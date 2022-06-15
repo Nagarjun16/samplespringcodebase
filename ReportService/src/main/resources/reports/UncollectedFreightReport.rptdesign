@@ -1,0 +1,2386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="layoutPreference">fixed layout</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="FromDate" id="120">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Image" id="304">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="308">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCityCode" id="309">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="4">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="5">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">PassDate</property>
+                    <property name="alias">PassDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">PassDate</text-property>
+                    <text-property name="heading">PassDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="alias">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">Diff_Days</property>
+                    <property name="alias">Diff_Days</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Diff_Days</text-property>
+                    <text-property name="heading">Diff_Days</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">flightkey</property>
+                    <property name="alias">flightkey</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flightkey</text-property>
+                    <text-property name="heading">flightkey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">irprefno</property>
+                    <property name="alias">irprefno</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">fltkey</property>
+                    <property name="alias">fltkey</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">fltkey</text-property>
+                    <text-property name="heading">fltkey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">awbNumber</property>
+                    <property name="alias">awbNumber</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">shipmentId</property>
+                    <property name="alias">shipmentId</property>
+                    <property name="analysis">measure</property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="alias">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">origin</property>
+                    <property name="alias">origin</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">destination</property>
+                    <property name="alias">destination</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">shchandlinggroupcode</property>
+                    <property name="alias">shchandlinggroupcode</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">specialhandlingcode</property>
+                    <property name="alias">specialhandlingcode</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">cycleone</property>
+                    <property name="alias">cycleone</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">cycletwo</property>
+                    <property name="alias">cycletwo</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">cyclethree</property>
+                    <property name="alias">cyclethree</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">cyclefour</property>
+                    <property name="alias">cyclefour</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">movetoabandoned</property>
+                    <property name="alias">movetoabandoned</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">irrpieces</property>
+                    <property name="alias">irrpieces</property>
+                    <property name="analysis">measure</property>
+                </structure>
+                <structure>
+                    <property name="columnName">irrweight</property>
+                    <property name="alias">irrweight</property>
+                    <property name="analysis">measure</property>
+                </structure>
+                <structure>
+                    <property name="columnName">house</property>
+                    <property name="alias">house</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">chargecode</property>
+                    <property name="alias">chargecode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">chargecode</text-property>
+                    <text-property name="heading">chargecode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">agentName</property>
+                    <property name="alias">agentName</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">StreetAddress</property>
+                    <property name="alias">StreetAddress</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">place</property>
+                    <property name="alias">place</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">custcode</property>
+                    <property name="alias">custcode</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">postal</property>
+                    <property name="alias">postal</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">CountryCode</property>
+                    <property name="alias">CountryCode</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">currentReminder</property>
+                    <property name="alias">currentReminder</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">currentReminder</text-property>
+                    <text-property name="heading">currentReminder</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">currentdate</property>
+                    <property name="alias">currentdate</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">natureOfGoods</property>
+                    <property name="alias">natureOfGoods</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantCityCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">tenantCityCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date1</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date2</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date3</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">8</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date4</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">9</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date5</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">10</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date6</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">11</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Date7</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">12</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">PassDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">Diff_Days</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">flightkey</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">irprefno</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">fltkey</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">awbNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">shipmentId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">origin</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">destination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">shchandlinggroupcode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">specialhandlingcode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">cycleone</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">cycletwo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">cyclethree</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">cyclefour</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">movetoabandoned</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">irrpieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">irrweight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">house</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">22</property>
+                        <property name="name">chargecode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">23</property>
+                        <property name="name">agentName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">24</property>
+                        <property name="name">StreetAddress</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">25</property>
+                        <property name="name">place</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">26</property>
+                        <property name="name">custcode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">27</property>
+                        <property name="name">postal</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">28</property>
+                        <property name="name">CountryCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">29</property>
+                        <property name="name">currentReminder</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">30</property>
+                        <property name="name">currentdate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">31</property>
+                        <property name="name">natureOfGoods</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <method name="beforeOpen"><![CDATA[
+
+]]></method>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">PassDate</property>
+                    <property name="nativeName">PassDate</property>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">Diff_Days</property>
+                    <property name="nativeName">Diff_Days</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">flightkey</property>
+                    <property name="nativeName">flightkey</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">irprefno</property>
+                    <property name="nativeName">irprefno</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">fltkey</property>
+                    <property name="nativeName">fltkey</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">awbNumber</property>
+                    <property name="nativeName">awbNumber</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">shipmentId</property>
+                    <property name="nativeName">shipmentId</property>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">origin</property>
+                    <property name="nativeName">origin</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">destination</property>
+                    <property name="nativeName">destination</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">shchandlinggroupcode</property>
+                    <property name="nativeName">shchandlinggroupcode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">specialhandlingcode</property>
+                    <property name="nativeName">specialhandlingcode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">cycleone</property>
+                    <property name="nativeName">cycleone</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">cycletwo</property>
+                    <property name="nativeName">cycletwo</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">cyclethree</property>
+                    <property name="nativeName">cyclethree</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">cyclefour</property>
+                    <property name="nativeName">cyclefour</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">movetoabandoned</property>
+                    <property name="nativeName">movetoabandoned</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">irrpieces</property>
+                    <property name="nativeName">irrpieces</property>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">irrweight</property>
+                    <property name="nativeName">irrweight</property>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">house</property>
+                    <property name="nativeName">house</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">22</property>
+                    <property name="name">chargecode</property>
+                    <property name="nativeName">chargecode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">23</property>
+                    <property name="name">agentName</property>
+                    <property name="nativeName">agentName</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">24</property>
+                    <property name="name">StreetAddress</property>
+                    <property name="nativeName">StreetAddress</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">25</property>
+                    <property name="name">place</property>
+                    <property name="nativeName">place</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">26</property>
+                    <property name="name">custcode</property>
+                    <property name="nativeName">custcode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">27</property>
+                    <property name="name">postal</property>
+                    <property name="nativeName">postal</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">28</property>
+                    <property name="name">CountryCode</property>
+                    <property name="nativeName">CountryCode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">29</property>
+                    <property name="name">currentReminder</property>
+                    <property name="nativeName">currentReminder</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">30</property>
+                    <property name="name">currentdate</property>
+                    <property name="nativeName">currentdate</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">31</property>
+                    <property name="name">natureOfGoods</property>
+                    <property name="nativeName">natureOfGoods</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[WITH flight AS (
+	SELECT leg.flight_id  FlightId, Flt.carriercode, Flt.flightnumber, Flt.flightkey, 
+			Cast(Leg.datesta AS DATE) FlightDate 
+	FROM   flt_operativeflight Flt 
+    INNER JOIN flt_operativeflight_legs leg ON leg.flight_id = Flt.flight_id 
+    WHERE  Leg.flightoffpoint = ?
+),   
+Manifest As (
+	SELECT arr.FlightId, sm.ShipmentId, 
+	       Sum(Shp.Piece) Pieces, Sum(Shp.Weight) Weight
+	FROM   Imp_ArrivalManifestShipmentInfo Shp 
+	INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = Shp.ShipmentNumber
+	                              And Sm.ShipmentDate = Shp.ShipmentDate	
+	INNER JOIN Imp_ArrivalManifestULD Uld       
+		 ON Uld.ImpArrivalManifestULDId = Shp.ImpArrivalManifestULDId
+	INNER JOIN Imp_ArrivalManifestBySegment ManSeg 
+		 ON ManSeg.ImpArrivalManifestBySegmentId = Uld.ImpArrivalManifestBySegmentId
+	INNER JOIN Imp_ArrivalManifestByFlight arr 
+		 ON arr.ImpArrivalManifestByFlightId = ManSeg.ImpArrivalManifestByFlightId
+	Inner Join Flight Flt On Flt.FlightId = arr.FlightId
+	Inner Join Flt_operativeflight_Segments FltSeg 
+		 On FltSeg.Flight_Id       = Flt.FlightId
+		And FltSeg.FlightSegmentId = ManSeg.FlightSegmentId 
+	Group By   Arr.FlightId, sm.ShipmentId
+), 
+Msca As (
+	Select irr.Flight_Id FlightId, sm.ShipmentId, 
+	       Sum(IsNull(irr.Pieces,0)) Pieces, Sum(IsNull(irr.Weight,0)) Weight
+	From Shipment_Irregularity irr
+	INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = irr.ShipmentNumber
+	                              And Sm.ShipmentDate = irr.ShipmentDate	
+	Where IsNull(irr.CargoIrregularityCode,'XXX') = 'MSCA' 
+	And irr.Flight_Id Is Not NUll
+	Group By irr.Flight_Id, sm.ShipmentId  
+),
+Fdca As (
+	Select irr.Flight_Id FlightId, sm.ShipmentId, 
+	Sum(IsNull(irr.Pieces,0)) Pieces, Sum(IsNull(irr.Weight,0)) Weight
+	From Shipment_Irregularity irr
+	INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = irr.ShipmentNumber
+	                              And Sm.ShipmentDate = irr.ShipmentDate
+	Where IsNull(irr.CargoIrregularityCode,'XXX') = 'FDCA'
+	And irr.Flight_Id Is Not NUll
+	Group By irr.Flight_Id, sm.ShipmentId
+),
+FrtIn As (
+	Select Ver.FlightId, Ver.ShipmentId, 
+	       IsNull(Sum(Ver.BreakDownPieces),0) Pieces, IsNull(Sum(Ver.BreakDownWeight),0) Weight
+	from Imp_ShipmentVerification Ver
+	Where IsNull(Ver.BreakDownPieces,0) > 0
+	Group By Ver.FlightId, Ver.ShipmentId
+),
+invWgt AS (
+	SELECT Inv.flight_id FlightId, Inv.shipment_id ShipmentId, 
+           Sum(Inv.Pieces) Pieces , Sum(Inv.weight) Weight 
+	FROM   shipment_inventory Inv 
+	INNER JOIN shipment_master Sm ON Sm.shipmentid = Inv.shipment_id 
+	
+	WHERE  sm.destination in (?,?)
+	AND sm.shipmenttype != 'MAIL' 
+    AND IsNull(Inv.Abandoned,0) = 0	
+	GROUP BY Inv.flight_id, Inv.shipment_id
+),
+InvRdy As (
+	Select FrtIn.FlightId, FrtIn.shipmentId, 'R' Rdy
+	From FrtIn
+	Inner Join invWgt On invWgt.FlightId = FrtIn.FlightId And invWgt.ShipmentId = FrtIn.ShipmentId
+	Left Join Manifest On Manifest.FlightId = FrtIn.FlightId And Manifest.ShipmentId = FrtIn.ShipmentId
+	Left Join Msca On Msca.FlightId = FrtIn.FlightId And Msca.ShipmentId = FrtIn.ShipmentId
+	Left Join Fdca On Fdca.FlightId = FrtIn.FlightId And Fdca.ShipmentId = FrtIn.ShipmentId
+	Where invWgt.Pieces = ((IsNull(Manifest.Pieces,0) - IsNull(Msca.Pieces,0)) + IsNull(Fdca.Pieces,0))
+),
+inv AS (
+	SELECT Inv.flight_id FlightId, Inv.shipment_id ShipmentId, Sm.shipmentnumber,
+           Isnull((SELECT airportname 
+		           FROM mst_airport 
+				   WHERE airportcode = Sm.origin),
+                  (SELECT CityName 
+				   FROM mst_city city 
+				   Where CityCode = Sm.origin)
+				  ) Origin, 
+				  (select shipment_houseinformation.number from shipment_houseinformation where
+				  shipment_houseinformation.ShipmentHouseId=inv.ShipmentHouseId
+				  and shipment_houseinformation.ShipmentType='HAWB')Number,
+			Sm.destination, Sum(Inv.pieces) Pieces, Sum(Inv.weight) Weight, sm.natureofgoodsdescription 
+	FROM   shipment_inventory Inv 
+	Inner Join InvRdy On InvRdy.FlightId = inv.flight_id 
+	                 And InvRdy.shipmentid = Inv.shipment_id	
+	INNER JOIN shipment_master Sm ON Sm.shipmentid = Inv.shipment_id 
+
+	WHERE  sm.destination in (?,?) 
+	AND sm.shipmenttype != 'MAIL' 
+	AND IsNull(Inv.WarehouseLocation,'XX') != 'UTL' 
+	AND IsNUll(Inv.Locked,0) = 0
+    AND IsNull(Inv.Abandoned,0) = 0	
+	GROUP BY Inv.flight_id, Inv.shipment_id, Sm.shipmentnumber, 
+		   Sm.origin, Sm.destination, sm.natureofgoodsdescription,inv.ShipmentHouseId
+),
+
+shc AS (
+	SELECT inv.flightid, inv.shipmentid, inv.natureofgoodsdescription, inv.shipmentnumber, 
+			inv.origin, inv.destination, inv.pieces, inv.weight, inv.number,
+			String_agg(shipment_mastershc.specialhandlingcode, '/') SpecialHandlingCode, 
+            CASE WHEN (SELECT Count(1) 
+                       FROM   shipment_mastershc innerSHC 
+                       INNER JOIN Mst_AssociateSHCbyHandlingGroup 
+					           ON innerSHC.specialhandlingcode 
+							      = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode 
+                       INNER JOIN mst_shchandlinggroup 
+                               ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid 
+                                  = mst_shchandlinggroup.mstshchandlinggroupid 
+					   WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP' 
+                       AND innerSHC.shipmentid = inv.shipmentid) > 0 
+				 THEN 'IRP' 
+                 ELSE 'IRG' 
+            END SHCHandlingGroupCode, 
+			Isnull((SELECT TOP 1 mst_shchandlinggroup.mstshchandlinggroupid 
+					FROM shipment_mastershc innerSHC 
+					INNER JOIN Mst_AssociateSHCbyHandlingGroup 
+						    ON innerSHC.specialhandlingcode = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode 
+                    INNER JOIN mst_shchandlinggroup 
+                            ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid 
+                               = mst_shchandlinggroup.mstshchandlinggroupid 
+                    WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP' 
+                    AND innerSHC.shipmentid = inv.shipmentid), 
+				 (Select Top 1 mstshchandlinggroupid
+				  From mst_shchandlinggroup
+				  WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRG')
+				 ) MstSHCHandlingGroupID 
+	FROM   inv 
+	LEFT JOIN shipment_mastershc ON inv.shipmentid = shipment_mastershc.shipmentid 
+	
+	GROUP  BY inv.flightid, inv.shipmentid, inv.natureofgoodsdescription, 
+			   inv.shipmentnumber, inv.origin, inv.destination, inv.pieces, inv.weight,inv.number
+), 
+customer AS (
+	SELECT shipment_mastercustomerinfo.shipmentid, 
+		   shipment_mastercustomerinfo.customercode custCode, 
+		   shipment_mastercustomeraddressinfo.streetaddress, 
+		   shipment_mastercustomeraddressinfo.place, 
+		   shipment_mastercustomerinfo.customername agentName, 
+		   (SELECT countryname 
+			FROM   mst_country 
+			WHERE  countrycode = shipment_mastercustomeraddressinfo.countrycode) CountryCode, 
+		   shipment_mastercustomeraddressinfo.postal 
+	FROM   shipment_mastercustomerinfo 
+	LEFT JOIN shipment_mastercustomeraddressinfo 
+	       ON shipment_mastercustomeraddressinfo.shipmentcustomerinfoid 
+			  = shipment_mastercustomerinfo.shipmentcustomerinfoid 
+	LEFT JOIN customer_master 
+		   ON shipment_mastercustomerinfo.appointedagent = customer_master.customer_id
+), 
+chargeinfo AS (
+	SELECT inv.shipmentid,
+           Min(CASE WHEN shipment_otherchargeinfo.chargecode = 'PP' 
+		            THEN 'ALL CHARGES PREPAID BY CASH' 
+                    WHEN shipment_otherchargeinfo.chargecode = 'CC' 
+				    THEN 'ALL CHARGES PREPAID BY CASH' 
+                    ELSE 'ALL CHARGES PREPAID BY CASH' 
+               END) chargecode 
+	FROM   shipment_otherchargeinfo 
+	Inner JOIN inv ON inv.shipmentid = shipment_otherchargeinfo.shipmentid
+	
+	Group By inv.shipmentid
+), 
+RefNo As (
+	Select Flight.FlightID, sm.ShipmentID,            
+	Min(CASE WHEN trace.casenumber IS NOT NULL THEN 'IRP' + '/' + trace.casenumber 
+             ELSE '' 
+        END) irpRefNo
+	From com_tracingshipmentinfo trace
+	Inner Join Flight On Flight.FlightKey = trace.FlightKey
+	       And Cast(Flight.FlightDate As Date)= Cast(trace.FlightDate As Date)
+	Inner Join Shipment_Master sm On sm.ShipmentNUmber = trace.ShipmentNUmber
+	      And Cast(sm.ShipmentDate as date) = cast(trace.ShipmentDate as date)
+
+	Where trace.irregularitytypecode = 'UNDELIVEREDSHIPMENT' 
+	Group By Flight.FlightID, sm.ShipmentID
+),
+cycle AS (
+	SELECT Cast(Flt.flightdate AS DATE) FlightDate, Flt.flightkey, 
+	       shc.shipmentid, shc.shipmentnumber, shc.origin, shc.destination, 
+           shc.shchandlinggroupcode, shc.specialhandlingcode, 
+           shc.pieces irrPieces, shc.weight irrWeight, 
+           shc.natureofgoodsdescription, Flt.flightid flightId,
+           customer.agentname, customer.streetaddress, customer.place, 
+		   customer.custcode, customer.postal, 
+		   customer.countrycode, chargeinfo.chargecode, shc.number as house,
+
+		    CASE WHEN Gpu.cycleone is NULL
+		    THEN 'N'
+		    ELSE
+           CASE WHEN Cast(Dateadd(day,Gpu.cycleone, Flt.flightdate) AS DATE) 
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE) 
+                     AND Cast(Dateadd(day, Gpu.cycleone, Flt.flightdate) AS DATE) = ?
+			    THEN 'Y /' + Cast(Gpu.cycleone AS VARCHAR) 
+			    ELSE 'N'
+			END
+		   END CycleOne, 
+
+		   CASE WHEN Gpu.cycletwo is NULL
+		    THEN 'N'
+		    ELSE
+           CASE WHEN Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE) 
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE) 
+                     AND Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE) = ?
+				THEN 'Y /' + Cast(Gpu.cycletwo AS VARCHAR) 
+                ELSE 'N' 
+				END
+           END CycleTwo, 
+
+		   CASE WHEN Gpu.cyclethree is NULL
+		    THEN 'N'
+		    ELSE
+			CASE WHEN Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE ) 
+				      <= Cast(Dateadd(hour,8,getDate()) AS DATE) 
+				      AND Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE) = ?
+			     THEN 'Y /' + Cast(Gpu.cyclethree AS VARCHAR) 
+			     ELSE 'N' 
+				 END
+			END CycleThree, 
+
+			CASE WHEN Gpu.cyclefour is NULL
+		    THEN 'N'
+		    ELSE
+			CASE WHEN Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE) 
+				      <= Cast(Dateadd(hour,8,getDate()) AS DATE) 
+				      AND Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE) = ?
+			     THEN 'Y /' + Cast(Gpu.cyclefour AS VARCHAR) 
+			ELSE 'N' 
+			END
+			END CycleFour, 
+			
+		 
+			CASE WHEN Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE ) 
+					  <= Cast(Dateadd(hour,8,getDate()) AS DATE) 
+					  AND Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE) = ?
+				 THEN 'Y /' + Cast(Gpu.movetoabandoned AS VARCHAR) 
+			     ELSE 'N' 
+				
+			END MoveToAbandoned,
+			irpRefNo, 
+            Upper(Format(Dateadd(hour,8,getDate()),'dd MMM yyyy')) currentDate 
+	FROM   shc  
+	INNER JOIN flight Flt ON Flt.flightid = shc.flightid 
+	INNER JOIN mst_graceperiodforunclaimedshipments Gpu 
+	        ON Gpu.mstshchandlinggroupid = shc.mstshchandlinggroupid
+	INNER JOIN customer ON customer.shipmentid = shc.shipmentid	
+    INNER JOIN chargeinfo ON chargeinfo.shipmentid = shc.shipmentid	
+	LEFT JOIN RefNo On RefNo.FlightId = Flt.flightid
+	      And RefNo.shipmentid = shc.shipmentid		
+)
+SELECT cast( ? as Date) PassDate, FlightDate, 
+       Datediff(day, flightdate, cast( ? as Date)) Diff_Days, 
+       Concat(flightkey, '/', Upper(flightdate)) flightkey, 
+       irprefno, 
+	   flightkey fltkey, 
+       shipmentnumber awbNumber, shipmentid shipmentId,
+       Stuff(RIGHT(shipmentnumber, 11), 4, 0, '-') ShipmentNumber, 
+       origin, destination, shchandlinggroupcode, specialhandlingcode, 
+       cycleone, cycletwo,  cyclethree, cyclefour, movetoabandoned, 
+       irrpieces, irrweight, house,
+	   chargecode, 
+       agentName, StreetAddress, place, 
+       custcode, postal, CountryCode, 
+       CASE 
+         WHEN movetoabandoned LIKE 'Y%' THEN 
+         'REMINDER ON NON-COLLECTION OF CARGO MOVED TO ABANDON' 
+         WHEN cyclefour LIKE 'Y%' THEN '4th REMINDER ON NON-COLLECTION OF CARGO' 
+         WHEN cyclethree LIKE 'Y%' THEN 
+         '3rd REMINDER ON NON-COLLECTION OF CARGO' 
+         WHEN cycletwo LIKE 'Y%' THEN '2nd REMINDER ON NON-COLLECTION OF CARGO' 
+         WHEN cycleone LIKE 'Y%' THEN '1st REMINDER ON NON-COLLECTION OF CARGO' 
+         ELSE 'NOSLAB' 
+       END currentReminder, 
+       currentdate, natureofgoodsdescription natureOfGoods 
+FROM   cycle 
+WHERE  ( cycleone LIKE 'Y%' 
+          OR cycletwo LIKE 'Y%' 
+          OR cyclethree LIKE 'Y%' 
+          OR cyclefour LIKE 'Y%' 
+          OR movetoabandoned LIKE 'Y%' ) 
+ORDER  BY Cast(flightdate AS DATE), flightkey, shipmentnumber 
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>shipmentId</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>shipmentId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>shipmentId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>shipmentnumber</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>shipmentnumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>shipmentnumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>pieces</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>pieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>pieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>weight</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>weight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>weight</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>shipmentType</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>shipmentType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>shipmentType</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DateSTA</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DateSTA</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DateSTA</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flightId</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfGoodsDescription</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfGoodsDescription</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfGoodsDescription</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Origin</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Origin</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Origin</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>destination</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>destination</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>destination</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>chargecode</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>chargecode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>chargecode</design:label>
+            <design:formattingHints>
+              <design:displaySize>2</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>agentName</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>agentName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>agentName</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>irpRefNo</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>irpRefNo</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>irpRefNo</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>reminder1</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>reminder1</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>reminder1</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>reminder2</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>reminder2</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>reminder2</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>reminder3</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>reminder3</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>reminder3</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>reminder4</design:name>
+              <design:position>17</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>reminder4</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>reminder4</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>abondon</design:name>
+              <design:position>18</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>abondon</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>abondon</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>currentReminder</design:name>
+              <design:position>19</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>13</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>currentReminder</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>currentReminder</design:label>
+            <design:formattingHints>
+              <design:displaySize>13</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flightkey</design:name>
+              <design:position>20</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flightkey</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flightkey</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>collectionTerminal</design:name>
+              <design:position>21</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>collectionTerminal</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>collectionTerminal</design:label>
+            <design:formattingHints>
+              <design:displaySize>8000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>currentDate</design:name>
+              <design:position>22</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>currentDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>currentDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="NewStyle" id="190">
+            <property name="height">0.4in</property>
+        </style>
+        <style name="NewStyle1" id="195"/>
+        <style name="NewStyle2" id="199">
+            <structure name="numberFormat">
+                <property name="category">Currency</property>
+                <property name="pattern">###0.0{RoundingMode=HALF_UP}</property>
+            </structure>
+        </style>
+        <style name="NewStyle4" id="201">
+            <structure name="numberFormat">
+                <property name="category">Currency</property>
+                <property name="pattern">###0{RoundingMode=HALF_UP}</property>
+            </structure>
+        </style>
+        <style name="NewStyle5" id="218">
+            <structure name="numberFormat">
+                <property name="category">Currency</property>
+                <property name="pattern">###0.0{RoundingMode=HALF_UP}</property>
+            </structure>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <page-footer>
+                <label id="307">
+                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                    <text-property name="text">import.no.signature</text-property>
+                </label>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <list id="24">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="visibility">
+                <structure>
+                    <property name="format">all</property>
+                    <expression name="valueExpr" type="javascript">if(row["movetoabandoned"]=='N')&#13;
+{false&#13;
+}&#13;
+else{&#13;
+false&#13;
+}</expression>
+                </structure>
+            </list-property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">PassDate</property>
+                    <text-property name="displayName">PassDate</text-property>
+                    <expression name="expression" type="javascript">Formatter.format(dataSetRow["PassDate"],'dd MMM yyyy')</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="name">Diff_Days</property>
+                    <text-property name="displayName">Diff_Days</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Diff_Days"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">flightkey</property>
+                    <text-property name="displayName">flightkey</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["flightkey"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">irprefno</property>
+                    <text-property name="displayName">irprefno</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["irprefno"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">fltkey</property>
+                    <text-property name="displayName">fltkey</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["fltkey"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">awbNumber</property>
+                    <text-property name="displayName">awbNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["awbNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shipmentId</property>
+                    <text-property name="displayName">shipmentId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shipmentId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentNumber</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">origin</property>
+                    <text-property name="displayName">origin</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["origin"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">destination</property>
+                    <text-property name="displayName">destination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["destination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shchandlinggroupcode</property>
+                    <text-property name="displayName">shchandlinggroupcode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shchandlinggroupcode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">specialhandlingcode</property>
+                    <text-property name="displayName">specialhandlingcode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["specialhandlingcode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">cycleone</property>
+                    <text-property name="displayName">cycleone</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["cycleone"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">cycletwo</property>
+                    <text-property name="displayName">cycletwo</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["cycletwo"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">cyclethree</property>
+                    <text-property name="displayName">cyclethree</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["cyclethree"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">cyclefour</property>
+                    <text-property name="displayName">cyclefour</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["cyclefour"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">movetoabandoned</property>
+                    <text-property name="displayName">movetoabandoned</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["movetoabandoned"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">irrpieces</property>
+                    <text-property name="displayName">irrpieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["irrpieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">irrweight</property>
+                    <text-property name="displayName">irrweight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["irrweight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">chargecode</property>
+                    <text-property name="displayName">chargecode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["chargecode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">agentName</property>
+                    <text-property name="displayName">agentName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["agentName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">StreetAddress</property>
+                    <text-property name="displayName">StreetAddress</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["StreetAddress"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">place</property>
+                    <text-property name="displayName">place</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["place"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">custcode</property>
+                    <text-property name="displayName">custcode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["custcode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">postal</property>
+                    <text-property name="displayName">postal</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["postal"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CountryCode</property>
+                    <text-property name="displayName">CountryCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CountryCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">currentReminder</property>
+                    <text-property name="displayName">currentReminder</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["currentReminder"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">currentdate</property>
+                    <text-property name="displayName">currentdate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["currentdate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">natureOfGoods</property>
+                    <text-property name="displayName">natureOfGoods</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["natureOfGoods"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">PassDate_1</property>
+                    <text-property name="displayName">PassDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PassDate"]</expression>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="name">house</property>
+                    <text-property name="displayName">house</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["house"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <detail>
+                <grid id="121">
+                    <column id="122"/>
+                    <column id="123"/>
+                    <column id="124"/>
+                    <row id="125">
+                        <cell id="126">
+                            <image id="306">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LogoDataItemEventHandler</property>
+                                <property name="height">0.5902777777777778in</property>
+                                <property name="width">0.6180555555555556in</property>
+                                <property name="source">expr</property>
+                                <expression name="valueExpr">params["Image"]</expression>
+                            </image>
+                        </cell>
+                        <cell id="128"/>
+                        <cell id="129">
+                            <label id="130">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                <text-property name="text">import.sats.cargo</text-property>
+                            </label>
+                            <label id="131">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                <text-property name="text">import.sats.ltd</text-property>
+                            </label>
+                            <label id="132">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                <text-property name="text">import.regn.number</text-property>
+                            </label>
+                        </cell>
+                    </row>
+                </grid>
+                <data id="212">
+                    <property name="resultSetColumn">agentName</property>
+                </data>
+                <data id="213">
+                    <property name="resultSetColumn">StreetAddress</property>
+                </data>
+                <data id="291">
+                    <property name="resultSetColumn">place</property>
+                </data>
+                <data id="216">
+                    <property name="resultSetColumn">CountryCode</property>
+                </data>
+                <data id="295">
+                    <property name="resultSetColumn">postal</property>
+                </data>
+                <label id="134">
+                    <text-property name="text"></text-property>
+                </label>
+                <data id="302">
+                    <property name="resultSetColumn">PassDate</property>
+                </data>
+                <label id="251">
+                    <text-property name="text"> </text-property>
+                </label>
+                <grid id="276">
+                    <property name="width">7.802083333333333in</property>
+                    <column id="277">
+                        <property name="width">1.5520833333333333in</property>
+                    </column>
+                    <column id="278"/>
+                    <row id="279">
+                        <cell id="280">
+                            <label id="139">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                <text-property name="text">import.reference.number</text-property>
+                            </label>
+                        </cell>
+                        <cell id="281">
+                            <data id="292">
+                                <property name="resultSetColumn">irprefno</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+                <table id="136">
+                    <property name="width">7.802083333333333in</property>
+                    <column id="186">
+                        <property name="width">2.6979166666666665in</property>
+                    </column>
+                    <column id="187"/>
+                    <header>
+                        <row id="137">
+                            <cell id="138">
+                                <property name="textAlign">left</property>
+                                <property name="verticalAlign">middle</property>
+                            </cell>
+                            <cell id="140"/>
+                        </row>
+                        <row id="196">
+                            <cell id="197">
+                                <property name="textAlign">left</property>
+                                <property name="verticalAlign">middle</property>
+                            </cell>
+                            <cell id="198"/>
+                        </row>
+                        <row id="204">
+                            <cell id="205">
+                                <property name="textAlign">left</property>
+                                <property name="verticalAlign">middle</property>
+                            </cell>
+                            <cell id="206"/>
+                        </row>
+                        <row id="142">
+                            <cell id="143">
+                                <property name="colSpan">2</property>
+                                <property name="rowSpan">1</property>
+                                <property name="style">NewStyle1</property>
+                                <property name="textAlign">left</property>
+                                <property name="verticalAlign">middle</property>
+                                <data id="229">
+                                    <property name="resultSetColumn">currentReminder</property>
+                                </data>
+                                <label id="144">
+                                    <text-property name="text"></text-property>
+                                </label>
+                                <label id="145">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.shipment.not.delievered</text-property>
+                                </label>
+                                <label id="146">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.collect.cargo</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                    </header>
+                    <detail>
+                        <row id="225">
+                            <cell id="226"/>
+                            <cell id="227"/>
+                        </row>
+                        <row id="147">
+                            <cell id="148">
+                                <label id="149">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.awb.number</text-property>
+                                </label>
+                            </cell>
+                            <cell id="150">
+                                <data id="297">
+                                    <property name="resultSetColumn">ShipmentNumber</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="220">
+                            <cell id="221">
+                                <label id="154">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.pieces.colan</text-property>
+                                </label>
+                            </cell>
+                            <cell id="222">
+                                <data id="298">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.PiecesDataItemEventHandler</property>
+                                    <property name="resultSetColumn">irrpieces</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="162">
+                            <cell id="163">
+                                <label id="223">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.weight.colan</text-property>
+                                </label>
+                            </cell>
+                            <cell id="165">
+                                <data id="299">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.WeightDataItemEventHandler</property>
+                                    <property name="resultSetColumn">irrweight</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="168">
+                            <cell id="169">
+                                <label id="164">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.flight.colan</text-property>
+                                </label>
+                            </cell>
+                            <cell id="171">
+                                <data id="219">
+                                    <property name="resultSetColumn">flightkey</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="173">
+                            <cell id="174">
+                                <label id="170">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.natureofgoods.colan</text-property>
+                                </label>
+                            </cell>
+                            <cell id="176">
+                                <data id="300">
+                                    <property name="resultSetColumn">natureOfGoods</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="178">
+                            <cell id="179">
+                                <label id="175">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.airport.origin</text-property>
+                                </label>
+                            </cell>
+                            <cell id="181">
+                                <data id="301">
+                                    <property name="resultSetColumn">origin</property>
+                                </data>
+                            </cell>
+                        </row>
+                        <row id="311">
+                            <cell id="312">
+                                <label id="180">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <text-property name="text">import.charges.code</text-property>
+                                </label>
+                            </cell>
+                            <cell id="313">
+                                <data id="182">
+                                    <property name="resultSetColumn">chargecode</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </detail>
+                    <footer>
+                        <row id="183">
+                            <cell id="184"/>
+                            <cell id="185"/>
+                        </row>
+                        <row id="192">
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">if(params["display_house_data"].value){&#13;
+fasle&#13;
+}&#13;
+else{&#13;
+true&#13;
+}</expression>
+                                </structure>
+                            </list-property>
+                            <cell id="193">
+                                <property name="colSpan">2</property>
+                                <property name="rowSpan">1</property>
+                            </cell>
+                        </row>
+                        <row id="317">
+                            <cell id="194">
+                                <property name="colSpan">2</property>
+                                <property name="rowSpan">1</property>
+                                <label id="189">
+                                    <property name="pageBreakAfter">avoid</property>
+                                    <text-property name="text">This shipment can be collected from SATS Airfreight at Changi Cargo Complex. The terminal is open 24 hours daily. Please bring the following documents when collecting the shipment:                                                                                                    &#13;
+          1.   Master Airwaybill&#13;
+          2.   Identity Card or Passport&#13;
+          3.   Company Authorisation letter and Company stamp and cash for permit&#13;
+               declaration.&#13;
+                                                                                                                                                                  &#13;
+Please also read the attached sheet, which lists out the storage charges rates.                                                                                                                                                                                                           &#13;
+</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                    </footer>
+                </table>
+                <label id="238">
+                    <text-property name="text"> </text-property>
+                </label>
+                <label id="237">
+                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                    <text-property name="text">import.thankyou</text-property>
+                </label>
+                <label id="244">
+                    <text-property name="text"> </text-property>
+                </label>
+                <label id="250">
+                    <text-property name="text"> </text-property>
+                </label>
+                <label id="249">
+                    <text-property name="text"> </text-property>
+                </label>
+                <label id="240">
+                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                    <property name="textAlign">center</property>
+                    <text-property name="text">import.ms.lily</text-property>
+                </label>
+                <label id="241">
+                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                    <property name="textAlign">center</property>
+                    <text-property name="text">import.cargo.manager</text-property>
+                </label>
+                <label id="428">
+                    <property name="pageBreakAfter">always</property>
+                </label>
+            </detail>
+        </list>
+    </body>
+    <list-property name="images">
+        <structure>
+            <property name="name">favicon.ico</property>
+            <property name="type">image/x-icon</property>
+            <property name="data">
+                AAABAAMAMDAAAAEAIACoJQAANgAAACAgAAABACAAqBAAAN4lAAAQEAAAAQAgAGgEAACGNgAAKAAAADAA
+                AABgAAAAAQAgAAAAAAAAJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////Aebj
+                9BK/tuIxnZHTV4+BzXOKe8uHjX/MkIt8y4uKe8t7lYjQY6qf2UDW0Owd/Pz+BQAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPb1
+                +wqxqNw8g3TIhmhVu8VVP7PpSDKt+j8nqf4+Jqn/Pyep/z8nqf8+Jan/Qyur/U44sPJdSLbWdGPBoJeK
+                0VfSzOsY////AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAD7+/0HraLaRHdmwqhRO7HrPiap/jgfpv83HaX/Nx6m/zgfpv84H6b/OB+m/zgfpv84H6b/Nx6m/zcd
+                pf83Hqb/OiGn/0cvrPZiTrnHkILNa9LN6xcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAMzG6CGEdMiQUjyx6zsip/83HqX/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv84H6b/RC2r+WhVvLunnNhG////BAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAD///8BrqTbQGlWvMRAKKr9Nx6l/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/Nx6m/zkgp/9RO7HminvKdOrn
+                9Q0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///wKnnNhRW0e22zkhp/83Hqb/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv83Hqb/Ri+s9YBwxo3o5fUSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKqf2U9ZRLXgOB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/Nx6m/0Mrq/iAcMaP7uz3DgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAubDgOF5Jt9Y4H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9FLqz2h3fJef///wUAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADi3/Iab12/uDoh
+                p/84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/Tzmw6qGV
+                1U4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//
+                /wOOgM18RCyr+jcepv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OCCm/2RRusTRy+sdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAMS85DFaRrXcNx6m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/Nx6m/0IqqvuJesp3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAA////A4Z3yYo/J6n/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9dSbbSx8DmIQAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1c/sJF5Kt9U3HqX/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9DK6v7jX/MZwAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnZHTX0YvrPg3Hqb/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv85IKb/a1i9sf///woAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8Ff2/GnDsi
+                p/84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv82HaX/NRyl/zUbpf81HKX/Nh2l/zgfpv84H6b/Nx6m/zYc
+                pf81G6X/NRul/zYcpf83Hqb/OB+m/zgfpv83Hqb/NRyl/zUbpf82HKX/OB+m/zgfpv83HaX/NRyl/zUb
+                pf81G6X/Nhyl/zcepv83HqX/VkCz4sC44yoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAD8/P4bZ1O7yzcepv84H6b/OB+m/zgfpv84H6b/OB+m/z0lqP9bRrb/fGvE/4Z2yf96acT/VUCz/zkg
+                pv83HqX/Qiqr/2lXvP+Dc8j/g3PI/2lWvP9GLqz/Nx6m/zcepv9DK6v/cF6//4R0yP9lUrr/PiWp/zkg
+                pv9PObD/cmDA/4V1yP+Bcsf/ZFG6/z8nqf82HaX/SDGt+ZyP01MAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAADd2fA/XUi25zYdpf84H6b/OB+m/zgfpv83Hqb/QSmq/6id2P/v7fj/9/b8//X0
+                +//49/z/5OHz/3ppw/9KNK7/u7Lh//X0+//19Pv/9PP6//X0+v/KxOf/Wka1/z4mqf+upNv/9/b8//j4
+                /P/z8fn/jn/M/3low//h3vL/9/b8//X0+//29fv/8/L6/66k2/9DK6v/Pyap/4Z3yXsAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADIweZdVT+z+DYdpf84H6b/OB+m/zgfpv84H6b/OyOo/5OF
+                zv+yqd3/fGzF/21avv+Dc8j/4d7y/9LN6/+Pgc3/+vn9/7Gn3P9vXb//bFq+/6CU1f/5+Pz/oJTV/2dU
+                u//z8vr/xr/m/3ppw/+pntn/b12//2VRuv+8s+H/jH7M/25cvv9zYcD/vbXh//b1+/9wXr//Nx6m/3tr
+                xJUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADGv+VwUz6y/zYdpf84H6b/OB+m/zgf
+                pv84H6b/Nx6m/zohp/9LNK7/WEO0/2RRuv98a8T/3dnw/9zY8P+bj9L/+/v9/52R0/9ZRLX/UDqx/2BM
+                uP/o5fX/sqjd/39vxv/49/z/f2/G/zIYo/85Iaf/OB+m/zcdpf9FLaz/Ujyy/2FNuP9tW77/tKrd//n4
+                /P95aMP/Nx6m/31txab///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADJwud1VT+z/zYd
+                pf84H6b/OB+m/zgfpv84H6b/OiGn/4Jyx//Z1O7/8vH5//b1+//49/z/7uz3/5GDzv9XQrT/zMXo//Ty
+                +v/x7/n/7+34/+fj9P/8+/7/safc/4Bwxv/29fv/eGfD/zMZpP82HaX/Nh2l/11Jt//Cu+T/7Or3//b1
+                +//39/z/9vX7/8G64/9NNq//OSCn/4Bwxq3///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AADGv+VuUz6y/zYdpf84H6b/OB+m/zgfpv82HaX/Uz2y/+Tg8//l4vT/pJnW/4+Bzf+AcMb/a1i9/z8n
+                qf82HKX/Uj2y/3Zlwv+Iecr/mY3R/7204f/9/f7/safc/39wxv/39vz/kILO/1dCtP9YRLX/Qiqq/7Ko
+                3f/49/z/uLDg/5aI0P+Iecr/dmTC/044sP82HaX/OiKn/31sxaX///8BAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAADLxehbV0G09jYdpf84H6b/OB+m/zgfpv82HaX/Uz6y/+Th8//c2PD/joDM/4Fx
+                x/+fk9T/0Mrq/3xrxP9CK6v/s6nd/8G54/+PgM3/iXrK/7Cm2//7+/3/m47S/3xsxf/7+/3/9PL6/+7s
+                9//n5PT/aVe8/66k2//18/r/pJjW/4Bwxv+Qgs3/w7zk/66k2/9BKar/OiGn/35uxZMAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADh3vI8Xkq35TYdpf84H6b/OB+m/zgfpv84H6b/OiGn/4Bw
+                xv/e2vD/9vX7//b1+//w7vj/y8Xo/3NiwP9FLqz/oJTU/+Dc8f/29fv/+Pf8//Du+P+6suD/Tzmw/3xs
+                xf/5+Pz/tq3e/5GDzv+PgM3/Tzmw/1lEtf/FvuX/8/L6//X0+//18/r/3trw/5yP0/9CKqr/QCiq/4l7
+                yncAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8XbFq9xjgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv9NN6//ZVK6/2pXvP9aRbX/QSmq/zcepf83Hqb/OSCm/0w1r/9jULn/ale8/1pF
+                tf8/J6n/NRuk/2RQuv/Ry+v/dWPB/zMZpP82HKX/Nx6m/zcepf9DK6v/X0u3/2tYvf9iTrn/SzSu/zgf
+                pv82HaX/SjOu96Wa104AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8DhXXIljwk
+                qP84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83HqX/Nhyl/zUcpf82HaX/Nx6m/zgfpv84H6b/OB+m/zce
+                pf82HKX/NRyl/zYdpf84Hqb/OB+m/zkgpv9KM67/RzCt/zcepv84H6b/OB+m/zgfpv83Hqb/Nhyl/zUc
+                pf82HKX/Nx6l/zgfpv83HqX/WkW13sfA5iYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAppvXWEkzrvY3Hqb/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/Nx6m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv86Iaf/cWDAqv///wgAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAA4d3xHmVRus83Hqb/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9GL6z5mIvRXgAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AZKFz39CKqv9Nx6m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv9mU7vL3NjvGwAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANTP7CljULnUNx6m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/Nx6m/0Yv
+                rPmXidBrAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//
+                /wGdkdNuSTKu9zcepf84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OiGn/29dv7jm4/MWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAD49/wTfWzFqj4lqf83Hqb/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv83Hqb/WEO04rOp3UEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAycLnK2lXvMk6Iaf/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9NNq/wl4rQZ////wIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL624j5mUrrTOiGn/zce
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/Nx6m/0s0rvORg858////CAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAC9teI/aFa8zD0kqP83Hqb/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/Tzmw7pCCznj+/v8LAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAx8DmL3low69HMK35Nx6m/zgepv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/Nx6l/zwkqP9dSbfZn5PUXv//
+                /wcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOrn9hWYi9F2Xkq33EAnqf43HqX/Nx6m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepf86Iaf/TTav8Xlo
+                w6S+tuIz////AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8DyMHmMIx9
+                zI1eSrfaRS2s+zohp/83HqX/Nh2l/zcepv83Hqb/Nx6m/zcepv83Hqb/Nx2l/zcdpf84H6b/Pyap/lA7
+                setyYcCvqZ/YUe7s9w0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAP///wXTzespnZDTanpqxKpjULnWVD6y8E02r/tJMq3/STOu/0kyrf9KM67+UDqx9VlF
+                teJvXb69inzLhLat30D19PsNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///wnk4fMjz8rqTry04XO1rN6LubDglbet
+                35G2rN5+xr/mXdjU7jLx7/kQ////AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAP///////wAA////////AAD///////8AAP///////wAA////////AAD///////8AAP//
+                /H///wAA//+AA///AAD//gAA//8AAP/4AAA//wAA//AAAB//AAD/4AAAB/8AAP/AAAAD/wAA/4AAAAP/
+                AAD/AAAAAf8AAP8AAAAA/wAA/gAAAAD/AAD8AAAAAH8AAPwAAAAAfwAA/AAAAAA/AAD4AAAAAD8AAPgA
+                AAAAPwAA+AAAAAA/AAD4AAAAAB8AAPgAAAAAHwAA+AAAAAAfAAD4AAAAAB8AAPgAAAAAHwAA+AAAAAA/
+                AAD4AAAAAD8AAPgAAAAAPwAA/AAAAAA/AAD8AAAAAH8AAP4AAAAAfwAA/gAAAAD/AAD/AAAAAP8AAP8A
+                AAAB/wAA/4AAAAP/AAD/wAAAB/8AAP/gAAAP/wAA//AAAB//AAD//AAAP/8AAP/+AAD//wAA///AA///
+                AAD///x///8AAP///////wAA////////AAD///////8AACgAAAAgAAAAQAAAAAEAIAAAAAAAABAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///wH///8D////AgAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8CrKLaHYR0yFBvXb+BZFG6n2ZTu61kUbqpZlK6lXRi
+                wW6Nf8w6wrvkDgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8Bn5LUKm1bvolQOrHWQiur+TwjqP85IKb/OSCm/zkg
+                pv85Iaf/PSWo/kYvrO9XQrS8eWjDYLeu3xEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0MrqCntqxGlQOrHbPCOo/zcepv83Hqb/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/Nx6m/zgfpv9AKKr4W0a2tI1/zDf///8BAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMO75BFsWb2QQiur9jcepv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv85IKb/TTav3YFxx1L///8CAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADW0e0Ma1m9kz8nqfs3Hqb/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/SjOu5IJz
+                x04AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////AXhnw3FBKar4Nx6m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv83Hqb/Tzmw1pWI0C4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACajtI0TTew4Tce
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv86Iaf/YEy4pOXi8woAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////BGlW
+                vJg6Iqf/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zcepv9ELazxg3THSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AACjl9YqTTav4Tcepv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zkgpv9gTLie////BAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAH5uxWU/J6n9OB+m/zgfpv84H6b/Nhyl/zYdpf83HaX/NRyl/zcepv82HaX/Nhyl/zcd
+                pf81HKX/Nx6l/zcepv82HKX/Nh2l/zYdpf82HaX/NRyl/zcdpf82HKX/Nhyl/043sNqpntgfAAAAAAAA
+                AAAAAAAAAAAAAAAAAAD///8Ebly+njkgp/84H6b/OB+m/zsip/9qV7z/npLU/6qf2f+Ke8r/RS6s/1lE
+                tf+bjtL/qp/Z/4x+zP9LNa//Qiqq/4x9y/+lmtf/aFW8/1pGtf+WiND/q6DZ/5eK0f9UP7P/Qiur9oV2
+                yUYAAAAAAAAAAAAAAAAAAAAAAAAAAP///xFqV7zHNx6m/zgfpv84Hqb/QCip/6SZ1v+uo9v/nJDT/9XP
+                7P+kmdf/x8Dm/7624v+XitD/zcfp/6mf2f+Iecr/3dnw/7Cm3P+Qgs7/invK/7eu3/+ajdL/xb3l/762
+                4v9FLaz/dmXCZQAAAAAAAAAAAAAAAAAAAAAAAAAA8/H5GWpXvNo3HaX/OB+m/zgfpv84H6b/XEe2/4d4
+                yf+XitD/1M7s/7Go3P/OyOn/sqjd/4Jzx/+to9v/xLzl/6yh2v+mmtf/NRyl/zkgp/9OOLD/gHDG/5KE
+                zv/BueP/x8Dm/0cwrf92ZcJ1AAAAAAAAAAAAAAAAAAAAAAAAAADz8voZale82jcdpf84H6b/Nx6l/0s0
+                rv/Pyer/zMbo/7Gn3P+dkdP/UTux/2lWvP+nnNj/taze/97a8P/FvuX/rKHa/7Ko3P9WQbT/SzSu/7Ko
+                3f/Z1O7/tave/6ec2P9lUrr/PSSo/3hnw3UAAAAAAAAAAAAAAAAAAAAAAAAAAP///xBrWL3FNx6m/zgf
+                pv83HqX/SzSu/87I6f/DvOT/r6Tb/8S95f9oVbv/invK/8O85P+xp9z/2NPt/6WZ1/+mmtf/6uj2/8/J
+                6f+DdMj/r6Xb/9LM6/+sotr/xL3l/4h5yv89Jaj+eWjDYwAAAAAAAAAAAAAAAAAAAAAAAAAA////A3Ff
+                v5o6Iaf/OB+m/zgfpv84H6b/WEO0/46Azf+WiND/dGLB/0Qtq/9PObD/gXLH/5iL0f+AcMb/RS6s/41/
+                zP+glNX/TTev/0Iqqv9KM67/hXbJ/5iL0f+AcMb/TTew/0UtrPSKfMtDAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAg3PHYUAoqvw4Hqb/OB+m/zgfpv82HaX/NRyl/zUcpf81HKX/Nx6m/zcepf81G6X/NRyl/zUc
+                pf83HqX/Pyep/0YvrP83HqX/Nx6m/zcepv81HKX/NRyl/zUbpf82HaX/UDqx2LCm3B0AAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAACto9omUDqx3Tcepv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84Hqb/Nx6m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zohp/9lUbqZ////AwAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///wNwXr+QOyOo/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/SDCt7o1/
+                zEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKec2C1SPbLbNx6m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zsi
+                p/9nVLub////BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIJyx2ZFLaz0Nx6m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/VT+zzqOY1icAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9vT7CHVk
+                woVCK6v4Nx6m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/OB+m/1A6sdyOgM1DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAA2NPuDHZlwoFHMK3xOB6m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84H6b/Nx6m/zohp/9TPrLSjn/MRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAA7uv3B4l6yllXQrTPPyap/Tcepv83Hqb/OB+m/zgfpv84H6b/OB+m/zgf
+                pv84Hqb/Nx6m/zkgpv9FLazzZFG6pJ6S1CsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALSr3h97asR2WUS1yEgxrfE+Jqn+OyKn/zoi
+                p/86Iqf/PCOo/0EpqvtMNq/kYU65qol6yk7SzesLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///wHJwucUmYzRP4h6
+                ynSCc8efhHTIsYJyx6yDdMiQiXrKXqWa1yvk4fMIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAP///wL///8E////A////wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////////////////4P///wAf//4AB//4A
+                AP/8AAB//AAAP/gAAB/wAAAf8AAAD/AAAA/gAAAP4AAAD+AAAA/gAAAP4AAAD+AAAA/wAAAP8AAAD/AA
+                AB/4AAAf/AAAP/wAAH/+AAD//4AB///gB////D////////////8oAAAAEAAAACAAAAABACAAAAAAAAAE
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMa/5QShldUMpJjWC9HL
+                6gIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfm7GFlpGtWRMNq+pSDGtxkgx
+                rcNNN6+eXUi2Uod4yQwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAale8N0kyrsE7I6j8OB+m/zge
+                pv84H6b/OB+m/z0kqPdMNa+ocV/AIQAAAAAAAAAAAAAAAAAAAAAAAAAAb12/LEYurNI4H6b/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OSCm/0ozrrV6asQWAAAAAAAAAAAAAAAAwLjjBk85sKI5IKb/OB+m/zgf
+                pv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv86Iaf+VD6yegAAAAAAAAAAAAAAAG9cvjBAKKrpOB6m/z0k
+                qP8+Jqn/Nx6m/z8nqf86Iaf/OiGn/z0lqP88I6j/Piap/0Qtq89/bsYVAAAAAAAAAABpVrxjPCOo/j4m
+                qf+DdMj/nZDT/4p7y/+ckNP/iXrK/4h5yv+EdMj/fm7F/5+S1P9vXL7wXkq3NgAAAAAAAAAAbVq9eTsi
+                p/9FLaz/n5LU/6+l2/+cj9P/rKLa/8G54/+sotr/ZFC6/5eK0f+yqNz/d2bC911ItkMAAAAAAAAAAGpX
+                vGE7I6j+Qyur/5SHz/+RhM7/ZFC6/5mM0f+Qgs3/n5PU/3dmwv+OgMz/mIvR/1pGtfBjT7k1AAAAAAAA
+                AAByYcAuQSqq6Dcepv86Iaf/PCOo/zgfpv88JKj/OSGn/0Epqv84H6b/OSCm/zwjqP9GL6zNhXXIFAAA
+                AAAAAAAA1M/sBVI8sZ45IKb/OB+m/zgfpv84H6b/OB+m/zgfpv83Hqb/OB+m/zgfpv87Iqf9V0K0dQAA
+                AAAAAAAAAAAAAAAAAAB2ZcIpSDGtzTgfpv84H6b/OB+m/zgfpv84H6b/OB+m/zgfpv85IKf/TDavr4R0
+                yBQAAAAAAAAAAAAAAAAAAAAAAAAAAHFfvzFMNq+5PSSo+jgfpv83Hqb/Nx6m/zkgpv8+Jqn0Tzmwn3lo
+                wx0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAinvLEmFNuFpTPrKgVD6yxVM9ssBTPbKUZFC5SZWH
+                zwoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7+34BNTP7A7X0u0N+fj8AgAA
+                AAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//AAD//wAA/D8AAPAPAADgBwAAwAcAAMADAADAAwAAwAMAAMAD
+                AADAAwAAwAcAAOAHAADwDwAA/D8AAP//AAA=
+</property>
+        </structure>
+        <structure>
+            <property name="name">apple-touch-icon-60x60.png</property>
+            <property name="type">image/png</property>
+            <property name="data">
+                iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6
+                JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH
+                4AwIBiwRjdhDIgAADjNJREFUaN7tWml0VMeV/uq93vdWq1s7EgIJSQiDMAFkMGC2sASwjYmD47E9jjOZ
+                ITOeJPYkmfHEx47H45xkjJ3Y8TrE42WcYAiYmM1xbAggEIsESAItaN9ard73ft3vvZofLWFh1KIlsZ05
+                fOfoh6R6t+5X996qe28VcAu38P8K5HpMQikdOt/gDwDQIT8g5Nqrc01mGCBIQKkm6g9kReyu20LW/uKo
+                xzcBBCbCsjIqijyN8R6pVt2tTDM3KS2mGnmKoZ2wrAeAeK3IS64ySVBR1LrrGqf2nzizwNfSUR5o7y4K
+                9zvS+HBEJYQjMipSMtS+rEIWkygVYalO69TmZTdpJ+acNJWVHo76g9VSjcoJgF5N8uOWRCnFCkKwJxwx
+                9R0+cZf1r5UbnGfOzQv22tKiXp+E8sLAYhAMpzeNCwEIAWEYSNVKUWFOdRlLJleb55TtzFmxaK/Sktp1
+                tYiPWQKlFBG7EwqzSWn9a+Xirv0Hv2s/fnpRoLNXL0RjcXJjUZDSOH+WgdKcEkm5rbg68647tuSuW76r
+                ccsfnKX//J1xxfqYvqSU4lWiwyOdDfkdH3+6qWvfgQe9F9rSBC4KwjBjVmY48mAYqDIs/owFc/ZOvHfl
+                ZvPsGacwjhgf9VdUFAFCGPvJs3c2f7Djaeuh4ws4l0cyJmsmzZtCopDTlNuK6yd9c80LEzes3sa5PJzC
+                ZBy1rFFtWgNkJb0Hjq5tePvD5+2naopELjo21x0FCCEQIhyxnzxbwrm9myNOd3rx3z/4ZtQf8Es16lG5
+                eNIjB3Zhtmv/wQ2NW/7wgqOqJo8K9Dqd5JcoAs2ELG/+/WtfnPqPD79EBTHASNikP08q4AbPVevBYyub
+                3vnoefupmjwq3gCyAEAIAp09+tZtu3/U8NaH3yMsIxuS2IyfMKUUlU88B09988ymd7c/az95Nh+jmOCa
+                kW7vMrRu2/0vbdv33gOAJEv6ioQDnT2Y++LP0pr/d+dT/ZXVM6kg3FiyQ0h7m9vT2nbs+3dXbcOMlq2f
+                jJ8wjccLe+G9Pz7Y80XFilgofM03qFFBFOE8XVfauvWTH0y6f40uaO0fO2FKKdp27IOvueO2rv0HHwv1
+                2pTXI7kfFQhBLBSG9dDxda3b9qz+YYYFV3LtES088d6Vsq79Bx501TZMueFxm5AzQbDbqrcePPadNwXR
+                4m1sGT1hSil6/nIYvpaOkr5Dx9fEfH5yU7nyVyAKApxnzpW3fPTJ0t2LvzWilRNaOGvpnaT3i4qVnqbW
+                /BtN6EoghCDUZ1f1H6u659s9J9Uhqy0h6WEJ+9u7AcDsOH1uadTrZ29m6w5C5Hl4GlvL+ypOFVsPViYc
+                dxlhSilctfVwVNUW+Vs6SqkgXh+NKQUVxTFXQgRA2GZPd9XUl7/2wN3JEwaA3DXL4K6/MCvicKVcaX4q
+                iqCCEK9sKAUVhHjO/RWXoqKIi7Xx0HEDZGVGPfLvW42J61eBsMNHGhUEUEG8uDiUHyKDEMT8QdbX0lH+
+                IqXymD8wrIzLigdKKQgh2mBnb1nUHxi5CiIEhimTYCqbCmWaGQAQsTvhPn8Bvgtt4EPh+KrKpNDm5cBY
+                OgXqzDQQlkXY7oSrph6ehhYIHIesJfMx+xc/Reu2PWjbue8y67NyOVKml8BYWgiZVgOR5xHs6YO7rhH+
+                9m5QnocYi4FzuovD/U6jv7WzLynCfDAMqUaVwXl9U0ashAhB7pplmPaj70Kbm/XlOErBub3oP3EGtZvf
+                RsThwrQfPIbs5QugsJi+rJcpRbjficbfbUXD2x9ColKCkUphmjEV03+yacALRLTv3I9gtxVTH38Ukzeu
+                g8ygu8TiYZsDXfsOoO6Vd8C5PAj29qX727sy+VAoOcJiNIqYn1pivkDmgLWHcWMKbV4WSh//W6gyLWj/
+                +FN4Glvif8/NgmXuTKizMyDGYqA8D4U5BRRAx64/I9DZAypSqLPSMGH1EhT93QOwVZyMu6gowlhSAGPx
+                ZIAQiNEY7KdqoM7JxJRHNoDz+NC2Yx+CPX2QqJTQF+bDMmcG5CYjKB9PeWO+gDrmD5hFLpqkS4sihAhn
+                4EPhlMS+TCHVqCDVaSGEObhqG9BfWY2oPwAqiGh6dzsoz8Pf2glKgapnXoIi1QjO7QVhGMgNOugm5yF9
+                /mwozCaoczIBSkEYBrZjVWj/4z7QgTh11zUgc/E8sEoFuJYOOKpq4G1qAx+OAJRCnmJAyGpD1OfHQPmm
+                jDhcBhrjkyNMCANKqJKwrBwJzm9CCAIdPbCfOI0J31iKsqcehxDhIESj4Jxu+Ns60f3nQwj22iDGeKRM
+                K0LumiXQF06CMi0VrFIBRiIBI5VAjMYu8SJfcwdat+2GKIhx9QngPHMevuZ2GEunoPzlZyFwHAQuirDN
+                Ds+5C2jbuQ+cywuR50FYRkIIo6IJWk2XdzwIAApCCGGQmDFigSBOP/8KPA0tsJTPhMJkBCuXQW7UQ5s/
+                H+nzZwMAwjYH5vzqKcj0WgR7+hDo6oUY48E53TCUFECVbrlUNENAWBbMkEXwNDSj8onnkLd+JYzFBZDp
+                dWAVMqizM2EsKYSlfCaO/MO/wXG6Lk6AgEm01Q7r0qCIioIQA4g0oVcTglCvDeffeB/1b3wAiUYFiUoJ
+                mV6LyRvXoeCh+5C+YA6CXVbIjXq0f/wpav7rTUQcrni8MQTzXv0PqDPTLlVIpYzrIQggEsnF485ZUw9X
+                XQMIy0Km00KiVECZlorpP9kE89emw1Q2FY7qOlBRFKkgRsQEZeywPS3CMn5CiA8EJoyA7K8vRM6KReg9
+                cBTe5nYIXBSsXA6JSgUAiPkCF48mhckIdXYGCMOAkUnjm1NJAcQYj6jXDz4Sd1Pz16Yjc/E8cC43sr++
+                CNaDx2A/dRZFj22EwpKK3i8qELL2A6IIiVoFVqkAFQTE/MGBhRI5Vi7zJ0pgLiPMSKWQatUOmV5rAyHD
+                E6YUUr0W+Ru+gaxldyJ37XJwbi+EaBRSrQYynQYhaz86d38OzuND3r0rkH7nbJjKSsG53GCkUihSU8BI
+                WPQeOAr3+SaAEDiqa5FWfjvKX3oaVBAhM+igtKSCj0SQ/8010E7MweSNa8G5fReTFYlSAUdVLewnzoAw
+                BKxcFlKmm51CODKs6pd1v5599hkwEgm1VZxa6KptKEzkzjQWg/v8BUT6naC8AEYaF8U5XLBVnELty1tg
+                O1YVT0RqGkBFEayEBSOTQohwcNc1ovWjPah//T2E+x3gwxF465vBKhSQKJXgg0H0HjiKpne3w9vQDPe5
+                JvDBEKhAwcgkoLyAQGcPuvcfQN2vt8Df1gVCCPSF+b3Zyxe8zoci7s3v/S4JC8tkAOCUp+jPStWqVTF/
+                YNjSkIoU3qZWeJtaIdVqINWoQBhmwEV9GNqUt1fVwFlzPr7ZyGWgooiYP4hYIAiAxDcqAK66Rpz41xcg
+                N+jji+f2xOUQBraKU+g/fhoynQYSpRIgAB+OIOr1x+N9YC65ydCcMq2o39vUmnwMH3r0SWHSxrVVMoM2
+                EPUHtIl2vMFJ+EBwIIYG7ogG7omGjqOCiIjTfTHH/uqYwXEiF0Wozz7w+5djCMsAlCLq8YFzey/KGLyT
+                AqWQaNRQZ2dUAwjqC4evai87rAghKPmnR2AoKaxRZ2e0IRkQclG5kaqdQZKEYUZMWeOyRvr/8DJkeq3X
+                OLXwyJlfvJawAzDs6WyYMgnqrPQuQ1FBhUShSHgc31QgBNq8nHPpd8w6nTa3LOGwYQlLVEocfPiHXNod
+                t+9Rppud9GZnTCmkWrVoLJ2yV5lutmUsKk/oacMSJoRg1nNPInv5gmPmWdOOMNKrdm9+zaCblNecs3LR
+                rrbte0e8R07Y09JMyMKPCXFlLpn/viY7wzWa64zrCkoh1WoEy5wZW1PLSusn3rdqbE08QgiesfZjwqrF
+                f0mfP3u3RKnATdmqZRikTCuqzl277P2OXZ8Kg7onwoi+qko3o+ZXb3jz71/zivdC26z+46dLbjS/oaCU
+                QpOd4c5ZtfjllNKiC4nq96QJE0IG3aM6d93yzaE++y/97V0pN8UNBKWQ6bSxrCXz/qfgb+7dxa3zJdUA
+                vOJlGiEEAhcVJz9w9+/z7l7+msqSGr7h8UwpWKVCzFg490+Fj37rRdux6qBcr0vq06TuhyUKOfxtXaGp
+                33/k13n3rHhHkZrC3bB4phSMXCZmLJz7Wcmmh37W+/mRnvQ7bk/686RfoOjyJ8BZU+8o+t63f56/YfXb
+                yjRz6LpbmlJIVEoha8n8/SWbHnry+BM/r5/y6P2jEpH8WwEAv3zrdYRtjmDW0vmVQjQqcHbXNM7tVQ2+
+                s7rWZOUmYzh7+YKtRY898NMz//lq4/KP/3vUjfsxacl5fJDptYqWjz5Z3/mnz37sqK4rjQVCTML8d5xE
+                iVQC/eS8rqxlC14vfGj9W86aBmfWknljuqUY18M0AMRV2zC1bce+79uOnFzv7+g2C5HoQBUzXp4UDMtC
+                aTEFTGWln+euWfabnFV3HY4FwzGZRjVmueM2Cef1QabTKns+O3xn7xcVD9urapcEe6wWPhgmVKQDnp7E
+                AgzZDxi5jCrNJp+huKAyY+GcD7JXLNpb8fjTrqW//+24X9xeNR/kIxxYuUzde+BoWX9l9SpPY+uiYLe1
+                iHO6dUKEY/lw5MuUb5DbwDqwcjkYhUyUaTVBdXZGu2ZCVoV59vQ9aeW3H1NnZziBq/e0+KoH3eB7rrDN
+                keKqbSgJdPVM87d2lUacrmyRi5oJw+gGnw+LMT5AJKxDbtD3qjLTGnSTcmsMxQV1+oK8PiqKsSvV1zcF
+                4WHIA/GMTi5EInI+GJZQQWQIQ0RWIRdYlSpKGBIBEAOuzyPxW7iFW7iFW7iFmwT/B4wdtxQjP+w/AAAA
+                JXRFWHRkYXRlOmNyZWF0ZQAyMDE2LTEyLTA4VDA2OjQ0OjE3KzAxOjAwwi7y5wAAACV0RVh0ZGF0ZTpt
+                b2RpZnkAMjAxNi0xMi0wOFQwNjo0NDoxNyswMTowMLNzSlsAAABXelRYdFJhdyBwcm9maWxlIHR5cGUg
+                aXB0YwAAeJzj8gwIcVYoKMpPy8xJ5VIAAyMLLmMLEyMTS5MUAxMgRIA0w2QDI7NUIMvY1MjEzMQcxAfL
+                gEigSi4A6hcRdPJCNZUAAAAASUVORK5CYII=
+</property>
+        </structure>
+    </list-property>
+</report>

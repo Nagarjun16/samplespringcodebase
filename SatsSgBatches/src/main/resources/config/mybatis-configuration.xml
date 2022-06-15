@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration SYSTEM "mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="lazyLoadingEnabled" value="false" />
+		<setting name="defaultExecutorType" value="REUSE" />
+		<setting name="useGeneratedKeys" value="true" />
+		<setting name="multipleResultSetsEnabled" value="false" />
+		<setting name="cacheEnabled" value="false" />
+	</settings>
+	
+	<!-- Type Handler plugin for UTC Timestamp to convert to Local Date Time by Tenant-ID -->
+	<typeHandlers>
+		<typeHandler handler="com.ngen.cosys.timezone.typehandler.UTCDateTimeTypeHandler" />
+		
+	</typeHandlers>	
+	
+	<plugins>
+		<plugin interceptor="com.ngen.cosys.batch.interceptor.MyBatisEntityBatchAuditPlugin" />
+		<plugin interceptor="com.ngen.cosys.audit.NgenAuditInterceptor" />
+		<plugin
+            interceptor="com.ngen.cosys.multitenancy.meter.interceptor.MeterSQLInterceptor" />
+	</plugins>
+	
+</configuration>

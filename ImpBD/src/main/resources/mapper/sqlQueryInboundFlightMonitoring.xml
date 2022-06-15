@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InboundFlightMonitoringSearch">
+	<!-- Inbound Flight Monitoring  Read Queries -->
+	<resultMap type="com.ngen.cosys.impbd.inboundflightmonitoring.model.InboundFlightMonitoringModel" 
+		id="InboundFlightMonitoringResultMap">
+	    <id column="id" property="id"/>
+		<result column="flight" property="flight"/>
+		<result column="Date" property="date"/>
+		<result column="STA" property="sta"/>
+		<result column="ETA" property="eta"/>
+		<result column="ATA" property="ata"/>
+		<result column="nilCargo" property="nilCargo"/>
+		<result column="AircraftType" property="acType"/>
+		<result column="AircraftRegCode" property="acRegistration"/>
+		<result column="LastBoardPoint" property="lastBoardPoint"/>
+		<result column="ThroughTransitWorkingListFinalizedAt" property="TTH"/>
+		<result column="RampStartDateTime" property="rampStartDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"  />
+		<result column="RampCompleteDateTime" property="rampCompleteDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="DocumentStartDateTime" property="documentStartDateTime"/>
+		<result column="DocumentCompleteDateTime" property="documentCompleteDateTime"  javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"  />
+		<result column="BreakdownStartDateTime" property="breakdownStartDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"  />
+		<result column="BreakdownCompleteDateTime" property="breakdownCompleteDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightCompleteDateTime" property="flightCompleteDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightCloseDateTime" property="flightCloseDateTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightDiscrepncyListSentAt" property="flightDiscrepancyListSentAt" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="Cancelled" property="cancelled"/>
+	</resultMap>
+	
+	<select id="InboundFlightMonitoringListInfo"
+		parameterType="com.ngen.cosys.impbd.inboundflightmonitoring.model.InboundFlightMonitoringSerach"
+		resultMap="InboundFlightMonitoringResultMap">
+		select
+			Flt_OperativeFlight.Flight_ID as id,
+			Flt_OperativeFlight.FlightKey as flight,
+			Flt_OperativeFlight_Legs.DateSTA as date,
+			Flt_OperativeFlight_Legs.FlightBoardPoint as LastBoardPoint,
+			Flt_OperativeFlight_Legs.DateSTA as STA,
+			Flt_OperativeFlight_Legs.DateETA as ETA,
+			Flt_OperativeFlight_Legs.DateATA as ATA,
+			Flt_OperativeFlight_Legs.AircraftType,
+			Flt_OperativeFlight_Legs.AircraftRegCode,
+			isnull(Imp_FlightEvents.FirstULDCheckedInAt, Imp_FlightEvents.RampCheckInCompletedAt) as RampStartDateTime,
+			Imp_FlightEvents.RampCheckInCompletedAt as RampCompleteDateTime,
+			Flt_OperativeFlight_Legs.DateATA DocumentStartDateTime,
+			Imp_FlightEvents.DocumentVerificationCompletedAt as DocumentCompleteDateTime,
+			isnull(BreakDownInformation.BreakdownStartDateTime, Imp_FlightEvents.BreakDownCompletedAt) BreakdownStartDateTime,
+			Imp_FlightEvents.BreakDownCompletedAt as BreakdownCompleteDateTime,
+			Imp_FlightEvents.FlightCompletedAt as FlightCompleteDateTime,
+			Imp_FlightEvents.FightClosedAt as FlightCloseDateTime,
+			Imp_FlightEvents.FlightDiscrepncyListSentAt,
+			case
+                when (select
+                            count(1)
+                        from
+                            Transhipment_TTWAConnectingFlight inner join
+                            Transhipment_TTWAConnectingFlightShipment
+                                on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId =
+                                    Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightId
+                        where
+                            Transhipment_TTWAConnectingFlight.InboundFlightId = Flt_OperativeFlight.Flight_ID and
+                            Transhipment_TTWAConnectingFlightShipment.FinalizedOn is not null) > 0 then
+                    'Y'
+                when (select
+                            count(1)
+                        from
+                            Transhipment_TTWAConnectingFlight inner join
+                            Transhipment_TTWAConnectingFlightShipment
+                                on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId =
+                                    Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightId
+                        where
+                            Transhipment_TTWAConnectingFlight.InboundFlightId = Flt_OperativeFlight.Flight_ID and
+                            Transhipment_TTWAConnectingFlightShipment.FinalizedOn is null) > 0 then
+                    'N'
+                else
+                    ''
+                end TTH,
+			(select
+					STRING_AGG(ArrivalManifestNilSegmentInfo.FlightBoardPoint + '(Y)', ' ')
+				from(
+					select
+						Flt_OperativeFlight_Segments.FlightBoardPoint
+					from	
+						Imp_ArrivalManifestByFlight inner join 				
+						Imp_ArrivalManifestBySegment 
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Flt_OperativeFlight_Segments
+							on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId and
+								Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}	
+					where
+						Imp_ArrivalManifestBySegment.NilCargo = 1 and
+						Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+				)ArrivalManifestNilSegmentInfo) as nilCargo,
+			case 
+				when Flt_OperativeFlight.FlightCancelFlag ='D' then 
+					'CANCELLED'
+				when isnull(Flt_OperativeFlight.ApronFlag, 0) = 1 then
+					'APRON FLT'
+				when isnull(Flt_OperativeFlight.FlightRestoredFlag, 0) =1 and Flt_OperativeFlight.FlightCancelFlag='A' then 
+					'RESTORED'
+				end Cancelled					
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint =#{tenantAirport} inner join
+			Imp_FlightEvents
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_FlightEvents.FlightId left join
+			(
+				select
+					Imp_ShipmentVerification.FlightId,
+					min(Imp_ShipmentVerification.DocumentReceivedDateTime) DocumentStartDateTime
+				from
+					Imp_ShipmentVerification
+				where
+					(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1)
+				group by
+					Imp_ShipmentVerification.FlightId
+			)Imp_ShipmentVerification
+				on Imp_FlightEvents.FlightId = Imp_ShipmentVerification.FlightId left join
+			(
+				select
+					Imp_ShipmentVerification.FlightId,
+					min(Imp_BreakDownULDTrolleyInfo.CreatedDateTime) BreakdownStartDateTime
+				from
+					Imp_ShipmentVerification inner join
+					Imp_BreakDownULDTrolleyInfo
+						on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId
+				group by
+					Imp_ShipmentVerification.FlightId
+			)BreakDownInformation
+				on Imp_FlightEvents.FlightId = BreakDownInformation.FlightId	
+		<where>
+			1 = 1
+            <if test="terminals != null" >
+   				and exists(select 
+   							1 
+   						from 
+   							Flt_OperativeFlight_HandlingArea
+   						where 
+   							Flt_OperativeFlight_HandlingArea.FlightId = Flt_OperativeFlight.Flight_ID and 
+   							Flt_OperativeFlight_HandlingArea.TerminalCode=#{terminals})
+	 		 </if>
+	 		 
+             <if test = "fromDate != null and toDate !=null">
+     		 	and ((Flt_OperativeFlight_Legs.DateSTA BETWEEN #{fromDate}  and #{toDate}) OR              
+              			(Flt_OperativeFlight_Legs.DateETA BETWEEN #{fromDate}  and #{toDate}) OR 
+              			(Flt_OperativeFlight_Legs.DateATA BETWEEN #{fromDate} and #{toDate} )) 
+  			 </if> 
+  			  
+  			 <if test = "carrierGroup != null and carrierGroup!=''">
+     		 	and Flt_OperativeFlight.CarrierCode in (select 
+      			 										Mst_AssociateCarrierWithGroup.CarrierCode
+													from 
+       													Mst_CarrierGroup inner join
+       													Mst_AssociateCarrierWithGroup
+              												on Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+													where
+      			 										Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup})
+       		</if> 
+       			 
+        	<if test = "acType != null and acType !=''" >
+     			and Flt_OperativeFlight_Legs.AircraftType = #{acType}
+  			</if>
+  			  
+  			<if test = "carrier != null and carrier !=''">
+     			and Flt_OperativeFlight.CarrierCode = #{carrier}
+  			</if> 
+  			 
+  			<if test = "flight != null and flight !=''">
+     			and Flt_OperativeFlight.FlightKey = #{flight}
+  			</if> 
+  			 
+  			  <if test = "date != null">
+     			and	cast(Flt_OperativeFlight_Legs.DateSTA as date) = CAST(#{date} AS DATE)
+  			 </if>
+    	</where>
+         order by  Flt_OperativeFlight_Legs.DateSTA
+  			   
+	</select>
+	
+	<select id="fetchFlightFromTranshipment" parameterType="com.ngen.cosys.impbd.inboundflightmonitoring.model.InboundFlightMonitoringSerach" 
+	resultType="com.ngen.cosys.impbd.inboundflightmonitoring.model.InboundFlightMonitoringModel">
+	select ThroughTransitWorkingListFinalizedAt as tth from Imp_FlightEvents where FlightId=#{id}
+	</select>
+
+	
+</mapper>

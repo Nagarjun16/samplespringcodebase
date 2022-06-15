@@ -1,0 +1,1336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="InactiveCargoMapper">
+	<resultMap
+		type="com.ngen.cosys.shipment.inactive.model.InactiveSearchList"
+		id="InactiveCargoListResultMap">
+		<id column="ShipmentId" property="shipmentId" />
+		<id column="ShipmentNumber" property="awbNumber" />
+		<id column="ShipmentDate" property="shipmentDate" />
+		<result column="ShipmentType" property="shipmentType" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="ShipperName" property="shipper" />
+		<result column="ConsigneeName" property="consignee" />
+		<result column="appointedAgentCode" property="appointedAgentCode" />
+		<result column="NatureOfGoodsDescription" property="nog" />
+		<result column="SpecialHandlingCode" property="specialHandlingCode" />
+		<result column="Pieces" property="awbPices" />
+		<result column="Weight" property="awbWaight" />
+		<result column="InventoryPieces" property="inventaryPices" />
+		<result column="InventoryWeight" property="inventoryWaight" />
+		<result column="customerType" property="customerType" />
+		<result column="userType" property="userType" />
+		<result column="FlightKey" property="freightInFlight" />
+		<result column="DateSTA" property="freightInDate" />
+		<result column="carriercode" property="carrier" />
+	</resultMap>
+	
+	<select id="fetchCustomerType"
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+		resultType="java.lang.String">
+			select Mst_CustomerTypes.Code from Customer_Master cm
+			inner join Customer_Types ON cm.Customer_ID = Customer_Types.Customer_ID inner join
+				Mst_CustomerTypes on Customer_Types.CustomerTypeCode = Mst_CustomerTypes.Code
+			inner join Adm_UserProfile adm on cm.Customer_ID = adm.Customer_ID
+			where UserLoginCode = #{loggedInUser} and DeRegisterDate is null
+			and Mst_CustomerTypes.Code = 'ARL'
+		</select>
+
+	<select id="sqlGetInactiveCargoList"
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+		resultMap="InactiveCargoListResultMap">
+	With ShpMasterSHC as (select
+					string_agg(Shipment_MasterSHC.SpecialHandlingCode, ',') as shc, ShipmentId
+				from
+					Shipment_MasterSHC group by ShipmentId)
+	
+	select 
+			Shipment_Master.ShipmentId,
+			Shipment_Master.ShipmentType,
+			Shipment_Master.ShipmentNumber,
+			Shipment_Master.ShipmentDate,
+			Shipment_Master.NatureOfGoodsDescription,
+			Shipment_Master.Origin,
+			Shipment_Master.Destination,
+			Shipment_Master.carriercode,
+			Shipment_Master.Pieces,
+			Shipment_Master.Weight,	
+			ShipmentShipperInfo.CustomerName as ShipperName,
+			ShipmentConsigneeInfo.CustomerName as ConsigneeName,
+			AppointedAgent.CustomerCode as appointedAgentCode,
+			sum(Shipment_Inventory.Pieces) InventoryPieces,
+			sum(Shipment_Inventory.Weight) InventoryWeight,
+			#{customerType} as customerType,
+			#{userType} as userType,
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight_Legs.DateSTA,
+			ShpMasterSHC.shc as SpecialHandlingCode
+		from
+			Shipment_Master inner join
+			Shipment_Inventory
+				on Shipment_Master.ShipmentId  = Shipment_Inventory.Shipment_ID 
+				left join ShpMasterSHC on Shipment_Master.ShipmentId = ShpMasterSHC.ShipmentId
+				left join 
+			Shipment_MasterCustomerInfo ShipmentShipperInfo
+				on Shipment_Master.ShipmentId = ShipmentShipperInfo.ShipmentId and 
+					ShipmentShipperInfo.CustomerType in ('SHP') left join
+			Shipment_MasterCustomerInfo ShipmentConsigneeInfo
+				on Shipment_Master.ShipmentId = ShipmentConsigneeInfo.ShipmentId and 
+					ShipmentConsigneeInfo.CustomerType in ('CNE') left join 
+			Customer_Master AppointedAgent
+				on ShipmentConsigneeInfo.AppointedAgent = AppointedAgent.Customer_ID  left join
+			Flt_OperativeFlight
+				on Shipment_Inventory.Flight_ID = Flt_OperativeFlight.Flight_ID left join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		where
+			Shipment_Master.ShipmentType != 'MAIL'
+					
+			
+			<if test="shcode != null and shcode.size() > 0">
+			and 
+			<foreach collection="shcode" item="s" open="(" close=")" separator="OR">
+				ShpMasterSHC.SHC like '%' + #{s} +'%'
+			</foreach>							
+			</if>
+			
+			<if test="creationdays !=null and creationdays > 0">
+				and Shipment_Master.ShipmentDate >= cast(getdate() - #{creationdays} as date)
+			</if>
+			
+			<if test="carrierCode != null and carrierCode != '' ">
+				and Shipment_Master.CarrierCode=#{carrierCode}
+			</if>
+			
+			<if test="shipmentNumber != null and shipmentNumber != '' ">
+				and Shipment_Master.ShipmentNumber=#{shipmentNumber}
+			</if>
+			
+			<if test="carrierGp != null and carrierGp != '' ">
+				and Shipment_Master.CarrierCode in(
+					select
+						Mst_AssociateCarrierWithGroup.CarrierCode
+					from
+						Mst_AssociateCarrierWithGroup inner join
+						Mst_CarrierGroup
+							on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+					where
+						Mst_CarrierGroup.Mst_CarrierGroup_ID = #{carrierGp}
+				)
+			</if>
+			<if test="origin != null and origin != '' and destination != null and destination != ''">
+				and Shipment_Master.Origin = #{origin} and Shipment_Master.Destination = #{destination}
+			</if>
+			<if test="destination != null and destination != ''">
+				and Shipment_Master.Destination = #{destination}
+			</if>
+			and ShipmentConsigneeInfo.CustomerName is not null
+			and AppointedAgent.CustomerCode is not null
+			<if test="userType == 'AGENT' and customerType != 'ARL'">
+				and  (AppointedAgent.CustomerCode = (select top(1) CustomerCode from Customer_Master cm
+				inner join Adm_UserProfile adm on cm.Customer_ID = adm.Customer_ID
+				where UserLoginCode = #{loggedInUser} and DeRegisterDate is null)
+				or 
+				ShipmentConsigneeInfo.CustomerName = (select top(1) CustomerShortName from Customer_Master cm
+				inner join Adm_UserProfile adm on cm.Customer_ID = adm.Customer_ID
+				where UserLoginCode = #{loggedInUser} and DeRegisterDate is null))
+			</if>
+			and
+			<![CDATA[
+			1 <= (
+
+			select    
+			sum(IncomingFlightInfo.readyForDelivery)
+			from(
+				select
+					
+					case when 
+						    ((select count(1) from Shipment_MasterSHC where Shipment_MasterSHC.ShipmentId = ShipmentVerification.ShipmentId 
+						    	and Shipment_MasterSHC.SpecialHandlingCode = 'COU') = 0 and
+						    (isnull(ShipmentVerification.BreakDownPieces, 0)  <= isnull(sm.Pieces, 0)) and
+								isnull(ShipmentVerification.BreakDownPieces, 0) > 0 and
+								isnull(sm.Pieces, 0) > 0 and
+								(sum(Imp_ArrivalManifestShipmentInfo.Piece) = 
+									(isnull((select	
+										sum(Shipment_Irregularity.Pieces) Pieces
+									from
+										Shipment_Irregularity
+									where
+										Shipment_Irregularity.Flight_ID = Flt_OperativeFlight.Flight_ID and
+										Shipment_Irregularity.ShipmentNumber = ShipmentVerification.ShipmentNumber and
+										Shipment_Irregularity.ShipmentDate = ShipmentVerification.ShipmentDate and
+										Shipment_Irregularity.CargoIrregularityCode = 'MSCA'), 0) +  isnull(ShipmentVerification.BreakDownPieces, 0))) and
+										((ShipmentVerification.AppointedAgent is not null and Imp_ArrivalManifestShipmentInfo.Destination in (#{tenantAirport}, #{tenantCity})) OR
+											Imp_ArrivalManifestShipmentInfo.Destination not in (#{tenantAirport}, #{tenantCity})) and
+						                (ShipmentVerification.DocumentReceivedFlag = 1
+											OR ShipmentVerification.PhotoCopyAwbFlag = 1
+											OR ShipmentVerification.DocumentReceivedOn is not null
+											OR ShipmentVerification.PhotoCopy is not null) and
+	                                                     isnull((select
+	                                        sum(Inventory.a)
+	                                    from(select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_Inventory
+	                                            where
+	                                                Shipment_Inventory.Shipment_ID = sm.ShipmentId and
+	                                                isnull(Shipment_Inventory.Locked, 0) = 0
+	                                            union
+	                                            select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_FreightOut
+	                                            where
+	                                                Shipment_FreightOut.ShipmentId = sm.ShipmentId
+	                                        ) Inventory), 0) > 0) then
+						        1
+						when 
+							((select count(1) from Shipment_MasterSHC where Shipment_MasterSHC.ShipmentId = ShipmentVerification.ShipmentId
+								and Shipment_MasterSHC.SpecialHandlingCode = 'COU') > 0 and
+								(isnull(sum(ShipmentVerification.BreakDownPieces), 0)  <= isnull(sm.Pieces, 0)) and 
+									isnull(sum(ShipmentVerification.BreakDownPieces), 0) > 0 and
+									isnull(sm.Pieces, 0) > 0 and
+									((ShipmentVerification.AppointedAgent is not null and Imp_ArrivalManifestShipmentInfo.Destination in (#{tenantAirport}, #{tenantCity})) OR
+											Imp_ArrivalManifestShipmentInfo.Destination not in (#{tenantAirport}, #{tenantCity})) and
+										(ShipmentVerification.DocumentReceivedFlag = 1
+											OR ShipmentVerification.PhotoCopyAwbFlag = 1									
+												OR ShipmentVerification.DocumentReceivedOn is not null
+												OR ShipmentVerification.PhotoCopy is not null) and
+	                                                     isnull((select
+	                                        sum(Inventory.a)
+	                                    from(select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_Inventory
+	                                            where
+	                                                Shipment_Inventory.Shipment_ID = sm.ShipmentId and
+	                                                isnull(Shipment_Inventory.Locked, 0) = 0
+	                                            union
+	                                            select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_FreightOut
+	                                            where
+	                                                Shipment_FreightOut.ShipmentId = sm.ShipmentId
+	                                        ) Inventory), 0) > 0) then
+							1
+						when 
+						    ((isnull(ShipmentVerification.BreakDownPieces, 0)  <= isnull(sm.Pieces, 0)) and
+								isnull(ShipmentVerification.BreakDownPieces, 0) > 0 and
+								isnull(sm.Pieces, 0) > 0 and
+								sum(Imp_ArrivalManifestShipmentInfo.Piece) + isnull((select	
+										sum(Shipment_Irregularity.Pieces) Pieces
+									from
+										Shipment_Irregularity
+									where
+										Shipment_Irregularity.Flight_ID = Flt_OperativeFlight.Flight_ID and
+										Shipment_Irregularity.ShipmentNumber = ShipmentVerification.ShipmentNumber and
+										Shipment_Irregularity.ShipmentDate = ShipmentVerification.ShipmentDate and
+										Shipment_Irregularity.CargoIrregularityCode = 'FDCA'), 0) =  isnull(ShipmentVerification.BreakDownPieces, 0) and
+										((ShipmentVerification.AppointedAgent is not null and Imp_ArrivalManifestShipmentInfo.Destination in (#{tenantAirport}, #{tenantCity})) OR
+											Imp_ArrivalManifestShipmentInfo.Destination not in (#{tenantAirport}, #{tenantCity})) and
+						                (ShipmentVerification.DocumentReceivedFlag = 1
+											OR ShipmentVerification.PhotoCopyAwbFlag = 1
+											OR ShipmentVerification.DocumentReceivedOn is not null
+											OR ShipmentVerification.PhotoCopy is not null) and
+	                                                     isnull((select
+	                                        sum(Inventory.a)
+	                                    from(select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_Inventory
+	                                            where
+	                                                Shipment_Inventory.Shipment_ID = sm.ShipmentId and
+	                                                isnull(Shipment_Inventory.Locked, 0) = 0
+	                                            union
+	                                            select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_FreightOut
+	                                            where
+	                                                Shipment_FreightOut.ShipmentId = sm.ShipmentId
+	                                        ) Inventory), 0) > 0) then
+						        1	
+						else 0
+					end readyForDelivery
+					
+					
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Flt_OperativeFlight
+						    on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						    on     Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						        Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+					Imp_ArrivalManifestBySegment
+						    on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Flt_OperativeFlight_Segments
+						on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId and
+						    Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID inner join
+					Imp_ArrivalManifestULD
+						    on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo
+						    on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+					Shipment_Master  sm
+						on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = sm.ShipmentNumber and
+						    Imp_ArrivalManifestShipmentInfo.ShipmentDate = sm.ShipmentDate left join
+					(
+						    select
+						        Imp_ShipmentVerification.FlightId,
+								innerShipmentMaster.ShipmentId,
+						        innerShipmentMaster.ShipmentNumber,
+						        innerShipmentMaster.ShipmentDate,
+						        innerShipmentMaster.DocumentReceivedOn,
+								innerShipmentMaster.PhotoCopy,
+						        Imp_ShipmentVerification.DocumentReceivedFlag,
+						        Imp_ShipmentVerification.PhotoCopyAwbFlag,			        
+						        Imp_ShipmentVerification.BreakDownPieces,
+						        Imp_ShipmentVerification.BreakDownWeight,
+						        Shipment_MasterCustomerInfo.AppointedAgent
+						    from
+						        Imp_ShipmentVerification inner join
+						        Shipment_Master innerShipmentMaster
+						                on Imp_ShipmentVerification.ShipmentId = innerShipmentMaster.ShipmentId left join
+						        Shipment_MasterCustomerInfo
+						                on innerShipmentMaster.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and 
+						                    Shipment_MasterCustomerInfo.CustomerType = 'CNE'
+								 where
+						    	innerShipmentMaster.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						   	innerShipmentMaster.ShipmentDate = Shipment_Master.ShipmentDate
+						     
+						    )ShipmentVerification
+						        on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = ShipmentVerification.ShipmentNumber and 
+						                Imp_ArrivalManifestShipmentInfo.ShipmentDate = ShipmentVerification.ShipmentDate AND
+						                Imp_ArrivalManifestByFlight.FlightId = ShipmentVerification.FlightId 
+					where
+						Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						Imp_ArrivalManifestShipmentInfo.ShipmentDate = Shipment_Master.ShipmentDate 
+					group by
+						
+						Flt_OperativeFlight.Flight_ID,
+						ShipmentVerification.ShipmentNumber,
+						ShipmentVerification.ShipmentDate,
+						ShipmentVerification.DocumentReceivedOn,
+						ShipmentVerification.PhotoCopy,
+						ShipmentVerification.DocumentReceivedFlag,
+						ShipmentVerification.PhotoCopyAwbFlag,
+						ShipmentVerification.BreakDownPieces,
+						ShipmentVerification.BreakDownWeight,
+						ShipmentVerification.ShipmentId,
+						Imp_ArrivalManifestShipmentInfo.Destination,
+						sm.Pieces,
+	               		sm.shipmentId,
+	               		ShipmentVerification.AppointedAgent
+				union		
+				select
+					
+					case when 
+						    ((select count(1) from Shipment_MasterSHC where Shipment_MasterSHC.ShipmentId = innerShp.ShipmentId 
+						    	and Shipment_MasterSHC.SpecialHandlingCode = 'COU') = 0 and
+								(isnull(Imp_ShipmentVerification.BreakDownPieces, 0)  <= isnull(innerShp.Pieces, 0)) and
+								isnull(Imp_ShipmentVerification.BreakDownPieces, 0) > 0 and
+								isnull(innerShp.Pieces, 0) > 0 and
+								isnull((select	
+										sum(Shipment_Irregularity.Pieces) Pieces
+									from
+										Shipment_Irregularity
+									where
+										Shipment_Irregularity.Flight_ID = Flt_OperativeFlight.Flight_ID and
+										Shipment_Irregularity.ShipmentNumber = innerShp.ShipmentNumber and
+										Shipment_Irregularity.ShipmentDate = innerShp.ShipmentDate and
+										Shipment_Irregularity.CargoIrregularityCode = 'FDCA'), 0) =  isnull(Imp_ShipmentVerification.BreakDownPieces, 0) and
+										((Shipment_MasterCustomerInfo.AppointedAgent is not null and innerShp.Destination in (#{tenantAirport}, #{tenantCity})) OR
+											innerShp.Destination not in (#{tenantAirport}, #{tenantCity})) and
+						                (Imp_ShipmentVerification.DocumentReceivedFlag = 1
+											OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1
+											OR innerShp.DocumentReceivedOn is not null
+											OR innerShp.PhotoCopy is not null) and
+	                                                     isnull((select
+	                                        sum(Inventory.a)
+	                                    from(select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_Inventory
+	                                            where
+	                                                Shipment_Inventory.Shipment_ID = innerShp.ShipmentId and
+	                                                isnull(Shipment_Inventory.Locked, 0) = 0
+	                                            union
+	                                            select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_FreightOut
+	                                            where
+	                                                Shipment_FreightOut.ShipmentId = innerShp.ShipmentId
+	                                        ) Inventory), 0) > 0) then
+						        1
+						when 
+							((select count(1) from Shipment_MasterSHC where Shipment_MasterSHC.ShipmentId = innerShp.ShipmentId
+								and Shipment_MasterSHC.SpecialHandlingCode = 'COU') > 0 and
+								(isnull(sum(Imp_ShipmentVerification.BreakDownPieces), 0)  <= isnull(innerShp.Pieces, 0)) and 
+									isnull(sum(Imp_ShipmentVerification.BreakDownPieces), 0) > 0 and
+									isnull(innerShp.Pieces, 0) > 0 and
+									((Shipment_MasterCustomerInfo.AppointedAgent is not null and innerShp.Destination in (#{tenantAirport}, #{tenantCity})) OR
+											innerShp.Destination not in (#{tenantAirport}, #{tenantCity})) and
+										(Imp_ShipmentVerification.DocumentReceivedFlag = 1
+											OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1									
+												OR innerShp.DocumentReceivedOn is not null
+												OR innerShp.PhotoCopy is not null) and
+	                                                     isnull((select
+	                                        sum(Inventory.a)
+	                                    from(select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_Inventory
+	                                            where
+	                                                Shipment_Inventory.Shipment_ID = innerShp.ShipmentId and
+	                                                isnull(Shipment_Inventory.Locked, 0) = 0
+	                                            union
+	                                            select
+	                                                count(1) a
+	                                            from
+	                                                Shipment_FreightOut
+	                                            where
+	                                                Shipment_FreightOut.ShipmentId = innerShp.ShipmentId
+	                                        ) Inventory), 0) > 0) then
+							1
+					else 0
+					end readyForDelivery
+					
+	
+				from
+					Imp_ShipmentVerification inner join
+					Flt_OperativeFlight
+							on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+							on     Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+								Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}  inner join
+					Shipment_Master innerShp
+							on Imp_ShipmentVerification.ShipmentId = innerShp.ShipmentId left join
+					Shipment_MasterCustomerInfo
+							on innerShp.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and 
+								Shipment_MasterCustomerInfo.CustomerType = 'CNE' 
+					
+					
+				where
+					innerShp.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					innerShp.ShipmentDate = Shipment_Master.ShipmentDate and
+					not exists(
+						select 
+							null
+						from
+								Imp_ArrivalManifestByFlight inner join 
+							Imp_ArrivalManifestBySegment
+									on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD
+									on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+							Imp_ArrivalManifestShipmentInfo
+									on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+						where
+							Imp_ArrivalManifestByFlight.FlightId = Imp_ShipmentVerification.FlightId and
+							Imp_ArrivalManifestShipmentInfo.ShipmentNumber = innerShp.ShipmentNumber and
+							Imp_ArrivalManifestShipmentInfo.ShipmentDate = innerShp.ShipmentDate
+					)
+				group by
+					
+					Flt_OperativeFlight.Flight_ID,
+					
+					Imp_ShipmentVerification.DocumentReceivedFlag,
+					Imp_ShipmentVerification.PhotoCopyAwbFlag,
+					Imp_ShipmentVerification.BreakDownPieces,
+					innerShp.DocumentReceivedOn,
+					innerShp.PhotoCopy,
+					
+					innerShp.Pieces,
+					innerShp.ShipmentId,
+					innerShp.ShipmentNumber,
+					innerShp.ShipmentDate,
+					innerShp.Destination,
+					
+	               	Shipment_MasterCustomerInfo.AppointedAgent				
+				) IncomingFlightInfo)
+				  ]]>
+		group by
+			Shipment_Master.ShipmentId,
+			Shipment_Master.ShipmentType,
+			Shipment_Master.ShipmentNumber,
+			Shipment_Master.ShipmentDate,
+			Shipment_Master.NatureOfGoodsDescription,
+			Shipment_Master.Origin,
+			Shipment_Master.Destination,
+			Shipment_Master.Pieces,
+			Shipment_Master.Weight,	
+			ShipmentShipperInfo.CustomerName,
+			ShipmentConsigneeInfo.CustomerName,
+			Shipment_Inventory.Shipment_ID,
+			Shipment_Inventory.Flight_ID,
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight_Legs.DateSTA,
+			AppointedAgent.CustomerCode,
+		    Shipment_Master.CarrierCode,
+		    ShpMasterSHC.shc
+	</select>
+	
+	<select id="sqlGetManualFreightOutShipmentPieceWeight"
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+		resultType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+		select
+			sum(Shipment_Inventory.Pieces) pieces,
+			sum(Shipment_Inventory.Weight) weight,
+			Shipment_OtherChargeInfo.ChargeCode chargeCode,
+			Imp_deliveryRequest.Status as poStatus
+		from
+			Shipment_Inventory left join
+			Shipment_OtherChargeInfo
+				on Shipment_Inventory.Shipment_ID = Shipment_OtherChargeInfo.ShipmentId left join 
+			Imp_deliveryRequest 
+			    on Imp_deliveryRequest.ImpDeliveryRequestId=Shipment_Inventory.DeliveryRequestOrderNo
+		where
+			
+				ShipmentInventory_Id in
+			    (
+				   <foreach item="currid" index="index" collection="inventoryId"  separator=",">
+		                   #{currid}
+		           </foreach>
+		        )  
+		
+		group by
+			 Shipment_OtherChargeInfo.ChargeCode,
+			  Imp_deliveryRequest.Status
+	</select>
+	
+
+	<resultMap id="ShimentInventoryResultMap"
+		type="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		<id column="ShipmentInventory_Id" property="shipmentInventoryId" />
+		<result column="Shipment_ID" property="shipmentId" />
+		<result column="ShipmentLocation" property="shipmentLocation" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="ChargebleWeight" property="chargebleWeight" />
+		<result column="WarehouseLocation" property="warehouseLocation" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="PDNumber" property="pdNumber" />
+		<result column="AssignedUldTrolley" property="assignedUldTrolley" />
+		<result column="DryIceWeight" property="dryIceWeight" />
+		<result column="TrackerId" property="trackerId" />
+		<result column="TemperatureRange" property="temperatureRange" />
+		<result column="HandlingArea" property="handlingArea" />
+		<result column="Locked" property="locked" />
+		<result column="LockReason" property="lockReason" />
+		<result column="LockedBy" property="lockedBy" />
+		<result column="HoldRemarks" property="holdRemarks" />
+		<result column="DeliveryRequestOrderNo" property="deliveryRequestOrderNo" />
+		<result column="DeliveryRequestIssuedBy" property="deliveryRequestIssuedBy" />
+		<result column="DeliveryRequestIssuedOn" property="deliveryRequestIssuedOn" />
+		<result column="DeliveryOrderNo" property="deliveryOrderNo" />
+		<result column="DeliveredOn" property="deliveredOn" />
+		<result column="DeliveredBy" property="deliveredBy" />
+		<result column="PartSuffix" property="partSuffix" />
+		<result column="TRMNumber" property="trmNumber"/>
+		<result column="ChargebleWeight" property="chargebleWeight"/>
+		<result column="ShipmentHouseId" property="shipmentHouseId"/>
+	</resultMap>
+
+	<select id="sqlGetManualFreightOutShipmentInventoryList"
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch" 
+		resultMap="ShimentInventoryResultMap">
+		select
+			ShipmentInventory_Id,
+			Shipment_ID,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			ChargebleWeight,
+			WarehouseLocation,
+			Flight_ID,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			Locked,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			WeighingId,
+			ReferenceDetails,
+			Abandoned,
+			PartSuffix,
+			TRMNumber,
+			ShipmentHouseId,
+			ChargebleWeight
+		from
+			Shipment_Inventory 
+		where 
+		    ShipmentInventory_Id in
+		    (
+			   <foreach item="currid" index="index" collection="inventoryId"  separator=",">
+	                   #{currid}
+	           </foreach>
+	        )   
+	</select>
+	
+	<select id="sqlTotalPieces"
+		parameterType="java.math.BigInteger" 
+		resultType="java.math.BigInteger">
+		 select
+            sum(Pieces) totalPieces
+		from
+			Shipment_Inventory 
+		where 
+			Shipment_ID = #{shipmentId} and (Locked = 0 or Locked is null)
+		group by 
+			Shipment_ID
+	</select>
+
+	<select id="defaultCreationDays"
+		parameterType="java.lang.String" 
+		resultType="long">
+		select ParameterValueNum from App_SystemParameters where ParameterCode='WITHOUT_MOVEMENT_OR_CREATIONDAYS'
+	</select>
+
+	<select id="sqlCheckInactiveCargoCarrierCode"
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+		resultType="String">
+		select CarrierCode from Mst_AssociateCarrierWithGroup where CarrierCode=#{carrierCode} and Mst_CarrierGroup_ID=#{carrierGp}
+	</select>
+
+	<select id="sqlCheckInactiveCargoShipmentOnHold"
+		parameterType="java.math.BigInteger"
+		resultType="java.math.BigInteger">
+		select count(1) from Shipment_Master where locked=1 and ShipmentId = #{shipmentId}
+	</select>
+	
+
+<select id="sqlInvenSHCCount"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut"
+		resultType="java.math.BigInteger">
+		select  
+			   count(SpecialHandlingCode)
+			 from 
+			   shipment_inventoryshc inner join shipment_inventory on
+			   shipment_inventoryshc.shipmentInventoryId=shipment_inventory.shipmentInventory_Id
+			 where ShipmentInventoryid= #{shipmentInventoryId} 
+			 and shipment_inventory.shipment_id=#{shipmentId}
+	 </select>
+	<update id="sqlUpdateShipmentMasterDeparted"
+		parameterType="java.math.BigInteger">
+		update Shipment_Master
+		set
+			DepartedOn = #{modifiedOn},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentId=#{shipmentId}
+	</update>
+
+	<update id="sqlUpdateShipmentMasterDelivered"
+		parameterType="java.math.BigInteger">
+		update Shipment_Master 
+		set
+			DeliveredOn = #{modifiedOn},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentId = #{shipmentId}
+	</update>
+
+	<insert id="sqlInsertManualShipmentFreightOut"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut"
+		keyColumn="ShipmentFreightOutId" 
+		keyProperty="freightOutId"
+		useGeneratedKeys="true">
+		insert into Shipment_FreightOut(
+			ShipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			ChargebleWeight,
+			WarehouseLocation,
+			FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			Locked,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			InboundFlightId,
+			CreatedUserCode,
+			CreatedDateTime,
+			Dispose,
+			ReferenceDetails,
+			Manual,
+			TRMNumber,
+			PartSuffix)
+		values(
+			#{shipmentId},
+			#{shipmentLocation},
+			#{pieces},
+			#{weight},
+			#{chargebleWeight},
+			#{warehouseLocation},
+			#{flightId},
+			#{pdNumber},
+			#{assignedUldTrolley},
+			#{dryIceWeight},
+			#{trackerId},
+			#{temperatureRange},
+			#{terminal},
+			#{locked},
+			#{lockReason},
+			#{lockedBy},
+			#{holdRemarks},
+			#{deliveryRequestOrderNo},
+			#{deliveryRequestIssuedBy},
+			#{deliveryRequestIssuedOn},
+			#{deliveryOrderNo},
+			#{deliveredOn},
+			#{deliveredBy},
+			#{inboundFlightId},
+			#{createdBy},
+			#{createdOn},
+			0,
+			#{shipmentInventoryId},
+			1,
+			#{trmNumber},
+			#{partSuffix}
+		)
+	</insert>
+
+	<insert id="sqlMoveShipmentInventoryToFreightOutHouse"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		insert into Shipment_FreightOutHouse(
+			ShipmentFreightOutId, 
+			ShipmentHouseId, 
+			Pieces, 
+			Weight,
+			CreatedUserCode, 
+			CreatedDateTime
+		)
+		select
+			#{freightOutId}
+			ShipmentFreightOutId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			#{createdBy},
+			#{createdOn}
+		from
+			Shipment_InventoryHouse
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId}
+	</insert>
+
+	<insert id="sqlMoveShipmentInventoryToFreightOutSHC"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		insert into Shipment_FreightOutSHC(
+			ShipmentFreightOutId, 
+			SpecialHandlingCode, 
+			CreatedUserCode,
+			CreatedDateTime
+		)
+		select
+			#{freightOutId} ShipmentFreightOutId,
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn}
+		from
+			Shipment_InventorySHC
+		where
+			ShipmentInventoryId = #{shipmentInventoryId}
+	</insert>
+	<insert id="sqlCopyMasterSHCToFreightOutSHC"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+        insert into Shipment_FreightOutSHC
+		(ShipmentFreightOutId, SpecialHandlingCode, CreatedUserCode,
+		CreatedDateTime)
+		select
+			#{freightOutId} ShipmentFreightOutId,
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn}
+		FROM
+			Shipment_MasterSHC 
+		WHERE
+			 Shipment_MasterSHC.shipmentid=#{shipmentId}
+	</insert>
+
+	<delete id="sqlDeleteManualFreightOutShipmentInventorySHC"
+		parameterType="java.math.BigInteger">
+		delete from Shipment_InventorySHC where ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+
+	<delete id="sqlDeleteManualFreightOutShipmentInventoryHouse"
+		parameterType="java.math.BigInteger">
+		delete from Shipment_InventoryHouse where ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+
+	<delete id="sqlDeleteManualFreightOutShipmentInventory"
+		parameterType="java.math.BigInteger">
+		delete from Shipment_Inventory where ShipmentInventory_Id = #{shipmentInventoryId}
+	</delete>
+	
+	<select id="getAppointedAgentId"
+		resultType="java.math.BigInteger" parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+		select top(1) Customer_ID from Customer_Master where CustomerCode = #{agent} and DeRegisterDate is null
+	</select>
+	
+	<select id="sqlCheckShipmentRemarksForManualFreightOutExists" 
+		resultType="java.math.BigInteger" 
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData" >
+		select 
+			count(1) 
+		from 
+			Shipment_Remarks 
+		where 
+			ShipmentNumber = #{awbNumber} and 
+			ShipmentDate = #{shipmentDate} and 
+			RemarkType =  #{remarkType} and
+			ShipmentRemarks=#{remarks}
+	</select>
+    
+    <insert id="sqlInsertShipmentRemarksForManualFreightOut"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+		insert into Shipment_Remarks(
+			ShipmentNumber,
+			ShipmentDate,
+			ShipmentId,
+			RemarkType,
+			ShipmentRemarks,
+			Flight_ID,
+			ShipmentType,
+			CreatedUser_Code,
+			Created_DateTime
+		)values(
+			#{awbNumber},
+			#{shipmentDate},
+			#{shipmentId},
+			#{remarkType},
+			#{remarks},
+			#{flightId}, 
+			#{shipmentType},
+			#{createdBy},
+	        #{createdOn}
+		)
+	</insert>
+	
+	<select id="sqlGetFlightIdForManualFreightOut" 
+		resultType="com.ngen.cosys.shipment.inactive.model.ShipmentData" 
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData" >
+		select 
+		    top(1) Flt_OperativeFlight.Flight_ID as flightId,
+		    Mst_Carrier.GroundHandlerCode as groundHandlingCode,
+		    Flt_OperativeFlight_Legs.FlightOffPoint as flightOffPoint,
+		    Flt_OperativeFlight.CarrierCode as carrier
+ 	    from
+		    Flt_OperativeFlight inner join
+		    Mst_Carrier 
+		    	on Mst_Carrier.CarrierCode = Flt_OperativeFlight.CarrierCode  inner join
+		    Flt_OperativeFlight_Legs  
+		    	on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+	      WHERE
+		    Flt_OperativeFlight.FlightKey = #{flightkey}
+		    <choose>
+		    	<when test="origin == tenantAirport">
+		    		and cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{flightDate} as date) and 
+		    			Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		    	</when>
+		    	<when test="origin != tenantAirport or destination != tenantAirport">
+		    		and cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{flightDate} as date) and 
+		    			Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		    	</when>
+		    	<otherwise>
+		    		and cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date) and 
+		    			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		    	</otherwise>
+		    </choose>
+	</select>
+	
+	<insert id="sqlInsertManualShipmentDelivery" 
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		useGeneratedKeys="true" keyProperty="deliveryId" keyColumn="ImpDeliveryId">
+	     insert into Imp_Delivery(
+         	ShipmentId,
+           	DeliveryOrderNo,
+           	ImpDeliveryRequestId,
+           	CustomerCode,
+         	DeliveredOn,
+           	ChargeCode,
+           	Status,
+           	AuthorizedToSignature,
+           	BankEndorsementCollected,
+           	TerminalDeliveredAt,
+           	CancellationReasonCode,
+           	CancelledOn,
+           	CancellationChargeable,
+           	PrintedOn,
+           	RePrintedOn,
+           	CreatedUserCode,
+           	CreatedDateTime,
+           	HandlingArea,
+           	HandlingSector,
+           	Pieces,
+           	Weight,
+           	IssuedToPersonnelNumber,
+           	IssuedToPersonnelName,
+           	IssuedToPersonnelCompany,
+           	PaymentReceived,
+           	AuthorizedTo,
+           	AuthorizedRemarks,
+           	ShipmentHouseId
+     	)values(
+     		#{shipmentId},
+           	#{deliveryOrderNo},
+           	NULL,
+           	#{agent},
+           	#{createdOn},
+           	#{chargeCode},
+           	'COMPLETED',
+           	NULL,
+           	0,
+           	NULL,
+           	NULL,
+           	NULL,
+           	NULL,
+           	NULL,
+           	NULL,
+           	#{createdBy},
+           	#{createdOn},
+           	#{terminal},
+           	#{sectorId},
+           	#{pieces},
+           	#{weight},
+           	'MANUAL FRT',
+           	'MANUAL FRT',
+           	NULL,
+           	0,
+           	NULL,
+           	NULL,
+           	#{shipmentHouseId}
+		) 
+	</insert>
+	
+	<insert id="sqlInsertLocalAuthorityInfo" 
+		parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+		useGeneratedKeys="true" keyProperty="localAuthorityInfoId" keyColumn="ImpDeliveryLocalAuthorityInformationId">
+	    INSERT INTO Imp_DeliveryLocalAuthorityInformation
+           (
+            ImpDeliveryId
+           ,LocalAuthorityType
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,LastUpdatedUserCode
+           ,LastUpdatedDateTime
+           )
+     VALUES
+           (
+            #{deliveryId}
+           ,#{type}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+	</insert>
+	
+	<insert id="sqlInsertLocalAuthorityInfoDetails" 
+		parameterType="com.ngen.cosys.shipment.inactive.model.LocalAuthorityDetailsModel"
+		useGeneratedKeys="true" keyProperty="localAutorityInfoId" keyColumn="ImpDeliveryLocalAuthorityDetailsId">
+	     INSERT INTO Imp_DeliveryLocalAuthorityDetails
+           (
+           ImpDeliveryLocalAuthorityInformationId
+           ,ReferenceNumber
+           ,AppointedAgentCode
+           ,License
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,LastUpdatedUserCode
+           ,LastUpdatedDateTime
+           ,Remarks
+           )
+     VALUES
+           (
+            #{localAutorityInfoId}
+           ,#{referenceNumber}
+           ,#{customerAppAgentId}
+           ,#{license}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,#{remarks}
+		  )
+	</insert>
+	
+	<select id="validateTRMNumber"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="java.lang.Boolean">		 
+		  select
+		       case 
+			    when count(1) > 0 then
+					 1
+				 else
+					 0
+				end result
+		 from Transhipment_TransferManifestByAWBInfo awbinfo inner join 
+			  Transhipment_TransferManifestByAWB awb on
+			  awb.TransTransferManifestByAwbId=awbinfo.TransTransferManifestByAwbId
+		where awbinfo.ShipmentNumber=#{awbNumber} and TRMNumber=#{trmNumber} and cast(IssuedDate as date)=cast(#{trmDate} as date)	 		
+	</select>
+	<select id="isDeliveryOrderNumberExist"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="java.lang.Boolean">		 
+		   select
+		       case 
+			    when count(1) > 0 then
+					 1
+				 else
+					 0
+				end result
+		 from 
+		    Imp_Delivery 
+		 where 
+		    DeliveryOrderNo = #{deliveryOrderNo} and
+		    ShipmentId = #{shipmentId} 
+	</select>
+	
+	<select id="sqlGetShipmentNumberType"
+		parameterType="java.lang.String"
+		resultType="java.lang.String">		 
+			select 
+		     top(1) 
+			   ShipmentType 
+			 from 
+			    Shipment_Master 
+			 where ShipmentNumber=#{awbNumber}
+	</select>
+	
+    
+    <update id="sqlUpdateShipmentDeliveryInfoToStorageInfo"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		update Imp_BreakDownStorageinfo
+		set
+			DeliveryOrderNo = #{deliveryOrderNo},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentInventory_Id = #{shipmentInventoryId}
+	</update>
+	<update id="sqlUpdateDeliveredOnInManualDO"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+	    update Imp_Delivery 
+        set 
+         DeliveredOn=#{createdOn}
+        where DeliveryOrderno=#{deliveryOrderNo}
+	</update>
+	
+	<select id="sqlGetFreightOutPieces"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="java.math.BigInteger">
+		select  COALESCE(sum(pieces),null,0,sum(pieces)) totalfreightoutPieces 
+		from (
+           select 
+              sum(shipment_freightout.pieces) pieces 
+		   from 
+		      shipment_freightout  join shipment_master on  
+		      shipment_master.shipmentid=shipment_freightout.shipmentid 
+			  and shipment_master.shipmentnumber=#{awbNumber} and
+			  Shipment_Master.ShipmentDate = #{shipmentDate} )ShipmentFreightout
+	</select>
+	
+	<select id="sqlDoubleCheckShipmentWeightInManualDO"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+		SELECT CASE 
+			       WHEN ( shipment_master.weight > 0 
+			                AND shipment_master.weight != Isnull(Sum( 
+			       imp_shipmentverification.breakdownweight), 
+			       0) 
+			       AND shipment_master.pieces = Isnull(Sum( 
+			       imp_shipmentverification.breakdownpieces), 0 
+			       ) ) THEN 1 
+			         ELSE 0 
+			       END result 
+			FROM   shipment_master 
+			       INNER JOIN imp_shipmentverification 
+			               ON shipment_master.shipmentid = 
+			                  imp_shipmentverification.shipmentid 
+			WHERE  shipment_master.shipmentnumber = #{awbNumber} 
+			       AND shipment_master.shipmentdate = #{shipmentDate} 
+			       AND shipment_master.pieces <> 0 
+			GROUP  BY shipment_master.pieces, 
+			          shipment_master.weight 
+	       ]]>
+	</select>
+	<select id="sqlQueryCheckFlightDeparted"
+	parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+	resultType="java.lang.Boolean">
+	select Case when FlightCompletedBy is not null 
+	then 1 else 0 end as flightCompleted 
+	from Exp_FlightEvents 
+	where FlightId=#{flightId}
+	</select>
+	
+	<select id="fetchHouseIDtoGetInventory" parameterType="com.ngen.cosys.shipment.inactive.model.InactiveSearch"
+     resultType="java.math.BigInteger">
+               select ShipmentHouseId
+	           from  Shipment_HouseInformation 
+	           where ShipmentId=#{shipmentId} and ShipmentType='HAWB'
+	            and Number=#{hawbNumber}          
+    </select>
+	
+
+		<select id="sqlInventorySHCCountHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut"
+		resultType="java.math.BigInteger">
+		select  
+			   count(SpecialHandlingCode)
+			 from 
+			   shipment_inventoryshc inner join shipment_inventory on
+			   shipment_inventoryshc.shipmentInventoryId=shipment_inventory.shipmentInventory_Id
+			 where ShipmentInventoryid= #{shipmentInventoryId} 
+			 		and shipment_inventory.shipment_id=#{shipmentId}
+			 <if test="shipmentHouseId != null">
+					and shipment_inventory.ShipmentHouseId = #{shipmentHouseId} 
+		     </if> 
+			 
+	 </select>
+	
+	
+	<insert id="sqlMoveShipmentInventoryToFreightOutHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut"
+		keyColumn="ShipmentFreightOutId" keyProperty="freightOutId"
+		useGeneratedKeys="true">
+		insert into Shipment_FreightOut
+		(ShipmentId,
+		ShipmentLocation, Pieces, Weight, WarehouseLocation, FlightId,
+		PDNumber, HandlingArea, CreatedUserCode, CreatedDateTime,
+		DeliveryRequestOrderNo, DeliveryRequestIssuedBy,
+		DeliveryRequestIssuedOn, DeliveryOrderNo, DeliveredOn, DeliveredBy,LastWarehouselocation,ReferenceDetails,ShipmentHouseId,ChargebleWeight)
+		select
+			Shipment_ID "ShipmentId"
+			,ShipmentLocation
+			,Pieces
+			,Weight
+			,'DLY' WarehouseLocation
+			,Flight_ID "FlightId"
+			,PDNumber
+			,HandlingArea
+			,#{createdBy}
+			,#{createdOn}
+			,DeliveryRequestOrderNo
+			,DeliveryRequestIssuedBy
+			,DeliveryRequestIssuedOn
+			,#{deliveryOrderNo} DeliveryOrderNo
+			,#{createdOn} DeliveredOn
+			,#{createdBy} DeliveredBy
+			,LastWarehouseLocation
+			,ShipmentInventory_Id "ReferenceDetails",
+			#{shipmentHouseId},
+			ChargebleWeight
+		from
+			Shipment_Inventory
+		where
+			ShipmentInventory_Id = #{shipmentInventoryId} and
+			DeliveryOrderNo = 	#{deliveryOrderNo}
+
+	</insert>
+	
+		<insert id="sqlMoveMasterSHCToFreightOutHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		insert into Shipment_FreightOutSHC
+		(ShipmentFreightOutId, SpecialHandlingCode, CreatedUserCode,
+		CreatedDateTime)
+		select
+			#{freightOutId} ShipmentFreightOutId,
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn}
+		FROM
+			Shipment_MasterSHC 
+		WHERE
+			 Shipment_MasterSHC.shipmentid=#{shipmentId} 
+	</insert>
+	
+		<insert id="sqlMoveShipmentInventoryToFreightOutSHCHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		insert into Shipment_FreightOutSHC
+		(ShipmentFreightOutId, SpecialHandlingCode, CreatedUserCode,
+		CreatedDateTime)
+		select
+			#{freightOutId} ShipmentFreightOutId,
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn}
+		FROM
+			Shipment_InventorySHC inner join Shipment_Inventory on
+			Shipment_InventorySHC.ShipmentInventoryId=Shipment_Inventory.ShipmentInventory_Id
+		WHERE
+			ShipmentInventoryId = #{shipmentInventoryId}
+			and Shipment_Inventory.shipment_id=#{shipmentId}
+	</insert>
+
+	<insert id="sqlMoveShipmentInventoryToFreightOutHouseHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		insert into Shipment_FreightOutHouse
+		(ShipmentFreightOutId, ShipmentHouseId, Pieces, Weight,
+		CreatedUserCode, CreatedDateTime)
+		select
+			#{freightOutId} ShipmentFreightOutId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			#{createdBy},
+			#{createdOn}
+		FROM
+			Shipment_InventoryHouse
+		WHERE
+			ShipmentInventoryId = #{shipmentInventoryId}
+	</insert>
+	
+	
+	<delete id="sqlDeleteShipmentInventorySHCHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		delete from Shipment_InventorySHC where
+		ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+	
+	
+	<delete id="sqlDeleteShipmentInventoryHouseHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		delete from Shipment_InventoryHouse where
+		ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+	
+		<delete id="sqlDeleteShipmentInventoryHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		delete from Shipment_Inventory where
+		ShipmentInventory_Id = #{shipmentInventoryId}
+	</delete>
+	
+	
+	
+	<update id="sqlUpdateShipmentDeliveryInfoToInventoryHAWB"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+		update Shipment_Inventory
+		set
+			DeliveryOrderNo = #{deliveryOrderNo},
+			DeliveredBy = #{modifiedBy},
+			DeliveredOn = #{modifiedOn},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn}
+		where
+			Shipment_Id = #{shipmentId} and
+			ShipmentInventory_Id = #{shipmentInventoryId}
+			<if test="shipmentHouseId != null">
+			and Shipment_Inventory.ShipmentHouseId = #{shipmentHouseId} 
+		    </if> 
+	</update>
+	
+	
+	 <update id="sqlUpdateShipmentDeliveryInfoToStorageInfoHAWB"
+             parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentFreightOut">
+              update Imp_BreakDownStorageinfo
+              set
+                     DeliveryOrderNo = #{deliveryOrderNo},
+                     LastUpdatedUserCode = #{modifiedBy},
+                     LastUpdatedDateTime = #{modifiedOn}              
+              where
+                     ShipmentInventory_Id = #{shipmentInventoryId}
+                     <if test="shipmentHouseId != null">
+			         and Imp_BreakDownStorageinfo.ShipmentHouseId = #{shipmentHouseId} 
+		             </if> 
+       </update>
+       	
+	<update id="sqlUpdateDeliveredOnmaster"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+	    update 
+	        shipment_master 
+                set shipment_master.deliveredon=#{createdOn} 
+                where shipment_master.shipmentid= #{shipmentId}
+	</update>
+	
+		<update id="sqlUpdateCaseStatustracing"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+	    update 
+	        Com_TracingShipmentInfo 
+                set Com_TracingShipmentInfo.CaseStatus='CLOSED',
+                     LastUpdatedUserCode = #{modifiedBy},
+                     LastUpdatedDateTime = #{modifiedOn}
+                where Com_TracingShipmentInfo.ShipmentNumber=#{awbNumber}
+                <if test="hawbnumber !=null and hawbnumber !=''">
+              and Com_TracingShipmentInfo.HouseNumber = #{hawbnumber}
+              </if>                          
+	</update>
+	
+	
+	<update id="sqlUpdateShipmentDeliveryInfoToInventoryHousebyHawb"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+		update Shipment_HouseInformation
+		set	
+			DeliveredOn = #{modifiedOn},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentHouseId = #{shipmentHouseId}
+			
+	</update>
+	
+	
+		<update id="sqlUpdateCustomsImportShipmentInfobyHawb"
+		parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+		update Customs_ImportShipment
+		set	
+			ShipmentDeliveryDate = #{modifiedOn},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentNumber = #{awbNumber}
+			 <if test="hawbnumber != null and hawbnumber !=''">
+                and Customs_ImportShipment.HouseNumber= #{hawbnumber}
+            </if>		
+	</update>
+	
+	<select id="sqlgetTotalShipmentHousePieces" parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="com.ngen.cosys.shipment.inactive.model.ShipmentData">	
+	select Shipment_Master.Pieces totalShipmentPieces,Shipment_HouseInformation.Pieces totalHousePieces
+	from Shipment_Master inner join
+	Shipment_HouseInformation on Shipment_HouseInformation.ShipmentId=Shipment_Master.ShipmentId 
+	where Shipment_HouseInformation.ShipmentHouseId=#{shipmentHouseId} and Shipment_Master.ShipmentId =#{shipmentId}
+	</select>
+	
+	
+	<select id="sqltotalFreighOutPiecesShipmentHouse" parameterType="com.ngen.cosys.shipment.inactive.model.ShipmentData"
+		resultType="com.ngen.cosys.shipment.inactive.model.ShipmentData">
+	  select Sum(Pieces) totalFreightoutShipmentPieces ,
+	  (select Sum(Pieces)  
+	  from Shipment_FreightOut 
+	  where ShipmentId=#{shipmentId}
+	  and ShipmentHouseId=#{shipmentHouseId}
+	  group by ShipmentId) totalFreightoutHousePieces
+	  from Shipment_FreightOut 
+	  where ShipmentId=#{shipmentId}
+	  group by ShipmentId  
+	</select>
+	
+</mapper>

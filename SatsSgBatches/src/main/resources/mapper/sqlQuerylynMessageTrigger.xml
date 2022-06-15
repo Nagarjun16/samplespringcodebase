@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="MessageConfigurationMapper">
+
+<select id="getLynmessageDataForBatch" parameterType ="java.util.Map" resultMap="getLynmessageDataForBatchMap">
+select
+	Interface_IncomingOutgoingMessageDefinition.MessageFormat,
+		Interface_IncomingOutgoingMessageDefinition.ChannelType,
+(case 
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek1=1 then 'MONDAY' 
+ else
+ ''
+ end ) as dayOfWeek1,
+( case 
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek2=1 then 'TUESDAY' 
+ else
+ ''
+ end) as dayOfWeek2,
+ (case
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek3=1 then 'WEDNESDAY' 
+ else
+	''
+ end) as dayOfWeek3,
+( case
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek4=1 then 'THURSDAY' 
+ else
+	''
+ end ) as dayOfWeek4,
+ (case 
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek5=1 then 'FRIDAY' 
+ else
+	''
+ end 
+ ) as dayOfWeek5,
+ 
+ (case
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek6=1 then 'SATURDAY' 
+ else
+	''
+ end) as dayOfWeek6 ,
+ (case
+ when Interface_IncomingOutgoingMessageDefinitionSchedules.DayOfWeek7=1 then 'SUNDAY' 
+  else
+	''
+ end)as dayOfWeek7 ,
+Interface_IncomingOutgoingMessageDefinitionSchedules.ScheduledTriggerTime,
+Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId as interfaceMessageDefinitionByCustomerId
+from Interface_IncomingOutgoingMessageDefinition
+inner join 
+Interface_AssociateCustomerWithMessageDefinition
+on
+Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId=
+Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+inner join
+Interface_IncomingOutgoingMessageDefinitionSchedules
+on
+Interface_IncomingOutgoingMessageDefinitionSchedules.InterfaceIncomingOutgoingMessageDefinitionId=Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+where Interface_IncomingOutgoingMessageDefinition.MessageType=#{messageType}
+<![CDATA[
+ and 
+			( cast(Interface_IncomingOutgoingMessageDefinition.EffectiveStartDate as date) <=cast(getdate() as date )
+			and 
+			cast(isnull( Interface_IncomingOutgoingMessageDefinition.EffectiveEndDate , getdate()) as date ) >=  cast(getdate() as date )
+			)
+				]]> 
+			and  Interface_IncomingOutgoingMessageDefinitionSchedules.ScheduledTriggerTime is not null
+</select>
+<resultMap id="getLynmessageDataForBatchMap" type="com.ngen.cosys.message.lyn.model.LynMessage">
+<id column="interfaceMessageDefinitionByCustomerId" property="interfaceMessageDefinitionByCustomerId"/>
+<result column="ScheduledTriggerTime" property="timeToTrigger"  javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+<result column="dayOfWeek1" property="dayToTrigger1"/>
+<result column="dayOfWeek2" property="dayToTrigger2"/>
+<result column="dayOfWeek3" property="dayToTrigger3"/>
+<result column="dayOfWeek4" property="dayToTrigger4"/>
+<result column="dayOfWeek5" property="dayToTrigger5"/>
+<result column="dayOfWeek6" property="dayToTrigger6"/>
+<result column="dayOfWeek7" property="dayToTrigger7"/>
+<result column="ChannelType" property="channelType"/>
+<result column="MessageFormat" property="messageFormat"/>
+<collection 
+			property="lynMessageCustomerDetails" 
+			select="getCustomerDetailsForLynMessage" 
+			ofType="com.ngen.cosys.message.lyn.model.LynMessageCustomerDetails"
+			column="{interfaceMessageDefinitionByCustomerId = interfaceMessageDefinitionByCustomerId}" />
+</resultMap>
+<select id="getCustomerDetailsForLynMessage"  parameterType="com.ngen.cosys.message.lyn.model.LynMessage" resultMap="getCustomerDetailsForLynMessageMap">
+select
+CarrierCode,
+AirportCode,
+CountryCode,
+FlightKey
+  from 
+Interface_MessageDefinitionByCustomer
+where InterfaceMessageDefinitionByCustomerId=#{interfaceMessageDefinitionByCustomerId}
+
+</select>
+<resultMap id="getCustomerDetailsForLynMessageMap" type="com.ngen.cosys.message.lyn.model.LynMessageCustomerDetails">
+<result column="CarrierCode" property="carrier"/>
+<result column="AirportCode" property="segment"/>
+<result column="CountryCode" property="countryCode"/>
+<result column="FlightKey" property="flightKey"/>
+</resultMap>
+</mapper>

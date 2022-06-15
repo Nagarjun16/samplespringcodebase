@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="VolumetricScannerMapper">
+
+		
+	<insert id="scanVolWgtRequest"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.ScanVolWgtRequest"
+		useGeneratedKeys="true" >
+		insert into Interface_VolumetricScannerLog(MessageId ,
+	ShipmentNumber,
+	Hawb ,MeasuredPieces,SkidHeight,CreatedUserCode,
+	CreatedDateTime ) values(
+	#{messageId},
+    #{awb},
+    #{hawb},
+    #{measuredPieces},
+   #{skidHeight} ,'SYSO',CURRENT_TIMESTAMP)
+	</insert>
+	
+	<update id="scanVolWgtRequestUpdate"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.ScanVolWgtRequest"
+		useGeneratedKeys="true" >
+		update Interface_VolumetricScannerLog set 
+		LastUpdatedUserCode = 'SYSO', 
+		LastUpdatedDateTime = CURRENT_TIMESTAMP
+		where ShipmentNumber=#{awb}
+	</update>
+	
+	<select id="checkScanVolWgtRequest" parameterType="com.ngen.cosys.service.volumetricscanner.model.ScanVolWgtRequest" 
+			resultType="java.math.BigInteger">
+		SELECT 	MessageId
+		FROM	Interface_VolumetricScannerLog
+		WHERE	ShipmentNumber = #{awb}
+	</select>
+	
+	<update id="scanVolWgtRequestUpdateForNewRequest" 
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.ScanVolWgtRequest">
+		UPDATE Interface_VolumetricScannerLog
+		SET 
+			MeasuredLength = NULL,
+			MeasuredWidth = NULL,
+			MeasuredHeight = NULL,
+			MeasuredVolume = NULL,
+			MeasuredVolWeight = NULL
+		WHERE
+			MessageId = #{messageId}
+	</update>
+	
+	<select id="volumetricScannerReferenceLogId" parameterType="java.lang.String" resultType="java.math.BigInteger">
+		SELECT 	MessageId
+		FROM	Interface_VolumetricScannerLog
+		WHERE	ShipmentNumber = #{shipmentNumber}
+	</select>
+	
+	<select id="volumetricRequestMessageReferenceId" resultType="java.math.BigInteger">
+		SELECT	MAX(MessageId) + 1 
+		FROM 	Interface_VolumetricScannerLog
+	</select>
+	
+	<update id="updateVolWgtReqLog"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.UpdateVolWgtRequest"
+		useGeneratedKeys="true" >
+		update Interface_VolumetricScannerLog set 
+	ShipmentNumber=#{awb},
+	Hawb=#{hawb} ,
+	MeasuredPieces= #{measuredPieces},
+	SkidHeight= #{skidHeight},
+    MeasuredLength=#{measuredLength},
+	MeasuredWidth=#{measuredWidth},
+	MeasuredHeight=#{measuredHeight} ,
+	MeasuredVolume=#{measuredVolume} ,
+	MeasuredVolWeight=#{measuredVolWeight} where MessageId=#{messageId}
+	</update>
+	<insert id="cancelScanVolWgtReq"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.CancelScanVolWgtRequest"
+		useGeneratedKeys="true" >
+			insert into Interface_VolumetricScannerLog(MessageId ,
+	ShipmentNumber,
+	Hawb ,CreatedUserCode,
+	CreatedDateTime ) values(#{messageId},
+    #{awb},
+    #{hawb},
+  'SYSO',CURRENT_TIMESTAMP)
+	</insert>
+	<update id="cancelScanVolWgtRes"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.CancelScanVolWgtResponse"
+		useGeneratedKeys="true" >
+	update Interface_VolumetricScannerLog set 
+   	ErrorFlag= #{errorFlag},
+	ErrorDescription=#{errorDescription} where MessageId=#{messageId}
+	</update>
+		<update id="scanVolWgtResLog"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.ScanVolWgtResponse"
+		useGeneratedKeys="true" >
+		update Interface_VolumetricScannerLog set ErrorFlag=#{errorFlag},ErrorDescription=#{errorDescription} where MessageId=#{messageId}
+	</update>
+	<update id="updateVolWgtResLog"
+		parameterType="com.ngen.cosys.service.volumetricscanner.model.UpdateVolWgtResponse"
+		useGeneratedKeys="true" >
+	update Interface_VolumetricScannerLog set 
+   	ErrorFlag= #{errorFlag},
+	ErrorDescription=#{errorDescription} where MessageId=#{messageId}
+	</update>
+
+	<!-- Volumetric Scanner CR Changes -->
+
+	<select id="getCargoEyeConfigurations" resultType="map">
+		WITH C AS (
+			SELECT ParameterCode, ParameterValueChar FROM App_SystemParameters WHERE ParameterCode LIKE 'CARGOEYE%'
+		) 
+		SELECT 
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_API_KEY') CARGOEYE_API_KEY,
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_SCANNER_API_ENDPOINT') CARGOEYE_SCANNER_API_ENDPOINT,
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_IMAGES_API_ENDPOINT') CARGOEYE_IMAGES_API_ENDPOINT,
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_CONNECTION_TIMEOUT') CARGOEYE_CONNECTION_TIMEOUT,
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_REQUEST_TIMEOUT') CARGOEYE_REQUEST_TIMEOUT,
+			(SELECT ParameterValueChar FROM C WHERE ParameterCode = 'CARGOEYE_ENABLE_SSL') CARGOEYE_ENABLE_SSL,
+			(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode = 'CONFIG_UPLOAD_FILES_ENDPOINT') CONFIG_UPLOAD_FILES_ENDPOINT
+	</select>
+
+	<select id="getVolumetricScanRequestMessageId" resultType="java.lang.Long">
+	
+		SELECT	MAX(MessageId) + 1 
+		FROM 	Interface_VolumetricScannerLog
+	</select>
+	
+	<insert id="saveVolumetricScanRequest" parameterType="com.ngen.cosys.service.volumetricscanner.model.VolumetricRequest">
+		INSERT INTO Interface_VolumetricScannerLog(MessageId, ShipmentNumber, Hawb, MeasuredPieces, SkidHeight, DeclaredVolume, OddSize, CreatedUserCode, CreatedDateTime) 
+		VALUES(#{messageId}, #{shipmentNumber}, #{hawb}, #{measuredPieces}, #{skidHeight}, #{declaredVolume}, IIF(UPPER(#{oddSize}) = 'Y' OR UPPER(#{oddSize}) = 'TRUE', 1, 0), 'SYSO', CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="saveVolumetricScanResponse" parameterType="com.ngen.cosys.service.volumetricscanner.model.CargoEyeVolWeightResponse">
+		UPDATE Interface_VolumetricScannerLog SET 
+			MeasuredLength = #{measuredLength},
+			MeasuredWidth = #{measuredWidth},
+			MeasuredHeight = #{measuredHeight},
+			MeasuredVolume = #{measuredVolume},
+			MeasuredVolWeight = #{measuredVolWeight},
+			Texture = #{texture},
+			ErrorCode = #{statusId},
+			ErrorDescription = #{statusDescription},
+			ErrorFlag = 0
+		WHERE MessageId = #{messageId}
+	</update>
+
+	<update id="saveVolumetricScanErrorResponse" parameterType="com.ngen.cosys.service.volumetricscanner.model.CargoEyeVolWeightErrorResponse">
+		UPDATE Interface_VolumetricScannerLog SET 
+			ErrorCode = #{errorCode},
+			ErrorDescription = #{errorDescription},
+			ErrorFlag = 1
+		WHERE MessageId = #{messageId}
+	</update>
+
+	<insert id="saveVolumetricScanImageResponse" parameterType="com.ngen.cosys.service.volumetricscanner.model.ScannedImage">
+		INSERT INTO Interface_VolumetricScannerLogImage
+		(
+			VolumetricScannerLogId, UploadedDocId, 
+			CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+		)
+		VALUES
+		(
+			(SELECT VolumetricScannerLogId FROM Interface_VolumetricScannerLog WHERE MessageId = #{associatedTo}), #{uploadDocId},
+			'SYSO', CURRENT_TIMESTAMP, NULL, NULL
+		)
+	</insert>
+
+	<delete id="deleteUploadedDocsByAssociatedTo" parameterType="long">
+		DELETE FROM Com_UploadedDocumentStore 
+		where UploadedDocId IN (
+			SELECT UploadedDocId FROM Interface_VolumetricScannerLogImage 
+			where VolumetricScannerLogId IN (
+				SELECT VolumetricScannerLogId FROM Interface_VolumetricScannerLog where MessageId = #{messageId}
+			)
+		)
+	</delete>
+	<delete id="deleteVolumeWeightLogImages" parameterType="long">
+		DELETE FROM Interface_VolumetricScannerLogImage 
+		where VolumetricScannerLogId IN (
+			SELECT VolumetricScannerLogId FROM Interface_VolumetricScannerLog where MessageId = #{messageId}
+		)
+	</delete>
+	<delete id="deleteVolumeWeightLog" parameterType="long">
+		DELETE FROM Interface_VolumetricScannerLog where MessageId = #{messageId}
+	</delete>
+</mapper>	

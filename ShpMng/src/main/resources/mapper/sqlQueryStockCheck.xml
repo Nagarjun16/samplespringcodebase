@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="StockManagementMapper">
+	<!-- <insert id="insertStockSummary" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+     INSERT INTO Com_AWBStock
+           (AWBStockId
+           ,CarrierCode
+           ,StockId
+           ,StockCategoryCode
+           ,FirstAWBNumber
+           ,NumberOfAWB
+           ,LowStockLimit
+           ,CreatedUser_Code
+           ,Created_DateTime)
+     VALUES
+           (#{awbStockId}
+           ,#{carrierCode}
+           ,#{stockId}
+           ,#{stockCategoryCode}
+           ,#{firstAwbNumber}
+           ,#{awbTotalNumber}
+           ,#{lowStockLimitNew}
+           
+           ,#{createdBy}
+           ,#{createdOn})
+	</insert> -->
+
+	<update id="updateStockSummary" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+	      UPDATE Com_AWBStock
+	        SET StockId = #{stockId},
+	        StockCategoryCode = #{stockCategoryCode},
+	        FirstAWBNumber = #{firstAwbNumber}, 
+	        NumberOfAWB = #{awbTotalNumber},
+	        LowStockLimit = #{lowStockLimitNew} ,
+	        LastUpdatedUser_Code = #{modifiedBy},
+	        LastUpdated_DateTime = #{modifiedOn}
+	      WHERE
+	        CarrierCode = #{carrierCode}
+	        AND AWBStockId = #{awbStockId}
+	</update>
+</mapper>

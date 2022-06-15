@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DummyMapper">
+
+	<resultMap id="getSeviceNumber"
+		type="com.ngen.cosys.etqs.model.ETQSShipmentInfo">
+		<result property="serviceNumber" column="ServiceNumber" />
+		<result property="serviceStatus" column="Status" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="pieces" column="DocumentPieces" />
+		<result property="weight" column="DocumentWeight" />
+		<result property="natureOfGoods"
+			column="NatureOfGoodsDescription" />
+		<result property="terminal" column="CargoTerminalCode" />
+		<result property="flightKey" column="FlightKey" />
+		<result property="documentId" column="PrelodgeDocumentId" />
+		<collection property="shcs" javaType="List"
+			ofType="java.lang.String" select="selectAgtPrelodgeSHC"
+			column="{documentId=PrelodgeDocumentId}" />
+	</resultMap>
+
+	<select id="getServiceInfo"
+		parameterType="com.ngen.cosys.etqs.model.ETQSShipmentInfo"
+		resultMap="getSeviceNumber">
+		select exps.ServiceNumber,exps.Status
+		,agtp.ShipmentNumber,agtp.DocumentPieces,agtp.DocumentWeight,
+		agtp.NatureOfGoodsDescription,agtp.FlightKey,
+		agtp.FlightDate,agtp.CargoTerminalCode,agtp.PrelodgeDocumentId
+		from
+		Exp_eAcceptanceServiceInformation exps
+		join
+		Exp_eAcceptanceDocumentInformation expd
+		on
+		exps.ServiceInformationId=expd.ServiceInformationId
+		left join
+		shipment_master shp
+		join
+		Shipment_MasterCustomerInfo shpinfo on
+		shpinfo.ShipmentId=shp.ShipmentId
+		on
+		shp.ShipmentNumber=expd.ShipmentNumber
+		join
+		Agt_PrelodgeExportDocuments
+		agtp
+		on
+		shp.ShipmentNumber=agtp.ShipmentNumber
+		and
+		shp.ShipmentDate=agtp.ShipmentDate
+		where
+		shp.ShipmentNumber=#{shipmentNumber} and
+		shp.ShipmentDate=#{shipmentDate} and
+		shpinfo.CustomerCode=#{agentCode}
+		and shpinfo.CustomerType='AGT'
+	</select>
+
+	<select id="selectAgtPrelodgeSHC" resultType="java.lang.String">
+		SELECT
+		SpecialHandlingCode
+		FROM
+		Agt_PrelodgeExportDocumentsSHC
+		WHERE
+		PrelodgeDocumentId = #{documentId}
+	</select>
+
+	<update id="updatePrelodgeService"
+		parameterType="com.ngen.cosys.etqs.model.ETQSShipmentInfo">
+		update Agt_PrelodgeExportService set
+		QueueNumber=#{queeNumber} where PrelodgeServiceNo=#{serviceNumber}
+	</update>
+
+
+
+</mapper>

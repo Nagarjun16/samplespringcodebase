@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ngen.cosys.ulms.dao.ReleaseULDToAgentDao">
+    <select id="getReleaseUldList" parameterType="com.ngen.cosys.ulms.model.ReleaseULDDetail"
+            resultType="com.ngen.cosys.ulms.model.ReleaseULDDetail">
+        SELECT
+        e.CustomerCode AS customerCode,
+        e.CustomerShortName AS customerName,
+        ar.CreatedDateTime AS releaseDate,
+        STRING_AGG (b.ContainerNumber, ',') AS uldNumbers
+        FROM Equipment_Release_Info a
+        INNER JOIN Equipment_Release_Trip_Info ar
+               on a.EquipmentRequestReleaseTripInfoId = ar.EquipmentRequestReleaseTripInfoId
+        INNER JOIN Equipment_Release_Container_Info b ON a.EquipmentReleaseInfoId = b.EquipmentReleaseInfoId
+        INNER JOIN Equipment_Request_Release_Details c ON a.EquipmentReleaseInfoId = c.EquipmentReleaseInfoId
+        INNER JOIN Equipment_Request d ON c.EquipmentRequestId = d.EquipmentRequestId
+        INNER JOIN Customer_Master e ON d.RequestedBy = e.Customer_ID
+        WHERE ar.CreatedDateTime BETWEEN #{startDate} AND #{endDate}
+        and (b.returned is null or b.returned =0)
+        <if test="customerId != null and customerId > 0">
+            and e.customer_id = #{customerId}
+        </if>
+        GROUP BY
+        e.CustomerCode,
+        e.CustomerShortName,
+        ar.CreatedDateTime
+    </select>
+
+    <select id="getCustomerDetail" parameterType="com.ngen.cosys.ulms.model.ReleaseULDDetail"
+            resultType="com.ngen.cosys.ulms.model.ReleaseULDDetail">
+        select top 1 customer_id as customerId, customerCode
+             , customerShortName as customerName
+        from customer_master
+        where customerCode = #{customerCode}
+    </select>
+</mapper>

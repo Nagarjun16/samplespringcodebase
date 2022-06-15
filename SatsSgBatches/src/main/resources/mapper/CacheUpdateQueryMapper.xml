@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CacheUpdateQueryMapper">
+
+	<resultMap id="shipmentDateCacheDetailsMap" type="com.ngen.cosys.cache.client.model.ShipmentDateCache">
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="CancelledOn" property="cancelledOn" />
+		<result column="ClosedOn" property="closedOn" />
+		<result column="DepartedOn" property="departedOn" />
+		<result column="DeliveredOn" property="deliveredOn" />
+		<result column="Abandoned" property="abandoned" />
+		<result column="Dispose" property="dispose" />
+	</resultMap>
+	
+	<!-- Shipment Date Info Detail -->
+	<select id="selectCachedShipmentDateDetails" resultMap="shipmentDateCacheDetailsMap">
+		<![CDATA[
+			WITH ShipmentDateCacheConfig AS (
+				SELECT	CAST(ISNULL(ParameterValueChar,'0') AS NUMERIC) AS EvictTime
+				FROM	App_SystemParameters
+				WHERE	ParameterCode = 'SHIPMENT_DATE_CACHE_REMOVE_TIME_CONFIG'
+				AND 	ParameterStatusFlag = 'Y'
+				AND 	StartDate <= GETDATE() 
+				AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+			)
+			SELECT	CachedShipmentDates.ShipmentNumber, CachedShipmentDates.ShipmentDate,
+					CachedShipmentDates.CancelledOn, CachedShipmentDates.ClosedOn,
+					CachedShipmentDates.DepartedOn, CachedShipmentDates.DeliveredOn,
+					CachedShipmentDates.Abandoned, CachedShipmentDates.Dispose
+			FROM (
+				SELECT	Shipment_Master.ShipmentNumber, MAX(Shipment_Master.ShipmentDate) AS ShipmentDate,
+						Shipment_Master.CancelledOn, Shipment_Master.ClosedOn,
+						Shipment_Master.DepartedOn, Shipment_Master.DeliveredOn,
+						Shipment_Master.Abandoned, Shipment_Master.Dispose,
+						CASE WHEN Shipment_Master.CancelledOn IS NOT NULL 
+							AND DATEDIFF(MINUTE, Shipment_Master.CancelledOn, GETDATE()) 
+								BETWEEN	(SELECT EvictTime FROM ShipmentDateCacheConfig) 
+									AND DATEDIFF(MINUTE, GETDATE(), DATEADD(MINUTE, +30, GETDATE()))
+							THEN 1 ELSE 0
+						END CancelledOnTime,
+						CASE WHEN Shipment_Master.ClosedOn IS NOT NULL 
+							AND DATEDIFF(MINUTE, Shipment_Master.ClosedOn, GETDATE()) 
+								BETWEEN	(SELECT EvictTime FROM ShipmentDateCacheConfig) 
+									AND DATEDIFF(MINUTE, GETDATE(), DATEADD(MINUTE, +30, GETDATE()))
+							THEN 1 ELSE 0
+						END ClosedOnTime,
+						CASE WHEN Shipment_Master.DepartedOn IS NOT NULL 
+							AND DATEDIFF(MINUTE, Shipment_Master.DepartedOn, GETDATE()) 
+								BETWEEN (SELECT EvictTime FROM ShipmentDateCacheConfig) 
+									AND DATEDIFF(MINUTE, GETDATE(), DATEADD(MINUTE, +30, GETDATE()))
+							THEN 1 ELSE 0
+						END DepartedOnTime,
+						CASE WHEN Shipment_Master.DeliveredOn IS NOT NULL 
+							AND DATEDIFF(MINUTE, Shipment_Master.DeliveredOn, GETDATE()) 
+								BETWEEN (SELECT EvictTime FROM ShipmentDateCacheConfig) 
+									AND DATEDIFF(MINUTE, GETDATE(), DATEADD(MINUTE, +30, GETDATE()))
+							THEN 1 ELSE 0
+						END DeliveredOnTime
+				FROM	Shipment_Master
+					INNER JOIN
+						Shipment_DateInfo
+					ON	Shipment_DateInfo.ShipmentNumber = Shipment_Master.ShipmentNumber
+					AND	Shipment_DateInfo.ShipmentDate = Shipment_Master.ShipmentDate
+				WHERE	CAST(Shipment_DateInfo.ShipmentDate AS DATE) BETWEEN
+							DATEADD(DAY, -30, CAST(GETDATE() AS DATE)) AND CAST(GETDATE() AS DATE)
+				AND		(
+							(Shipment_Master.DepartedOn IS NOT NULL 
+								AND Shipment_Master.DepartedOn BETWEEN DATEADD(HOUR, -5, GETDATE()) AND GETDATE()) OR 
+							(Shipment_Master.DeliveredOn IS NOT NULL 
+								AND Shipment_Master.DeliveredOn BETWEEN DATEADD(HOUR, -5, GETDATE()) AND GETDATE()) OR 
+							(Shipment_Master.CancelledOn IS NOT NULL
+								AND Shipment_Master.CancelledOn BETWEEN DATEADD(HOUR, -5, GETDATE()) AND GETDATE()) OR 
+							(Shipment_Master.ClosedOn IS NOT NULL
+								AND Shipment_Master.ClosedOn BETWEEN DATEADD(HOUR, -5, GETDATE()) AND GETDATE()) OR 
+							(Shipment_Master.Abandoned = 1 OR Shipment_Master.Dispose = 1)
+						)
+				GROUP BY 
+						Shipment_Master.ShipmentNumber, Shipment_Master.ShipmentDate,
+						Shipment_Master.CancelledOn, Shipment_Master.ClosedOn,
+						Shipment_Master.DepartedOn, Shipment_Master.DeliveredOn,
+						Shipment_Master.Abandoned, Shipment_Master.Dispose
+				) AS CachedShipmentDates
+			WHERE	CachedShipmentDates.CancelledOnTime = 1 OR CachedShipmentDates.ClosedOnTime = 1 OR
+					CachedShipmentDates.DepartedOnTime = 1 OR CachedShipmentDates.DeliveredOnTime = 1 OR
+					(CachedShipmentDates.Abandoned = 1 OR CachedShipmentDates.Dispose = 1)
+		]]>
+	</select>
+	
+</mapper>

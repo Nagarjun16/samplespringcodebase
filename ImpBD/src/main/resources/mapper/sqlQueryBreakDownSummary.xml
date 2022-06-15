@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BreakDownSummaryMapper">
+
+ 	<!-- Get inbound break down tonnage information -->
+	<resultMap id="InboundBreakDownULDTrolleyTonnageInformation"
+		type="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel">		
+		<result column="FlightId" property="flightId"/>
+		<result column="ULDTrolleyNumber" property="uldNumber"/>
+		<result column="HandlingMode" property="handlingMode"/>
+		<result column="HandlingAreaCode" property="handlingArea"/>
+		<result column="BreakDownStartedAt" property="breakdownStartDataTime"/>
+		<result column="BreakDownEndedAt" property="breakdownEndDataTime"/>
+		<result column="ManifestWeight" property="manifestedWeight"/>
+		<result column="ServiceContractor" property="serviceContrator"/>
+		<result column="TonnageByGha" property="tonnageByGha"/>
+		<result column="TonnageByContractor" property="tonnageByContractor"/>
+		<result column="BreakDownStaff" property="breakdownStaff"/>
+		<result column="ServiceContractorName" property="serviceContractorName"/>		
+		<collection 
+			property="shcTonnageInfo"
+			column="{uldNumber = ULDTrolleyNumber, flightId=FlightId}"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldTrolleyShcModel"
+			javaType="List"
+			select="sqlGetInboundBreakDownSHCTonnageSummary"/>	 
+	</resultMap>
+	
+  	<select id="sqlGetInboundBreakDownTonnageSummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+		resultMap="InboundBreakDownULDTrolleyTonnageInformation">	
+		<![CDATA[
+		select			
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,
+			Imp_BreakDownULDTrolleyInfo.HandlingMode,
+			Imp_BreakDownULDTrolleyInfo.HandlingAreaCode,
+			isnull(min(Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt), getdate()) BreakDownStartedAt,
+			isnull(max(Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt), getdate()) BreakDownEndedAt,
+			ArrivalManifestInfo.ManifestWeight,
+			case 
+				when Imp_BreakDownULDTrolleyInfo.ServiceContractor is NULL then 
+					'YES' 
+				else 
+					'NO' 
+				end sats,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor,
+			case 
+				when Imp_BreakDownULDTrolleyInfo.ServiceContractor is null then 
+					sum(Imp_BreakDownStorageInfo.Weight)
+				else 
+					0
+				end TonnageByGha,
+			case 
+				when Imp_BreakDownULDTrolleyInfo.ServiceContractor is not null then 
+					sum(Imp_BreakDownStorageInfo.Weight)
+				else 
+					0
+				end TonnageByContractor,
+			(select 
+					string_agg(BreakDownStaff.UserName, ',')
+				from
+					(
+						select
+							distinct innerBreakDownStorageInfo.CreatedUserCode as UserName
+						from	
+							Imp_BreakDownStorageInfo innerBreakDownStorageInfo inner join
+							Imp_BreakDownULDTrolleyInfo innerBreakDownULDTrolleyInfo
+								on innerBreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId = innerBreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId inner join
+							Imp_ShipmentVerification innerShipmentVerification
+								on innerBreakDownULDTrolleyInfo.ImpShipmentVerificationId = innerShipmentVerification.ImpShipmentVerificationId
+						where
+							innerShipmentVerification.FlightId = Imp_ShipmentVerification.FlightId and
+							innerBreakDownULDTrolleyInfo.ULDTrolleyNumber = Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber
+					)BreakDownStaff
+			) BreakDownStaff,
+			case 
+				when Imp_BreakDownULDTrolleyInfo.ServiceContractor is not null then 
+					(select CustomerCode from Customer_Master where Customer_ID = Imp_BreakDownULDTrolleyInfo.ServiceContractor)
+				else
+					'SATS'
+				end ServiceContractorName
+		from
+			Imp_ShipmentVerification inner join
+			Imp_BreakDownULDTrolleyInfo
+				on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+			Imp_BreakDownStorageInfo
+				on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId left join
+			(
+				select
+					Imp_ArrivalManifestByFlight.FlightId,
+					isnull(Imp_ArrivalManifestULD.ULDNumber, 'Bulk') ULDNumber,
+					sum(Imp_ArrivalManifestShipmentInfo.Weight) ManifestWeight
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = #{flightId} and 
+					not exists(
+						select
+							null
+						from
+							Imp_ArrivalManifestByShipmentSHC inner join
+							Mst_AssociateSHCByHandlingGroup
+								on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+							Mst_SHCHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+						where
+							Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId and
+							Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('VAL', 'RAC')
+					)
+				group by
+					Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestULD.ULDNumber
+			)ArrivalManifestInfo
+				on Imp_ShipmentVerification.FlightId = ArrivalManifestInfo.FlightId and
+					Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = ArrivalManifestInfo.ULDNumber
+		where
+			Imp_ShipmentVerification.FlightId = #{flightId} and
+			Imp_BreakDownULDTrolleyInfo.HandlingMode <> 'NO BREAK' and
+			not exists(
+				select
+					null
+				from
+					Imp_BreakDownULDTrolleyInfo ThroughTransitULDTrolleyInfo
+				where
+					ThroughTransitULDTrolleyInfo.ThroughTransit = 1 and
+					ThroughTransitULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+			) and
+			not exists(
+				select
+					null
+				from
+					Shipment_Master inner join
+					Shipment_MasterSHC
+						on Shipment_Master.ShipmentId = Shipment_MasterSHC.ShipmentId
+				where
+					Shipment_MasterSHC.SpecialHandlingCode in ('VAL', 'RAC') and
+					Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+			)
+		group by	
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,
+			Imp_BreakDownULDTrolleyInfo.HandlingMode,
+			Imp_BreakDownULDTrolleyInfo.HandlingAreaCode,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor,
+			ArrivalManifestInfo.ManifestWeight
+		Order by
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber asc
+		]]>
+	</select>
+
+	<select id="sqlGetInboundBreakDownSHCTonnageSummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+		resultType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldTrolleyShcModel">	
+		<![CDATA[
+			select
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode shcGroup,
+				sum(Imp_BreakDownStorageInfo.Weight) tonnage	
+			from
+				Imp_ShipmentVerification inner join
+				Imp_BreakDownULDTrolleyInfo
+					on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+				Imp_BreakDownStorageInfo
+					on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join
+				Imp_BreakDownStorageSHCInfo
+					on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownStorageSHCInfo.ImpBreakDownStorageInfoId inner join
+				Mst_AssociateSHCByHandlingGroup
+					on Imp_BreakDownStorageSHCInfo.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+				Mst_SHCHandlingGroup
+					on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID 
+			where
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = #{uldNumber} and
+				Imp_BreakDownULDTrolleyInfo.HandlingMode <> 'NO BREAK' and
+				Mst_SHCHandlingGroup.Category = 'WH' and
+				not exists(
+					select
+						null
+					from
+						Imp_BreakDownULDTrolleyInfo ThroughTransitULDTrolleyInfo
+					where
+						ThroughTransitULDTrolleyInfo.ThroughTransit = 1 and
+						ThroughTransitULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+				)
+			group by	
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode
+		]]>		
+	</select>
+	
+	<select id="sqlGetInboundBreakDownOtherTonnageSummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+		resultType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel">	
+		<![CDATA[
+		select
+			Mst_SHCHandlingGroup.SHCHandlingGroupCode as cargoType,
+			sum(Imp_BreakDownStorageInfo.Weight) as tonnage	
+		from
+			Imp_ShipmentVerification inner join
+			Imp_BreakDownULDTrolleyInfo
+				on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+			Imp_BreakDownStorageInfo
+				on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join
+			Imp_BreakDownStorageSHCInfo
+				on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownStorageSHCInfo.ImpBreakDownStorageInfoId inner join
+			Mst_AssociateSHCByHandlingGroup
+				on Imp_BreakDownStorageSHCInfo.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+			Mst_SHCHandlingGroup
+				on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID 
+		where
+			Imp_ShipmentVerification.FlightId = #{flightId} and
+			Imp_BreakDownULDTrolleyInfo.HandlingMode <> 'NO BREAK' and
+			Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('VAL', 'RAC') and
+			Mst_SHCHandlingGroup.Category = 'WH' and
+			not exists(
+				select
+					null
+				from
+					Imp_BreakDownULDTrolleyInfo ThroughTransitULDTrolleyInfo
+				where
+					ThroughTransitULDTrolleyInfo.ThroughTransit = 1 and
+					ThroughTransitULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+			)
+		group by	
+			Mst_SHCHandlingGroup.SHCHandlingGroupCode
+		]]>
+	</select>
+	
+	 	
+ 	<resultMap id="BreakdownSummaryFlightInfo"
+		type="com.ngen.cosys.impbd.summary.model.BreakDownSummaryModel">
+		<id column="Flight_ID" property="flightId" />
+		<id column="ImpBreakDownSummaryId" property="id" />
+		<result column="FlightKey" property="flightNumber"/>
+		<result column="DateSTA" property="sta"/>			
+		<result column="DateATA" property="ata"/>
+		<result column="FirstULDTowTime" property="firstUldTowInTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="LastULDTowTime" property="lastUldTowInTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FirstTimeBreakdownCompletedAt" property="breakdownCompletionDataTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FlightCompletedAt" property="flightCompletionDataTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/> 
+		<result column="FlightClosedFlag" property="flightClosedFlag" />
+		<result column="FlightCompletedTime" property="fct"/>
+		<result column="ATAtime" property="atat"/>
+		<result column="STPtime" property="stp"/>
+		<result column="FlightNumber" property="flightNo"/> 
+		<result column="LiquIdatedDamagesWaived" property="liquIdatedDamagesWaived"/> 
+	    <result column="LiquIdatedDamageApplicable" property="liquIdatedDamageApplicable"/> 
+	    <result column="ReasonForWaive" property="reasonForWaive"/> 
+	    <result column="ReasonForDelay" property="reasonForDelay"/> 
+	    <result column="FightClosedAt" property="flightClosedAt" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/> 
+	    <result column="FlightClosedBy" property="fightClosedBy"/> 
+	    <result column="FlightDate" property="flightDate"/>  
+		 <collection 
+		 	property="uldInfo" 
+		 	javaType="List"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+			select="sqlGetBreakdownTonnageULDTrolleySummary" 
+			column="{id = ImpBreakDownSummaryId}" />
+		 <collection 
+		 	property="tonnageHandlingInfo" 
+		 	javaType="List"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel"
+			select="sqlGetBreakDownOtherTonnageSummary" 
+			column="{id = ImpBreakDownSummaryId}" /> 		
+	</resultMap>
+	<resultMap id="BreakdownTonnageULDTrolleySummaryInfo"
+		type="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel">
+		<id column="ImpBreakDownULDTrolleySummaryInfoId" property="id"/>
+		<id column="ImpBreakDownSummaryId" property="summaryId"/>
+		<result column="ULDTrolleyNumber" property="uldNumber"/>
+		<result column="TonnageByContractor" property="tonnageByContractor"/>
+		<result column="TonnageByGHA" property="tonnageByGha"/>
+		<result column="ServiceContractor" property="serviceContrator"/>
+		<result column="BreakDownStartedAt" property="breakdownStartDataTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="BreakDownEndedAt" property="breakdownEndDataTime" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="HandlingAreaCode" property="handlingArea"/>
+		<result column="HandlingMode" property="handlingMode"/>
+		<result column="ManifestWeight" property="manifestedWeight"/>
+		<result column="BreakDownStaff" property="breakdownStaff"/>
+		<result column="ServiceContractorName" property="serviceContractorName"/>
+		<result column="Difference" property="differece"/>
+		<result column="sats" property="sats"/>
+		<collection 
+			property="shcTonnageInfo"
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldTrolleyShcModel"
+			column="{id = ImpBreakDownULDTrolleySummaryInfoId}"
+			select="sqlGetBreakdownTonnageULDTrolleySHCSummary"/>
+	</resultMap>
+  
+  	<select id="sqlGetBreakDownSummaryInfo"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryModel"
+		resultMap="BreakdownSummaryFlightInfo">				
+		<![CDATA[
+		select
+			Imp_BreakDownSummary.ImpBreakDownSummaryId,
+			Flt_OperativeFlight.Flight_ID,
+			Flt_OperativeFlight.FlightType,
+			Flt_OperativeFlight.CarrierCode,
+			Flt_OperativeFlight.FlightNumber,	
+			Flt_OperativeFlight.FlightKey,
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) as FlightDate,
+			Flt_OperativeFlight_Legs.DateSTA,
+			Flt_OperativeFlight_Legs.DateATA,
+			cast(Imp_FlightEvents.FirstULDTowedAt as Time) as FirstULDTowTime,
+			cast(Imp_FlightEvents.LastULDTowedAt as Time) as LastULDTowTime,
+			Imp_FlightEvents.FirstTimeBreakdownCompletedAt,
+			Imp_FlightEvents.FlightCompletedAt,
+			Imp_BreakDownSummary.LiquIdatedDamagesWaived,
+			Imp_BreakDownSummary.LiquIdatedDamageApplicable,
+			Imp_BreakDownSummary.ReasonForWaive,
+			Imp_FlightEvents.FightClosedAt,
+			Imp_FlightEvents.FlightClosedBy,
+			Imp_BreakDownSummary.ReasonForDelay,
+			case when
+				(Imp_FlightEvents.FightClosedAt is not null) then
+				1
+			else
+				0
+			end FlightClosedFlag,
+			case when 
+				(Flt_OperativeFlight.FlightType ='P') then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='PASSENGERFLIGHT') 
+				when (Flt_OperativeFlight.FlightType ='C' and 
+						sum(Imp_BreakDownTonnageULDTrolleySummaryInfo.ManifestWeight)/1000 > 40) then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTgt40') 
+				when (Flt_OperativeFlight.FlightType ='C' and 
+						sum(Imp_BreakDownTonnageULDTrolleySummaryInfo.ManifestWeight)/1000 <= 40) then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTlt40') 
+					else 0
+			end STPtime,
+			isnull(DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, Flt_OperativeFlight_Legs.DateATA), 0), Flt_OperativeFlight_Legs.DateATA),0) as ATAtime,
+			isnull(DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, Imp_FlightEvents.FlightCompletedAt), 0), Imp_FlightEvents.FlightCompletedAt),DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), GETDATE())) as FlightCompletedTime
+		from
+			Imp_BreakDownSummary inner join
+			Flt_OperativeFlight
+				on Imp_BreakDownSummary.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Imp_FlightEvents
+				on Flt_OperativeFlight.Flight_ID = Imp_FlightEvents.FlightId inner join
+			Mst_OperativeFlight_ServiceTypes 
+				on  Flt_OperativeFlight.FlightServiceType = Mst_OperativeFlight_ServiceTypes.FlightServiceType inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} left join
+			Imp_BreakDownTonnageULDTrolleySummaryInfo
+				on Imp_BreakDownSummary.ImpBreakDownSummaryId = Imp_BreakDownTonnageULDTrolleySummaryInfo.ImpBreakDownSummaryId
+		where
+			Flt_OperativeFlight.FlightKey = #{flightNumber} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+		group by
+			Imp_BreakDownSummary.ImpBreakDownSummaryId,
+			Flt_OperativeFlight.Flight_ID,
+			Flt_OperativeFlight.FlightType,
+			Flt_OperativeFlight.CarrierCode,
+			Flt_OperativeFlight.FlightNumber,	
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight_Legs.DateSTA,
+			Flt_OperativeFlight_Legs.DateATA,
+			Imp_FlightEvents.FirstULDTowedAt,
+			Imp_FlightEvents.LastULDTowedAt,
+			Imp_FlightEvents.FirstTimeBreakdownCompletedAt,
+			Imp_FlightEvents.FlightCompletedAt,
+			Imp_FlightEvents.FightClosedAt,
+			Imp_BreakDownSummary.LiquIdatedDamagesWaived,
+			Imp_BreakDownSummary.LiquIdatedDamageApplicable,
+			Imp_BreakDownSummary.ReasonForWaive,
+			Imp_BreakDownSummary.ReasonForDelay,
+			Imp_FlightEvents.FightClosedAt,
+			Imp_FlightEvents.FlightClosedBy
+		]]>
+	</select>
+  	
+  	<select id="sqlGetBreakdownTonnageULDTrolleySummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryModel"
+		resultMap="BreakdownTonnageULDTrolleySummaryInfo">	
+		select
+			ImpBreakDownULDTrolleySummaryInfoId,
+			ImpBreakDownSummaryId,
+			ULDTrolleyNumber,
+			TonnageByContractor,
+			TonnageByGHA,
+			ServiceContractor,
+			BreakDownStartedAt,
+			BreakDownEndedAt,
+			HandlingAreaCode,
+			HandlingMode,
+			ManifestWeight,
+			BreakDownStaff,
+			(ManifestWeight - (TonnageByContractor + TonnageByGHA)) Difference,
+			case 
+				when ServiceContractor is NULL then 
+					'YES' 
+				else 
+					'NO' 
+				end sats,
+				
+			    ServiceContractor as ServiceContractorName
+		from
+			Imp_BreakDownTonnageULDTrolleySummaryInfo
+		where
+			ImpBreakDownSummaryId = #{id}
+	</select>
+	
+	<select id="sqlGetBreakdownTonnageULDTrolleySHCSummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+		resultType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldTrolleyShcModel">	
+		select
+			ImpBreakDownULDTrolleySHCSummaryInfoId as id,
+			ImpBreakDownULDTrolleySummaryInfoId as referenceId,
+			SHCGroup as shcGroup,
+			Tonnage as tonnage
+		from
+			Imp_BreakDownTonnageULDTrolleySHCSummaryInfo
+		where
+			ImpBreakDownULDTrolleySummaryInfoId = #{id}
+	</select>
+	
+	<select id="getEmailDetails"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.summary.model.Email">	
+		select Email AS toAddress from Event_GroupMemberList join Event_Group
+		on Event_Group.EventGroupId = Event_GroupMemberList.EventGroupId
+		where Name = #{groupName}			
+	</select>
+	
+	<select id="sqlGetBreakDownOtherTonnageSummary"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryModel"
+		resultType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel">	
+		select
+			ImpBreakDownTonnageSummaryInfoId as tonnageId,
+			ImpBreakDownSummaryId as summaryId,
+			CargoType as cargoType,
+			DeductableTonnageWeight as tonnage,
+			Reason as remark,
+			ServiceContractor,
+		    AddTonnage as additionalTonnage,
+		    DeductTonnage as subtractTonnage
+		from
+			Imp_BreakDownTonnageSummaryInfo
+		where
+			ImpBreakDownSummaryId = #{id}			
+	</select>
+ 	 	
+ 	<!-- Break Down Summary -->
+ 	<select id="sqlGetBreakDownSummaryId"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary"
+ 		resultType="java.math.BigInteger">
+ 		select ImpBreakDownSummaryId from Imp_BreakDownSummary where FlightId = #{flightId}
+ 	</select>
+ 	
+ 	<insert id="sqlInsertBreakDownSummary"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary"
+ 		keyColumn="ImpBreakDownSummaryId"
+ 		keyProperty="id"
+ 		useGeneratedKeys="true">
+ 		insert into Imp_BreakDownSummary(
+ 			FlightId,
+			FeedbackForStaff,
+			BreakDownStaffGroup,
+			ReasonForWaive,
+			ReasonForDelay,
+			LiquIdatedDamagesWaived,
+			LiquIdatedDamageApplicable,
+			ApprovedLDWaive,
+			ApprovedLDWaiveApprovedBy,
+			ApprovedLDWaiveApprovedOn,
+			ApprovedLDApplicable,
+			ApprovedLDApplicableApprovedBy,
+			ApprovedLDApplicableApprovedOn,
+			CreatedUserCode,
+			CreatedDateTime
+ 		)values(
+ 			 #{flightId},
+ 			 #{feedbackForStaff},
+ 			 #{breakDownStaffGroup},
+ 			 #{reasonForWaive},
+ 			 #{reasonForDelay},
+ 			 #{liquIdatedDamagesWaived},
+ 			 #{liquIdatedDamageApplicable},
+ 			 #{approvedLDWaive},
+ 			 #{approvedLDWaiveApprovedBy},
+ 			 #{approvedLDWaiveApprovedOn},
+ 			 #{approvedLDApplicable},
+ 			 #{approvedLDApplicableApprovedBy},
+ 			 #{approvedLDApplicableApprovedOn}, 			 
+ 			 #{createdBy},
+ 			 #{createdOn}
+ 		)
+ 	</insert>
+ 	
+ 	<update id="sqlUpdateBreakDownSummary"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary">
+ 		update Imp_BreakDownSummary
+ 		set
+ 			FeedbackForStaff = #{feedbackForStaff},
+			BreakDownStaffGroup = #{breakDownStaffGroup},
+			ReasonForWaive = #{reasonForWaive},
+			ReasonForDelay = #{reasonForDelay},
+			LiquIdatedDamagesWaived = #{liquIdatedDamagesWaived},
+			LiquIdatedDamageApplicable = #{liquIdatedDamageApplicable},
+			ApprovedLDWaive = #{approvedLDWaive},
+			ApprovedLDWaiveApprovedBy = #{approvedLDWaiveApprovedBy},
+			ApprovedLDWaiveApprovedOn = #{approvedLDWaiveApprovedOn},
+			ApprovedLDApplicable = #{approvedLDApplicable},
+			ApprovedLDApplicableApprovedBy = #{approvedLDApplicableApprovedBy},
+			ApprovedLDApplicableApprovedOn = #{approvedLDApplicableApprovedOn},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			FlightId = #{flightId}
+ 	</update>
+ 	
+ 	<!-- Break Down ULD/Trolley Tonnage Summary -->
+ 	<select id="sqlGetBreakDownTonnageULDTrolleySummaryInfoId"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+ 		resultType="java.math.BigInteger">
+ 		select
+ 			ImpBreakDownULDTrolleySummaryInfoId 
+ 		from 
+ 			 Imp_BreakDownTonnageULDTrolleySummaryInfo 
+ 		where 
+ 			ImpBreakDownSummaryId = #{summaryId} and
+ 			ULDTrolleyNumber = #{uldNumber}
+ 	</select>
+ 	
+ 	<insert id="sqlCreateBreakDownTonnageULDTrolleySummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+ 		keyColumn="ImpBreakDownULDTrolleySummaryInfoId"
+ 		keyProperty="id"
+ 		useGeneratedKeys="true">
+ 		insert into Imp_BreakDownTonnageULDTrolleySummaryInfo(
+ 			ImpBreakDownSummaryId,
+			ULDTrolleyNumber,
+			TonnageByContractor,
+			TonnageByGHA,
+			ServiceContractor,
+			BreakDownStartedAt,
+			BreakDownEndedAt,
+			HandlingAreaCode,
+			HandlingMode,	
+			BreakDownStaff,	
+			ManifestWeight,	
+			CreatedUserCode,
+			CreatedDateTime
+ 		)values(
+ 			#{summaryId},
+ 			#{uldNumber},
+ 			#{tonnageByContractor},
+ 			#{tonnageByGha},
+ 			#{serviceContrator},
+ 			#{breakdownStartDataTime},
+ 			#{breakdownEndDataTime},
+ 			#{handlingArea},
+ 			#{handlingMode},
+ 			#{breakdownStaff},
+ 			#{manifestedWeight},
+ 			#{createdBy},
+ 			#{createdOn}
+ 		) 		
+ 	</insert>
+ 	
+ 	<update id="sqlUpdateBreakDownTonnageULDTrolleySummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel">
+ 		update Imp_BreakDownTonnageULDTrolleySummaryInfo
+ 		set
+ 			TonnageByContractor = #{tonnageByContractor},
+ 			TonnageByGHA = #{tonnageByGha},
+ 			ServiceContractor = #{serviceContrator},
+ 			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+ 		where
+ 			ImpBreakDownULDTrolleySummaryInfoId = #{id}
+ 	</update>
+ 	<update id="sqlUpdateBreakDownTonnageULDTrolleySummaryInfoOnFlightComplete"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel">
+ 		update Imp_BreakDownTonnageULDTrolleySummaryInfo
+ 		set
+ 			TonnageByContractor = TonnageByContractor+#{tonnageByContractor},
+ 			TonnageByGHA = #{tonnageByGha},
+ 			ServiceContractor = #{serviceContrator},
+ 			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+ 		where
+ 			ImpBreakDownULDTrolleySummaryInfoId = #{id}
+ 	</update>
+ 	
+ 	<!-- Break Down ULD/Trolley Tonnage SHC Summary -->
+ 	<insert id="sqlCreateBreakDownTonnageULDTrolleySHCSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldTrolleyShcModel">
+ 		insert into Imp_BreakDownTonnageULDTrolleySHCSummaryInfo(
+ 			ImpBreakDownULDTrolleySummaryInfoId,
+ 			SHCGroup,
+ 			Tonnage,
+ 			CreatedUserCode,
+ 			CreatedDateTime
+ 		)values(
+ 			#{referenceId},
+ 			#{shcGroup},
+ 			#{tonnage},
+ 			#{createdBy},
+ 			#{createdOn}
+ 		)
+ 	</insert>
+ 	
+ 	<delete id="sqlDeleteBreakDownTonnageULDTrolleySHCSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel">
+ 		delete from Imp_BreakDownTonnageULDTrolleySHCSummaryInfo where ImpBreakDownULDTrolleySummaryInfoId = #{id}
+ 	</delete>
+ 				
+	<!-- Break Down Tonnage Summary --> 	
+ 	<insert id="sqlCreateBreakDownTonnageSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel"
+ 		keyColumn="ImpBreakDownTonnageSummaryInfoId"
+ 		keyProperty="tonnageId"
+ 		useGeneratedKeys="true">
+ 		insert into Imp_BreakDownTonnageSummaryInfo(
+ 			ImpBreakDownSummaryId,
+ 			CargoType,
+ 			DeductableTonnageWeight,
+ 			Reason,
+ 			CreatedUserCode,
+ 			CreatedDateTime,
+ 			ServiceContractor,
+ 			AddTonnage,
+ 			DeductTonnage
+ 		)values(
+ 			#{summaryId},
+ 			#{cargoType},
+ 			#{tonnage},
+ 			#{remark}, 			
+ 			#{createdBy},
+ 			#{createdOn},
+ 			#{serviceContractor},
+ 	        #{additionalTonnage},
+ 			#{subtractTonnage}
+ 		) 		
+ 	</insert>
+ 	
+ 	<update id="sqlUpdateBreakDownTonnageSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel">
+ 		update Imp_BreakDownTonnageSummaryInfo
+ 		set
+ 			DeductableTonnageWeight =#{tonnage},
+ 			Reason = #{remark},
+ 			LastUpdatedUserCode = #{modifiedBy},
+ 			LastUpdatedDateTime = #{modifiedOn},
+ 			ServiceContractor=#{serviceContractor},
+ 			AddTonnage=#{additionalTonnage},
+ 			DeductTonnage=#{subtractTonnage}
+ 		where
+ 			ImpBreakDownSummaryId = #{summaryId} and 			
+ 			CargoType = #{cargoType}
+ 	</update> 		
+ 	<select id="sqlCheckForCargoTypeExistsOrNot"
+		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel" 
+		resultType="java.lang.Boolean">
+		   select  
+			   case 
+			     when count(1)>0 then 
+				 1
+			     else
+			     0 
+				 end 
+			 from 
+			      Imp_BreakDownTonnageSummaryInfo
+			 where ImpBreakDownSummaryId = #{summaryId} and CargoType = #{cargoType}	
+	</select>	
+ 	<delete id="sqlDeleteBreakDownTonnageSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel">
+ 		delete from Imp_BreakDownTonnageSummaryInfo where ImpBreakDownSummaryId = #{summaryId} and ImpBreakDownTonnageSummaryInfoId = #{tonnageId}
+ 	</delete>	
+
+	<!-- Clear existing information -->
+	<delete id="sqlDeleteBreakDownTonnageULDTrolleySummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary">
+ 		delete from Imp_BreakDownTonnageULDTrolleySummaryInfo where ImpBreakDownSummaryId = #{id}
+ 	</delete>
+ 	
+ 	<delete id="sqlDeleteAllBreakDownTonnageULDTrolleySHCSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary">
+ 		delete from Imp_BreakDownTonnageULDTrolleySHCSummaryInfo where ImpBreakDownULDTrolleySummaryInfoId in (
+			select ImpBreakDownULDTrolleySummaryInfoId from Imp_BreakDownTonnageULDTrolleySummaryInfo where ImpBreakDownSummaryId = #{id}
+		)
+ 	</delete>
+ 	
+ 	<delete id="sqlDeleteAllBreakDownTonnageSummaryInfo"
+ 		parameterType="com.ngen.cosys.impbd.summary.model.BreakDownSummary">
+ 		delete from Imp_BreakDownTonnageSummaryInfo where ImpBreakDownSummaryId = #{id}
+ 	</delete>
+ 	<select id="fetchContractorName"
+		parameterType="java.lang.String"
+		resultType="java.lang.String">	
+		select top(1) customercode from customer_master where customer_id=#{serviceContractor}			
+	</select>
+	
+</mapper>

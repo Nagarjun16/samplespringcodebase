@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AirmailStatus">
+
+	<select id="getStoredEventForAirmailStatus" resultType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+	SELECT EventCamsStoreId as eventCamsStoreEventid
+      ,InterfaceType as interfaceType
+      ,SourceTriggerType sourceTriggerType
+      ,EventType eventsType
+      ,ContainerMailbagSequence 
+      ,MailbagNumber mailBag
+      ,ShipmentId shipmentId
+      ,ShipmentNumber shipmentNumber
+      ,ImportExportIndicator importExportIndicator
+      ,ManifestedUldKey manifestedUldKey
+      ,ManifestedUldType manifestedUldType
+      ,PreviousStoreLocation previousStoreLocation
+      ,PreviousStoreLocationType previousStoreLocationType
+      ,StoreLocation storeLocation
+      ,StoreLocationType storeLocationType
+      ,NextDestination nextDestination
+      ,ContainerDestination containerDestination
+      ,BreakDownLocation breakDownLocation
+      ,BreakDownLocationType breakDownLocationType
+      ,CarrierCode carrierCode
+      ,FlightId flightId
+      ,Pieces  pieces
+      ,Weight weight
+      ,AgentId agentId
+      ,NestedId nestedId
+      ,Remarks remarks
+      ,Bup bup
+      ,transferCarrierTo transferCarrierTo
+      ,offloadCode offloadCode
+      ,returnCode returnCode
+      ,damageCode damageCode
+      ,TenantId tenantId
+      ,Status status
+      ,TransferredDate
+      ,CreatedBy createdBy
+      ,CreatedOn createdOn
+  	  FROM Event_AirmailStatusStore
+      Where (Status = 'N' OR Status = 'CREATED')  AND InterfaceType = 'CAMS' order by CreatedOn ASC
+	</select>
+	
+	<update id="changeStatusToProcessing" parameterType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+	Update Event_AirmailStatusStore set Status=#{status} , TransferredDate = GETDATE() where EventCamsStoreId = #{eventCamsStoreEventid}
+	</update>
+	
+	
+	<select id="getFlightInfoForImportCAMS" parameterType="com.ngen.cosys.AirmailStatus.Model.AirmailStatusChildModel" resultType="com.ngen.cosys.AirmailStatus.Model.AirmailStatusFlightModel">
+	select 
+	flt_operativeflight.flightkey as flightKey,
+	flt_operativeflight.FlightNumber as flightNumber, 
+	flt_operativeflight.CarrierCode as carrierCode,
+	flt_operativeflight.FlightOriginDate as flightOriginDate, 
+	flt_operativeflight_legs.FlightBoardPoint as flightBoardPoint, 
+	flt_operativeflight_legs.FlightOffPoint as flightOffPoint, 
+	flt_operativeflight_legs.DateSTA as dateSTA,
+	flt_operativeflight_legs.DateSTD as dateSTD  
+	from flt_operativeflight inner join flt_operativeflight_legs on flt_operativeflight.Flight_ID = flt_operativeflight_legs.Flight_ID 
+	where flt_operativeflight.Flight_ID = #{flightId} and flt_operativeflight_legs.FlightOffPoint = #{tenantAirport}
+</select>
+
+	<select id="getContainerinfoForExpEventCAMS" parameterType="com.ngen.cosys.AirmailStatus.Model.AirmailStatusChildModel" resultType="com.ngen.cosys.AirmailStatus.Model.AirmailStatusChildModel">
+	Select top 1 Shipment_Inventory.ShipmentLocation as manifestedUldKey,
+	uld_uldmaster.MovableLocationType as manifestedUldType,
+	uld_uldmaster.ContainerDestination as containerDestination 
+	From Shipment_Inventory Inner Join Shipment_InventoryHouse ON Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId
+	Inner Join Shipment_Master ON Shipment_Inventory.Shipment_Id = Shipment_Master.ShipmentId
+	INNER JOIN Shipment_HouseInformation ON  Shipment_Master.ShipmentId=Shipment_HouseInformation.ShipmentId 
+	INNER JOIN Uld_UldMaster ON Shipment_Inventory.ShipmentLocation = Uld_UldMaster.UldKey 
+	Where Shipment_Master.ShipmentType='MAIL' AND Shipment_Master.ShipmentId=#{shipmentId}  order by 1 desc
+	</select>
+
+
+	<select id="getCarrierCodeForDamageEvent"  parameterType="com.ngen.cosys.AirmailStatus.Model.AirmailStatusChildModel" resultType="java.lang.String" >
+	  select top 1 Carriercode from Shipment_Master Where ShipmentNumber = substring(#{mailBag},1,20) order by 1 desc
+	</select>
+	
+	<select id="getFlightInformationForExport" parameterType="Map" resultType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+	select 
+		flt_operativeflight.flightkey as flightKey,
+		flt_operativeflight.FlightNumber as flightNumber, 
+		flt_operativeflight.CarrierCode as carrierCode,
+		flt_operativeflight.FlightOriginDate as flightOriginDate, 
+		flt_operativeflight_legs.FlightBoardPoint as flightBoardPoint, 
+		flt_operativeflight_legs.FlightOffPoint as flightOffPoint, 
+		flt_operativeflight_legs.DateSTA as dateSTA,
+		flt_operativeflight_legs.DateSTD as flightDate  
+		from flt_operativeflight inner join flt_operativeflight_legs on flt_operativeflight.Flight_ID = flt_operativeflight_legs.Flight_ID 
+		inner join event_airmailstatusstore on flt_operativeflight.flight_Id = event_airmailstatusstore.flightId
+		where flt_operativeflight.Flight_ID = #{param} and flt_operativeflight_legs.FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<select id="getFlightInfoForExpMan" parameterType="Map" resultType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+	select 
+		flt_operativeflight.flightkey as flightKey,
+		flt_operativeflight.FlightNumber as flightNumber, 
+		flt_operativeflight.CarrierCode as carrierCode,
+		flt_operativeflight.FlightOriginDate as flightOriginDate, 
+		flt_operativeflight_legs.FlightBoardPoint as flightBoardPoint, 
+		flt_operativeflight_legs.FlightOffPoint as flightOffPoint, 
+		flt_operativeflight_legs.DateSTA as dateSTA,
+		flt_operativeflight_legs.DateSTD as flightDate  
+		from flt_operativeflight inner join flt_operativeflight_legs on flt_operativeflight.Flight_ID = flt_operativeflight_legs.Flight_ID 
+		where flt_operativeflight.Flight_ID = #{param} and flt_operativeflight_legs.FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<select id="getErrorMessage" parameterType="java.lang.String" resultType="java.lang.String">
+		select AdministrationSubGroupDescription from Mst_CodeAdministration_SubGroup 
+		where AdministrationGroupCode='CAMS_AIRMAIL' and AdministrationSubGroupCode = #{errorCode}
+	</select>
+	
+	<select id="sqlGetDetailsforCAMSResendMessage" resultType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+	
+	<![CDATA[ 
+	select	
+		top(select cast(ParameterValueChar as INTEGER) from App_SystemParameters where	ParameterCode ='CAMS_RESEND_MAX_MESSAGE_COUNT') message as	formattedMessge
+		,InterfaceOutgoingMessageLogId eventCamsStoreEventid
+		,(select CAST( ParameterValueChar as INTEGER) from App_SystemParameters where ParameterCode = 'CAMS_RESEND_LONG_SLEEP_TIME') longsleepTime
+		,(select CAST( ParameterValueChar as INTEGER) from App_SystemParameters where ParameterCode = 'CAMS_RESEND_SHORT_SLEEP_TIME') shortSleepTime
+		,(select case when ParameterValueChar = 'Y' then 1 else 0  end from  App_SystemParameters where ParameterCode = 'CAMS_RESEND_LONG_SLEEP_FLAG') longSleepFalg,
+		isNull(CamsRtryCount,0) as retryCount,
+		datediff(mi,isnull(LastUpdatedDateTime,CreatedDateTime),getdate()) timeDiffFromLastUpdated,
+		Status as status,
+		(select ParameterValueChar from App_SystemParameters where ParameterCode = 'CAMS_RESEND_MAX_RETRY_COUNT') configuredRetryCount
+		
+	from interface_outgoingmessagelog
+	where
+		status ='CAMSERROR' and
+		datediff(mi,CreatedDateTime,getdate()) > (select CAST(ParameterValueChar as INTEGER)*60 from App_SystemParameters where ParameterCode = 'CAMS_RESEND_TIME_DELAY') 
+		
+		order by createDdateTime desc
+	]]>
+	</select>
+	
+	<update id="sqlUpdateCAMSEventLog" parameterType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+		Update interface_outgoingmessagelog set 
+		LastUpdatedDateTime=getDate() ,
+		 CamsRtryCount =isNull(CamsRtryCount,0) +1 ,
+		 Status =#{status} 
+		 where InterfaceOutgoingMessageLogId = #{eventCamsStoreEventid}
+	</update>
+	
+	<select id="sqlGetCAMSAlertEmailId" resultType="java.lang.String">
+		select l.email emailId 
+		from Event_Group  g 
+			inner join Event_GroupMemberList l on g.eventGroupId = l.eventGroupId
+		where g.name= 'CAMS ALERT USERS'
+	</select>
+	
+	<select id="sqlGetCAMSAlertTemplateForMail" resultType="java.lang.String">
+		SELECT 	Email AS "templateMessage"
+		FROM	Event_Template
+		WHERE	Name = 'CAMS ALERT MAIL'
+	</select>
+	
+	<select id="sqlGetCAMSInterfaceConfigurations" resultType="com.ngen.cosys.events.payload.CAMSModel">
+		select
+			EndPointUrl,
+			UserName,
+			Password, Token
+		from
+			Interface_ExternalSystemWSChannelConfiguration inner join
+			Interface_ExternalSystem
+			on Interface_ExternalSystemWSChannelConfiguration.InterfaceExternalSystemId = Interface_ExternalSystem.InterfaceExternalSystemId
+		where
+			Interface_ExternalSystem.Name = 'CAMS' and
+			Interface_ExternalSystemWSChannelConfiguration.FlowType = 'OUT'
+	</select>
+	
+</mapper>
+
+

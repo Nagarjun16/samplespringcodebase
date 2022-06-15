@@ -1,0 +1,1873 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.2.v201410272105 Build &lt;4.4.2.v20150217-1805></property>
+    <list-property name="propertyBindings">
+        <structure>
+            <property name="name">queryText</property>
+            <property name="id">8</property>
+        </structure>
+        <structure>
+            <property name="name">queryTimeOut</property>
+            <property name="id">8</property>
+        </structure>
+        <structure>
+            <property name="name">rowFetchSize</property>
+            <property name="id">8</property>
+        </structure>
+    </list-property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="FlightKey" id="436">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="FlightDate" id="437">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="441">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="561">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="HAWBhandlingFlag" id="568">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">boolean</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">False</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">check-box</property>
+            <structure name="format"/>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="8">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">AWBNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AWBNumber</text-property>
+                    <text-property name="heading">AWBNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">HAWBNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">HAWBNumber</text-property>
+                    <text-property name="heading">HAWBNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Remarks</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Remarks</text-property>
+                    <text-property name="heading">Remarks</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FlightId</text-property>
+                    <text-property name="heading">FlightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Content</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Content</text-property>
+                    <text-property name="heading">Content</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DamagedPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">DamagedPieces</text-property>
+                    <text-property name="heading">DamagedPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CreatedUser_Code</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CreatedUser_Code</text-property>
+                    <text-property name="heading">CreatedUser_Code</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightKey</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightKey</text-property>
+                    <text-property name="heading">FlightKey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <text-property name="heading">FlightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">entityType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">entityType</text-property>
+                    <text-property name="heading">entityType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">WeatherCondition</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">WeatherCondition</text-property>
+                    <text-property name="heading">WeatherCondition</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Severity</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Severity</text-property>
+                    <text-property name="heading">Severity</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Occurrence</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Occurrence</text-property>
+                    <text-property name="heading">Occurrence</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleancrushed</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleancrushed</text-property>
+                    <text-property name="heading">NatureOfDamageBooleancrushed</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanseam</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanseam</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanseam</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanpuncture</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanpuncture</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanpuncture</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleantorn</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleantorn</text-property>
+                    <text-property name="heading">NatureOfDamageBooleantorn</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanwet</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanwet</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanwet</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanforeigntaping</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanforeigntaping</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanforeigntaping</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanothers</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanothers</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanothers</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">FlightKey</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">FlightDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">91</property>
+                    <property name="position">3</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">AWBNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">HAWBNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">Remarks</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">FlightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">Content</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">DamagedPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">CreatedUser_Code</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">FlightKey</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">entityType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">WeatherCondition</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">Severity</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">Occurrence</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">NatureOfDamageBooleancrushed</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">NatureOfDamageBooleanseam</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">NatureOfDamageBooleanpuncture</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">NatureOfDamageBooleantorn</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">NatureOfDamageBooleanwet</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">NatureOfDamageBooleanforeigntaping</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">NatureOfDamageBooleanothers</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">AWBNumber</property>
+                    <property name="nativeName">AWBNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">HAWBNumber</property>
+                    <property name="nativeName">HAWBNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">Remarks</property>
+                    <property name="nativeName">Remarks</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">FlightId</property>
+                    <property name="nativeName">FlightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">Content</property>
+                    <property name="nativeName">Content</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">DamagedPieces</property>
+                    <property name="nativeName">DamagedPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">CreatedUser_Code</property>
+                    <property name="nativeName">CreatedUser_Code</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">FlightKey</property>
+                    <property name="nativeName">FlightKey</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">91</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">entityType</property>
+                    <property name="nativeName">entityType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">WeatherCondition</property>
+                    <property name="nativeName">WeatherCondition</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">Severity</property>
+                    <property name="nativeName">Severity</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">Occurrence</property>
+                    <property name="nativeName">Occurrence</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">NatureOfDamageBooleancrushed</property>
+                    <property name="nativeName">NatureOfDamageBooleancrushed</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">NatureOfDamageBooleanseam</property>
+                    <property name="nativeName">NatureOfDamageBooleanseam</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">NatureOfDamageBooleanpuncture</property>
+                    <property name="nativeName">NatureOfDamageBooleanpuncture</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">NatureOfDamageBooleantorn</property>
+                    <property name="nativeName">NatureOfDamageBooleantorn</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">NatureOfDamageBooleanwet</property>
+                    <property name="nativeName">NatureOfDamageBooleanwet</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">NatureOfDamageBooleanforeigntaping</property>
+                    <property name="nativeName">NatureOfDamageBooleanforeigntaping</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">NatureOfDamageBooleanothers</property>
+                    <property name="nativeName">NatureOfDamageBooleanothers</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[SELECT DISTINCT
+          Com_DamageInfo.EntityKey as AWBNumber,
+          Com_DamageInfo.SubEntityKey as HAWBNumber,
+		  ISNULL(Com_DamageLineItems.Remarks, Com_DamageInfo.Remarks) Remarks,
+          Com_DamageInfo.FlightId,
+          Com_DamageInfo.Content,
+          Com_DamageLineItems.DamagedPieces,
+          Com_DamageInfo.CreatedUser_Code,
+          Flt_OperativeFlight.FlightKey,
+          CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) AS FlightDate,
+          Com_DamageInfo.EntityType AS entityType,
+          Imp_FlightEvents.WeatherCondition,
+          Com_DamageLineItems.Severity,
+          Com_DamageLineItems.Occurrence,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Crushed') AS NatureOfDamageBooleancrushed,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) =  0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Seams_Opened') AS NatureOfDamageBooleanseam,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Punctured') AS NatureOfDamageBooleanpuncture,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y') FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Torn') AS NatureOfDamageBooleantorn,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) =  0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage IN('Wet', 'Damp')) AS NatureOfDamageBooleanwet,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) =  0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Foreign_Taping') AS NatureOfDamageBooleanforeigntaping,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) =  0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Others') AS NatureOfDamageBooleanothers
+FROM 
+	Flt_OperativeFlight inner join
+	Flt_OperativeFlight_Legs
+		on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+			Flt_OperativeFlight_Legs.FlightOffPoint = ? inner join
+	Imp_FlightEvents
+		on Flt_OperativeFlight_Legs.Flight_ID = Imp_FlightEvents.FlightId left join
+	Com_DamageInfo
+		on Flt_OperativeFlight.Flight_ID = Com_DamageInfo.FlightId left join
+	Com_DamageLineItems
+		on Com_DamageInfo.DamageInFoId = Com_DamageLineItems.DamageInFoId and
+			Com_DamageInfo.EntityType = 'AWB'  
+ WHERE
+     Flt_OperativeFlight.FlightKey = ?  and 
+	 cast(Flt_OperativeFlight_Legs.DateSTA AS DATE) = cast(? AS DATE)]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamageBoolean</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamageBoolean</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamageBoolean</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Remarks</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>65</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Remarks</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Remarks</design:label>
+            <design:formattingHints>
+              <design:displaySize>65</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightId</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Content</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Content</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Content</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DamagedPieces</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DamagedPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DamagedPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CreatedUser_Code</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CreatedUser_Code</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CreatedUser_Code</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamage</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>65</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamage</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamage</design:label>
+            <design:formattingHints>
+              <design:displaySize>65</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightKey</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightKey</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightKey</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DateSTD</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DateSTD</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DateSTD</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentType</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentType</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentNumber</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set1" id="438">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">currentDateTime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">currentDateTime</text-property>
+                    <text-property name="heading">currentDateTime</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters"/>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">currentDateTime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">currentDateTime</property>
+                    <property name="nativeName">currentDateTime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select UPPER(convert(datetime, CONVERT(datetimeoffset, getDate()) AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))) currentDateTime]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>currentDateTime</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>currentDateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>currentDateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+            <structure name="dateTimeFormat">
+                <property name="category">Custom</property>
+                <property name="pattern">d MMMM y HH:mm</property>
+            </structure>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <grid id="9">
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">AVE</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">BirtDateTime.now()</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Column Binding</property>
+                    <expression name="expression" type="javascript">BirtDateTime.now()</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="10"/>
+            <row id="11">
+                <cell id="12">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <grid id="14">
+                        <property name="width">7.875in</property>
+                        <column id="15">
+                            <property name="width">6.40625in</property>
+                        </column>
+                        <column id="16">
+                            <property name="width">1.46875in</property>
+                        </column>
+                        <row id="17">
+                            <cell id="18">
+                                <label id="20">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="textUnderline">underline</property>
+                                    <property name="textAlign">center</property>
+                                    <text-property name="text">imp.cargo.damage.report</text-property>
+                                </label>
+                            </cell>
+                            <cell id="19">
+                                <data id="442">
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">tenantCurrentDateTime</property>
+                                            <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">tenantCurrentDateTime</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <grid id="30">
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">CreatedUser_Code</property>
+                    <text-property name="displayName">CreatedUser_Code</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="name">WeatherCondition</property>
+                    <text-property name="displayName">WeatherCondition</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["WeatherCondition"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="31">
+                <property name="width">2.5208333333333335in</property>
+            </column>
+            <column id="32">
+                <property name="width">2.9479166666666665in</property>
+            </column>
+            <column id="33">
+                <property name="width">2.4791666666666665in</property>
+            </column>
+            <row id="34">
+                <cell id="35">
+                    <data id="42">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">CreatedUser_Code</property>
+                                <text-property name="displayName">CreatedUser_Code</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">CreatedUser_Code</property>
+                    </data>
+                </cell>
+                <cell id="36"/>
+                <cell id="37"/>
+            </row>
+            <row id="38">
+                <cell id="39">
+                    <grid id="52">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="width">2.4375in</property>
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">FlightDate</property>
+                                <text-property name="displayName">FlightDate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                                <property name="dataType">date</property>
+                            </structure>
+                        </list-property>
+                        <column id="53">
+                            <property name="width">0.6875in</property>
+                        </column>
+                        <column id="54">
+                            <property name="width">0.14583333333333334in</property>
+                        </column>
+                        <column id="55">
+                            <property name="width">1.6041666666666667in</property>
+                        </column>
+                        <row id="56">
+                            <cell id="57">
+                                <data id="60">
+                                    <property name="fontWeight">bold</property>
+                                    <property name="dataSet">Data Set</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">FlightKey</property>
+                                            <text-property name="displayName">FlightKey</text-property>
+                                            <expression name="expression" type="javascript">params["FlightKey"].value</expression>
+                                            <property name="dataType">string</property>
+                                            <property name="allowExport">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">FlightKey</property>
+                                </data>
+                            </cell>
+                            <cell id="58">
+                                <label id="61">
+                                    <text-property name="text">/</text-property>
+                                </label>
+                            </cell>
+                            <cell id="59">
+                                <data id="382">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.DateDataItemEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="dataSet">Data Set</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">FlightDate</property>
+                                            <text-property name="displayName">FlightDate</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                                            <property name="dataType">date</property>
+                                            <property name="allowExport">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">FlightDate</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+                <cell id="40"/>
+                <cell id="41">
+                    <grid id="63">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="width">2.8645833333333335in</property>
+                        <column id="64">
+                            <property name="width">1.6354166666666667in</property>
+                        </column>
+                        <column id="65">
+                            <property name="width">1.2291666666666667in</property>
+                        </column>
+                        <row id="66">
+                            <cell id="67">
+                                <property name="borderBottomStyle">none</property>
+                                <property name="borderLeftStyle">none</property>
+                                <property name="borderRightStyle">none</property>
+                                <property name="borderTopStyle">none</property>
+                                <label id="69">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">normal</property>
+                                    <property name="textAlign">right</property>
+                                    <text-property name="text">import.create.damage.weather.condition</text-property>
+                                </label>
+                            </cell>
+                            <cell id="68">
+                                <data id="384">
+                                    <property name="fontWeight">bold</property>
+                                    <property name="textAlign">left</property>
+                                    <property name="resultSetColumn">WeatherCondition</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <grid id="197">
+            <column id="198"/>
+            <row id="199">
+                <cell id="200">
+                    <label id="201"/>
+                </cell>
+            </row>
+        </grid>
+        <table id="109">
+            <property name="width">7.958333333333333in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">AWBNumber</property>
+                    <text-property name="displayName">AWBNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AWBNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">DamagedPieces</property>
+                    <text-property name="displayName">DamagedPieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DamagedPieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">Content</property>
+                    <text-property name="displayName">Content</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Content"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Remarks</property>
+                    <text-property name="displayName">Remarks</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Remarks"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleancrushed</property>
+                    <text-property name="displayName">NatureOfDamageBooleancrushed</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleancrushed"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanseam</property>
+                    <text-property name="displayName">NatureOfDamageBooleanseam</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanseam"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanpuncture</property>
+                    <text-property name="displayName">NatureOfDamageBooleanpuncture</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanpuncture"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleantorn</property>
+                    <text-property name="displayName">NatureOfDamageBooleantorn</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleantorn"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanwet</property>
+                    <text-property name="displayName">NatureOfDamageBooleanwet</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanwet"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanforeigntaping</property>
+                    <text-property name="displayName">NatureOfDamageBooleanforeigntaping</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanforeigntaping"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanothers</property>
+                    <text-property name="displayName">NatureOfDamageBooleanothers</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanothers"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">integer</property>
+                    <property name="aggregateFunction">RUNNINGCOUNT</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">HAWBNumber</property>
+                    <text-property name="displayName">HAWBNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HAWBNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="149">
+                <property name="width">0.40625in</property>
+            </column>
+            <column id="150">
+                <property name="width">0.9270833333333334in</property>
+            </column>
+            <column id="565">
+                <list-property name="visibility">
+                    <structure>
+                        <property name="format">all</property>
+                        <expression name="valueExpr" type="javascript">if(!params["HAWBhandlingFlag"].value)&#13;
+{&#13;
+true;&#13;
+}</expression>
+                    </structure>
+                </list-property>
+                <property name="width">0.8958333333333334in</property>
+            </column>
+            <column id="151">
+                <property name="width">0.4375in</property>
+            </column>
+            <column id="152">
+                <property name="width">0.7395833333333334in</property>
+            </column>
+            <column id="153">
+                <property name="width">0.9895833333333334in</property>
+            </column>
+            <column id="154">
+                <property name="width">0.010416666666666666in</property>
+            </column>
+            <column id="155">
+                <property name="width">0.4791666666666667in</property>
+            </column>
+            <column id="156">
+                <property name="width">0.5625in</property>
+            </column>
+            <column id="157">
+                <property name="width">0.4583333333333333in</property>
+            </column>
+            <column id="158">
+                <property name="width">0.5in</property>
+            </column>
+            <column id="159">
+                <property name="width">0.40625in</property>
+            </column>
+            <column id="160">
+                <property name="width">0.40625in</property>
+            </column>
+            <column id="189">
+                <property name="width">0.7395833333333334in</property>
+            </column>
+            <header>
+                <row id="110">
+                    <property name="borderBottomStyle">none</property>
+                    <property name="borderLeftStyle">none</property>
+                    <property name="borderRightStyle">none</property>
+                    <property name="borderTopStyle">none</property>
+                    <property name="height">0.3645833333333333in</property>
+                    <cell id="111">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="174">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">val.SNo</text-property>
+                        </label>
+                    </cell>
+                    <cell id="112">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="175">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">imp.airway.bill</text-property>
+                        </label>
+                    </cell>
+                    <cell id="562">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="566">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">black</property>
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">if(!params["HAWBhandlingFlag"].value)&#13;
+{&#13;
+true;&#13;
+}</expression>
+                                </structure>
+                            </list-property>
+                            <text-property name="text">g.hawb.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="113">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="176">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">import.report.pcs</text-property>
+                        </label>
+                    </cell>
+                    <cell id="114">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="177">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">export.contents.caps</text-property>
+                        </label>
+                    </cell>
+                    <cell id="115">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="178">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">export.remarks</text-property>
+                        </label>
+                    </cell>
+                    <cell id="117">
+                        <property name="colSpan">7</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="191">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">imp.damaged.nature</text-property>
+                        </label>
+                    </cell>
+                </row>
+                <row id="161">
+                    <cell id="563">
+                        <property name="color">white</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                    </cell>
+                    <cell id="168">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="179">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">import.create.damage.crushed</text-property>
+                        </label>
+                    </cell>
+                    <cell id="169">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="180">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">imp.seam.opened</text-property>
+                        </label>
+                    </cell>
+                    <cell id="170">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="181">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">imp.puncture</text-property>
+                        </label>
+                    </cell>
+                    <cell id="171">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="182">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">import.create.damage.torn</text-property>
+                        </label>
+                    </cell>
+                    <cell id="172">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="183">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">import.create.damage.wet.damp</text-property>
+                        </label>
+                    </cell>
+                    <cell id="173">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="184">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">import.create.damage.foreign.taping</text-property>
+                        </label>
+                    </cell>
+                    <cell id="186">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="190">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">import.create.damage.others</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="123">
+                    <cell id="124">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="textAlign">center</property>
+                        <data id="435">
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="125">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="424">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">AWBNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="564">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="567">
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">if(!params["HAWBhandlingFlag"].value)&#13;
+{&#13;
+true;&#13;
+}</expression>
+                                </structure>
+                            </list-property>
+                            <property name="resultSetColumn">HAWBNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="126">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="425">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.PiecesDataItemEventHandler</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">DamagedPieces</property>
+                        </data>
+                    </cell>
+                    <cell id="127">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="426">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">Content</property>
+                        </data>
+                    </cell>
+                    <cell id="128">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="427">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">Remarks</property>
+                        </data>
+                    </cell>
+                    <cell id="130">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="428">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleancrushed</property>
+                        </data>
+                    </cell>
+                    <cell id="131">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="429">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanseam</property>
+                        </data>
+                    </cell>
+                    <cell id="132">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="430">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanpuncture</property>
+                        </data>
+                    </cell>
+                    <cell id="133">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="431">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleantorn</property>
+                        </data>
+                    </cell>
+                    <cell id="134">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="432">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanwet</property>
+                        </data>
+                    </cell>
+                    <cell id="135">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="433">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanforeigntaping</property>
+                        </data>
+                    </cell>
+                    <cell id="187">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="434">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanothers</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+        <grid id="224">
+            <column id="225"/>
+            <row id="226">
+                <cell id="227">
+                    <label id="228"/>
+                </cell>
+            </row>
+        </grid>
+        <grid id="229">
+            <column id="230"/>
+            <row id="231">
+                <cell id="232">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <label id="233">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="fontStyle">italic</property>
+                        <property name="textAlign">justify</property>
+                        <text-property name="text">imp.the.information.on.this.report</text-property>
+                    </label>
+                </cell>
+            </row>
+        </grid>
+        <grid id="234">
+            <column id="235"/>
+            <row id="236">
+                <cell id="237"/>
+            </row>
+        </grid>
+        <grid id="310">
+            <property name="fontSize">9pt</property>
+            <column id="311"/>
+            <row id="312">
+                <cell id="313">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <grid id="325">
+                        <column id="326"/>
+                        <row id="327">
+                            <cell id="328">
+                                <label id="335">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontStyle">italic</property>
+                                    <text-property name="text">import.breakdown.delay.legend</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                        <row id="329">
+                            <cell id="330">
+                                <label id="336">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontStyle">italic</property>
+                                    <property name="textAlign">left</property>
+                                    <text-property name="text">import.c.f.o.p.s.o.f.o.p.s</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                        <row id="331">
+                            <cell id="332">
+                                <grid id="338">
+                                    <property name="width">7.802083333333333in</property>
+                                    <column id="339">
+                                        <property name="width">0.96875in</property>
+                                    </column>
+                                    <column id="340">
+                                        <property name="width">6.833333333333333in</property>
+                                    </column>
+                                    <row id="341">
+                                        <cell id="342">
+                                            <label id="344">
+                                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                                <property name="fontStyle">italic</property>
+                                                <text-property name="text">export.prepared.by</text-property>
+                                            </label>
+                                        </cell>
+                                        <cell id="343">
+                                            <data id="345">
+                                                <property name="fontStyle">italic</property>
+                                                <property name="dataSet">Data Set</property>
+                                                <list-property name="boundDataColumns">
+                                                    <structure>
+                                                        <property name="name">CreatedUser_Code</property>
+                                                        <text-property name="displayName">CreatedUser_Code</text-property>
+                                                        <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                                                        <property name="dataType">string</property>
+                                                    </structure>
+                                                </list-property>
+                                                <property name="resultSetColumn">CreatedUser_Code</property>
+                                            </data>
+                                        </cell>
+                                    </row>
+                                </grid>
+                            </cell>
+                        </row>
+                        <row id="333">
+                            <cell id="334">
+                                <label id="346">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="textAlign">center</property>
+                                    <text-property name="text">export.end.of.report</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+    </body>
+</report>

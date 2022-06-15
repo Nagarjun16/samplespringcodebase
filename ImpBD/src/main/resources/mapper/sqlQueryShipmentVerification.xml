@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentVerificationMapper">
+
+	<resultMap id="ShipmentVerificationResultMap"
+		type="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		<id column="ImpShipmentVerificationId" property="impShipmentVerificationId" />
+		<id column="FlightId" property="flightId" />
+		<id column="ShipmentId" property="shipmentId" />
+		<result column="BreakDownPieces" property="breakDownPieces" />
+		<result column="BreakDownWeight" property="breakDownWeight" />
+		<result column="DocumentReceivedFlag" property="documentReceivedFlag" />
+		<result column="PhotoCopyAwbFlag" property="photoCopyAwbFlag" />
+		<result column="DocumentPouchReceivedFlag" property="documentPouchReceivedFlag" />
+		<result column="BarcodePrintedFlag" property="barcodePrintedFlag" />		
+	</resultMap>
+
+	<sql id="ShipmentVerificationResultColumn">
+		ImpShipmentVerificationId,
+		FlightId,
+		ShipmentId,
+		BreakDownPieces,
+		BreakDownWeight,
+		DocumentReceivedFlag,
+		PhotoCopyAwbFlag,
+		DocumentPouchReceivedFlag,
+		BarcodePrintedFlag		
+	</sql>
+	
+	<select id="sqlGetShipmentVerification" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel"
+		resultMap="ShipmentVerificationResultMap">
+		select
+			<include refid="ShipmentVerificationResultColumn" />
+		from
+			Imp_ShipmentVerification
+		where
+			FlightId = #{flightId} and 
+			ShipmentId = #{shipmentId}
+	</select>
+	
+	<insert id="sqlInsertShipmentVerification"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel"
+		keyProperty="impShipmentVerificationId" keyColumn="ImpShipmentVerificationId" useGeneratedKeys="true">
+		insert into Imp_ShipmentVerification(
+			FlightId,
+			ShipmentId,
+			BreakDownPieces,
+			BreakDownWeight,
+			DocumentReceivedFlag,
+			PhotoCopyAwbFlag,
+			DocumentPouchReceivedFlag,
+			BarcodePrintedFlag,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			checklist,
+			DocumentReceivedDateTime,
+			DocumentPieces,
+			DocumentWeight
+		)values(
+			#{flightId},
+			#{shipmentId},
+			#{breakDownPieces},
+			#{breakDownWeight},
+			#{documentReceivedFlag},
+			#{photoCopyAwbFlag},
+			#{documentPouchReceivedFlag},
+			#{barcodePrintedFlag},
+			#{createdBy},
+			#{createdOn},
+			#{modifiedBy},
+			#{modifiedOn},
+			#{checkListRequired},
+			#{documentReceivedDateTime},
+			#{documentPieces},
+			#{documentWeight}
+		)
+	</insert>
+	
+	<update id="sqlUpdateShipmentVerificationDocument"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		update Imp_ShipmentVerification
+		set
+			DocumentReceivedFlag = #{documentReceivedFlag},
+			PhotoCopyAwbFlag = #{photoCopyAwbFlag},
+			DocumentPouchReceivedFlag = #{documentPouchReceivedFlag},		
+			BarcodePrintedFlag = #{barcodePrintedFlag},
+			LastUpdatedUserCode = #{modifiedBy},			
+			LastUpdatedDateTime = #{modifiedOn},
+			checklist=#{checkListRequired},
+			DocumentReceivedDateTime = #{documentReceivedDateTime},
+			DocumentPieces = #{documentPieces},
+			DocumentWeight = #{documentWeight}
+		where 
+			FlightId = #{flightId} and 
+			ShipmentId = #{shipmentId}
+	</update>
+	
+	<update id="sqlUpdateShipmentVerificationBreakDown"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		update Imp_ShipmentVerification
+		set
+			BreakDownPieces = #{breakDownPieces},			
+			BreakDownWeight = #{breakDownWeight},			
+			LastUpdatedUserCode = #{modifiedBy},			
+			LastUpdatedDateTime = #{modifiedOn}		
+		where 
+			FlightId = #{flightId} and 
+			ShipmentId = #{shipmentId}
+	</update>
+		
+	<update id="sqlUpdateDgChecklist"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		update Imp_ShipmentVerificationDocumentInfo 
+		set 
+			DocumentReceived=#{checkListRequired},
+		  	LastUpdatedUserCode=#{modifiedBy},
+          	LastUpdatedDateTime=#{modifiedOn} 
+		where 
+			DocumentName=#{documentName} and 
+			ImpShipmentVerificationId=#{impShipmentVerificationId}
+	</update>
+	
+	<insert id="sqlInsertDgChecklist"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		
+		INSERT INTO Imp_ShipmentVerificationDocumentInfo
+           (ImpShipmentVerificationId
+           ,DocumentName
+           ,DocumentReceived
+           ,CreatedUserCode
+           ,CreatedDateTime
+          )
+     VALUES
+           (#{impShipmentVerificationId}
+           ,#{documentName}
+           ,#{checkListRequired}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+		
+	</insert>
+	
+</mapper>

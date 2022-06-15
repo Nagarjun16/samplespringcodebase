@@ -1,0 +1,1743 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.2.v201410272105 Build &lt;4.4.2.v20150217-1805></property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="datefrom" id="241">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="dateto" id="242">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="carriercode" id="243">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="carriergroup" id="245">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantID" id="333">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="carriercodeflag" id="334">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="carriergroupflag" id="335">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="99">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCUAT</property>
+            <property name="odaUser">SATSUatAppUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0c0FwcCQxNTYl</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="100">
+            <property name="eventHandlerClass">com.ngen.cosys.report.event.DateTimeDataItemEventHandler</property>
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ULDNumber</property>
+                    <property name="alias">ULDNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ULDNumber</text-property>
+                    <text-property name="heading">ULDNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="alias">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <text-property name="heading">ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentDate</property>
+                    <property name="alias">ShipmentDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <text-property name="heading">ShipmentDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Origin</property>
+                    <property name="alias">Origin</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <text-property name="heading">Origin</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Destination</property>
+                    <property name="alias">Destination</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Destination</text-property>
+                    <text-property name="heading">Destination</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Pieces</property>
+                    <property name="alias">Pieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Pieces</text-property>
+                    <text-property name="heading">Pieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Weight</property>
+                    <property name="alias">Weight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Weight</text-property>
+                    <text-property name="heading">Weight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">InboundFlightId</property>
+                    <property name="alias">InboundFlightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">InboundFlightId</text-property>
+                    <text-property name="heading">InboundFlightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">InboundFlightInfo</property>
+                    <property name="alias">InboundFlightInfo</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">InboundFlightInfo</text-property>
+                    <text-property name="heading">InboundFlightInfo</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">dateinfo</property>
+                    <property name="analysis">dimension</property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightCancelFlag</property>
+                    <property name="alias">FlightCancelFlag</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightCancelFlag</text-property>
+                    <text-property name="heading">FlightCancelFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightRestoredFlag</property>
+                    <property name="alias">FlightRestoredFlag</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FlightRestoredFlag</text-property>
+                    <text-property name="heading">FlightRestoredFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ParkingBayArrivalAircraft</property>
+                    <property name="alias">ParkingBayArrivalAircraft</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ParkingBayArrivalAircraft</text-property>
+                    <text-property name="heading">ParkingBayArrivalAircraft</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">STA</property>
+                    <property name="alias">STA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">STA</text-property>
+                    <text-property name="heading">STA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ETA</property>
+                    <property name="alias">ETA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ETA</text-property>
+                    <text-property name="heading">ETA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ATA</property>
+                    <property name="alias">ATA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ATA</text-property>
+                    <text-property name="heading">ATA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDelay</property>
+                    <property name="alias">FlightDelay</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDelay</text-property>
+                    <text-property name="heading">FlightDelay</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentId</property>
+                    <property name="alias">ShipmentId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ShipmentId</text-property>
+                    <text-property name="heading">ShipmentId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">RequestedTemperature</property>
+                    <property name="alias">RequestedTemperature</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">RequestedTemperature</text-property>
+                    <text-property name="heading">RequestedTemperature</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfGoodsDescription</property>
+                    <property name="alias">NatureOfGoodsDescription</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfGoodsDescription</text-property>
+                    <text-property name="heading">NatureOfGoodsDescription</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shcs</property>
+                    <property name="alias">shcs</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shcs</text-property>
+                    <text-property name="heading">shcs</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">WarehouseLocation</property>
+                    <property name="alias">WarehouseLocation</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">WarehouseLocation</text-property>
+                    <text-property name="heading">WarehouseLocation</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TransferType</property>
+                    <property name="alias">TransferType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">TransferType</text-property>
+                    <text-property name="heading">TransferType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TemperatureLogged</property>
+                    <property name="alias">TemperatureLogged</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">TemperatureLogged</text-property>
+                    <text-property name="heading">TemperatureLogged</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentRemarks</property>
+                    <property name="alias">ShipmentRemarks</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentRemarks</text-property>
+                    <text-property name="heading">ShipmentRemarks</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ReceviedFromFFM</property>
+                    <property name="alias">ReceviedFromFFM</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ReceviedFromFFM</text-property>
+                    <text-property name="heading">ReceviedFromFFM</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">datefrom</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">dateTime</property>
+                    <property name="nativeDataType">93</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">dateto</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">dateTime</property>
+                    <property name="nativeDataType">93</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantID</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">carriercodeflag</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">carriercodeflag</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">carriercode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_7</property>
+                    <property name="paramName">carriergroupflag</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_8</property>
+                    <property name="paramName">carriergroupflag</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">8</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_9</property>
+                    <property name="paramName">carriergroup</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">9</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ULDNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">ShipmentDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">Origin</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">Destination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">Pieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">Weight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">InboundFlightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">InboundFlightInfo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">dateinfo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">FlightCancelFlag</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">FlightRestoredFlag</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">ParkingBayArrivalAircraft</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">STA</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">ETA</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">ATA</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">FlightDelay</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">ShipmentId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">RequestedTemperature</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">NatureOfGoodsDescription</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">shcs</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">22</property>
+                        <property name="name">WarehouseLocation</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">23</property>
+                        <property name="name">TransferType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">24</property>
+                        <property name="name">TemperatureLogged</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">25</property>
+                        <property name="name">ShipmentRemarks</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">26</property>
+                        <property name="name">ReceviedFromFFM</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <method name="beforeOpen"><![CDATA[
+		
+		
+			
+	
+		]]></method>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ULDNumber</property>
+                    <property name="nativeName">ULDNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">ShipmentDate</property>
+                    <property name="nativeName">ShipmentDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">Origin</property>
+                    <property name="nativeName">Origin</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">Destination</property>
+                    <property name="nativeName">Destination</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">Pieces</property>
+                    <property name="nativeName">Pieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">Weight</property>
+                    <property name="nativeName">Weight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">InboundFlightId</property>
+                    <property name="nativeName">InboundFlightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">InboundFlightInfo</property>
+                    <property name="nativeName">InboundFlightInfo</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">dateinfo</property>
+                    <property name="nativeName">dateinfo</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">FlightCancelFlag</property>
+                    <property name="nativeName">FlightCancelFlag</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">FlightRestoredFlag</property>
+                    <property name="nativeName">FlightRestoredFlag</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">ParkingBayArrivalAircraft</property>
+                    <property name="nativeName">ParkingBayArrivalAircraft</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">STA</property>
+                    <property name="nativeName">STA</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">ETA</property>
+                    <property name="nativeName">ETA</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">ATA</property>
+                    <property name="nativeName">ATA</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">FlightDelay</property>
+                    <property name="nativeName">FlightDelay</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">ShipmentId</property>
+                    <property name="nativeName">ShipmentId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">RequestedTemperature</property>
+                    <property name="nativeName">RequestedTemperature</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">NatureOfGoodsDescription</property>
+                    <property name="nativeName">NatureOfGoodsDescription</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">shcs</property>
+                    <property name="nativeName">shcs</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">22</property>
+                    <property name="name">WarehouseLocation</property>
+                    <property name="nativeName">WarehouseLocation</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">23</property>
+                    <property name="name">TransferType</property>
+                    <property name="nativeName">TransferType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">24</property>
+                    <property name="name">TemperatureLogged</property>
+                    <property name="nativeName">TemperatureLogged</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">25</property>
+                    <property name="name">ShipmentRemarks</property>
+                    <property name="nativeName">ShipmentRemarks</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">26</property>
+                    <property name="name">ReceviedFromFFM</property>
+                    <property name="nativeName">ReceviedFromFFM</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[		with ArrivalManifestShipmentInfo AS(
+				select
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,	
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,	
+					Imp_ArrivalManifestShipmentInfo.Origin,
+					Imp_ArrivalManifestShipmentInfo.Destination,
+					Imp_ArrivalManifestShipmentInfo.Piece as Pieces,
+					Imp_ArrivalManifestShipmentInfo.Weight as Weight,
+					Imp_ArrivalManifestByFlight.FlightID as InboundFlightId,
+					inboundFlight.FlightKey + '/' + upper(cast(format(inboundFlightLeg.DateSTA,'ddMMMyyyy') as varchar)) as InboundFlightInfo,
+					inboundFlightLeg.DateSTA as dateinfo, 	
+					inboundFlight.FlightCancelFlag,
+					inboundFlight.FlightRestoredFlag,
+					inboundFlight.ParkingBayArrivalAircraft,
+					inboundFlightLeg.DateSTA as STA,
+					inboundFlightLeg.DateETA as ETA,
+					inboundFlightLeg.DateATA as ATA,
+					case
+						when inboundFlight.InboundFlightDelayFlag = 1 then
+							'Y'
+						else
+							''
+						end as FlightDelay,	
+					Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+					Imp_ArrivalManifestULD.ImpArrivalManifestULDId,
+					Imp_ArrivalManifestULD.ULDNumber,
+					Imp_ArrivalManifestShipmentInfo.TransferType,
+					inboundFlightLeg.DateATA,
+					inboundFlightLeg.DateETA,
+					inboundFlightLeg.DateSTA,
+					(select
+						string_agg(Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode, ' ')
+					from
+						Imp_ArrivalManifestByShipmentSHC inner join
+						Mst_AssociateSHCByHandlingGroup
+							on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+						Mst_SHCHandlingGroup
+							on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+					where
+						Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId and
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PER' and 
+						Mst_SHCHandlingGroup.Category = 'WH'
+					) as ShipmentShc
+				from
+					Imp_ArrivalManifestByFlight inner join
+				   	Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				   	Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				   	Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+				   	Flt_OperativeFlight inboundFlight
+						on Imp_ArrivalManifestByFlight.FlightId = inboundFlight.Flight_ID inner join
+				   	Flt_OperativeFlight_Legs inboundFlightLeg
+						on inboundFlight.Flight_ID = inboundFlightLeg.Flight_ID								
+				where
+					inboundFlightLeg.DateSTA between ? and ?  and
+					inboundFlightLeg.FlightOffPoint = ?
+					AND ((? = '0') 
+                    or (? = '1' and  inboundFlight.CarrierCode= ?))
+                    AND ((? = '0') 
+                   or (? = '1' and inboundFlight.CarrierCode in (
+				  		select
+							Mst_AssociateCarrierWithGroup.CarrierCode
+						from
+							Mst_CarrierGroup inner join
+							Mst_AssociateCarrierWithGroup
+								on Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+						where
+							Mst_CarrierGroup.CarrierGroupCode = ?
+					)))
+			
+				
+			)
+			select
+				ArrivalManifestShipmentInfo.ULDNumber,
+				ArrivalManifestShipmentInfo.ShipmentNumber,	
+				ArrivalManifestShipmentInfo.ShipmentDate,	
+				ArrivalManifestShipmentInfo.Origin,
+				ArrivalManifestShipmentInfo.Destination,
+				ArrivalManifestShipmentInfo.Pieces,
+				ArrivalManifestShipmentInfo.Weight,
+				ArrivalManifestShipmentInfo.InboundFlightId,
+				ArrivalManifestShipmentInfo.InboundFlightInfo, 	
+				ArrivalManifestShipmentInfo.dateinfo,
+				ArrivalManifestShipmentInfo.FlightCancelFlag,
+				ArrivalManifestShipmentInfo.FlightRestoredFlag,
+				ArrivalManifestShipmentInfo.ParkingBayArrivalAircraft,
+				ArrivalManifestShipmentInfo.STA,
+				ArrivalManifestShipmentInfo.ETA,
+				ArrivalManifestShipmentInfo.ATA,
+				ArrivalManifestShipmentInfo.FlightDelay,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.RequestedTemperature,
+				Shipment_Master.NatureOfGoodsDescription,
+				ArrivalManifestShipmentInfo.ShipmentShc  as shcs,
+				(select
+						string_agg(cast(Shipment_Inventory.WarehouseLocation as NVARCHAR(MAX)), ' ')
+					from
+					(select	
+							distinct Shipment_Inventory.WarehouseLocation
+						from
+							 Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID =  Shipment_Master.ShipmentId and
+							Shipment_Inventory.Flight_ID = ArrivalManifestShipmentInfo.InboundFlightId
+					)Shipment_Inventory
+				) as WarehouseLocation,
+				ArrivalManifestShipmentInfo.TransferType,
+				(select
+						TOP 1 TemperatureLogInfo.Temperature
+					from(
+						select
+							Com_ShipmentTemperatureLogEntry.Temperature
+						from	
+							Com_ShipmentTemperatureLogEntry
+						where
+							Com_ShipmentTemperatureLogEntry.ShipmentId = Shipment_Master.ShipmentId 
+						) TemperatureLogInfo
+				) as TemperatureLogged,
+				isnull((select
+							STRING_AGG(cast(ShipmentRemarksInfo.ShipmentRemarks as NVARCHAR(MAX)), ', ')
+						from(
+							select
+								distinct Shipment_Remarks.ShipmentRemarks
+							from	
+								Shipment_Remarks
+							where
+								Shipment_Remarks.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+								Shipment_Remarks.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate and					
+								Shipment_Remarks.Flight_ID = ArrivalManifestShipmentInfo.InboundFlightId and
+								Shipment_Remarks.RemarkType in ('OSI', 'SSR', 'BDI')) ShipmentRemarksInfo),
+				(select
+					STRING_AGG(cast(ShipmentRemarksInfo.ShipmentRemarks as NVARCHAR(MAX)), ', ')
+				from(
+					select
+						distinct Shipment_Remarks.ShipmentRemarks
+					from	
+						Shipment_Remarks
+					where
+						Shipment_Remarks.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Shipment_Remarks.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate and
+						Shipment_Remarks.RemarkType in ('OSI', 'SSR', 'BDI')) ShipmentRemarksInfo)) as ShipmentRemarks,
+		 		(select 
+					case 
+						when count(1) > 0 then 
+							'Y' 
+						else 
+							'N' 
+						end isFFMProcessed
+					from 
+						Imp_FreightFlightManifestByShipment inner join
+						Imp_FreightFlightManifestULD 
+							on Imp_FreightFlightManifestByShipment.ImpFreightFlightManifestULDId = Imp_FreightFlightManifestULD.ImpFreightFlightManifestULDId inner join
+						Imp_FreightFlightManifestBySegment
+							on Imp_FreightFlightManifestULD.ImpFreightFlightManifestBySegmentId = Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestBySegmentId inner join
+						Imp_FreightFlightManifestByFlight
+							on Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId
+					where 
+						Imp_FreightFlightManifestByShipment.AwbNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Imp_FreightFlightManifestByShipment.AwbDate = ArrivalManifestShipmentInfo.ShipmentDate and
+						Imp_FreightFlightManifestByFlight.FlightId = ArrivalManifestShipmentInfo.InboundFlightId
+				) as ReceviedFromFFM
+			from
+				Shipment_Master inner join
+				ArrivalManifestShipmentInfo
+					on Shipment_Master.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Shipment_Master.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate
+			where
+				exists(
+					select
+						Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+					from
+						Mst_AssociateSHCByHandlingGroup inner join
+						Mst_SHCHandlingGroup
+							on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+					where
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PER' and
+						Mst_SHCHandlingGroup.Category = 'WH' and
+						exists (select value FROM string_split(ArrivalManifestShipmentInfo.ShipmentShc, ' ') where value = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode)
+						) and not exists(
+					select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                            on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                    where
+                        Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'DGR' and
+                        Mst_SHCHandlingGroup.Category = 'WH' and
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode not in (
+                        select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                            on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                            Where   Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('CDP'))
+                            and
+						exists (select value FROM string_split(ArrivalManifestShipmentInfo.ShipmentShc, ' ') where value = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode)
+				
+				)
+			order by
+				coalesce(ArrivalManifestShipmentInfo.DateATA,ArrivalManifestShipmentInfo.DateETA,isnull(ArrivalManifestShipmentInfo.DateSTA, getdate() + 10)) asc]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+            <structure name="dateTimeFormat">
+                <property name="category">Custom</property>
+                <property name="pattern">d MMM y HH:mm</property>
+            </structure>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="NewStyle" id="270">
+            <structure name="numberFormat">
+                <property name="category">Currency</property>
+                <property name="pattern">###0.00{RoundingMode=HALF_UP}</property>
+            </structure>
+        </style>
+        <style name="NewStyle1" id="271">
+            <structure name="numberFormat">
+                <property name="category">Currency</property>
+                <property name="pattern">###0.00{RoundingMode=HALF_UP}</property>
+            </structure>
+        </style>
+        <style name="NewStyle2" id="272">
+            <structure name="stringFormat">
+                <property name="category">></property>
+                <property name="pattern">></property>
+            </structure>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="orientation">landscape</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="137">
+            <column id="138"/>
+            <row id="139">
+                <cell id="140">
+                    <label id="141">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="fontFamily">"Courier New"</property>
+                        <property name="fontWeight">bold</property>
+                        <property name="textUnderline">underline</property>
+                        <property name="textAlign">center</property>
+                        <text-property name="text">awb.coolport.shipment.monitoring</text-property>
+                    </label>
+                </cell>
+            </row>
+        </grid>
+        <grid id="142">
+            <column id="143"/>
+            <row id="144">
+                <cell id="145">
+                    <label id="146"/>
+                </cell>
+            </row>
+        </grid>
+        <table id="147">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="textAlign">center</property>
+            <property name="width">10.46875in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ULDNumber</property>
+                    <text-property name="displayName">ULDNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ULDNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentNumber</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentDate</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">Origin</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Origin"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Destination</property>
+                    <text-property name="displayName">Destination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Destination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Pieces</property>
+                    <text-property name="displayName">Pieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Pieces"]</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Weight</property>
+                    <text-property name="displayName">Weight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Weight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">InboundFlightId</property>
+                    <text-property name="displayName">InboundFlightId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["InboundFlightId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">InboundFlightInfo</property>
+                    <text-property name="displayName">InboundFlightInfo</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["InboundFlightInfo"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightCancelFlag</property>
+                    <text-property name="displayName">FlightCancelFlag</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightCancelFlag"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightRestoredFlag</property>
+                    <text-property name="displayName">FlightRestoredFlag</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightRestoredFlag"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ParkingBayArrivalAircraft</property>
+                    <text-property name="displayName">ParkingBayArrivalAircraft</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ParkingBayArrivalAircraft"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">STA</property>
+                    <text-property name="displayName">STA</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["STA"]</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ETA</property>
+                    <text-property name="displayName">ETA</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ETA"]</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ATA</property>
+                    <text-property name="displayName">ATA</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ATA"]</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDelay</property>
+                    <text-property name="displayName">FlightDelay</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDelay"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentId</property>
+                    <text-property name="displayName">ShipmentId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">RequestedTemperature</property>
+                    <text-property name="displayName">RequestedTemperature</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["RequestedTemperature"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfGoodsDescription</property>
+                    <text-property name="displayName">NatureOfGoodsDescription</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfGoodsDescription"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shcs</property>
+                    <text-property name="displayName">shcs</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shcs"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">WarehouseLocation</property>
+                    <text-property name="displayName">WarehouseLocation</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["WarehouseLocation"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">TransferType</property>
+                    <text-property name="displayName">TransferType</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["TransferType"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">TemperatureLogged</property>
+                    <text-property name="displayName">TemperatureLogged</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["TemperatureLogged"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentRemarks</property>
+                    <text-property name="displayName">ShipmentRemarks</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentRemarks"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ReceviedFromFFM</property>
+                    <text-property name="displayName">ReceviedFromFFM</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ReceviedFromFFM"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Pieces_1</property>
+                    <text-property name="displayName">Pieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Pieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">dateinfo</property>
+                    <text-property name="displayName">dateinfo</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["dateinfo"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <property name="pageBreakInterval">0</property>
+            <column id="196">
+                <property name="width">0.5104166666666666in</property>
+            </column>
+            <column id="197">
+                <property name="width">0.5520833333333334in</property>
+            </column>
+            <column id="198">
+                <property name="width">0.53125in</property>
+            </column>
+            <column id="199">
+                <property name="width">0.6458333333333334in</property>
+            </column>
+            <column id="200">
+                <property name="width">0.4583333333333333in</property>
+            </column>
+            <column id="201">
+                <property name="width">0.4895833333333333in</property>
+            </column>
+            <column id="202">
+                <property name="width">0.7083333333333334in</property>
+            </column>
+            <column id="203">
+                <property name="width">0.5208333333333334in</property>
+            </column>
+            <column id="343">
+                <property name="width">0.5833333333333334in</property>
+            </column>
+            <column id="266">
+                <property name="width">0.59375in</property>
+            </column>
+            <column id="256">
+                <property name="width">0.6041666666666666in</property>
+            </column>
+            <column id="259">
+                <property name="width">0.59375in</property>
+            </column>
+            <column id="205">
+                <property name="width">0.5625in</property>
+            </column>
+            <column id="206">
+                <property name="width">0.5520833333333334in</property>
+            </column>
+            <column id="358">
+                <property name="width">0.5520833333333334in</property>
+            </column>
+            <column id="208">
+                <property name="width">0.5416666666666666in</property>
+            </column>
+            <column id="209">
+                <property name="width">0.5208333333333334in</property>
+            </column>
+            <column id="210">
+                <property name="width">0.4895833333333333in</property>
+            </column>
+            <header>
+                <row id="148">
+                    <cell id="149">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="211">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">uld.uld.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="150">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="212">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.awbNumber</text-property>
+                        </label>
+                    </cell>
+                    <cell id="151">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="213">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.origin</text-property>
+                        </label>
+                    </cell>
+                    <cell id="152">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="214">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.destination</text-property>
+                        </label>
+                    </cell>
+                    <cell id="153">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="215">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.pieces</text-property>
+                        </label>
+                    </cell>
+                    <cell id="154">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="216">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.weight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="155">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="217">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.natureOfGoods</text-property>
+                        </label>
+                    </cell>
+                    <cell id="156">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="218">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.shc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="339">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="344">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.transfer.type</text-property>
+                        </label>
+                    </cell>
+                    <cell id="264">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="267">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">flight.sta</text-property>
+                        </label>
+                    </cell>
+                    <cell id="254">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="260">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">flight.eta</text-property>
+                        </label>
+                    </cell>
+                    <cell id="257">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="261">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">flight.ata</text-property>
+                        </label>
+                    </cell>
+                    <cell id="158">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="220">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.location</text-property>
+                        </label>
+                    </cell>
+                    <cell id="159">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="221">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">flight.FFM</text-property>
+                        </label>
+                    </cell>
+                    <cell id="355">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="352">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.remarks</text-property>
+                        </label>
+                    </cell>
+                    <cell id="161">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="223">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">flight.flight.delay</text-property>
+                        </label>
+                    </cell>
+                    <cell id="162">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="224">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">awb.current.temp</text-property>
+                        </label>
+                    </cell>
+                    <cell id="163">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="225">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">awb.req.temp</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <group id="293">
+                <property name="groupName">NewTableGroup1</property>
+                <expression name="keyExpr" type="javascript">row["InboundFlightInfo"]</expression>
+                <structure name="toc">
+                    <expression name="expressionValue" type="javascript">row["InboundFlightInfo"]</expression>
+                </structure>
+                <property name="hideDetail">false</property>
+                <list-property name="sort">
+                    <structure>
+                        <expression name="key" type="javascript">row["dateinfo"]</expression>
+                        <property name="direction">asc</property>
+                        <property name="strength">-1</property>
+                    </structure>
+                </list-property>
+                <header>
+                    <row id="294">
+                        <cell id="295">
+                            <property name="colSpan">9</property>
+                            <property name="rowSpan">1</property>
+                            <data id="332">
+                                <property name="textAlign">left</property>
+                                <property name="resultSetColumn">InboundFlightInfo</property>
+                            </data>
+                        </cell>
+                        <cell id="304"/>
+                        <cell id="305"/>
+                        <cell id="306"/>
+                        <cell id="307"/>
+                        <cell id="308"/>
+                        <cell id="356"/>
+                        <cell id="310"/>
+                        <cell id="311"/>
+                        <cell id="312"/>
+                    </row>
+                </header>
+            </group>
+            <detail>
+                <row id="164">
+                    <cell id="165">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="276">
+                            <property name="resultSetColumn">ULDNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="166">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="277">
+                            <property name="resultSetColumn">ShipmentNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="167">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="278">
+                            <property name="resultSetColumn">Origin</property>
+                        </data>
+                    </cell>
+                    <cell id="168">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="279">
+                            <property name="resultSetColumn">Destination</property>
+                        </data>
+                    </cell>
+                    <cell id="169">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="359">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.PiecesDataItemEventHandler</property>
+                            <structure name="dateTimeFormat">
+                                <property name="category">Unformatted</property>
+                            </structure>
+                            <property name="resultSetColumn">Pieces</property>
+                        </data>
+                    </cell>
+                    <cell id="170">
+                        <property name="style">NewStyle1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="281">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.WeightDataItemEventHandler</property>
+                            <structure name="numberFormat">
+                                <property name="category">Currency</property>
+                                <property name="pattern">###0.0{RoundingMode=HALF_UP}</property>
+                            </structure>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">Weight</property>
+                        </data>
+                    </cell>
+                    <cell id="171">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="346">
+                            <property name="resultSetColumn">NatureOfGoodsDescription</property>
+                        </data>
+                    </cell>
+                    <cell id="172">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="283">
+                            <property name="resultSetColumn">shcs</property>
+                        </data>
+                    </cell>
+                    <cell id="341">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="345">
+                            <property name="resultSetColumn">TransferType</property>
+                        </data>
+                    </cell>
+                    <cell id="265">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="285">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.TimeDataItemEventHandler</property>
+                            <list-property name="userProperties">
+                                <structure>
+                                    <property name="name">timeZoneConversion</property>
+                                    <property name="type">boolean</property>
+                                </structure>
+                            </list-property>
+                            <property name="timeZoneConversion">false</property>
+                            <property name="resultSetColumn">STA</property>
+                        </data>
+                    </cell>
+                    <cell id="255">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="286">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.TimeDataItemEventHandler</property>
+                            <list-property name="userProperties">
+                                <structure>
+                                    <property name="name">timeZoneConversion</property>
+                                    <property name="type">boolean</property>
+                                </structure>
+                            </list-property>
+                            <property name="timeZoneConversion">false</property>
+                            <property name="resultSetColumn">ETA</property>
+                        </data>
+                    </cell>
+                    <cell id="258">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="287">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.TimeDataItemEventHandler</property>
+                            <list-property name="userProperties">
+                                <structure>
+                                    <property name="name">timeZoneConversion</property>
+                                    <property name="type">boolean</property>
+                                </structure>
+                            </list-property>
+                            <property name="timeZoneConversion">false</property>
+                            <property name="resultSetColumn">ATA</property>
+                        </data>
+                    </cell>
+                    <cell id="174">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="288">
+                            <property name="resultSetColumn">WarehouseLocation</property>
+                        </data>
+                    </cell>
+                    <cell id="175">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="354">
+                            <property name="resultSetColumn">ReceviedFromFFM</property>
+                        </data>
+                    </cell>
+                    <cell id="357">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="353">
+                            <property name="resultSetColumn">ShipmentRemarks</property>
+                        </data>
+                    </cell>
+                    <cell id="177">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="291">
+                            <property name="resultSetColumn">FlightDelay</property>
+                        </data>
+                    </cell>
+                    <cell id="178">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="179">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="292">
+                            <property name="resultSetColumn">RequestedTemperature</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

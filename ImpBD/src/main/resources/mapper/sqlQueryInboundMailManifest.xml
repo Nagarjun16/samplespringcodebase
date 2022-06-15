@@ -1,0 +1,871 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InboundMailManifestMapper">
+   <select id="selectflightid" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+  <!-- select Flight_ID as flightId from Flt_OperativeFlight where FlightKey=#{flightKey} and FlightOriginDate=#{flightDate} -->
+     
+	select Flt.Flight_ID as flightId,Flt.CarrierCode as carrierCode,
+    CASE WHEN impFltEvnt.MailDocumentVerificationCompletedBy IS NOT NULL
+    THEN 1 ELSE 0 END as mailFirstTimeDocumentVerificationCompletedBy,
+       CASE WHEN impFltEvnt.MailBreakDownCompletedBy IS NOT NULL THEN 1 ELSE 0 END as mailFirstTimeBreakDownCompletedBy,
+       Segs.FlightSegmentId as segmentId,
+       Segs.FlightBoardPoint as segments,
+       Segs.FlightBoardPoint  as boardingPoint,
+       Segs.FlightOffPoint as offPoint
+    from Flt_OperativeFlight Flt
+    INNER JOIN Flt_OperativeFlight_Legs Legs ON Flt.Flight_ID=Legs.Flight_ID AND Legs.FlightOffPoint =#{tenantAirport}
+    INNER JOIN Flt_OperativeFlight_Segments Segs ON Flt.Flight_ID=Segs.Flight_ID AND Segs.FlightOffPoint =#{tenantAirport} AND Legs.FlightBoardPoint = Segs.FlightBoardPoint
+    LEFT OUTER JOIN Imp_FlightEvents impFltEvnt on impFltEvnt.FlightId=Flt.Flight_ID where Flt.FlightKey=#{flightKey}
+    AND CAST(Legs.DateSTA AS date)= cast(#{flightDate} as date)
+    </select>
+	<select id="fetchmailmanifest" resultMap="inboundmailmanifest"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+		with inventoryInfo as (select 
+									Shipment_Inventory.ShipmentInventory_Id,
+									Shipment_Inventory.Shipment_ID,
+									Shipment_Inventory.ShipmentLocation,
+									Shipment_Inventory.WarehouseLocation,
+									Shipment_InventoryHouse.ShipmentHouseId
+								from
+									Shipment_InventoryHouse inner join 
+									Shipment_Inventory 
+										on Shipment_Inventory.ShipmentInventory_Id	= Shipment_InventoryHouse.ShipmentInventoryId
+								) 
+		SELECT 
+			#{tenantAirport} tenantAirport
+			,Imp_ShipmentVerification.FlightId as flightId
+			,Shipment_HouseInformation.Pieces as breakDownPieces
+			,Shipment_HouseInformation.Weight as breakDownWeight
+			,Shipment_HouseInformation.MailSubCategory as mailType
+			,Shipment_Master.ShipmentId as shipmentId
+			,Shipment_Master.Origin as origin
+			,Shipment_Master.Destination as destination
+			,isnull(Imp_ShipmentVerification.DocumentPieces, 0) as pieces
+			,isnull(Imp_ShipmentVerification.DocumentWeight, 0) as weight
+			,Substring(Shipment_Master.OriginOfficeExchange, 1,2) originCountry
+			,Shipment_Master.OriginOfficeExchange as originOfExchange
+			,Substring(Shipment_Master.DestinationOfficeExchange, 1,2) destinationCountry
+			,Shipment_Master.DestinationOfficeExchange as destinationOfExchange
+			,Shipment_Master.ShipmentNumber as shipmentNumber
+			,Shipment_Master.NatureOfGoodsDescription as natureOfGoodsDescription
+			,(select distinct
+					String_Agg(Mst_CarrierGroup.CarrierGroupCode, ',')
+				from
+					Mst_AssociateCarrierWithGroup inner join
+					Mst_CarrierGroup
+						on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+				where
+					Mst_AssociateCarrierWithGroup.CarrierCode = #{carrierCode}) ShipmentCarrierGroup
+			,Shipment_Remarks.ShipmentRemarks as remarks
+			,Shipment_HouseInformation.DispatchNumber as dispatchNumber
+			,Shipment_HouseInformation.Number as mailBagNumber
+			,Shipment_HouseInformation.ShipmentHouseId
+			,Shipment_HouseInformation.NextDestination as nextDestination
+			,Imp_BreakDownULDTrolleyInfo.DamagedFlag as damaged
+			,Imp_BreakDownULDTrolleyInfo.Intact as bup
+			,Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber as uldTrollyNo
+			,Imp_BreakDownHouseInfo.ImpBreakDownHouseInfoId as impBreakDownHouseInfoId
+			,Shipment_MasterRoutingInfo.Carrier as transferCarrierFrom
+			,(select distinct
+					String_Agg(Mst_CarrierGroup.CarrierGroupCode, ',')
+				from
+					Mst_AssociateCarrierWithGroup inner join
+					Mst_CarrierGroup
+						on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+				where
+					Mst_AssociateCarrierWithGroup.CarrierCode = Shipment_MasterRoutingInfo.Carrier) TransferCarrierGroup
+			,CASE WHEN  Transhipment_TransferManifestByAWBInfo.ShipmentNumber IS NULL THEN 0 ELSE 1 end as transferred
+			,CASE WHEN Shipment_HouseInformation.DeliveredOn IS NULL THEN 0 ELSE 1 end as delivered
+			,inventoryInfo.ShipmentInventory_Id as shipmentInventoryId
+			,inventoryInfo.ShipmentLocation as storageLocation
+			,inventoryInfo.WarehouseLocation as breakDownLocation
+		from 
+			Imp_ShipmentVerification  inner join 
+			Shipment_Master  
+				on  Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId inner join 
+			Shipment_HouseInformation  
+				on  Shipment_HouseInformation.ShipmentId =  Shipment_Master.ShipmentId inner join 
+			Imp_BreakDownULDTrolleyInfo  
+				on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join 
+			Imp_BreakDownStorageInfo 
+				on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join 
+			Imp_BreakDownHouseInfo 
+				on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownHouseInfo.ImpBreakDownStorageInfoId and 
+					Shipment_HouseInformation.Number = Imp_BreakDownHouseInfo.HouseNumber left join  
+			Shipment_MasterRoutingInfo  
+				on Shipment_MasterRoutingInfo.ShipmentId = Shipment_Master.ShipmentId	left join 
+			Shipment_Remarks  
+				on Shipment_Master.ShipmentId= Shipment_Remarks.ShipmentId left join 
+			Transhipment_TransferManifestByAWBInfo 
+				on Transhipment_TransferManifestByAWBInfo.ShipmentNumber = Shipment_HouseInformation.Number left join
+			inventoryInfo
+				on Shipment_Master.shipmentId = inventoryInfo.Shipment_ID and
+					Shipment_HouseInformation.ShipmentHouseId = inventoryInfo.ShipmentHouseId
+		where 
+				Imp_ShipmentVerification.FlightId= #{flightId} and 
+				Shipment_Master.ShipmentType='MAIL' 
+		<if test="destination != null and destination !=''">
+			AND Shipment_Master.Destination = #{destination}
+		</if>
+		<if test="nextDestination != null and nextDestination !=''">
+			AND Shipment_HouseInformation.NextDestination = #{nextDestination}
+		</if>
+		<if test="shipmentLocation != null and shipmentLocation !=''">
+			AND inventoryInfo.ShipmentLocation = #{shipmentLocation}
+		</if>
+		<if test="breakDownUld != null and breakDownUld !=''">
+			AND Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = #{breakDownUld}
+		</if>
+		UNION
+		
+		select distinct
+			#{tenantAirport} tenantAirport,
+		    Imp_ShipmentVerification.FlightId as flightId,
+		    null as breakDownPieces,
+		    null as breakDownWeight,
+		    Shipment_Master.MailSubCategory as mailType,
+		    Shipment_Master.ShipmentId as shipmentId,
+		    Shipment_Master.Origin as origin,
+		    Shipment_Master.Destination as destination,
+		    Shipment_Master.Pieces as pieces,
+			Shipment_Master.Weight as weight,
+			Substring(Shipment_Master.OriginOfficeExchange, 1,2) originCountry,
+			Shipment_Master.OriginOfficeExchange as originOfExchange,
+			Substring(Shipment_Master.DestinationOfficeExchange, 1,2) destinationCountry,
+		    Shipment_Master.DestinationOfficeExchange as destinationOfExchange,
+		    Shipment_Master.ShipmentNumber as shipmentNumber,
+		    Shipment_Master.NatureOfGoodsDescription as natureOfGoodsDescription,
+		    null ShipmentCarrierGroup,
+		    Shipment_Remarks.ShipmentRemarks as remarks,
+			null as dispatchNumber,
+			null as mailBagNumber,
+			null as ShipmentHouseId,
+			null as nextDestination,
+			null as damaged,
+			null as bup,
+			null as uldTrollyNo,
+			null as impBreakDownHouseInfoId,
+			null transferCarrierFrom,
+			null TransferCarrierGroup,
+			null as transferred,
+			null as delivered,
+			null as shipmentInventoryId,
+			null as storageLocation,
+			null as breakDownLocation
+		from
+			Imp_ShipmentVerification inner join 
+			Shipment_Master on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId and Shipment_Master.ShipmentType='MAIL'
+			left join
+			Shipment_Remarks on (Imp_ShipmentVerification.FlightId = Shipment_Remarks.Flight_ID and
+								Shipment_Master.ShipmentId = Shipment_Remarks.ShipmentId and
+			Shipment_Remarks.RemarkType = 'GEN')
+			LEFT OUTER JOIN Flt_OperativeFlight ON Flt_OperativeFlight.Flight_ID=Imp_ShipmentVerification.FlightId
+		    LEFT OUTER JOIN Flt_OperativeFlight_Segments ON Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID AND Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+		where
+			Imp_ShipmentVerification.FlightId = #{flightId} and Shipment_Master.ShipmentId NOT IN (Select Shipment_HouseInformation.ShipmentId from Shipment_HouseInformation 
+			Inner Join Shipment_Master On Shipment_HouseInformation.ShipmentId = Shipment_Master.ShipmentId Inner Join Imp_ShipmentVerification 
+			on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId Where Imp_ShipmentVerification.FlightId = #{flightId} )
+	</select>
+	<resultMap
+		type="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel"
+		id="inboundmailmanifest">
+		<id property="flightId" column="flightId" />
+		<result property="breakDownPieces" column="breakDownPieces"/>
+		<result property="breakDownWeight" column="breakDownWeight"/>
+		<collection property="mailBagInfo" javaType="List" ofType="com.ngen.cosys.impbd.mail.manifest.model.MailBagInformation" >
+			<result property="mailBagNumber" column="mailBagNumber" />
+			<result property="shipmentInventoryId" column="shipmentInventoryId" />
+			<result property="shipmentId" column="shipmentId" />
+			<result property="houseId" column="houseId" />
+			<result property="flightId" column="flightId" />
+			<result property="storageLocation" column="storageLocation" />
+			<result property="breakDownLocation" column="breakDownLocation" />
+			<result property="nextDestination" column="nextDestination" />
+			<result property="originOfficeExchange" column="originOfExchange" />
+			<result property="destinationOfficeExchange" column="destinationOfExchange" />
+			<result property="shipmentNumber" column="shipmentNumber" />
+			<result property="origin" column="origin" />
+			<result property="destination" column="destination" />
+			<result property="originCity" column="origin" />
+			<result property="destinationCity" column="destination" />
+			<result property="bup" column="bup" />
+			<result property="uldKey" column="uldTrollyNo" />
+			<result property="transferCarrierTo" column="transferCarrierFrom" />
+			<result property="pieces" column="breakDownPieces" />
+			<result property="weight" column="breakDownWeight" />
+			<result property="transferred" column="transferred"/>
+			<result property="delivered" column="delivered"/>
+		</collection>
+		<collection property="shipments" javaType="List"
+			ofType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInfoModel">
+			<id property="uldTrollyNo" column="uldTrollyNo"/>
+			<id property="shipmentId" column="shipmentId" />
+			<result property="dispatchNumber" column="dispatchNumber" />
+			<result property="shipmentNumber" column="shipmentNumber" />
+			<result property="origin" column="origin" />
+			<result property="destination" column="destination" />
+			<result property="pieces" column="pieces" />
+			<result property="weight" column="weight" />
+			<result property="breakDownPieces" column="breakDownPieces" />
+			<result property="breakDownWeight" column="breakDownWeight" />
+			<result property="bup" column="bup" />
+			<result property="damaged" column="damaged" />
+			<result property="originOfExchange" column="originOfExchange" />
+			<result property="destinationOfExchange" column="destinationOfExchange" />
+			<result property="mailType"  column="mailType" />
+			<result property="remarks" column="remarks" />
+			<result property="impBreakDownHouseInfoId" column="ImpBreakDownHouseInfoId"/> 
+			<result property="delivered" column="delivered"/>
+			<result property="natureOfGoodsDescription" column="natureOfGoodsDescription"/>
+			<result property="tenantAirport" column="tenantAirport"/>
+			<result property="shipmentCarrierGroup" column="ShipmentCarrierGroup"/>
+			<result property="transferCarrierGroup" column="TransferCarrierGroup"/>
+			<collection property="storeLocations" ofType="java.lang.String" javaType="List">
+			 <result property="storeLocations" column="storageLocation"/>
+			</collection>
+			<collection property="brkdwnLocation" ofType="java.lang.String" javaType="List">
+			 <result property="brkdwnLocation" column="breakDownLocation"/>
+			</collection>
+			<collection property="inventory" javaType="List"
+			 ofType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+			  <result property="breakDownPieces" column="breakDownPieces" />
+			  <result property="breakDownWeight" column="breakDownWeight" />
+			  <result property="originOfficeExchange" column="originOfExchange" />
+			  <result property="originCountry" column="originCountry" />
+			  <result property="originCity" column="origin" />
+			  <result property="destinationCountry" column="destinationCountry" />
+			  <result property="destinationCity" column="destination" />
+			  <result property="destinationOfficeExchange" column="destinationOfExchange" />
+			  <result property="shipmentInventoryId" column="shipmentInventoryId" />
+			  <result property="breakDownLocation" column="breakDownLocation" />
+			  <result property="mailBagNumber" column="mailBagNumber"/>  
+			  <result property="storageLocation" column="storageLocation" />
+			  <result property="nextDestination"  column="nextDestination" />
+			  <result property="transferCarrierFrom" column="transferCarrierFrom" />
+			  <result property="shipmentId"  column="ShipmentId" />
+			  <result property="transferred" column="transferred"/>
+			  <result property="delivered" column="delivered"/>
+			  <result property="tenantAirport" column="tenantAirport"/>
+			</collection>
+		</collection>
+	</resultMap>
+
+	<insert id="transfertocndeatils"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.TransferCN46FromManifestModel" useGeneratedKeys="true" keyProperty="airmailManifestId">
+		INSERT INTO Airmail_Manifest
+		(FlightId
+		,SegmentId
+		,AirportOfLoading
+		,AirportOfOffloading
+		,DestinationOffice
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(
+		#{flightId},
+		#{segmentId},
+		#{origin},
+		#{nextDestination},
+		#{destinationOfficeExchange},
+		#{createdBy},
+		#{createdOn}
+		)
+	</insert>
+	<select id="fetchAirmailManifestId" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="java.lang.Integer">
+	select AirmailManifestId from Airmail_Manifest where FlightId=#{flightId}
+	</select>
+	<insert id="transfer" parameterType="com.ngen.cosys.impbd.mail.manifest.model.TransferCN46FromManifestModel">
+		<!-- INSERT INTO Airmail_ManifestShipment
+		(AirmailManifestId
+		,DN
+		,ULDTrolleyNumber
+		,GrossWeight
+		,OriginOfficeExchange
+		,DestinationOfficeExchange
+		,Remarks
+		,CreatedUserCode
+		,CreatedDateTime
+		,AirportOfTranshipment
+		,AirportOfOffloading
+		,DateOfDispactch
+		,)
+		VALUES
+		
+		(#{airmailManifestId},
+		#{dispatchNumber},
+		#{uldTrollyNumber},
+		#{totWeight},
+		#{originOfficeExchange},
+		#{destinationOfficeExchange},
+		#{remarks},
+		#{createdBy},
+		#{createdOn},
+		#{origin},
+		#{nextDestination},
+		#{dispatchDate}) -->
+		INSERT INTO Airmail_ManifestShipment
+           (AirmailManifestId
+           ,DN
+           ,ULDTrolleyNumber
+           ,GrossWeight
+           ,OriginOfficeExchange
+           ,DestinationOfficeExchange
+           ,AirportOfTranshipment
+           ,AirportOfOffloading
+           ,DateOfDispactch
+           ,LetterPost
+           ,CP
+           ,EMS
+           ,OtherItems
+           ,Remarks
+           ,CreatedUserCode
+           ,CreatedDateTime
+            )
+     VALUES
+           (#{airmailManifestId},
+			#{dispatchNumber},
+			#{uldTrollyNumber},
+			#{totWeight},
+			#{originOfficeExchange},
+			#{destinationOfficeExchange},
+			#{origin},
+			#{nextDestination},
+			#{dispatchDate},
+			#{lcPieces},
+			#{cpPieces},
+			#{emsPieces},
+			#{othPieces},
+			#{remarks},
+			#{createdBy},
+			#{createdOn})
+		
+	</insert>
+	<select id="checktransfertocn46" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInfoModel" resultType="java.lang.Integer">
+	<!-- select count(*) from Airmail_ManifestShipment where DN=#{shipmentNumber} -->
+	select count(*) from Airmail_ManifestShipment inner join Airmail_Manifest on Airmail_Manifest.AirmailManifestId = Airmail_ManifestShipment.AirmailManifestId  where Airmail_ManifestShipment.DN = #{shipmentNumber} and Airmail_Manifest.FlightId = #{flightId}
+	</select>
+	<select id="takeId" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="java.lang.Integer">
+	select AirmailManifestId   from Airmail_Manifest where FlightId=#{flightId}
+	</select>
+	 <select id="checkdocumentcompleted" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="java.lang.Integer">
+	 <![CDATA[  
+	 SELECT CASE WHEN MailFirstTimeDocumentVerificationCompletedBy IS NOT NULL  THEN 1 ELSE 0 END FROM Imp_FlightEvents where FlightId=#{flightId} ]]>
+	</select>
+	 <select id="checkbreakdowncompleted" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="java.lang.Integer">
+	 <![CDATA[  
+	 SELECT CASE WHEN MailFirstTimeBreakDownCompletedBy IS NOT NULL  THEN 1 ELSE 0 END FROM Imp_FlightEvents where FlightId=#{flightId} ]]>
+	</select>
+	<select id="reopenBreakdownIfComplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	select MailBreakDownCompletedAt as breakDownCompletedAt
+			   ,MailBreakDownCompletedBy as breakDownCompletedBy
+			    from Imp_FlightEvents
+			   WHERE FlightId = #{flightId}
+	</select>
+	<select id="reopenDocumentIfComplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	select MailDocumentVerificationCompletedAt as documentCompletedAt  
+			   ,MailDocumentVerificationCompletedBy as documentCompletedBy
+			    from Imp_FlightEvents
+			   WHERE FlightId = #{flightId}
+	</select>
+	<update id="documentcomplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		       MailFirstTimeDocumentVerificationCompletedAt = #{modifiedOn}
+		      ,MailFirstTimeDocumentVerificationCompletedBy = #{modifiedBy}
+		      ,MailDocumentVerificationCompletedAt = #{modifiedOn}
+			   ,MailDocumentVerificationCompletedBy = #{modifiedBy}
+			   WHERE FlightId=#{flightId}
+	</update>
+	<update id="breakdowncomplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		       MailFirstTimeBreakDownCompletedAt = #{modifiedOn}
+		      ,MailFirstTimeBreakDownCompletedBy = #{modifiedBy}
+		      ,MailBreakDownCompletedAt = #{modifiedOn}
+			   ,MailBreakDownCompletedBy = #{modifiedBy}
+			   WHERE FlightId=#{flightId}
+	</update>
+	
+	<update id="afterBreakdowncomplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		        MailBreakDownCompletedAt = #{modifiedOn}
+			   ,MailBreakDownCompletedBy = #{modifiedBy}
+			   WHERE FlightId=#{flightId}
+	</update>
+	<update id="afterDocumentComplete" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		        MailDocumentVerificationCompletedAt = #{modifiedOn}
+			   ,MailDocumentVerificationCompletedBy = #{modifiedBy}
+			   WHERE FlightId=#{flightId}
+	</update>
+	
+	<update id="reOpenBreakDown" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		     MailFirstTimeBreakDownCompletedAt = #{breakDownCompletedAt}
+		      ,MailFirstTimeBreakDownCompletedBy = #{breakDownCompletedBy}
+		      ,MailBreakDownCompletedAt = null
+			   ,MailBreakDownCompletedBy = null
+			   WHERE FlightId=#{flightId}
+	</update>
+	
+	<update id="reOpenDocument" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	UPDATE Imp_FlightEvents
+		   SET 
+		     MailFirstTimeDocumentVerificationCompletedAt = #{documentCompletedAt}
+		      ,MailFirstTimeDocumentVerificationCompletedBy = #{documentCompletedBy}
+		      ,MailDocumentVerificationCompletedAt = null
+			   ,MailDocumentVerificationCompletedBy = null
+			   WHERE FlightId=#{flightId}
+	</update>
+	
+	<select id="checkFlightId" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel"
+	resultType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel"
+	>
+		select FlightId as flightId from Imp_FlightEvents where FlightId=#{flightId}	
+	</select>
+	
+	<insert id="insertflightevents" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	INSERT INTO Imp_FlightEvents
+           (FlightId
+           ,CreatedUserCode
+           ,CreatedDateTime
+           )
+     VALUES
+           (#{flightId}
+           ,#{createdBy}
+           ,CURRENT_TIMESTAMP
+           )
+	</insert>
+	
+	<select id="irregularityInfo" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel" resultType="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel">
+	<![CDATA[
+		select 
+	       FlightId,
+	       ShipmentNumber,
+	       ShipmentDate "shipmentdate",
+	       origin,
+		   destination,
+		   pieces "documentedPieces",
+		   weight,
+		   weightUnitCode,
+		   natureOfGoodsDescription,
+		   shipmentType,
+
+		   'PHYSICAL' discrepancyType, 
+	       (documentPieces - breakDownPieces) piece,
+	        case 
+				
+				when (documentPieces > breakDownPieces) then
+	                'MSMB'
+	            when (documentPieces < breakDownPieces) then
+					'FDMB'
+	       end cargoIrregularityCode,
+	       case 
+				when (documentPieces > breakDownPieces) then
+	                (select IrregularityTypeDescription from Mst_CargoIrregularityTypes where IrregularityTypeCode = 'MSMB')
+	              when (documentPieces < breakDownPieces) then
+	                (select IrregularityTypeDescription from Mst_CargoIrregularityTypes where IrregularityTypeCode = 'FDMB')
+	       end irregularityRemarks
+		from(select
+		       Imp_ShipmentVerification.FlightId,
+		       Shipment_Master.ShipmentNumber,
+		       Shipment_Master.ShipmentDate "shipmentdate",
+		       Shipment_Master.Origin,
+			   Shipment_Master.Destination,
+			   Shipment_Master.Pieces,
+			   Shipment_Master.Weight,
+			   Shipment_Master.WeightUnitCode,
+			   Shipment_Master.NatureOfGoodsDescription,
+			   Shipment_Master.ShipmentType,			   
+		       isnull(Imp_ShipmentVerification.DocumentPieces,0) documentPieces, 
+		       abs(isnull((Imp_ShipmentVerification.BreakDownPieces + isnull(ShipmentIrregularityInfo.IrregularityPieces,0) ),0))     breakDownPieces
+			from
+				Imp_ShipmentVerification inner join   
+				Shipment_Master 
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId left join
+					(
+					       select
+					              Flight_ID,
+					              ShipmentNumber,
+					              ShipmentDate "shipmentdate",
+					              Sum(pieces) IrregularityPieces
+					       from
+					              Shipment_Irregularity
+					       where
+					              CargoIrregularityCode in ('FDMB', 'MSMB')
+					       group by
+					              Flight_ID,
+					              ShipmentNumber,
+					              ShipmentDate
+					)ShipmentIrregularityInfo
+					       on Imp_ShipmentVerification.FlightId = ShipmentIrregularityInfo.Flight_ID and 
+					              Shipment_Master.ShipmentNumber = ShipmentIrregularityInfo.ShipmentNumber and 
+					              Shipment_Master.ShipmentDate = ShipmentIrregularityInfo.ShipmentDate 
+                      		
+		)ShipmentIrregularityInfo
+		where
+			(documentPieces - breakDownPieces) <> 0 and 
+	       	ShipmentIrregularityInfo.FlightId = #{flightId} and 
+		  	ShipmentIrregularityInfo.ShipmentType = 'MAIL'
+	]]>
+	</select>
+	
+	<update id="updateLocation" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+	 update Shipment_Inventory set ShipmentLocation=#{storageLocation}, WarehouseLocation=#{breakDownLocation} where ShipmentInventory_Id=#{shipmentInventoryId}
+	 	and 
+			Shipment_ID = #{shipmentId}  
+			<choose>
+			<when test="existingShipmentLocation!= null and existingShipmentLocation!= ''">
+				 and ShipmentLocation=#{existingShipmentLocation}			
+			</when>
+		</choose>
+		<choose>
+			<when test="existingWarehouseLocation!= null and existingWarehouseLocation!= ''">
+				  and WarehouseLocation = #{existingWarehouseLocation} 				
+			</when>
+			</choose>
+			and Flight_ID = #{flightId}
+	</update>
+	
+	<select id="checkDateAta" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel" resultType="java.lang.Integer">
+	SELECT COUNT(1) from Flt_OperativeFlight INNER JOIN Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID WHERE Flt_OperativeFlight.Flight_ID = #{flightId} AND Flt_OperativeFlight_Legs.FlightOffPoint= #{tenantAirport} AND Flt_OperativeFlight_Legs.DateATA IS NOT NULL
+	</select>
+	
+	<select id="unFinalizeServiceReport" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestModel">
+	update Imp_FlightEvents set MailInwardServiceReportFinalizedAt = null , MailInwardServiceReportFinalizedBy = null where FlightId = #{flightId}
+	</select>
+	
+	<select id="checkInventoryForUpdate" 
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel"
+		resultType="java.math.BigInteger" >
+		select 
+	    	ShipmentInventory_Id 
+		from 
+			Shipment_Inventory
+		where 
+			Shipment_ID = #{shipmentId}  
+			<choose>
+			<when test="storageLocation!= null and storageLocation!= ''">
+				  and ShipmentLocation = #{storageLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="breakDownLocation!= null and breakDownLocation!= ''">
+				  and WarehouseLocation = #{breakDownLocation} 				
+			</when>
+		</choose> 
+			and Flight_ID = #{flightId}
+	</select>
+	
+	<select id="getExistingInventory" 
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel"
+		resultType="java.math.BigInteger" >
+		select 
+	    	ShipmentInventory_Id 
+		from 
+			Shipment_Inventory
+		where 
+			Shipment_ID = #{shipmentId}  
+			<choose>
+			<when test="existingShipmentLocation!= null and existingShipmentLocation!= ''">
+				 and ShipmentLocation=#{existingShipmentLocation}			
+			</when>
+		</choose>
+		<choose>
+			<when test="existingWarehouseLocation!= null and existingWarehouseLocation!= ''">
+				  and WarehouseLocation = #{existingWarehouseLocation} 				
+			</when>
+			</choose>
+			and Flight_ID=#{flightId}
+	</select>
+	
+	<select id="getHouseInventory" 
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel"
+		resultType="java.math.BigInteger" >
+		select ShipmentHouseId from Shipment_HouseInformation where ShipmentId=#{shipmentId}  and Number=#{mailBagNumber}
+	</select>
+	
+	<delete id="deleteHouseInventory" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+		delete Shipment_InventoryHouse
+			where ShipmentInventoryId=#{shipmentInventoryId}
+			AND ShipmentHouseId=#{houseId}
+	</delete>
+	
+	<update id="deductExistingInventoryPieceWeight"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+		update Shipment_Inventory
+		set
+			Pieces = Pieces - #{breakDownPieces},
+			Weight = Weight - #{breakDownWeight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn}
+		where Shipment_ID = #{shipmentId}  and ShipmentInventory_Id = #{shipmentInventoryId}
+			<choose>
+			<when test="existingShipmentLocation!= null and existingShipmentLocation!= ''">
+				  and ShipmentLocation = #{existingShipmentLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="existingWarehouseLocation!= null and existingWarehouseLocation!= ''">
+				  and WarehouseLocation = #{existingWarehouseLocation} 				
+			</when>
+		</choose> 
+			and Flight_ID = #{flightId}
+	</update>
+	
+	<update id="addNewInventoryPieceWeight"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+		update Shipment_Inventory
+		set Pieces = Pieces + #{breakDownPieces},
+			Weight = Weight + #{breakDownWeight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn}
+		where Shipment_ID = #{shipmentId}
+		and ShipmentInventory_Id=#{shipmentInventoryId}
+	</update>
+	
+	
+	<select id="getInventotyPieceAndWeightInfo" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel"
+	resultType="java.math.BigInteger">
+	select Pieces from Shipment_Inventory where ShipmentInventory_Id =#{shipmentInventoryId}
+	</select>
+	
+	 <delete id="deleteInventory" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+     <![CDATA[ DELETE Shipment_Inventory WHERE Pieces < 1  AND ShipmentInventory_Id=#{shipmentInventoryId} ]]>
+     </delete>
+     
+     <delete  id="deleteInventorySHC" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+     DELETE FROM  Shipment_InventorySHC WHERE ShipmentInventoryId = #{shipmentInventoryId}  
+     </delete>
+	
+	<insert id="insertInventory"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel"
+		keyProperty="shipmentInventoryId" keyColumn="ShipmentInventory_Id" useGeneratedKeys="true">
+		insert into Shipment_Inventory(
+			Shipment_ID,			
+			ShipmentLocation,			
+			Pieces,			
+			Weight,			
+			WarehouseLocation,			
+			Flight_ID,		
+			HandlingArea,
+			CreatedUser_Code,
+			Created_DateTime				
+		)values(
+			#{shipmentId},
+			#{storageLocation},
+			#{breakDownPieces},
+			#{breakDownWeight},
+			#{breakDownLocation},
+			#{flightId},
+			'T1', <!-- Hard coded later need to change it to actuals -->
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<insert id="insertHouseInventory"
+		parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+		insert into Shipment_InventoryHouse(		
+			ShipmentInventoryId,			
+			ShipmentHouseId,			
+			Pieces,			
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentInventoryId},
+			#{houseId},
+			#{breakDownPieces},
+			#{breakDownWeight},
+			#{createdBy},
+			#{createdOn}			
+		)
+	</insert>
+	
+	<select id="getStoreLocationType" parameterType="java.lang.String" resultType="java.lang.String">
+	select MovableLocationType from uld_uldmaster where uldkey = #{storageLocation}
+	</select>
+	
+	<select id="getTransferToCn46Data" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInfoModel" resultType="com.ngen.cosys.impbd.mail.manifest.model.TransferCN46FromManifestModel">
+		select
+			A.flightId, 
+			A.FlightKey, 
+			A.FlightDate, 
+			A.segmentId, 
+			A.DispatchNumber,
+			A.ShipmentId,
+			A.DispatchDate, 
+			A.originOfficeExchange,
+			A.destinationOfficeExchange,
+			A.origin, 
+			A.destination,
+			A.nextDestination,
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'U%' OR Typmst.AdministrationSubGroupDetailDescription LIKE 'L%' then A.Pieces else 0 end) as lcPieces, 
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'U%' OR Typmst.AdministrationSubGroupDetailDescription LIKE 'L%' then A.Weight else 0 end) as lcWeight,
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'C%' then A.Pieces else 0 end) as cpPieces, 
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'C%' then A.Weight else 0 end) as cpWeight,
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'E%' then A.Pieces else 0 end) as emsPieces, 
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription LIKE 'E%' then A.Weight else 0 end) as emsWeight,
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription NOT LIKE ('U%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('L%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('C%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('E%') then A.Pieces else 0 end) as OthPieces, 
+			SUM(case when Typmst.AdministrationSubGroupDetailDescription NOT LIKE ('U%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('L%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('C%') AND Typmst.AdministrationSubGroupDetailDescription NOT LIKE('E%') then A.Weight else 0 end) as OthWeight,
+			SUM(A.Pieces) as totPieces, 
+			SUM(A.Weight) as totWeight,
+			B.ShipmentLocation 	uldTrollyNumber
+		from
+			(select 
+				Imp_ShipmentVerification.FlightId as flightId, 
+				Flt_OperativeFlight.FlightKey, 
+				Flt_OperativeFlight_Legs.DateSTA FlightDate, 
+				Flt_OperativeFlight_Segments.FlightSegmentId as segmentId, 
+				Shipment_HouseInformation.DispatchNumber,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.CreatedDateTime as DispatchDate,
+				Shipment_HouseInformation.ShipmentHouseId,
+				Shipment_HouseInformation.OriginOfficeExchange as originOfficeExchange,
+				Shipment_HouseInformation.DestinationOfficeExchange destinationOfficeExchange,
+				Shipment_Master.Origin as origin, 
+				Shipment_Master.Destination as destination,
+				Shipment_HouseInformation.NextDestination as nextDestination,
+				Shipment_HouseInformation.Pieces,
+				Shipment_HouseInformation.Weight,
+				Shipment_HouseInformation.MailSubCategory
+			from 
+				Flt_OperativeFlight inner join
+				Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+				Flt_OperativeFlight_Segments 
+					on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Segments.Flight_ID and 
+						Flt_OperativeFlight_Legs.FlightSegmentOrder = Flt_OperativeFlight_Segments.FlightSegmentOrder inner join
+				Imp_ShipmentVerification 
+					on Flt_OperativeFlight.Flight_ID = Imp_ShipmentVerification.FlightId inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+				Shipment_HouseInformation
+					on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId inner join
+				Imp_BreakDownULDTrolleyInfo
+					on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+				Imp_BreakDownStorageInfo
+					on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join
+				Imp_BreakDownHouseInfo
+					on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownHouseInfo.ImpBreakDownStorageInfoId and
+						Shipment_HouseInformation.Number = Imp_BreakDownHouseInfo.HouseNumber 
+			where
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				Shipment_Master.ShipmentType = 'MAIL' and 
+				Shipment_Master.ShipmentId = #{shipmentId} and
+				Shipment_HouseInformation.DispatchNumber = #{dispatchNumber} and 
+				Shipment_HouseInformation.OriginOfficeExchange = #{originOfExchange} and 
+				Shipment_HouseInformation.DestinationOfficeExchange = #{destinationOfExchange}) A inner join
+				Mst_CodeAdministration_SubGroupDetails Typmst
+					on  Typmst.AdministrationSubGroupCode = 'MailType' and 
+						Typmst.AdministrationSubGroupDetailCode = A.MailSubCategory left join
+				(select 
+					Shipment_Inventory.Shipment_ID,
+					Shipment_Inventory.ShipmentLocation,
+					Shipment_InventoryHouse.ShipmentHouseId
+				 from
+					Shipment_Inventory inner join
+					Shipment_InventoryHouse
+						on Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId 
+				 where
+					Shipment_Inventory.Shipment_ID = #{shipmentId}
+					) B
+					on A.ShipmentId = B.Shipment_ID and
+					   A.ShipmentHouseId = B.ShipmentHouseId
+		where
+			1=1
+			<if test="storeLocations != null and !storeLocations.isEmpty()">
+					and B.ShipmentLocation in
+						<foreach item="item" index="index" collection="storeLocations"
+							open="(" separator="," close=")">
+							#{item}
+						</foreach>
+					</if>
+		
+		group by
+			A.flightId, 
+			A.FlightKey, 
+			A.FlightDate, 
+			A.segmentId, 
+			A.DispatchNumber,
+			A.ShipmentId,
+			A.DispatchDate, 
+			A.originOfficeExchange,
+			A.destinationOfficeExchange,
+			A.origin, 
+			A.destination,
+			A.nextDestination,
+			B.ShipmentLocation
+	
+	</select>
+	 <update id="updateAirmailManifestCn46Shipments" parameterType="com.ngen.cosys.impbd.mail.manifest.model.TransferCN46FromManifestModel">
+	   UPDATE  Airmail_ManifestShipment set
+      LetterPost = #{lcPieces}
+      ,CP = #{cpPieces}
+      ,EMS = #{emsPieces}
+      ,OtherItems = #{othPieces}
+      ,GrossWeight = #{totWeight}
+      ,LastUpdatedUserCode = #{modifiedBy}
+      ,LastUpdatedDateTime = #{modifiedOn}
+      where DN = #{dispatchNumber} and ULDTrolleyNumber = #{uldTrollyNumber} and 
+      OriginOfficeExchange = #{originOfficeExchange} and DestinationOfficeExchange = #{destinationOfficeExchange}
+	</update> 
+	<select id="getExistingRecordOfAirmanifets" parameterType="com.ngen.cosys.impbd.mail.manifest.model.TransferCN46FromManifestModel" resultType="java.lang.Integer">
+		select count(*) from Airmail_Manifest 
+		Inner Join Airmail_ManifestShipment on Airmail_Manifest.AirmailManifestId = Airmail_ManifestShipment.AirmailManifestId
+		Where Airmail_Manifest.FlightId = #{flightId} and 
+		Airmail_ManifestShipment.DN = #{dispatchNumber} and 
+		Airmail_ManifestShipment.ULDTrolleyNumber = #{uldTrollyNumber} and  
+		Cast(Airmail_ManifestShipment.DateOfDispactch as date) =  cast(#{dispatchDate} as date) and 
+		Airmail_ManifestShipment.OriginOfficeExchange = #{originOfficeExchange} and
+		Airmail_ManifestShipment.DestinationOfficeExchange = #{destinationOfficeExchange}
+	</select>
+	
+	<select id="checkMailBagLoaded" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel" resultType="java.lang.Integer">
+	 select count(*) from exp_loadedshipmenthouseinfo where Number= #{mailBagNumber}
+	</select>
+	
+	<select id="loadedHouseCheck" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel" resultType="java.lang.Integer">
+	select count(*) from exp_loadedshipmenthouseinfo inner join exp_loadedshipmentinfo on
+		exp_loadedshipmenthouseinfo.LoadedShipmentInfoId = exp_loadedshipmentinfo.LoadedShipmentInfoId
+		inner join Exp_AssignedUldTrolleyToFlight on exp_loadedshipmentinfo.AssUldTrolleyId = Exp_AssignedUldTrolleyToFlight.AssUldTrolleyId 
+		Where exp_loadedshipmenthouseinfo.Number=#{mailBagNumber} and Exp_AssignedUldTrolleyToFlight.ULDTrolleyNumber=#{storageLocation}
+	</select>
+	
+	<select id="checkContentCode" parameterType="java.lang.String" resultType="java.lang.String">
+	select ContentCode from uld_uldmaster where uldkey=#{storeLocation}
+	</select>
+	
+	<select id="getLoadedSHC1" parameterType="java.lang.String" resultType="java.lang.Integer">
+	SELECT COUNT(*)
+			FROM 
+			Exp_AssignedULDTrolleyToFlight INNER JOIN Flt_OperativeFlight_Segments
+			ON Flt_OperativeFlight_Segments.FlightSegmentId = Exp_AssignedULDTrolleyToFlight.FlightSegmentId
+			INNER JOIN Flt_OperativeFlight ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+			INNER JOIN Exp_FlightEvents	ON Exp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Exp_LoadedShipmentInfo ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+			INNER JOIN Shipment_Master ON Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+			LEFT JOIN Exp_LoadedShipmentSHCInfo ON Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+			WHERE 
+			Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{storeLocation} 
+			AND 
+			Exp_AssignedULDTrolleyToFlight.ContentCode = 'M' 
+			AND 
+			Exp_FlightEvents.FlightDepartedOn IS NULL
+			AND Exp_LoadedShipmentSHCInfo.SpecialHandlingCode != 'MAL'
+	</select>
+	
+	<select id="getContainerDestinationForOverView" parameterType="java.lang.String" resultType="java.lang.String">
+	select ContainerDestination from uld_uldmaster where uldkey=#{storeLocation}
+	</select>
+	
+	<update id="updateNextDestOfMB" parameterType="com.ngen.cosys.impbd.mail.manifest.model.InboundMailManifestShipmentInventoryInfoModel">
+	update Shipment_HouseInformation set NextDestination = #{containerDestination} Where ShipmentHouseId = #{houseId}
+	</update>
+	
+</mapper>

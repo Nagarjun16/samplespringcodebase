@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scheduleMessageMapper">
+	<select id="checkForAirportExistance" parameterType="java.util.Map" resultType="java.lang.Integer" >
+	select count(*)  from  mst_airport where airportcode=#{code}
+	</select>
+	<select id="checkAirCraftType"  parameterType="java.util.Map" resultType="java.lang.Integer" >
+	 select count(*) from  mst_aircrafttype where aircrafttype=#{aircraftCode}
+	</select>
+	<select id="checkForCarrierCode"  parameterType="java.util.Map" resultType="java.lang.Integer" >
+	 select count(*) from  Mst_Carrier where carrierCode=#{carrierCode}
+	</select>
+	<select id="checkOverlapSchedule" parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo"  resultType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo" >
+		<![CDATA[
+		   
+		    select Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID as flightSchedulePeriodId,
+				   Flt_OperativeFlight_Schedules.FlightSchedule_ID  as flightScheduleId ,
+		 		   Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate as scheduleStartDate,
+		 		   Flt_OperativeFlight_SchedulePeriods.ScheduleEndDate as  scheduleEndDate,
+		 		   Flt_OperativeFlight_SchedulePeriods.FlightKey as flightKey,
+		 		   Flt_OperativeFlight_Schedules.FlightOnMon as flightOnMon,Flt_OperativeFlight_Schedules.FlightOnTue as flightOnTue,
+		 		   Flt_OperativeFlight_Schedules.FlightOnWed as flightOnWed,Flt_OperativeFlight_Schedules.FlightOnThu as flightOnThu,
+				   Flt_OperativeFlight_Schedules.FlightOnFri as flightOnFri,Flt_OperativeFlight_Schedules.FlightOnSat as flightOnSat,
+		 		   Flt_OperativeFlight_Schedules.FlightOnSun as flightOnSun
+		    from  Flt_OperativeFlight_SchedulePeriods
+			inner join 
+			Flt_OperativeFlight_Schedules
+			on
+			Flt_OperativeFlight_Schedules.FlightSchedulePeriod_ID=Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID
+			where Flt_OperativeFlight_SchedulePeriods.FlightKey=#{flightKey}
+			and 
+					((Flt_OperativeFlight_Schedules.FlightOnMon=#{flightOnMon} and  Flt_OperativeFlight_Schedules.FlightOnMon=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnTue=#{flightOnTue} and  Flt_OperativeFlight_Schedules.FlightOnTue=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnWed=#{flightOnWed} and  Flt_OperativeFlight_Schedules.FlightOnWed=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnThu=#{flightOnThu} and  Flt_OperativeFlight_Schedules.FlightOnThu=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnFri=#{flightOnFri} and  Flt_OperativeFlight_Schedules.FlightOnFri=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnSat=#{flightOnSat} and  Flt_OperativeFlight_Schedules.FlightOnSat=1)
+					  or(Flt_OperativeFlight_Schedules.FlightOnSun=#{flightOnSun} and  Flt_OperativeFlight_Schedules.FlightOnSun=1)
+					)
+		
+		and ( ( Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate>= cast(#{scheduleStartDate} as date )
+					and Flt_OperativeFlight_SchedulePeriods.scheduleEndDate >=cast(#{scheduleEndDate} as date) 
+					and cast(#{scheduleEndDate} as date) between  Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate and Flt_OperativeFlight_SchedulePeriods.scheduleEndDate  
+					 )
+				or
+				(Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate<=cast(#{scheduleStartDate} as date)
+				and Flt_OperativeFlight_SchedulePeriods.ScheduleEndDate >= cast(#{scheduleEndDate} as date ) )
+				
+				or
+				(Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate<= cast(#{scheduleStartDate} as date)
+				and Flt_OperativeFlight_SchedulePeriods.scheduleEndDate<=cast(#{scheduleEndDate} as date)
+				 and cast(#{scheduleStartDate} as date)  between   Flt_OperativeFlight_SchedulePeriods.ScheduleStartDate and Flt_OperativeFlight_SchedulePeriods.scheduleEndDate  
+				 )
+			)
+		 ]]>
+	</select>
+	<select id="checkBeforeInsertion" parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo" resultType="java.math.BigInteger">
+	<![CDATA[select distinct Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID  from Flt_OperativeFlight_SchedulePeriods
+			 	where FlightKey=#{flightKey}
+ 				and(ScheduleStartDate =CAST(#{scheduleStartDate} AS DATE)
+ 				and ScheduleEndDate= CAST(#{scheduleEndDate} AS DATE))
+ 			]]>
+	</select>
+	<select id="getCountOfScheduleTableRecords" parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo" resultType="java.lang.Integer">
+	<![CDATA[select count(FlightSchedulePeriod_ID) from Flt_OperativeFlight_Schedules where FlightSchedulePeriod_ID = #{flightSchedulePeriodId}]]>
+	</select>
+	<insert id="insertFltOperativeFlightSchedulePeriods"
+			useGeneratedKeys="true" keyColumn="FlightSchedulePeriod_ID" keyProperty="flightSchedulePeriodId"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		INSERT INTO Flt_OperativeFlight_SchedulePeriods
+           (CarrierCode
+           ,FlightNumber
+           ,ScheduleStartDate
+           ,ScheduleEndDate
+           ,FlightKey
+           ,ApronFlag
+           ,GroundHandlerCode
+           ,CreatedUser_Code
+           ,Created_DateTime)
+     VALUES
+           (#{carrier}
+           ,#{flightNo}
+           ,#{scheduleStartDate}
+           ,#{scheduleEndDate}
+           ,#{flightKey}
+           ,0
+           ,(select 
+			   case when   (select GroundHandlerCode from Mst_Carrier where CarrierCode=#{carrier}) is not null
+			   then ( select GroundHandlerCode from Mst_Carrier where CarrierCode=#{carrier})
+			   else
+				'SATS'
+				end)
+           ,#{createdUserId}
+           ,GETDATE())
+	</insert>
+	<insert id="insertFltOperativeFlightSchedules"
+			useGeneratedKeys="true" keyColumn="FlightSchedule_ID" keyProperty="flightScheduleId"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		INSERT INTO Flt_OperativeFlight_Schedules
+           (FlightSchedulePeriod_ID
+           ,ScheduleSequenceNo
+           ,FlightServiceType
+           ,FlightType
+           ,FlightOnMon
+           ,FlightOnTue
+           ,FlightOnWed
+           ,FlightOnThu
+           ,FlightOnFri
+           ,FlightOnSat
+           ,FlightOnSun
+           ,CreatedBy_SSM
+           ,JointFlightOnMon
+           ,JointFlightOnTue
+           ,JointFlightOnWed
+           ,JointFlightOnThu
+           ,JointFlightOnFri
+           ,JointFlightOnSat
+           ,JointFlightOnSun
+           ,CreatedUser_Code
+           ,Created_DateTime)
+     VALUES
+           (#{flightSchedulePeriodId}
+           ,#{scheduleSequenceNo}
+           ,#{serviceType}
+           ,(select FlightType from  Mst_OperativeFlight_ServiceTypes where  FlightServiceType=#{serviceType})
+           ,#{flightOnMon}
+           ,#{flightOnTue}
+           ,#{flightOnWed}
+           ,#{flightOnThu}
+           ,#{flightOnFri}
+           ,#{flightOnSat}
+           ,#{flightOnSun}
+           ,1
+           ,0
+           ,0
+           ,0
+           ,0
+           ,0
+           ,0
+           ,0
+           ,#{createdUserId}
+           ,GETDATE())
+	</insert>
+	<insert id="insertFltOperativeFlightSchedulelegs"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		INSERT INTO Flt_OperativeFlight_Schedule_legs
+		           (FlightSchedule_ID
+		           ,ScheduleLegOrder
+		           ,FlightBoardPoint
+		           ,FlightOffPoint
+		           ,ArrivalTime
+		           ,DepartureTime
+		           ,ArrivalDayChange
+		           ,DepartureDayChange
+		           ,DomesticFlightFlag
+		           ,AircraftType
+		           ,CreatedUser_Code
+		           ,Created_DateTime
+		           )
+		     VALUES
+		           (#{flightScheduleId}
+		           ,#{flightSegmentOrder}
+		           ,#{origin}
+		           ,#{destination}
+		           ,CAST(#{arrivalTime} AS TIME)
+		           ,CAST(#{departureTime} AS TIME)
+		           ,#{arrivalDayChange}
+		           ,#{departureDayChange}
+		           ,0
+		           ,#{aircraftType}
+		           ,#{createdUserId}
+		           ,GETDATE()
+		           )
+	</insert>
+	
+	<insert id="insertFltOperativeFlightScheduleSegments" 
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+			INSERT INTO Flt_OperativeFlight_Schedule_Segments
+	           (FlightSchedule_ID
+	           ,ScheduleSegmentLegOrder
+	           ,FlightBoardPoint
+	           ,FlightOffPoint
+	           ,SegmentLegFlag
+	           ,NoFreightLoading
+	           ,FlightTechnicalStopFlag
+	           ,NoCargoFlag
+	           ,NoMailFlag
+	           ,CreatedUser_Code
+	           ,Created_DateTime)
+	     VALUES
+	           (#{flightScheduleId}
+	           ,#{flightSegmentOrder}
+	           ,#{origin}
+	           ,#{destination}
+	           ,0
+	           ,0
+	           ,0
+	           ,0
+	           ,0
+	           ,#{createdUserId}
+	           ,GETDATE())
+	</insert>
+	<insert id="insertRemarksInFactInSchedule"  parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		insert into Flt_OperativeFlight_Schedule_Facts(
+		FlightSchedule_ID,
+		FactSequenceNo,
+		FactDescription,
+		CreatedUser_Code,
+		Created_DateTime
+		)
+		values(#{flightScheduleId},
+		 (SELECT (case when MAX (FactSequenceNo) is null then 1 else
+		
+		              MAX
+		
+		              (FactSequenceNo) + 1 end ) txNumber FROM
+		
+		              Flt_OperativeFlight_Schedule_Facts where FlightSchedule_ID =#{flightScheduleId}),
+		    #{flightScheduleRemark},
+		     #{createdUserId},
+		      GETDATE()        
+		
+		)
+	</insert>
+	<delete id="deleteFltOperativeFlightScheduleSegments"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		<![CDATA[ 
+		Delete FROM Flt_OperativeFlight_Schedule_Segments WHERE 
+			FlightSchedule_ID in (
+								SELECT 
+									  FlightSchedule_ID 
+								FROM 
+									  Flt_OperativeFlight_Schedules
+								INNER JOIN 
+									  Flt_OperativeFlight_SchedulePeriods
+								ON
+								(
+									  Flt_OperativeFlight_Schedules.FlightSchedulePeriod_ID = Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID
+								  AND
+									  Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID = #{flightSchedulePeriodId}))
+		]]>														
+	</delete>
+	<delete id="deleteFltOperativeFlightScheduleLegs"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		<![CDATA[
+		Delete FROM Flt_OperativeFlight_Schedule_Legs WHERE 
+			FlightSchedule_ID in (
+								SELECT 
+									  FlightSchedule_ID 
+								FROM 
+									  Flt_OperativeFlight_Schedules
+								INNER JOIN 
+									  Flt_OperativeFlight_SchedulePeriods
+								ON
+								(
+									  Flt_OperativeFlight_Schedules.FlightSchedulePeriod_ID = Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID
+								  AND
+									  Flt_OperativeFlight_SchedulePeriods.FlightSchedulePeriod_ID = #{flightSchedulePeriodId}))
+		]]>	
+	</delete>
+	<delete id="deleteFltOperativeFlightSchedules"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+	<![CDATA[ DELETE FROM Flt_OperativeFlight_Schedules WHERE FlightSchedulePeriod_ID = #{flightSchedulePeriodId}]]>	
+	</delete>
+	<delete id="deleteFltOperativeFlightSchedulePeriods"
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+	<![CDATA[DELETE FROM Flt_OperativeFlight_SchedulePeriods WHERE FlightSchedulePeriod_ID = #{flightSchedulePeriodId} ]]>	
+	</delete>
+	<delete id="deleteFltOperativeScheduleFacts" parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+	<![CDATA[DELETE FROM Flt_OperativeFlight_Schedule_Facts WHERE FlightSchedule_ID = #{flightScheduleId}]]>	
+	</delete>
+	
+	<select id="sqlCheckFlightTypeSSM"
+		parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from 
+			Mst_OperativeFlight_ServiceTypes 
+		where  
+			FlightServiceType = #{serviceType}
+	]]>
+	</select>
+	
+	<update id="updateFrequencyInScheduleTable" 
+			parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlightInfo">
+		UPDATE 
+		      Flt_OperativeFlight_Schedules 
+		SET 
+			  FlightOnMon=#{flightOnMon},
+			  FlightOnTue=#{flightOnTue},
+			  FlightOnWed=#{flightOnWed},
+			  FlightOnThu=#{flightOnThu},
+			  FlightOnFri=#{flightOnFri},
+			  FlightOnSat=#{flightOnSat},
+			  FlightOnSun=#{flightOnSun},
+			  LastUpdatedUser_Code = #{createdUserId},
+			  LastUpdated_DateTime = GETDATE()
+		WHERE 
+			  FlightSchedulePeriod_ID = #{flightSchedulePeriodId}
+			  AND
+			  FlightSchedule_ID = #{flightScheduleId}
+	</update>
+	<select id="checkForScheduleFactExistance" parameterType="java.math.BigInteger" resultType="java.lang.Integer">
+		<![CDATA[select count(FlightSchedule_ID) from Flt_OperativeFlight_Schedule_facts where FlightSchedule_ID = #{flightScheduleId}]]>
+	</select> 
+	<select id="getFlightType"
+		parameterType="java.lang.String"
+		resultType="java.lang.String">
+	<![CDATA[
+		select
+			flightType
+		from 
+			Mst_OperativeFlight_ServiceTypes 
+		where  
+			FlightServiceType = #{serviceType}
+	]]>
+	</select>
+		
+		<update id="insertFlightSchedule" parameterType="com.ngen.cosys.icms.model.scheduleFlight.ScheduleFlights">
+		INSERT INTO FLT_OperativeFlight_Icms_IncomingScheduleInfo
+		(carrierCode, flightNumber, effectiveFromDate, effectiveToDate, frequency, status, CreatedUser_Code, Created_DateTime, LastUpdatedUser_Code, LastUpdated_DateTime)
+		VALUES
+		(#{carrierCode}, 
+		#{flightNumber}, 
+		#{effectiveFromDate}, 
+		#{effectiveToDate}, 
+		#{frequency}, 
+		#{status}, 
+		#{createdBy}, 
+		GETDATE(),
+		#{createdBy}, 
+		GETDATE())
+		</update>
+	
+	
+</mapper>

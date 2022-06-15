@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ReportI18NMapper">
+	<!-- Gets User Profile -->
+	<select id="sqlGetReportI18NLabels" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.report.model.ReportLabel">
+		<![CDATA[
+			SELECT
+			ApplicationLabelCode AS code, ApplicationLabelName AS label
+			FROM
+			App_ApplicationLabels
+			WHERE
+			ApplicationLabelLocaleValue = #{locale}
+		]]>
+	</select>
+		<!-- Gets Tenant City Name -->
+	<select id="sqlGetTenantCityName" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		<![CDATA[
+			SELECT
+			        CityName
+			  FROM
+			        Mst_City 
+			 WHERE CityCode = #{cityCode}
+		]]>
+	</select>
+</mapper>

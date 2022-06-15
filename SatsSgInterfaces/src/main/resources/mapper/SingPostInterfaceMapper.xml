@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DummyMapper">
+
+	<select id="fetchBagReceivingStatusDetails"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagRequestModel"
+		resultType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagRequestModel">
+		select
+			Number as recpID,
+			CreatedDateTime as bagStatusDateTime
+		from
+			Exp_eAcceptanceHouseInformation
+		where
+			Number = #{recpID}
+	</select>
+
+	<select id="validateMailBag"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel"
+		resultType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+	    select 
+	   		BookingId as bookingId 
+	    from
+	        Exp_ShipmentBooking
+	    where 
+	    	ShipmentNumber = cast(#{dispatchID} as varchar) and ShipmentDate = #{shipmentDate}
+	</select>
+	
+	<select id="validateMailBagForDetail"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel"
+		resultType="java.math.BigInteger">
+	    select 
+	   		BookingId 
+	    from
+	        Exp_ShipmentBooking
+	    where 
+	    	ShipmentNumber = cast(#{recpID} as varchar) and ShipmentDate = #{shipmentDate}
+	</select> 
+
+	<select id="fetchFlightDetails"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel"
+		resultType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+		SELECT
+			Flt_OperativeFlight.Flight_ID flightId
+			,Flt_OperativeFlight.FlightKey flightNumber
+			,Flt_OperativeFlight.FlightOriginDate departureDateTime
+			,Flt_OperativeFlight_Segments.FlightOffPoint flightOffPoint
+			,Flt_OperativeFlight_Segments.FlightBoardPoint flightBoardPoint
+			,Flt_OperativeFlight_Segments.FlightSegmentId flightSegmentId
+		FROM
+			Flt_OperativeFlight 
+			inner join Flt_OperativeFlight_Segments 
+				on Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID AND 
+					Flt_OperativeFlight_Segments.FlightBoardPoint=#{tenantAirport}
+		WHERE
+			Flt_OperativeFlight.FlightKey = #{flightNumber}
+			AND Cast(Flt_OperativeFlight_Segments.DateSTD as date)= cast(#{departureDateTime} as date)
+			AND Flt_OperativeFlight_Segments.FlightOffPoint = #{destination}
+	</select>
+	
+    <update id="updateMailBagStatus"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+		UPDATE
+			Exp_ShipmentBooking
+		SET
+			 Origin= #{origin}
+			,Destination = #{destination}
+			,GrossWeight = #{bagWeight}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = GETDATE()	
+		where 
+	    	ShipmentNumber = cast(#{dispatchID} as varchar) and ShipmentDate = #{shipmentDate}
+	</update>
+	<update id="updateMailBagStatusForPADetail"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+		UPDATE
+			Exp_ShipmentBooking
+		SET
+			 Origin= #{origin}
+			,Destination = #{destination}
+			,GrossWeight = #{bagWeight}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}	
+		where 
+	    	ShipmentNumber = cast(#{recpID} as varchar) and ShipmentDate = #{shipmentDate}
+	</update>
+	
+	 <update id="updateBagDetails"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+		UPDATE
+			Exp_ShipmentFlightBookingDetail
+		SET
+			 FlightBoardPoint = #{flightBoardPoint}
+			,FlightOffPoint = #{flightOffPoint}
+			,BookingWeight = #{bagWeight}
+			,FlightSegmentId = #{flightSegmentId}
+		where 
+	    	BookingId = #{bookingId}
+	</update>
+	
+	<insert id="insertMailBagStatus" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel" keyProperty="bookingId" keyColumn="BookingId">
+
+		INSERT INTO Exp_ShipmentBooking
+			(ShipmentNumber
+			,Origin
+			,Destination
+			,Pieces
+			,GrossWeight
+			,WeightUnitCode
+			,VolumeUnitCode
+			,Manual
+			,CreatedUserCode
+			,CreatedDateTime
+			,ShipmentDate)
+		VALUES
+			(#{dispatchID}
+			,#{origin}
+			,#{destination}
+			,#{totalBagCount}
+			,#{bagWeight}
+			,'K'
+			,'MC'
+			,0
+			,#{createdBy}
+			,#{createdOn}
+			,#{shipmentDate}
+			)
+	</insert>
+	
+	<insert id="insertMailBagStatusForPADetail" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel" keyProperty="bookingId" keyColumn="BookingId">
+
+		INSERT INTO Exp_ShipmentBooking
+			(ShipmentNumber
+			,Origin
+			,Destination
+			,Pieces
+			,GrossWeight
+			,WeightUnitCode
+			,VolumeUnitCode
+			,Manual
+			,CreatedUserCode
+			,CreatedDateTime
+			,ShipmentDate)
+		VALUES
+			(#{recpID}
+			,#{origin}
+			,#{destination}
+			,#{totalBagCount}
+			,#{bagWeight}
+			,'K'
+			,'MC'
+			,0
+			,#{createdBy}
+			,#{createdOn}
+			,#{shipmentDate}
+			)
+	</insert>
+
+	<insert id="insertBagDetails"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel" keyProperty="flightBookingId" keyColumn="FlightBookingId">
+
+		INSERT INTO Exp_ShipmentFlightBookingDetail
+			(BookingId
+			,FlightId
+			,FlightBoardPoint
+			,FlightOffPoint
+			,BookingPieces
+			,BookingWeight
+			,BookingStatusCode
+			,FlightSegmentId
+			,CreatedUserCode
+			,CreatedDateTime)
+		VALUES
+			(#{bookingId}
+			,#{flightId}
+			,#{flightBoardPoint}
+			,#{flightOffPoint}
+			,'1'
+			,#{bagWeight}
+			,#{bookingStatusCode}
+			,#{flightSegmentId}
+			,#{createdBy}
+			,GETDATE()
+			)
+	</insert>
+		<insert id="insertBagDetailsShc"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel" >
+		INSERT INTO Exp_ShipmentFlightBookingDetailSHC
+           (FlightBookingId
+           ,SpecialHandlingCode
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,LastUpdatedUserCode
+           ,LastUpdatedDateTime)
+     VALUES
+           (#{flightBookingId}
+           ,'MAL'
+           ,#{createdBy}
+           ,#{createdOn}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+	</insert>
+		<insert id="insertIpsAA"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+
+		INSERT INTO Airmail_Truckdoc_Scan
+           (DateReceiveScan
+           ,DestinationCountry
+           ,OriginOfficeExchange
+           ,DestinationOfficeExchange
+           ,DispatchNumber
+           ,ReceptacleNumber
+           ,Weight
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,Number)
+     VALUES
+           (CAST(#{bagStatusDateTime} AS datetime)
+           ,#{destinationCountry}
+           ,#{flightBoardPoint}
+           ,#{flightOffPoint}
+           ,#{despatchNumber}
+           ,#{bagNumber}
+           ,#{bagWeight}
+           ,#{createdBy}
+           ,GETDATE()
+           ,#{recpID}
+           )
+	</insert>
+	
+    <update id="updatedlvMailBags"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+		UPDATE
+			Shipment_HouseInformation
+		SET
+			DeliveredOn = #{bagStatusDateTime} 
+		where 
+	    	Number = #{recpID}
+	</update>
+ 
+   <select id="getMailBagInfoForSingPostDLV" parameterType="com.ngen.cosys.events.payload.AirmailStatusEvent" resultType="com.ngen.cosys.events.payload.AirmailStatusEvent">
+   select Shipment_Master.ShipmentNumber, Shipment_Master.ShipmentId,Shipment_Master.CarrierCode,
+	Shipment_HouseInformation.Number, Shipment_HouseInformation.NextDestination,
+	Imp_ShipmentVerification.FlightId
+	from Shipment_Master inner join Imp_ShipmentVerification on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId 
+	inner join Shipment_HouseInformation on Shipment_Master.ShipmentNumber = SUBSTRING(Shipment_HouseInformation.Number,1,20)
+	where Shipment_HouseInformation.Number = #{mailBag}
+   </select>
+   
+   <select id="getFlightSegmentidForSingPost" parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel" resultType="java.math.BigInteger">
+   Select FlightSegmentId from Flt_OperativeFlight_Segments Where Flight_Id = #{flightId} and FlightBoardPoint = #{flightBoardPoint} and FlightOffPoint = #{flightOffPoint}
+   </select>
+   
+   <insert id="saveMailBagsForPostalAuthorities" parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.MailBagResponseModel">
+   INSERT INTO Interface_IncomingMessageFromPostalAuthorities
+           (MailBagNumber
+           ,ShipmentNumber
+           ,Origin
+           ,Destination
+           ,DispatchNumber
+           ,RecepticalNumber
+           ,Pieces
+           ,Weight
+           ,BagScanStatusDateTime
+           ,ShipmentDate
+           ,FlightKey
+           ,FlightDate
+           ,FlightBoardPoint
+           ,FlightOffPoint
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,IsValidFlight
+           )
+     VALUES
+           (#{recpID}
+           ,#{shipmentNumber}
+           ,#{origin}
+           ,#{destination}
+           ,#{despatchNumber}
+           ,#{bagNumber}
+           ,'1'
+           ,#{bagWeight}
+           ,#{bagStatusDateTime}
+           ,#{shipmentDate}
+           ,#{flightNumber}
+           ,#{departureDateTime}
+           ,#{flightBoardPoint}
+           ,#{flightOffPoint}
+           ,#{createdBy}
+           ,GETDATE()
+           ,#{validFlight})
+   </insert>
+   
+   <select id="sqlCheckValidFlightForPostalAUthorities" resultType="java.lang.Integer">
+   SELECT
+			count(*)
+		FROM
+			Flt_OperativeFlight 
+			inner join Flt_OperativeFlight_Segments 
+				on Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID AND 
+					Flt_OperativeFlight_Segments.FlightBoardPoint=#{tenantAirport}
+		WHERE
+			Flt_OperativeFlight.FlightKey = #{flightNumber}
+			AND Cast(Flt_OperativeFlight_Segments.DateSTD as date)= cast(#{departureDateTime} as date)
+			
+   </select>
+
+
+
+</mapper>

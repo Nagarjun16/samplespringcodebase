@@ -1,0 +1,1481 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="CosysRFIDMapper">
+
+ 
+   	<select id="getAuthUserPassword" resultType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.AuthModel">
+		SELECT top 1
+		 	(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterShortDescription='RFID' AND ParameterCode='XPS_USR') username,
+		 	(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterShortDescription='RFID' AND ParameterCode='XPS_PWD') password
+		FROM App_SystemParameters 
+	</select>
+   	
+ 	<resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.FlightsModel' id='FlightResult'> 
+     <result property='carrier' column='carrier'/>
+     <result property='flightNumber' column='flightNumber'/>     
+     <result property='flightKey' column='flightKey'/>
+     <result property='flightOriginDate' column='flightOriginDate'/>
+     <result property='origin' column='origin'/>
+     <result property='destination' column='destination'/>
+     <result property='flightType' column='flightType'/>
+     <result property='station' column='station'/>
+     <result property='STA' column='STA'/>
+     <result property='STD' column='STD'/>
+     <result property='parkingBay' column='parkingBay'/>
+     <result property='aircraftRegNo' column='aircraftRegNo'/>
+     <result property='cgoAcftType' column='cgoAcftType'/> 
+     <result property='createdUserCode' column='createdUserCode'/>
+     <result property='createdDateTime' column='createdDateTime'/>
+     <result property='lastUpdatedUserCode' column='lastUpdatedUserCode'/>
+     <result property='lastUpdatedDateTime' column='lastUpdatedDateTime'/> 
+     <result property='fromDate' column='fromDate'/>
+     <result property='toDate' column='toDate'/>     
+     <collection property='flightLegs' ofType='com.ngen.cosys.platform.rfid.tracker.interfaces.model.FlightLegModel' resultMap='LegResult' columnPrefix="legx_"></collection>
+   </resultMap>
+
+   <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.FlightLegModel' id='LegResult'>    
+     <result property='carrier' column='carrier'/> 
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='flightBoardPoint' column='flightBoardPoint'/>
+     <result property='flightOffPoint' column='flightOffPoint'/>
+     <result property='flightSegmentOrder' column='flightSegmentOrder'/>
+     <result property='STD' column='STD'/>
+     <result property='STA' column='STA'/>
+     <result property='ETD' column='ETD'/>
+     <result property='ETA' column='ETA'/>
+     <result property='ATD' column='ATD'/>
+     <result property='ATA' column='ATA'/>
+     <result property='domesticFlightFlag' column='domesticFlightFlag'/>
+     <result property='aircraftRegCode' column='aircraftRegCode'/>
+     <result property='aircraftType' column='aircraftType'/>
+     <result property='parkingBay' column='parkingBay'/>
+     <result property='weight' column='weight'/>
+     <result property='weightUnit' column='weightUnit'/>
+     <result property='createdUser_Code' column='createdUser_Code'/>
+     <result property='created_DateTime' column='created_DateTime'/>
+     <result property='lastUpdatedUser_Code' column='lastUpdatedUser_Code'/>
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/> 
+   </resultMap>
+ 
+  <select id='getFlightsData' parameterType='com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel' resultMap='FlightResult'>
+	<!-- with
+	       lcltime as (
+	       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE
+	                                           (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+				fltmaxseg as (
+				select max(FlightSegmentOrder) maxseg,flight_id
+					from Flt_OperativeFlight_Legs  group by flight_id
+				),
+	              fltleg as (
+	              select *
+				   from Flt_OperativeFlight_Legs join lcltime on 1=1 where
+					(Flt_OperativeFlight_Legs.FlightBoardPoint = 'SIN' OR Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN')
+					and(
+	                      (Flt_OperativeFlight_Legs.DateATD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60)) 
+	                      or (Flt_OperativeFlight_Legs.DateETD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60))
+	                      or (Flt_OperativeFlight_Legs.DateSTD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60))
+	                      or (Flt_OperativeFlight_Legs.DateATA between lcldttime  -  #{importDataPushMinusFrom}/(24*60) and       lcldttime  +   #{importDataPushPlusTo}/(24*60)) 
+	                      or (Flt_OperativeFlight_Legs.DateETA between lcldttime  -  #{importDataPushMinusFrom}/(24*60) and       lcldttime  +   #{importDataPushPlusTo}/(24*60))
+	                      or (Flt_OperativeFlight_Legs.DateSTA between lcldttime  -  #{importDataPushMinusFrom}/(24*60) and       lcldttime  +   #{importDataPushPlusTo}/(24*60))
+	                 )
+	             )
+	,fltseg as
+	(select 
+	Flt_OperativeFlight.CarrierCode AS carrier, Flt_OperativeFlight.FlightNumber  AS flightNumber, Flt_OperativeFlight.FlightKey AS flightKey,
+	            Flt_OperativeFlight.FlightOriginDate  AS flightOriginDate, 
+				Case  when (Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN') then 
+					case when Flt_OperativeFlight_legs.FlightSegmentOrder = 1 then 
+							case when (Flt_OperativeFlight_Legs.FlightBoardPoint='SIN') 
+									then Flt_OperativeFlight_Legs.FlightOffPoint 
+									else Flt_OperativeFlight_Legs.FlightBoardPoint 
+									 end else Flt_OperativeFlight_Legs.FlightBoardPoint end 
+							else Flt_OperativeFlight_Legs.FlightBoardPoint end 
+				AS origin,
+				Case  when (Flt_OperativeFlight_Legs.FlightBoardPoint = 'SIN') then case 
+					when Flt_OperativeFlight_legs.FlightSegmentOrder =maxseg
+					then 
+					case when (Flt_OperativeFlight_Legs.FlightOffPoint='SIN') then 
+					Flt_OperativeFlight_Legs.FlightBoardPoint else Flt_OperativeFlight_Legs.FlightOffPoint end else Flt_OperativeFlight_Legs.FlightOffPoint end else Flt_OperativeFlight_Legs.FlightOffPoint end AS destination,
+	            case when (Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN') then 'I' else 'E' end  AS flightType,
+	            'SATS' AS station, Flt_OperativeFlight_Legs.DateSTD   AS STD, Flt_OperativeFlight_Legs.DateSTA  AS STA,
+	            Flt_OperativeFlight.JointFlightFlag                                                 AS jointFlightFlag,
+	            Flt_OperativeFlight.ParkingBayArrivalAircraft                                       AS parkingBay,
+	            Flt_OperativeFlight_Legs.AircraftRegCode                                            AS aircraftRegNo,
+	            case
+	                when (Flt_OperativeFlight.FlightType = 'P') then
+	                    'PAX'
+	                else
+	                    'FRT'
+	                end                                                                             AS cgoAcftType, 
+	            'SATSUSER'                                                                          AS createdUserCode,
+	            ''                                                                                  AS createdDateTime,
+	            'SATSUSER'                                                                          AS lastUpdatedUserCode,
+	            ''                                                                                  AS lastUpdatedDateTime,
+	            Flt_OperativeFlight.CarrierCode                                                     AS legx_carrier,
+	            Flt_OperativeFlight.FlightNumber                                                    AS legx_flightNumber,
+	            Flt_OperativeFlight.FlightKey                                                       AS legx_flightKey,
+	            Flt_OperativeFlight_Legs.FlightBoardPoint                                           AS legx_flightBoardPoint,
+	            Flt_OperativeFlight_Legs.FlightOffPoint                                             AS legx_flightOffPoint,
+	            Flt_OperativeFlight_Legs.FlightSegmentOrder                                         AS legx_flightSegmentOrder,   
+	                    Flt_OperativeFlight_Legs.DateSTD                                            AS legx_STD,
+	                    Flt_OperativeFlight_Legs.DateSTA                                            AS legx_STA,
+	                    Flt_OperativeFlight_Legs.DateETA                                            AS legx_ETA,
+	                    Flt_OperativeFlight_Legs.DateETD                                            AS legx_ETD,
+	                    Flt_OperativeFlight_Legs.DateATA                                            AS legx_ATA,
+	                    Flt_OperativeFlight_Legs.DateATD                                            AS legx_ATD,
+	            ''                                                                                  AS legx_domesticFlightFlag,
+	            Flt_OperativeFlight_Legs.AircraftRegCode                                            AS legx_aircraftRegCode,
+	            Flt_OperativeFlight_Legs.AircraftType                                               AS legx_aircraftType,
+	            0                                                                                   AS legx_weight,
+	            'K'                                                                                 AS legx_weightUnit,
+	            'SATSUSER'                                                                          AS legx_createdUser_Code,
+	            ''                                                                                  AS legx_created_DateTime,
+	            'SATSUSER'                                                                          AS legx_lastUpdatedUser_Code,
+	            ''                                                                                  AS legx_lastUpdated_DateTime,
+	            case   when Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN' then
+	                    (lcldttime - #{importDataPushMinusFrom}/(24*60))
+	                else
+	                    (lcldttime - #{exportDataPushMinusFrom}/(24*60))
+	                end                                                                             AS fromDate,
+	            case
+	                when Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN' then
+	                    (lcldttime - #{importDataPushPlusTo}/(24*60))
+	                else
+	                    (lcldttime - #{exportDataPushPlusTo}/(24*60))
+	                end                                                                             AS toDate   
+	
+	from  fltleg as Flt_OperativeFlight_Legs
+	inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id 
+	inner join fltmaxseg on fltmaxseg.flight_id = Flt_OperativeFlight_Legs.Flight_Id 
+	)
+	
+	select * from fltseg
+	<if test="bkgList.size() > 0 ">
+	where   concat(FlightKey,
+	                ISNULL(CONVERT(VARCHAR(11), CAST(legx_ATA AS DATE), 106),
+	                ISNULL(CONVERT(VARCHAR(11), CAST(legx_ETA AS DATE), 106),
+	                CONVERT(VARCHAR(11), CAST(legx_STA AS DATE), 106))),'I' ) IN
+	              <foreach item="AwbModel" index="index" collection="bkgList" open="(" separator="," close=")">
+		    		(#{AwbModel.flightKeyDate})
+		    	 </foreach>
+	
+				  OR 
+				  concat(FlightKey,
+	                ISNULL(CONVERT(VARCHAR(11), CAST(legx_ATD AS DATE), 106),
+	                ISNULL(CONVERT(VARCHAR(11), CAST(legx_ETD AS DATE), 106),
+	                CONVERT(VARCHAR(11), CAST(legx_STD AS DATE), 106))),'E' ) IN
+	
+	                <foreach item="AwbModel" index="index" collection="bkgList" open="(" separator="," close=")">
+		    		(#{AwbModel.flightKeyDate})
+		    	 </foreach>
+	</if>		
+	<if test="bkgList.size() == 0 ">
+	WHERE 0 = 1
+	</if> -->
+	
+		 
+	
+	with
+	       lcltime as (
+	       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE
+	                                           (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+			fltkey as (select * from flt_operativeflight where FlightKey = #{flightKeyNew}),
+				fltmaxseg as (
+				select max(FlightSegmentOrder) maxseg,flight_id
+					from Flt_OperativeFlight_Legs  
+					where Flight_ID in (select flight_id from fltkey)
+					group by flight_id
+				),
+	              fltleg as (
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}    )
+				and  (Flt_OperativeFlight_Legs.DateATD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60)) 
+				union	                    
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}   ) and  (Flt_OperativeFlight_Legs.DateETD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60))
+				union	                    
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}   ) and (Flt_OperativeFlight_Legs.DateSTD between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60))
+				union	                    
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} ) and   (Flt_OperativeFlight_Legs.DateATA between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60)) 
+				union	                    
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} ) and (Flt_OperativeFlight_Legs.DateETA between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +   #{exportDataPushPlusTo}/(24*60))
+				union	                    
+	              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flight_ID in (select flight_id from fltkey) and 
+				(Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} ) and (Flt_OperativeFlight_Legs.DateSTA between lcldttime  -  #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+	                 )
+	 
+	,
+	fltseg as
+	(select 
+	Flt_OperativeFlight.CarrierCode AS carrier, Flt_OperativeFlight.FlightNumber  AS flightNumber, Flt_OperativeFlight.FlightKey AS flightKey,
+	            Flt_OperativeFlight.FlightOriginDate  AS flightOriginDate, 
+				Case  when (Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}) then 
+					case when Flt_OperativeFlight_legs.FlightSegmentOrder = 1 then 
+							case when (Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantAirport}) 
+									then Flt_OperativeFlight_Legs.FlightOffPoint 
+									else Flt_OperativeFlight_Legs.FlightBoardPoint 
+									 end else Flt_OperativeFlight_Legs.FlightBoardPoint end 
+							else Flt_OperativeFlight_Legs.FlightBoardPoint end 
+				AS origin,
+				Case  when (Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}) then case 
+					when Flt_OperativeFlight_legs.FlightSegmentOrder =maxseg
+					then 
+					case when (Flt_OperativeFlight_Legs.FlightOffPoint=#{tenantAirport}) then 
+					Flt_OperativeFlight_Legs.FlightBoardPoint else Flt_OperativeFlight_Legs.FlightOffPoint end else Flt_OperativeFlight_Legs.FlightOffPoint end else Flt_OperativeFlight_Legs.FlightOffPoint end AS destination,
+	            case when (Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}) then 'I' else 'E' end  AS flightType,
+	            'SATS' AS station, Flt_OperativeFlight_Legs.DateSTD   AS STD, Flt_OperativeFlight_Legs.DateSTA  AS STA,
+	            Flt_OperativeFlight.JointFlightFlag                                                 AS jointFlightFlag,
+	            Flt_OperativeFlight.ParkingBayArrivalAircraft                                       AS parkingBay,
+	            Flt_OperativeFlight_Legs.AircraftRegCode                                            AS aircraftRegNo,
+	            case
+	                when (Flt_OperativeFlight.FlightType = 'P') then
+	                    'PAX'
+	                else
+	                    'FRT'
+	                end                                                                             AS cgoAcftType, 
+	            'SATSUSER'                                                                          AS createdUserCode,
+	            ''                                                                                  AS createdDateTime,
+	            'SATSUSER'                                                                          AS lastUpdatedUserCode,
+	            ''                                                                                  AS lastUpdatedDateTime,
+	            Flt_OperativeFlight.CarrierCode                                                     AS legx_carrier,
+	            Flt_OperativeFlight.FlightNumber                                                    AS legx_flightNumber,
+	            Flt_OperativeFlight.FlightKey                                                       AS legx_flightKey,
+	            Flt_OperativeFlight_Legs.FlightBoardPoint                                           AS legx_flightBoardPoint,
+	            Flt_OperativeFlight_Legs.FlightOffPoint                                             AS legx_flightOffPoint,
+	            Flt_OperativeFlight_Legs.FlightSegmentOrder                                         AS legx_flightSegmentOrder,   
+	                    Flt_OperativeFlight_Legs.DateSTD                                            AS legx_STD,
+	                    Flt_OperativeFlight_Legs.DateSTA                                            AS legx_STA,
+	                    Flt_OperativeFlight_Legs.DateETA                                            AS legx_ETA,
+	                    Flt_OperativeFlight_Legs.DateETD                                            AS legx_ETD,
+	                    Flt_OperativeFlight_Legs.DateATA                                            AS legx_ATA,
+	                    Flt_OperativeFlight_Legs.DateATD                                            AS legx_ATD,
+	            ''                                                                                  AS legx_domesticFlightFlag,
+	            Flt_OperativeFlight_Legs.AircraftRegCode                                            AS legx_aircraftRegCode,
+	            Flt_OperativeFlight_Legs.AircraftType                                               AS legx_aircraftType,
+	            0                                                                                   AS legx_weight,
+	            'K'                                                                                 AS legx_weightUnit,
+	            'SATSUSER'                                                                          AS legx_createdUser_Code,
+	            ''                                                                                  AS legx_created_DateTime,
+	            'SATSUSER'                                                                          AS legx_lastUpdatedUser_Code,
+	            ''                                                                                  AS legx_lastUpdated_DateTime,
+	            case   when Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} then
+	                    (lcldttime - #{importDataPushMinusFrom}/(24*60))
+	                else
+	                    (lcldttime - #{exportDataPushMinusFrom}/(24*60))
+	                end                                                                             AS fromDate,
+	            case
+	                when Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} then
+	                    (lcldttime + #{importDataPushPlusTo}/(24*60))
+	                else
+	                    (lcldttime + #{exportDataPushPlusTo}/(24*60))
+	                end                                                                             AS toDate   
+	
+	from  fltleg as Flt_OperativeFlight_Legs
+	inner join fltkey Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id 
+	inner join fltmaxseg on fltmaxseg.flight_id = Flt_OperativeFlight_Legs.Flight_Id 
+	)
+	
+	select * 					
+	  from fltseg
+	where  (ISNULL(format( CAST(legx_ATA AS DATE), 'dd MMM yyyy'),
+	                ISNULL(format(CAST(legx_ETA AS DATE), 'dd MMM yyyy'),
+	 format(CAST(legx_STA AS DATE), 'dd MMM yyyy')))= #{flightKeyDateNew}
+				  OR 
+	                ISNULL(format( CAST(legx_ATD AS DATE), 'dd MMM yyyy'),
+	                ISNULL(format(CAST(legx_ETD AS DATE), 'dd MMM yyyy'),
+	                format(CAST(legx_STD AS DATE), 'dd MMM yyyy'))) =#{flightKeyDateNew}
+					)
+
+	
+	
+  </select> 
+  
+   <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.AwbModel' id='FlightBookingResult'> 
+     <result property='awbNo' column='awbNo'/>
+     <result property='hawbNo' column='hawbNo'/> 
+     <result property='totalPcs' column='totalPcs'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='flightDate' column='flightDate'/>
+     <result property='flightEstimatedDate' column='flightEstimatedDate'/>
+     <result property='flightActualDate' column='flightActualDate'/>
+     <result property='flightKeyDate' column='flightKeyDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='origin' column='origin'/>
+     <result property='station' column='station'/>
+     <result property='destination' column='destination'/>
+     <result property='SHCS' column='SHCS'/>
+     <result property='totalWt' column='totalWt'/>
+     <result property='weightUnit' column='weightUnit'/>
+     <result property='shipmentType' column='shipmentType'/> 
+     <result property='flowType' column='flowType'/>
+     <result property='transitType' column='transitType'/>
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+     <result property='stage' column='stage'/>
+     <result property='brdPoint' column='brdPoint'/>
+     <result property='offPoint' column='offPoint'/>
+    <collection property='ulds' notNullColumn='uld'   ofType='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' resultMap='ULDResult2'></collection> 
+   </resultMap>
+
+   <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' id='ULDResult2'>      
+     <result property='uldNo' column='uld'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightDate' column='flightDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='assignedTotalPcs' column='assignedTotalPcs'/> 
+     <result property='assignedTotalWt' column='assignedTotalWt'/> 
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+   </resultMap> 
+   
+  
+  <select id="getFlightBookingCarrShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel"  resultMap='FlightBookingResult'>
+
+Declare @fltsegTmpTbl Table (CarrierCode varchar(5),FlightNumber varchar(6), flightkey varchar(10), flightorigindate datetime, 
+flight_id numeric, DateATD datetime, DateSTD datetime, dateetd datetime, flightsegmentid varchar(10),flightboardpoint varchar(5) index TmpIndFBP,
+flightoffpoint varchar(5));
+with lcltime as (
+	select 
+		convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  
+			(select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime
+), fltleg as (
+	select  Flt_OperativeFlight_Legs.Flight_ID, Flt_OperativeFlight_Legs.DateATD, Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight_Legs.DateETD
+	from  Flt_OperativeFlight_Legs inner join  lcltime  on 1 = 1 
+	where  Flt_OperativeFlight_Legs.FlightBoardPoint = (select ParameterValueChar from App_SystemParameters where ParameterCode='BASE_PORT') and
+		coalesce(Flt_OperativeFlight_Legs.DateATD,  Flt_OperativeFlight_Legs.DateETD,  Flt_OperativeFlight_Legs.DateSTD) between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and lcldttime  +  #{exportDataPushPlusTo}/(24*60) 
+)
+--select * from fltleg 
+, fltsegs as (
+	select  Flt_OperativeFlight.CarrierCode, Flt_OperativeFlight.FlightNumber, Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate, 
+		fltleg.Flight_ID, fltleg.DateATD, fltleg.DateSTD, fltleg.DateETD
+		, Flt_OperativeFlight_Segments.FlightSegmentId, Flt_OperativeFlight_Segments.FlightBoardPoint,
+		Flt_OperativeFlight_Segments.FlightOffPoint
+	from  fltleg 
+		inner join   Flt_OperativeFlight  on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id 
+		inner join Flt_OperativeFlight_Segments  on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 		
+)
+
+<if test="carrierList2.size() > 0">
+insert into @fltsegTmpTbl select * from fltsegs where CarrierCode in 
+<foreach item="shc1" index="index" collection="carrierList2" open="(" separator="," close=");">
+(#{shc1})
+</foreach>
+</if>
+
+with fltseg as (
+select * from  @fltsegTmpTbl where FlightBoardPoint=#{tenantAirport})
+--select * from fltseg
+, TrackableBookingInformation as(
+	select
+		fltseg.CarrierCode,
+		fltseg.FlightNumber,
+		fltseg.FlightKey,
+		fltseg.FlightOriginDate, 
+		fltseg.Flight_ID,
+		fltseg.DateATD,
+		fltseg.DateSTD,
+		fltseg.DateETD,
+		fltseg.FlightSegmentId,
+		fltseg.FlightBoardPoint,
+		fltseg.FlightOffPoint,
+		Exp_ShipmentFlightBookingDetail.BookingId,
+		Exp_ShipmentFlightBookingDetail.FlightBookingId,
+		Exp_ShipmentFlightBookingDetail.BookingPieces,
+		Exp_ShipmentFlightBookingDetail.BookingWeight,
+		Exp_ShipmentFlightBookingDetail.ThroughTransitFlag,
+		Exp_ShipmentFlightBookingDetail.TransferType
+	from
+        Exp_ShipmentBooking inner join
+        Exp_ShipmentFlightBookingDetail
+            on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+        Flt_OperativeFlight_Segments
+            on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight_Segments.Flight_ID and
+                Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId left join
+        Flt_OperativeFlight
+			on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+		fltseg
+			on Flt_OperativeFlight.Flight_ID = fltseg.Flight_ID and
+				Flt_OperativeFlight_Segments.FlightSegmentId = fltseg.FlightSegmentId
+	where
+	
+		Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1 and
+		
+		<if test="carrierList.size() > 0">
+		exists(
+			select
+				null
+			from
+				Exp_ShipmentFlightBookingDetailSHC innerSHC
+			where
+				innerSHC.FlightBookingId = Exp_ShipmentFlightBookingDetail.FlightBookingId
+				and concat(fltseg.CarrierCode, innerSHC.SpecialHandlingCode) IN 	
+				
+					 <foreach item="shc1" index="index" collection="carrierList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      </foreach>
+				      
+		)
+)
+</if> 	
+
+--select * from TrackableBookingInformation
+, TrackableLoadedInformation as(
+	select
+		Exp_AssignedULDTrolleyToFlight.FlightId,
+		sum(Exp_LoadedShipmentInfo.Pieces) LoadedPieces,
+		sum(Exp_LoadedShipmentInfo.Weight) LoadedWeight,
+		Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		Shipment_Master.Origin,
+		Shipment_Master.Destination
+	from
+		Exp_AssignedULDTrolleyToFlight inner join 
+		Exp_LoadedShipmentInfo 
+			on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join 
+		Shipment_Master 
+			on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+	where
+	<![CDATA[
+		Shipment_Master.ShipmentType <> 'MAIL' and
+		Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber is not null and
+		len(Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber) > 7 and
+		]]>
+		exists(
+			select
+				null
+			from
+				fltseg
+			where
+				fltseg.Flight_ID = Exp_AssignedULDTrolleyToFlight.FlightId
+		)
+	group by
+		Exp_AssignedULDTrolleyToFlight.FlightId,
+		Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		Shipment_Master.Origin,
+		Shipment_Master.Destination
+), FinalTrackableBookingInformation as(
+	select
+		Exp_ShipmentBooking.ShipmentNumber								AS awbNo,
+		null															AS hawbNo,
+		case
+			when (TrackableLoadedInformation.LoadedPieces) > 0 then
+				'BULK'
+			else
+				''
+			end															AS uld,
+		Exp_ShipmentBooking.Pieces										AS totalPcs,
+		FlightNumber													AS flightNumber,
+        convert(varchar(11), TrackableBookingInformation.DateSTD, 106)	AS flightDate, 
+        convert(varchar(11), TrackableBookingInformation.DateETD, 106)	AS flightEstimatedDate,
+        convert(varchar(11), TrackableBookingInformation.DateATD, 106)	AS flightActualDate,
+		FlightKey                   AS flightKey,
+		concat(FlightKey,
+            ISNULL(CONVERT(VARCHAR(11), CAST(TrackableBookingInformation.DateATD AS DATE), 106),
+            ISNULL(CONVERT(VARCHAR(11), CAST(TrackableBookingInformation.DateETD AS DATE), 106),
+            CONVERT(VARCHAR(11), CAST(TrackableBookingInformation.DateSTD AS DATE), 106))),'E' )
+																		AS flightKeyDate,
+		CarrierCode														AS carrier,
+		Exp_ShipmentBooking.Origin										AS origin,
+		'SATS'															AS station,
+		Exp_ShipmentBooking.Destination									AS destination,
+		(select	
+				string_agg(Exp_ShipmentFlightBookingDetailSHC.SpecialHandlingCode, ' ')
+			from(
+				select
+					distinct Exp_ShipmentFlightBookingDetailSHC.SpecialHandlingCode
+				from
+					Exp_ShipmentFlightBookingDetailSHC
+				where
+					Exp_ShipmentFlightBookingDetailSHC.FlightBookingId = TrackableBookingInformation.FlightBookingId
+			)Exp_ShipmentFlightBookingDetailSHC	
+		)																AS SHCS,
+		Exp_ShipmentBooking.GrossWeight									AS totalWt,
+		Exp_ShipmentBooking.WeightUnitCode								AS weightUnit,
+		''																AS shipmentType,
+		case 
+			when TrackableLoadedInformation.LoadedPieces = 0  then 
+				TrackableBookingInformation.BookingPieces
+			else 
+				isnull(TrackableLoadedInformation.LoadedPieces  ,TrackableBookingInformation.BookingPieces) 
+			end															AS assignedTotalPcs,
+		'E'																AS flowType,
+		case                
+			when (TrackableLoadedInformation.Origin in ( #{tenantAirport} , #{tenantCity} ) OR TrackableLoadedInformation.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+				 then NULL 
+			when (TrackableBookingInformation.ThroughTransitFlag = 0) 
+				  then 'T'             
+			when (TrackableBookingInformation.TransferType IS NOT NULL or TrackableBookingInformation.ThroughTransitFlag = 1) 
+				then TrackableBookingInformation.TransferType 
+			when (TrackableBookingInformation.TransferType IS NULL or TrackableBookingInformation.ThroughTransitFlag = 1) 
+				  then 'TT'             
+		end																AS transitType ,
+		''																AS created_DateTime,
+		''																AS lastUpdated_DateTime,
+		'SATSUSER'														AS createdUser,
+		'SATSUSER'														AS lastUpdated_User,
+		'BKG'															AS stage,
+		TrackableBookingInformation.FlightBoardPoint											AS brdPoint,
+		TrackableBookingInformation.FlightOffPoint											AS offPoint,
+		case 
+			when TrackableLoadedInformation.LoadedWeight = 0  then 
+				TrackableBookingInformation.BookingWeight
+			else 
+				isnull(TrackableLoadedInformation.LoadedWeight  ,TrackableBookingInformation.BookingWeight) 
+			end															AS assignedTotalWt
+	from
+		TrackableBookingInformation inner join
+		Exp_ShipmentBooking
+			on TrackableBookingInformation.BookingId = Exp_ShipmentBooking.BookingId left join
+		TrackableLoadedInformation
+			on TrackableBookingInformation.Flight_ID = TrackableLoadedInformation.FlightId and
+				Exp_ShipmentBooking.ShipmentNumber = TrackableLoadedInformation.ShipmentNumber and
+				Exp_ShipmentBooking.ShipmentDate = TrackableLoadedInformation.ShipmentDate
+	where
+		<![CDATA[
+		len(Exp_ShipmentBooking.ShipmentNumber) < 20
+		]]>
+)
+select
+	*
+from
+	FinalTrackableBookingInformation
+order by
+	FinalTrackableBookingInformation.awbno,
+	FinalTrackableBookingInformation.flightActualDate,
+    FinalTrackableBookingInformation.flightEstimatedDate,
+    FinalTrackableBookingInformation.flightDate,
+    FinalTrackableBookingInformation.FlightNumber,
+    FinalTrackableBookingInformation.carrier
+
+	  
+  </select> 
+  
+  <select id="getFlightBookingShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel"  resultMap='FlightBookingResult'>
+
+	with
+       lcltime as (
+       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+              fltleg as (
+              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+ 
+              and( (Flt_OperativeFlight_Legs.DateATD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateETD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateSTD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                 ) 
+                 )
+                 ,
+		fltseg as
+		(select 
+		Flt_OperativeFlight.CarrierCode,
+		Flt_OperativeFlight.FlightNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight.FlightOriginDate, fltleg.* , Flt_OperativeFlight_Segments.FlightSegmentId 
+		from  fltleg 
+		<!-- inner join (select * from Flt_OperativeFlight where CarrierCode = 'SQ') as Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id  and CarrierCode = 'SQ' -->
+		inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id  		 
+		inner join Flt_OperativeFlight_Segments on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 
+		)
+		<!-- select * from fltseg -->
+		,
+		<!-- With -->
+		 TrackableBookingInformation AS(
+			select
+			Exp_ShipmentBooking.ShipmentNumber				AS awbNo,
+			null											AS hawbNo,
+			case
+				when (AssignedShipmentInfo.LoadedPieces) > 0 then
+					'BULK'
+				else
+					''
+				end											AS uld,
+			Exp_ShipmentBooking.Pieces						AS totalPcs,
+			FlightNumber									AS flightNumber,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateSTD, 106)	AS flightDate, 
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateETD, 106)	AS flightEstimatedDate,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateATD, 106)	AS flightActualDate,
+			FlightKey					AS flightKey,
+			concat(FlightKey,
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateATD AS DATE), 106),
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateETD AS DATE), 106),
+			CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE), 106))),'E' )
+			   											    AS flightKeyDate,
+			
+			CarrierCode										AS carrier,
+			Exp_ShipmentBooking.Origin						AS origin,
+			'SATS'											AS station,
+			Exp_ShipmentBooking.Destination					AS destination,
+			Exp_ShipmentFlightBookingDetailSHC.SHCS			AS SHCS,
+			Exp_ShipmentBooking.GrossWeight	AS totalWt,
+			Exp_ShipmentBooking.WeightUnitCode				AS weightUnit,
+			''			                                    AS shipmentType,
+			case when AssignedShipmentInfo.LoadedPieces = 0  then Exp_ShipmentFlightBookingDetail.BookingPieces
+			else isnull(AssignedShipmentInfo.LoadedPieces  ,Exp_ShipmentFlightBookingDetail.BookingPieces) end AS assignedTotalPcs,
+		    'E' 											AS flowType,
+		    case                
+				when (AssignedShipmentInfo.Origin in ( #{tenantAirport} , #{tenantCity} ) OR AssignedShipmentInfo.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+					 then NULL 
+				when (Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 0) 
+					  then 'T'             
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NOT NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then Exp_ShipmentFlightBookingDetail.TransferType 
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					  then 'TT'             
+			end  											AS transitType,
+<!-- 			case  -->
+<!-- 				when (Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) then -->
+<!-- 					'T' -->
+<!-- 				else  -->
+<!-- 					( -->
+<!-- 						select -->
+<!-- 							TOP 1 Imp_ArrivalManifestShipmentInfo.TransferType -->
+<!-- 						from -->
+<!-- 							Imp_ArrivalManifestShipmentInfo -->
+<!-- 						where -->
+<!-- 							Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Exp_ShipmentBooking.ShipmentNumber and -->
+<!-- 							Imp_ArrivalManifestShipmentInfo.ShipmentDate = Exp_ShipmentBooking.ShipmentDate and -->
+<!-- 							Imp_ArrivalManifestShipmentInfo.BookingFlightId = Exp_ShipmentFlightBookingDetail.FlightId and -->
+<!-- 							Imp_ArrivalManifestShipmentInfo.FlightSegmentId = Exp_ShipmentFlightBookingDetail.FlightSegmentId -->
+<!-- 					) -->
+<!-- 				end			                                AS transitType , -->
+			'' 												AS created_DateTime,
+		    '' 												AS lastUpdated_DateTime,
+		    'SATSUSER' 										AS createdUser,
+		    'SATSUSER' 										AS lastUpdated_User,
+		    'BKG' 											AS stage,
+			Flt_OperativeFlight_Legs.FlightBoardPoint		AS brdPoint,
+            Flt_OperativeFlight_Legs.FlightOffPoint			AS offPoint,
+			case when AssignedShipmentInfo.LoadedWeight = 0  then Exp_ShipmentFlightBookingDetail.BookingWeight
+			else isnull(AssignedShipmentInfo.LoadedWeight  ,Exp_ShipmentFlightBookingDetail.BookingWeight) end AS assignedTotalWt
+			<!-- ,OutwardBookingFlag -->
+		from
+			Exp_ShipmentBooking 
+			inner join Exp_ShipmentFlightBookingDetail on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+			 inner join fltseg as Flt_OperativeFlight_Legs on
+			  Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight_Legs.Flight_Id   and 
+			  Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Legs.FlightSegmentId
+			  and Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1 
+			inner join
+			(
+				select outerSHC.FlightBookingId,
+					substring((Select 
+									' '+innerSHC.SpecialHandlingCode AS [text()]
+								From 
+									Exp_ShipmentFlightBookingDetailSHC as innerSHC
+								Where 
+									innerSHC.FlightBookingId = outerSHC.FlightBookingId 
+								ORDER BY 
+									innerSHC.FlightBookingId For XML PATH ('')), 2, 1000) as SHCS
+				from
+					Exp_ShipmentFlightBookingDetailSHC as outerSHC
+				group by
+					outerSHC.FlightBookingId
+			) Exp_ShipmentFlightBookingDetailSHC
+				on Exp_ShipmentFlightBookingDetail.FlightBookingId = Exp_ShipmentFlightBookingDetailSHC.FlightBookingId 
+				 left join
+			(
+				select
+					Exp_AssignedULDTrolleyToFlight.FlightId,
+					sum(isnull(Exp_LoadedShipmentInfo.Pieces,0)) LoadedPieces,
+					sum(isnull(Exp_LoadedShipmentInfo.Weight,0)) LoadedWeight,
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination
+					
+				from
+					Exp_AssignedULDTrolleyToFlight 
+					inner join Exp_LoadedShipmentInfo on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId 
+					inner join Shipment_Master on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+				where
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber is not null and
+					len(Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber) > 7
+				group by
+					Exp_AssignedULDTrolleyToFlight.FlightId,
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination
+			)AssignedShipmentInfo
+				on Exp_ShipmentBooking.ShipmentNumber = AssignedShipmentInfo.ShipmentNumber and
+					Exp_ShipmentBooking.ShipmentDate = AssignedShipmentInfo.ShipmentDate and
+					Exp_ShipmentFlightBookingDetail.FlightId = AssignedShipmentInfo.FlightId
+		where			   
+	      	
+	      	<if test="shcList.size() > 0">
+		     exists( select
+						1
+					from
+						Exp_ShipmentFlightBookingDetailSHC
+						where						
+						Exp_ShipmentFlightBookingDetail.FlightBookingId = Exp_ShipmentFlightBookingDetailSHC.FlightBookingId AND
+						Exp_ShipmentFlightBookingDetailSHC.SpecialHandlingCode IN 	
+				      <foreach item="shc1" index="index" collection="shcList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      </foreach>
+	        	)   	
+	      	</if> 	       
+	      	
+	      	)select
+		*
+	from
+		TrackableBookingInformation
+					 
+			ORDER BY awbno,
+			TrackableBookingInformation.flightActualDate,
+			TrackableBookingInformation.flightEstimatedDate,
+			TrackableBookingInformation.flightDate,
+			TrackableBookingInformation.FlightNumber,
+			TrackableBookingInformation.carrier
+
+ 
+  </select>
+  
+  
+  <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.AwbModel' id='ManifestedResult'> 
+     <result property='awbNo' column='awbNo'/>
+     <result property='hawbNo' column='hawbNo'/> 
+     <result property='totalPcs' column='totalPcs'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='flightDate' column='flightDate'/>
+     <result property='flightEstimatedDate' column='flightEstimatedDate'/>
+     <result property='flightActualDate' column='flightActualDate'/>
+     <result property='flightKeyDate' column='flightKeyDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='origin' column='origin'/>
+     <result property='station' column='station'/>
+     <result property='destination' column='destination'/>
+     <result property='SHCS' column='SHCS'/> 
+     <result property='totalWt' column='totalWt'/>
+     <result property='weightUnit' column='weightUnit'/>
+     <result property='shipmentType' column='shipmentType'/>
+     <result property='flowType' column='flowType'/>
+     <result property='transitType' column='transitType'/>
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+     <result property='stage' column='stage'/>
+     <result property='brdPoint' column='brdPoint'/>
+     <result property='offPoint' column='offPoint'/>
+    <collection property='ulds' ofType='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' resultMap='ULDResult3'></collection>
+   </resultMap>
+
+   <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' id='ULDResult3'>      
+     <result property='uldNo' column='uld'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightDate' column='flightDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='assignedTotalPcs' column='assignedTotalPcs'/>
+     <result property='assignedTotalWt' column='assignedTotalWt'/> 
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+   </resultMap>
+   
+  <select id="getFlightManifestedCarrShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel" resultMap='ManifestedResult'>
+with lcltime as (
+	select 
+		convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  
+			(select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime
+), fltleg as (
+	select 
+		Flt_OperativeFlight_Legs.Flight_ID,
+		Flt_OperativeFlight_Legs.DateATD,
+		Flt_OperativeFlight_Legs.DateSTD,
+		Flt_OperativeFlight_Legs.DateETD
+	from 
+		Flt_OperativeFlight_Legs inner join 
+		lcltime 
+			on 1 = 1 
+	where 
+		Flt_OperativeFlight_Legs.FlightBoardPoint = (select ParameterValueChar from App_SystemParameters where ParameterCode='BASE_PORT') and
+		coalesce(Flt_OperativeFlight_Legs.DateATD, 
+			Flt_OperativeFlight_Legs.DateETD, 
+			Flt_OperativeFlight_Legs.DateSTD) between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and lcldttime  +  #{exportDataPushPlusTo}/(24*60) 
+), fltseg as (
+	select 
+		Flt_OperativeFlight.CarrierCode,
+		Flt_OperativeFlight.FlightNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight.FlightOriginDate, 
+		fltleg.Flight_ID,
+		fltleg.DateATD,
+		fltleg.DateSTD,
+		fltleg.DateETD,
+		Flt_OperativeFlight_Segments.FlightSegmentId,
+		Flt_OperativeFlight_Segments.FlightBoardPoint,
+		Flt_OperativeFlight_Segments.FlightOffPoint
+	from  
+		fltleg 
+		
+		<if test="carrierList2.size() > 0">
+		inner join 
+		Flt_OperativeFlight 
+			on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id inner join 
+		Flt_OperativeFlight_Segments on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 
+	where
+		Flt_OperativeFlight.CarrierCode in 
+		 <foreach item="shc1" index="index" collection="carrierList2" open="(" separator="," close=")">
+	      	(#{shc1})
+	     </foreach>
+		 </if>
+		
+), TrackableManifestInformation as (
+	select distinct 
+		Shipment_Master.ShipmentNumber									AS awbNo, 
+		null															AS hawbNo, 
+		case
+			when (Exp_ManifestULDInfo.ULDNumber  is null OR <![CDATA[ Len(Exp_ManifestULDInfo.ULDNumber)   <=  7 ]]> ) then
+				'BULK' 
+			else	
+				Exp_ManifestULDInfo.ULDNumber  
+			end															AS uld,
+		Shipment_Master.Pieces 											AS totalPcs, 
+		fltseg.FlightNumber	 											AS flightNumber,
+		convert(varchar(11), fltseg.DateSTD, 106)						AS flightDate, 
+		convert(varchar(11), fltseg.DateETD, 106)						AS flightEstimatedDate,
+		convert(varchar(11), fltseg.DateATD, 106)						AS flightActualDate,
+		fltseg.FlightKey												AS flightKey,	
+		concat(fltseg.FlightKey,
+		ISNULL(CONVERT(VARCHAR(11), CAST(fltseg.DateATD AS DATE), 106), 
+		ISNULL(CONVERT(VARCHAR(11), CAST(fltseg.DateETD AS DATE), 106),
+		CONVERT(VARCHAR(11), CAST(fltseg.DateSTD AS DATE), 106))),'E' ) AS flightKeyDate,
+		fltseg.CarrierCode												AS carrier,
+		Exp_ManifestShipmentInfo.Origin									AS origin,
+		'SATS'															AS station,
+		Exp_ManifestShipmentInfo.Destination							AS destination,
+		(select	
+				string_agg(Exp_ManifestShipmentSHCInfo.SpecialHandlingCode, ' ')
+			from(
+				select
+					distinct Exp_ManifestShipmentSHCInfo.SpecialHandlingCode
+				from
+					Exp_ManifestShipmentSHCInfo
+				where
+					Exp_ManifestShipmentSHCInfo.ManifestShipmentInfoId = Exp_ManifestShipmentInfo.ManifestShipmentInfoId
+			)Exp_ManifestShipmentSHCInfo	
+		)																AS SHCS,
+		Exp_ManifestShipmentInfo.Weight									AS assignedTotalWt,
+		Shipment_Master.WeightUnitCode									AS weightUnit,
+		''																AS shipmentType, 
+		Exp_ManifestShipmentInfo.Piece									AS assignedTotalPcs,
+		'E'																AS flowType,
+<!-- 			case -->
+<!-- 				when (select -->
+<!-- 							count(1) -->
+<!-- 						from -->
+<!-- 							Transhipment_TransferTypes -->
+<!-- 						where -->
+<!-- 							Transhipment_TransferTypes. TransferType = 'TT' and -->
+<!-- 							Transhipment_TransferTypes.Code = Exp_ManifestShipmentInfo.TransferType) > 0 then -->
+<!-- 					'T' -->
+<!-- 				else -->
+<!-- 					Exp_ManifestShipmentInfo.TransferType -->
+<!-- 				end														AS transitType, -->
+		case                
+			when (Shipment_Master.Origin in ( #{tenantAirport} , #{tenantCity} ) OR Shipment_Master.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+				 then NULL 
+			when (Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 0) 
+				  then 'T'             
+			when (Exp_ShipmentFlightBookingDetail.TransferType IS NOT NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+				then Exp_ShipmentFlightBookingDetail.TransferType 
+			when (Exp_ShipmentFlightBookingDetail.TransferType IS NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+				  then 'TT'             
+		end																AS transitType,
+			''															AS created_DateTime,
+		    ''															AS lastUpdated_DateTime,
+		'SATSUSER'														AS createdUser,
+		'SATSUSER'														AS lastUpdated_User,
+		'MAN'															AS stage,
+        fltseg.FlightBoardPoint											AS brdPoint,
+        fltseg.FlightOffPoint											AS offPoint,
+		Shipment_Master.Weight											AS totalWt
+	from	
+		fltseg inner join	
+		Exp_Manifest 
+			on fltseg.FlightSegmentId = Exp_Manifest.FlightSegmentId inner join 
+		Exp_ManifestULDInfo 
+			on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join	
+		Exp_ManifestShipmentInfo 
+			on Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join	
+		Shipment_Master	
+			on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId 
+		inner join Exp_ShipmentBooking 
+			on Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber 
+		inner join Exp_ShipmentFlightBookingDetail on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+			and Exp_ShipmentFlightBookingDetail.FlightId = fltseg.Flight_ID
+	where
+	
+	<if test="carrierList.size() > 0">
+		 exists(
+			select
+				null
+			from
+				Exp_ManifestShipmentSHCInfo innerSHC
+			where
+				innerSHC.ManifestShipmentInfoId = Exp_ManifestShipmentInfo.ManifestShipmentInfoId
+				and concat(fltseg.CarrierCode, innerSHC.SpecialHandlingCode) IN 	
+					<foreach item="shc1" index="index" collection="carrierList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      </foreach>
+		)
+		</if>
+		
+)
+select 
+	* 
+from 
+	TrackableManifestInformation		
+order by 
+	TrackableManifestInformation.Awbno,
+	TrackableManifestInformation.flightActualDate,
+	TrackableManifestInformation.flightEstimatedDate,
+	TrackableManifestInformation.flightDate,
+	TrackableManifestInformation.FlightNumber,
+	TrackableManifestInformation.carrier
+
+
+ </select> 
+ 
+ 
+ <select id="getFlightManifestedShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel" resultMap='ManifestedResult'>
+	with
+       lcltime as (
+       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+              fltleg as (
+              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} 
+              and( (Flt_OperativeFlight_Legs.DateATD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateETD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateSTD between lcldttime  - #{exportDataPushMinusFrom}/(24*60) and       lcldttime  +  #{exportDataPushPlusTo}/(24*60))
+                 ) 
+                 ),
+		fltseg as
+		(select 
+		Flt_OperativeFlight.CarrierCode,
+		Flt_OperativeFlight.FlightNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight.FlightOriginDate, fltleg.* , Flt_OperativeFlight_Segments.FlightSegmentId 
+		from  fltleg 		
+		 
+		inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id  
+		inner join Flt_OperativeFlight_Segments on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 
+		),
+		
+ TrackableManifestInformation AS(
+	select distinct 
+			Shipment_Master.ShipmentNumber	 AS awbNo, null AS hawbNo, case
+				when (Exp_ManifestULDInfo.ULDNumber  is null OR Len(Exp_ManifestULDInfo.ULDNumber)  <![CDATA[<=]]> 7 ) then
+				'BULK' else Exp_ManifestULDInfo.ULDNumber  end	AS uld,
+			Shipment_Master.Pieces 						AS totalPcs, 
+			fltseg.FlightNumber	 						AS flightNumber,
+			convert(varchar(11), fltseg.DateSTD, 106)	AS flightDate, 
+			convert(varchar(11), fltseg.DateETD, 106)	AS flightEstimatedDate,
+			convert(varchar(11), fltseg.DateATD, 106)	AS flightActualDate,
+			fltseg.FlightKey							AS flightKey,	
+			concat(fltseg.FlightKey,
+			ISNULL(CONVERT(VARCHAR(11), CAST(fltseg.DateATD AS DATE), 106),
+			ISNULL(CONVERT(VARCHAR(11), CAST(fltseg.DateETD AS DATE), 106),
+			CONVERT(VARCHAR(11), CAST(fltseg.DateSTD AS DATE), 106))),'E' )
+																	AS flightKeyDate,
+			fltseg.CarrierCode							AS carrier,
+			Exp_ManifestShipmentInfo.Origin							AS origin,
+			'SATS'													AS station,
+			Exp_ManifestShipmentInfo.Destination					AS destination,
+			Exp_ManifestShipmentSHCInfo.SHCS						AS SHCS,
+			Exp_ManifestShipmentInfo.Weight							AS assignedTotalWt,
+			Shipment_Master.WeightUnitCode							AS weightUnit,
+			''				                                        AS shipmentType, 
+			Exp_ManifestShipmentInfo.Piece							AS assignedTotalPcs,
+			'E'														AS flowType,
+			case                
+				when (Shipment_Master.Origin  in ( #{tenantAirport} , #{tenantCity} ) OR Shipment_Master.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+					 then NULL 
+				when (Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 0) 
+					  then 'T'             
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NOT NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then Exp_ShipmentFlightBookingDetail.TransferType 
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then 'TT'             
+			end														AS transitType,
+<!-- 			case -->
+<!-- 				when (select -->
+<!-- 							count(1) -->
+<!-- 						from -->
+<!-- 							Transhipment_TransferTypes -->
+<!-- 						where -->
+<!-- 							Transhipment_TransferTypes. TransferType = 'TT' and -->
+<!-- 							Transhipment_TransferTypes.Code = Exp_ManifestShipmentInfo.TransferType) > 0 then -->
+<!-- 					'T' -->
+<!-- 				else -->
+<!-- 					Exp_ManifestShipmentInfo.TransferType -->
+<!-- 				end													AS transitType, -->
+			''														AS created_DateTime,
+		    ''														AS lastUpdated_DateTime,
+		    'SATSUSER'												AS createdUser,
+		    'SATSUSER'												AS lastUpdated_User,
+		    'MAN'													AS stage,
+            fltseg.FlightBoardPoint									AS brdPoint,
+            fltseg.FlightOffPoint									AS offPoint,
+			Shipment_Master.Weight 									AS totalWt
+		from fltseg
+				inner join	Exp_Manifest on fltseg.FlightSegmentId = Exp_Manifest.FlightSegmentId
+				inner join Exp_ManifestULDInfo on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId 
+				inner join	Exp_ManifestShipmentInfo on Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId 
+				inner join	Shipment_Master	on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId 
+				inner join Exp_ShipmentBooking on Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber 
+				inner join Exp_ShipmentFlightBookingDetail on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+					and Exp_ShipmentFlightBookingDetail.FlightId = Exp_Manifest.FlightId
+				left join		(
+			select outerSHC.ManifestShipmentInfoId,
+				substring((Select 
+								' '+innerSHC.SpecialHandlingCode AS [text()]
+							From 
+								Exp_ManifestShipmentSHCInfo as innerSHC
+							Where 
+								innerSHC.ManifestShipmentInfoId = outerSHC.ManifestShipmentInfoId
+							ORDER BY 
+								innerSHC.ManifestShipmentInfoId For XML PATH ('')), 2, 1000) as SHCS
+			from
+				Exp_ManifestShipmentSHCInfo as outerSHC
+			group by
+				outerSHC.ManifestShipmentInfoId
+		) Exp_ManifestShipmentSHCInfo
+			on Exp_ManifestShipmentInfo.ManifestShipmentInfoId = Exp_ManifestShipmentSHCInfo.ManifestShipmentInfoId
+		where
+ 	      	
+	      	<if test="shcList.size() > 0">
+		    exists(
+					select
+						1
+					from
+						Exp_ManifestShipmentSHCInfo innerSHC
+					where
+						innerSHC.ManifestShipmentInfoId = Exp_ManifestShipmentInfo.ManifestShipmentInfoId
+						and innerSHC.SpecialHandlingCode IN 
+						<foreach item="shc1" index="index" collection="shcList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      </foreach>
+				)
+				</if>
+		 )select
+		*
+	from
+		TrackableManifestInformation
+ 
+		ORDER BY Awbno,
+			TrackableManifestInformation.flightActualDate,
+			TrackableManifestInformation.flightEstimatedDate,
+			TrackableManifestInformation.flightDate,
+			TrackableManifestInformation.FlightNumber,
+			TrackableManifestInformation.carrier
+
+ </select> 
+   
+  
+  <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.AwbModel' id='FlightFFMResult'>  
+     <result property='awbNo' column='awbNo'/>
+     <result property='hawbNo' column='hawbNo'/> 
+     <result property='totalPcs' column='totalPcs'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='flightDate' column='flightDate'/> 
+     <result property='flightEstimatedDate' column='flightEstimatedDate'/>
+     <result property='flightActualDate' column='flightActualDate'/>
+     <result property='flightKeyDate' column='flightKeyDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='origin' column='origin'/>
+     <result property='station' column='station'/>
+     <result property='destination' column='destination'/>
+     <result property='SHCS' column='SHCS'/> 
+     <result property='totalWt' column='totalWt'/>
+     <result property='weightUnit' column='weightUnit'/>
+     <result property='shipmentType' column='shipmentType'/>
+     <result property='flowType' column='flowType'/>
+     <result property='transitType' column='transitType'/>
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+     <result property='stage' column='stage'/>
+     <result property='brdPoint' column='brdPoint'/>
+     <result property='offPoint' column='offPoint'/>
+    <collection property='ulds' notNullColumn='uld'   ofType='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' resultMap='ULDResult'></collection>
+   </resultMap>
+
+   <resultMap type='com.ngen.cosys.platform.rfid.tracker.interfaces.model.ULDModel' id='ULDResult'>      
+     <result property='uldNo' column='uld'/>
+     <result property='flightNumber' column='flightNumber'/>
+     <result property='flightDate' column='flightDate'/>
+     <result property='carrier' column='carrier'/>
+     <result property='flightKey' column='flightKey'/>
+     <result property='assignedTotalPcs' column='assignedTotalPcs'/>
+     <result property='assignedTotalWt' column='assignedTotalWt'/> 
+     <result property='created_DateTime' column='created_DateTime'/> 
+     <result property='lastUpdated_DateTime' column='lastUpdated_DateTime'/>
+     <result property='createdUser' column='createdUser'/>
+     <result property='lastUpdated_User' column='lastUpdated_User'/> 
+   </resultMap>
+   
+  <select id="getImportFFMCarrShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel"  resultMap='FlightFFMResult'>
+  
+Declare @tmpFltseg Table 
+(CarrierCode varchar(4) Index tmpFltSeg_Ind, FlightNumber varchar(6), FlightKey varchar(10), FlightOriginDate datetime,
+Flight_ID numeric, DateATA datetime, DateSTA datetime, DateETA datetime, FlightBoardPoint varchar(10), FlightOffPoint varchar(10),
+FlightSegmentId numeric
+);
+with
+       lcltime as (
+       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+              fltleg as (
+              select 		Flt_OperativeFlight_Legs.Flight_ID,
+		Flt_OperativeFlight_Legs.DateATA,
+		Flt_OperativeFlight_Legs.DateSTA,
+		Flt_OperativeFlight_Legs.DateETA , Flt_OperativeFlight_Legs.FlightBoardPoint, Flt_OperativeFlight_Legs.FlightOffPoint
+		from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flt_OperativeFlight_Legs.FlightOffPoint = (select ParameterValueChar from App_SystemParameters where ParameterCode='BASE_PORT') 
+		and coalesce(Flt_OperativeFlight_Legs.DateATA, 
+			Flt_OperativeFlight_Legs.DateETA, 
+			Flt_OperativeFlight_Legs.DateSTA) between lcldttime  - #{importDataPushMinusFrom}/(24*60) and lcldttime  +  #{importDataPushPlusTo}/(24*60) 
+                 ),
+		fltsegs as
+		(select 
+		Flt_OperativeFlight.CarrierCode,
+		Flt_OperativeFlight.FlightNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight.FlightOriginDate, fltleg.* , Flt_OperativeFlight_Segments.FlightSegmentId 
+		from  fltleg  				 
+		inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id 
+		inner join Flt_OperativeFlight_Segments on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 
+		)
+<if test="carrierList2.size() > 0">
+insert into @tmpFltseg select * from fltsegs where CarrierCode in 
+ <foreach item="shc1" index="index" collection="carrierList2" open="(" separator="," close=");">
+	      	(#{shc1})
+	     </foreach>
+ </if>
+ 
+with fltseg as(select * from @tmpFltseg),
+		
+TrackableArrivalManifestInformation AS(
+	select
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber				AS awbNo,
+			null														AS hawbNo,
+			case
+				when (Imp_ArrivalManifestULD.ULDNumber is null) then
+					'BULK'
+				else
+					Imp_ArrivalManifestULD.ULDNumber
+				end														AS uld,
+			(select sum(IAMS.Piece) from Imp_ArrivalManifestShipmentInfo IAMS where IAMS.shipmentnumber= Imp_ArrivalManifestShipmentInfo.shipmentnumber
+and IAMS.shipmentdate= Imp_ArrivalManifestShipmentInfo.shipmentdate)					AS totalPcs,
+			FlightNumber							AS flightNumber,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateSTA, 106)	AS flightDate, 
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateETA, 106)	AS flightEstimatedDate,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateATA, 106)	AS flightActualDate,
+
+			FlightKey								AS flightKey,
+			concat(FlightKey,
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateATA AS DATE), 106),
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateETA AS DATE), 106),
+			CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateSTA AS DATE), 106))),'I' )
+																		AS flightKeyDate,
+			Flt_OperativeFlight_Legs.CarrierCode								AS carrier,
+			Imp_ArrivalManifestShipmentInfo.Origin						AS origin,
+			'SATS'														AS station,
+			Imp_ArrivalManifestShipmentInfo.Destination					AS destination,
+			
+			Imp_ArrivalManifestByShipmentSHC.SHCS						AS SHCS,
+			Imp_ArrivalManifestShipmentInfo.Weight						AS assignedTotalWt,
+			Imp_ArrivalManifestShipmentInfo.WeightUnitCode				AS weightUnit,
+			''															AS shipmentType, 
+			Imp_ArrivalManifestShipmentInfo.Piece						AS assignedTotalPcs,
+		    'I' 														AS flowType,
+		    case                
+				when (sm.Origin in ( #{tenantAirport} , #{tenantCity} ) OR sm.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+					 then NULL 
+				when (TTBkDtl.ThroughTransitFlag = 0) 
+					  then 'T'             
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NOT NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then Exp_ShipmentFlightBookingDetail.TransferType 
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then 'TT'             
+			end														AS transitType,
+<!-- 			case  -->
+<!-- 				when ( -->
+<!-- 					select -->
+<!-- 						count(1) -->
+<!-- 					from -->
+<!-- 						Transhipment_TransferTypes -->
+<!-- 					where -->
+<!-- 						Transhipment_TransferTypes.TransferType = 'TT' and -->
+<!-- 						Transhipment_TransferTypes.Code = Imp_ArrivalManifestShipmentInfo.TransferType -->
+<!-- 				) > 0 then -->
+<!-- 					'T' -->
+<!-- 				else  -->
+<!-- 					CASE  -->
+<!-- 						WHEN (Imp_ArrivalManifestShipmentInfo.TransferType is null) THEN null -->
+<!-- 						ELSE 'T' -->
+<!-- 					END -->
+<!-- 				end														AS transitType , -->
+			'' 															AS created_DateTime,
+		    '' 															AS lastUpdated_DateTime,
+		    'SATSUSER' 													AS createdUser,
+		    'SATSUSER' 													AS lastUpdated_User,
+		    'FFM' 														AS stage,
+			Flt_OperativeFlight_Legs.FlightBoardPoint					AS brdPoint,
+			Flt_OperativeFlight_Legs.FlightOffPoint						AS offPoint,
+			(select sum(IAMS.weight) from Imp_ArrivalManifestShipmentInfo IAMS where IAMS.shipmentnumber= Imp_ArrivalManifestShipmentInfo.shipmentnumber
+			and IAMS.shipmentdate= Imp_ArrivalManifestShipmentInfo.shipmentdate) as totalWt
+		from
+			Imp_ArrivalManifestByFlight inner join
+			fltseg as Flt_OperativeFlight_Legs on  Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight_Legs.Flight_Id 			 
+			inner join Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+				and Flt_OperativeFlight_Legs.FlightSegmentId = Imp_ArrivalManifestBySegment.FlightSegmentId
+			inner join Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId 
+			inner join Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			left join shipment_master sm on sm.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+				and sm.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+			left join Exp_ShipmentBooking on Exp_ShipmentBooking.ShipmentNumber = sm.ShipmentNumber 
+			left join Exp_ShipmentFlightBookingDetail on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+                    and Exp_ShipmentFlightBookingDetail.TransferType is not null  
+            left join Exp_ShipmentFlightBookingDetail TTBkDtl on  Exp_ShipmentBooking.BookingId = TTBkDtl.BookingId
+                    and TTBkDtl.ThroughTransitFlag = 0
+			left join
+			(
+				select outerSHC.ImpArrivalManifestShipmentInfoId,
+					substring((Select 
+									' '+innerSHC.SpecialHandlingCode AS [text()]
+								From 
+									Imp_ArrivalManifestByShipmentSHC as innerSHC
+								Where 
+									innerSHC.ImpArrivalManifestShipmentInfoId = outerSHC.ImpArrivalManifestShipmentInfoId
+								ORDER BY 
+									innerSHC.ImpArrivalManifestShipmentInfoId For XML PATH ('')), 2, 1000) as SHCS
+				from
+					Imp_ArrivalManifestByShipmentSHC as outerSHC
+				group by
+					outerSHC.ImpArrivalManifestShipmentInfoId
+			) Imp_ArrivalManifestByShipmentSHC
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+		where	
+		
+			  <if test="carrierList.size() > 0"> 
+		     exists(
+					select
+						null
+					from
+						Imp_ArrivalManifestByFlight innerArrivalManifestByFlight 
+						inner join Flt_OperativeFlight innerFltOperativeFlight on innerArrivalManifestByFlight.FlightId = innerFltOperativeFlight.Flight_Id 
+						inner join Imp_ArrivalManifestBySegment innerArrivalManifestBySegment on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+						inner join Imp_ArrivalManifestULD innerArrivalManifestULD on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestULD.ImpArrivalManifestBySegmentId 
+						inner join Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo on innerArrivalManifestULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId 
+						inner join Imp_ArrivalManifestByShipmentSHC innerArrivalManifestByShipmentSHC on innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = innerArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+						and innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+					where	 
+						innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId and
+						innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId and
+						innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId and
+						
+						concat(innerFltOperativeFlight.CarrierCode, innerArrivalManifestByShipmentSHC.SpecialHandlingCode) IN 						 
+						 <foreach item="shc1" index="index" collection="carrierList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      	</foreach>	
+	        		)   	
+				  </if> 
+			)select 
+		*
+	from
+		TrackableArrivalManifestInformation
+				
+		ORDER BY TrackableArrivalManifestInformation.awbNo,
+			TrackableArrivalManifestInformation.flightActualDate,
+			TrackableArrivalManifestInformation.flightEstimatedDate,
+			TrackableArrivalManifestInformation.flightDate,
+			TrackableArrivalManifestInformation.FlightNumber,
+			TrackableArrivalManifestInformation.carrier
+						
+  </select> 
+  
+  
+  <select id="getImportFFMShcData" parameterType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.SearchFilterModel"  resultMap='FlightFFMResult'>
+  with
+       lcltime as (
+       select convert(datetime, CONVERT(datetimeoffset, getdate()) AT TIME ZONE  (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  as lcldttime),
+              fltleg as (
+              select * from Flt_OperativeFlight_Legs join lcltime on 1=1 where Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} 
+              and( (Flt_OperativeFlight_Legs.DateATA between lcldttime  - #{importDataPushMinusFrom}/(24*60) and       lcldttime  +  #{importDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateETA between lcldttime  - #{importDataPushMinusFrom}/(24*60) and       lcldttime  +  #{importDataPushPlusTo}/(24*60))
+                      or (Flt_OperativeFlight_Legs.DateSTA between lcldttime  - #{importDataPushMinusFrom}/(24*60) and       lcldttime  +  #{importDataPushPlusTo}/(24*60))
+                 ) 
+                 ),
+		fltseg as
+		(select 
+		Flt_OperativeFlight.CarrierCode,
+		Flt_OperativeFlight.FlightNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight.FlightOriginDate, fltleg.* , Flt_OperativeFlight_Segments.FlightSegmentId 
+		from  fltleg 
+		 		
+		inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_Id = fltleg.Flight_Id 
+		 
+		inner join Flt_OperativeFlight_Segments on fltleg.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id 
+		),		
+		
+TrackableArrivalManifestInformation AS(
+	select
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber				AS awbNo,
+			null														AS hawbNo,
+			case
+				when (Imp_ArrivalManifestULD.ULDNumber is null) then
+					'BULK'
+				else
+					Imp_ArrivalManifestULD.ULDNumber
+				end														AS uld,
+			(select sum(IAMS.Piece) from Imp_ArrivalManifestShipmentInfo IAMS where IAMS.shipmentnumber= Imp_ArrivalManifestShipmentInfo.shipmentnumber
+and IAMS.shipmentdate= Imp_ArrivalManifestShipmentInfo.shipmentdate)					AS totalPcs,
+			FlightNumber							AS flightNumber,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateSTA, 106)	AS flightDate, 
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateETA, 106)	AS flightEstimatedDate,
+			convert(varchar(11), Flt_OperativeFlight_Legs.DateATA, 106)	AS flightActualDate,
+
+			FlightKey								AS flightKey,
+			concat(FlightKey,
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateATA AS DATE), 106),
+			ISNULL(CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateETA AS DATE), 106),
+			CONVERT(VARCHAR(11), CAST(Flt_OperativeFlight_Legs.DateSTA AS DATE), 106))),'I' )
+																		AS flightKeyDate,
+			Flt_OperativeFlight_Legs.CarrierCode								AS carrier,
+			Imp_ArrivalManifestShipmentInfo.Origin						AS origin,
+			'SATS'														AS station,
+			Imp_ArrivalManifestShipmentInfo.Destination					AS destination,
+			
+			Imp_ArrivalManifestByShipmentSHC.SHCS						AS SHCS,
+			Imp_ArrivalManifestShipmentInfo.Weight						AS assignedTotalWt,
+			Imp_ArrivalManifestShipmentInfo.WeightUnitCode				AS weightUnit,
+			''															AS shipmentType, 
+			Imp_ArrivalManifestShipmentInfo.Piece						AS assignedTotalPcs,
+		    'I' 														AS flowType,
+		    case                
+				when (sm.Origin in ( #{tenantAirport} , #{tenantCity} ) OR sm.Destination in ( #{tenantAirport} , #{tenantCity} )) 
+					 then NULL 
+				when (TTBkDtl.ThroughTransitFlag = 0) 
+					  then 'T'             
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NOT NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then Exp_ShipmentFlightBookingDetail.TransferType 
+				when (Exp_ShipmentFlightBookingDetail.TransferType IS NULL or Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) 
+					then 'TT'             
+			end														AS transitType,
+<!-- 			case  -->
+<!-- 				when ( -->
+<!-- 					select -->
+<!-- 						count(1) -->
+<!-- 					from -->
+<!-- 						Transhipment_TransferTypes -->
+<!-- 					where -->
+<!-- 						Transhipment_TransferTypes.TransferType = 'TT' and -->
+<!-- 						Transhipment_TransferTypes.Code = Imp_ArrivalManifestShipmentInfo.TransferType -->
+<!-- 				) > 0 then -->
+<!-- 					'T' -->
+<!-- 				else  -->
+<!-- 					CASE  -->
+<!-- 						WHEN (Imp_ArrivalManifestShipmentInfo.TransferType is null) THEN null -->
+<!-- 						ELSE 'T' -->
+<!-- 					END -->
+<!-- 				end														AS transitType , -->
+			'' 															AS created_DateTime,
+		    '' 															AS lastUpdated_DateTime,
+		    'SATSUSER' 													AS createdUser,
+		    'SATSUSER' 													AS lastUpdated_User,
+		    'FFM' 														AS stage,
+			Flt_OperativeFlight_Legs.FlightBoardPoint					AS brdPoint,
+			Flt_OperativeFlight_Legs.FlightOffPoint						AS offPoint,
+			(select sum(IAMS.weight) from Imp_ArrivalManifestShipmentInfo IAMS where IAMS.shipmentnumber= Imp_ArrivalManifestShipmentInfo.shipmentnumber
+			and IAMS.shipmentdate= Imp_ArrivalManifestShipmentInfo.shipmentdate) as totalWt
+		from
+			Imp_ArrivalManifestByFlight inner join
+			fltseg as Flt_OperativeFlight_Legs on  Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight_Legs.Flight_Id 
+			inner join Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+				and Flt_OperativeFlight_Legs.FlightSegmentId = Imp_ArrivalManifestBySegment.FlightSegmentId
+				inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId 
+			left join shipment_master sm on sm.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+				and sm.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+			left join Exp_ShipmentBooking on Exp_ShipmentBooking.ShipmentNumber = sm.ShipmentNumber 
+			left join Exp_ShipmentFlightBookingDetail on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+                    and Exp_ShipmentFlightBookingDetail.TransferType is not null  
+            left join Exp_ShipmentFlightBookingDetail TTBkDtl on  Exp_ShipmentBooking.BookingId = TTBkDtl.BookingId
+                    and TTBkDtl.ThroughTransitFlag = 0
+			left join
+			(
+				select outerSHC.ImpArrivalManifestShipmentInfoId,
+					substring((Select 
+									' '+innerSHC.SpecialHandlingCode AS [text()]
+								From 
+									Imp_ArrivalManifestByShipmentSHC as innerSHC
+								Where 
+									innerSHC.ImpArrivalManifestShipmentInfoId = outerSHC.ImpArrivalManifestShipmentInfoId
+								ORDER BY 
+									innerSHC.ImpArrivalManifestShipmentInfoId For XML PATH ('')), 2, 1000) as SHCS
+				from
+					Imp_ArrivalManifestByShipmentSHC as outerSHC
+				group by
+					outerSHC.ImpArrivalManifestShipmentInfoId
+			) Imp_ArrivalManifestByShipmentSHC
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+		where	
+		
+			<if test="shcList.size() > 0">
+		    exists(
+					select
+						1
+					from
+						Imp_ArrivalManifestByShipmentSHC
+					where
+						Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId and
+						Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode IN 
+						<foreach item="shc1" index="index" collection="shcList" open="(" separator="," close=")">
+				      	(#{shc1})
+				      </foreach>										      
+	        		)   	
+				</if> 
+			)select 
+		*
+	from
+		TrackableArrivalManifestInformation
+				
+		ORDER BY awbNo,
+			TrackableArrivalManifestInformation.flightActualDate,
+			TrackableArrivalManifestInformation.flightEstimatedDate,
+			TrackableArrivalManifestInformation.flightDate,
+			TrackableArrivalManifestInformation.FlightNumber,
+			TrackableArrivalManifestInformation.carrier
+			
+  </select>
+ 
+</mapper>

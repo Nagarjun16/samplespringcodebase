@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AppSystemParameterMapper">
+	
+	<select id="sqlSelectAppSystemParameter" parameterType="java.lang.String" 
+			resultType="java.lang.String">
+		<![CDATA[
+			SELECT 	ParameterValueChar
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = #{code}
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>
+	</select>
+	
+	<select id="getMrsDestinationAddress" resultType="java.lang.String">
+		select ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_DESTINATION_ADDRESS'
+	</select>
+	
+	<select id="getMrsOriginatorAddress" resultType="java.lang.String">
+		SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_ORIGINATOR_ADDRESS'
+	</select>
+	
+	<select id="getMrsPimaAddress" resultType="java.lang.String">
+		SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_PIMA _ADDRESS'
+	</select>
+	
+	<select id="getMrsFirstWindowForExport" resultType="java.math.BigInteger">
+		SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='CMD FIRST WINDOW FOR EXPORT'
+	</select>
+	
+	<select id="getMrsSecondWindowForExport" resultType="java.math.BigInteger">
+		SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='CMD SECOND WINDOW FOR EXPORT'
+	</select>
+	
+	<select id="getMrsFirstWindowForImport" resultType="java.math.BigInteger">
+		SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='CMD FIRST WINDOW FOR IMPORT'
+	</select>
+	
+	<select id="getMrsSecondWindowForImport" resultType="java.math.BigInteger">
+		SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='CMD SECOND WINDOW FOR IMPORT'
+	</select>
+	
+</mapper>

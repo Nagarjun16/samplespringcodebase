@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="TranshipmentByCarrier">
+
+	<resultMap type="com.ngen.cosys.transhipment.model.TransferByCarrier" id="TranshipmentByCarrier">
+		<result property="to" column="ReceivingCarrier"/>
+		<result property="awbNumber" column="ShipmentNumber"/>
+		<result property="flight" column="FlightKey"/>
+		<result property="date" column="DateSTA"/>
+		<result property="handler" column="GroundHandlerCode"/>
+		<result property="destination" column="Destination"/>
+		<result property="awbDestination" column="AwbDestination"/>
+		<result property="origin" column="Origin"/>
+		<result property="pieces" column="Pieces"/>
+		<result property="weight" column="Weight"/>
+		<result property="flightId" column="Flight_ID"/>
+		<result property="weightCode" column="WeightUnitCode"/>
+		<result property="natureOfGoods" column="NatureOfGoodsDescription"/>
+		<result property="shc" column="Shcs"/>
+		<result property="barecodeInd" column="BarcodePrintedFlag"/>
+		<result property="documentReceivedFlag" column="DocumentReceivedFlag"/>
+		<result property="photoCopyAwbFlag" column="PhotoCopyAwbFlag"/>
+		<result property="piecesInventory" column="PiecesInventory"/>
+		<result property="irregularityPieces" column="IrregularityPieces"/>
+		<result property="totalPieces" column="totalPieces"/>		
+		<result property="freightOutPieces" column="FreightOutPieces"/>
+		<result property="manifestPieces" column="ManifestPieces"/>
+		<result property="foundPieces" column="FoundPieces"/>
+		<result property="weightInventory" column="weightInventory"/>
+	</resultMap>
+
+	<select id="searchShipmentListByCarrier" parameterType="com.ngen.cosys.transhipment.model.TransferByCarrierSearch" resultMap="TranshipmentByCarrier">
+	<![CDATA[
+		With ShipmentInfo AS(
+			select 
+				Shipment_Master.CarrierCode,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_Master.Destination,
+				Shipment_Master.WeightUnitCode,                   
+				Shipment_Master.NatureOfGoodsDescription,
+				(select
+						TOP 1 isnull(RouteInfo.NextCarrier, '**') + '-' + isnull(RouteInfo.NextPoint, '***')
+					from(
+						select	
+							Shipment_MasterRoutingInfo.ShipmentId,
+							Shipment_MasterRoutingInfo.FromPoint as AirportCityCode,
+							Shipment_MasterRoutingInfo.Carrier as CarrierCode,
+							Shipment_MasterRoutingInfo.ShipmentMasterRoutingId,
+							LEAD(Shipment_MasterRoutingInfo.FromPoint , 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextPoint,
+							LEAD(Shipment_MasterRoutingInfo.Carrier, 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextCarrier
+						from 
+							Shipment_MasterRoutingInfo
+						where
+							Shipment_MasterRoutingInfo.ShipmentId = Shipment_Master.ShipmentId
+						)RouteInfo
+					where
+						RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+						RouteInfo.NextPoint <> '0'   
+				) as NextCarrierInfo,
+				(select
+						TOP 1 isnull(RouteInfo.CarrierCode, '**') + '-' + isnull(RouteInfo.AirportCityCode, '***')
+					from(
+						select	
+							Shipment_MasterRoutingInfo.ShipmentId,
+							Shipment_MasterRoutingInfo.FromPoint as AirportCityCode,
+							Shipment_MasterRoutingInfo.Carrier as CarrierCode,
+							Shipment_MasterRoutingInfo.ShipmentMasterRoutingId,
+							LEAD(Shipment_MasterRoutingInfo.FromPoint , 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextPoint,
+							LEAD(Shipment_MasterRoutingInfo.Carrier, 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextCarrier
+						from 
+							Shipment_MasterRoutingInfo
+						where
+							Shipment_MasterRoutingInfo.ShipmentId = Shipment_Master.ShipmentId
+						)RouteInfo
+					where
+						RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+						RouteInfo.NextPoint <> '0'   
+				) as CarrierInfo
+			from 
+				Shipment_Master
+			where  
+				Shipment_Master.ShipmentDate between cast(#{fromDate} as date) and cast(#{toDate} as date) and
+				Shipment_Master.ShipmentType <> ('MAIL') and
+				Shipment_Master.Origin NOT IN  ( #{tenantAirport}, #{tenantCity}) and
+				Shipment_Master.Destination NOT IN  ( #{tenantAirport}, #{tenantCity}) and
+				Shipment_Master.DepartedOn is null and
+				exists(
+					select
+						1
+					from
+						Shipment_MasterRoutingInfo
+					where
+						Shipment_MasterRoutingInfo.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterRoutingInfo.Carrier = #{transferringCarrier}
+				)
+		)
+		select
+			ShipmentInfo.ShipmentId,
+			ShipmentInfo.ShipmentNumber,
+			ShipmentInfo.ShipmentDate,
+			ShipmentInfo.Origin,
+			ShipmentInfo.Pieces as totalPieces,
+			ShipmentInfo.Destination as AwbDestination,
+			ShipmentInfo.WeightUnitCode,                   
+			ShipmentInfo.NatureOfGoodsDescription,
+			substring(ShipmentInfo.CarrierInfo, 1, 2) as TransferCarrier,
+			case
+				when substring(ShipmentInfo.NextCarrierInfo, 1, 2) <> '**' then
+					substring(ShipmentInfo.NextCarrierInfo, 1, 2) 
+				else
+					null
+				end as ReceivingCarrier,
+			(select
+					string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+				from
+					Shipment_MasterSHC
+				where
+					Shipment_MasterSHC.ShipmentId = ShipmentInfo.ShipmentId) Shcs,
+			sum(Shipment_Inventory.Pieces) PiecesInventory,
+			sum(Shipment_Inventory.Weight) weightInventory,
+			sum(Shipment_Irregularity.Pieces) IrregularityPieces,
+			(select GroundHandlerCode from Mst_Carrier where CarrierCode = substring(ShipmentInfo.NextCarrierInfo, 1, 2)) GroundHandlerCode,
+			(select
+					sum(Shipment_FreightOut.Pieces)
+				from
+					Shipment_FreightOut
+				where
+					Shipment_FreightOut.InboundFlightId = ShipmentVerificationInfo.Flight_ID and
+					Shipment_FreightOut.ShipmentId = ShipmentInfo.ShipmentId
+			) FreightOutPieces,
+			ShipmentVerificationInfo.Flight_ID,
+			ShipmentVerificationInfo.FlightKey,
+			ShipmentVerificationInfo.DateSTA,
+			ShipmentVerificationInfo.BarcodePrintedFlag,
+			ShipmentVerificationInfo.DocumentReceivedFlag,
+			ShipmentVerificationInfo.PhotoCopyAwbFlag,
+			isnull(sum(Shipment_Inventory.Pieces), 0) as pieces,
+			isnull(sum(Shipment_Inventory.Weight), 0) as weight,
+			substring(ShipmentInfo.NextCarrierInfo, 4, 3) as Destination,
+			(select
+					sum(Imp_ArrivalManifestShipmentInfo.Piece)
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = ShipmentVerificationInfo.Flight_ID and 
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber = ShipmentInfo.ShipmentNumber and
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate = ShipmentInfo.ShipmentDate
+			) as manifestPieces,
+			sum(FoundCargo.Pieces) as FoundPieces
+		from
+			ShipmentInfo left join
+			(
+				select 
+					Imp_ShipmentVerification.FlightId,
+					Imp_ShipmentVerification.ShipmentId,
+					Imp_ShipmentVerification.BarcodePrintedFlag,
+					Imp_ShipmentVerification.DocumentReceivedFlag,
+					Imp_ShipmentVerification.PhotoCopyAwbFlag,
+					Flt_OperativeFlight.Flight_ID,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA
+				from
+					Imp_ShipmentVerification inner join
+					Flt_OperativeFlight 
+						on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs 
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+				where
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			)ShipmentVerificationInfo 
+				on ShipmentInfo.ShipmentId = ShipmentVerificationInfo.ShipmentId left join 
+			Shipment_Inventory
+				on ShipmentInfo.ShipmentId = Shipment_Inventory.Shipment_Id and 
+					ShipmentVerificationInfo.flightid = Shipment_Inventory.Flight_ID left join 
+			Shipment_Irregularity
+				on ShipmentInfo.ShipmentNumber = Shipment_Irregularity.ShipmentNumber and  
+					ShipmentInfo.ShipmentDate = Shipment_Irregularity.ShipmentDate and
+					Shipment_Irregularity.CargoIrregularityCode = 'MSCA' and
+					ShipmentVerificationInfo.flightid = Shipment_Irregularity.Flight_ID left join 
+			Shipment_Irregularity FoundCargo
+				on ShipmentInfo.ShipmentNumber = FoundCargo.ShipmentNumber and  
+					ShipmentInfo.ShipmentDate = FoundCargo.ShipmentDate and
+					FoundCargo.CargoIrregularityCode = 'FDCA' and
+					ShipmentVerificationInfo.flightid = FoundCargo.Flight_ID
+		where 
+			substring(ShipmentInfo.CarrierInfo, 1, 2) = #{transferringCarrier} and
+			substring(ShipmentInfo.NextCarrierInfo, 1, 2) not in (
+					select 
+						CarrierCode 
+					from 
+						Mst_AssociateCarrierWithGroup inner join 
+						Mst_CarrierGroup 
+							on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+					where 
+						Mst_CarrierGroup.CarrierGroupCode = #{transferringCarrier}
+			) and
+			substring(ShipmentInfo.NextCarrierInfo, 1, 2) <> substring(ShipmentInfo.CarrierInfo, 1, 2) and
+			not exists(
+				select
+					null
+				from
+					Transhipment_TransferManifestByAWBInfo
+				where
+					Transhipment_TransferManifestByAWBInfo.ShipmentNumber = ShipmentInfo.ShipmentNumber and
+					Transhipment_TransferManifestByAWBInfo.ShipmentDate = ShipmentInfo.ShipmentDate and
+					Transhipment_TransferManifestByAWBInfo.InboundFlightId = ShipmentVerificationInfo.Flight_ID
+			)
+	]]>
+			<if test="onwardCarrier != null">
+				and substring(ShipmentInfo.NextCarrierInfo, 1, 2) = #{onwardCarrier}
+			</if>
+	<![CDATA[
+		group by
+			ShipmentInfo.ShipmentId,
+			ShipmentInfo.ShipmentNumber,
+			ShipmentInfo.ShipmentDate,
+			ShipmentInfo.Origin,
+			ShipmentInfo.Pieces,
+			ShipmentInfo.Destination,
+			ShipmentInfo.WeightUnitCode,                   
+			ShipmentInfo.NatureOfGoodsDescription,
+			ShipmentInfo.CarrierInfo,
+			ShipmentInfo.NextCarrierInfo,
+			ShipmentVerificationInfo.Flight_ID,
+			ShipmentVerificationInfo.FlightKey,
+			ShipmentVerificationInfo.DateSTA,
+			ShipmentVerificationInfo.BarcodePrintedFlag,
+			ShipmentVerificationInfo.DocumentReceivedFlag,
+			ShipmentVerificationInfo.PhotoCopyAwbFlag
+		order by 
+			substring(ShipmentInfo.NextCarrierInfo, 1, 2),
+			ShipmentInfo.ShipmentNumber	
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MssBatchJobMapper">
+	<select id="getFlightData" parameterType="Map"
+		resultType="com.ngen.cosys.model.MssModelOperativeFlightData"
+		resultMap="mssFlightData">
+	SELECT
+              Flt_OperativeFlight.Flight_ID,
+              REPLACE(STR(Flt_OperativeFlight_Segments.FlightSegmentId,8),' ','0') as transactionSequenceNumber,
+              FORMAT( Flt_OperativeFlight.FlightOriginDate, 'yyyyMMdd' ) as flightOriginDate,
+              FORMAT( Flt_OperativeFlight.FlightOriginDate, 'hhmmss' ) as flightOriginTime,
+              Flt_OperativeFlight.CarrierCode,
+              Flt_OperativeFlight.FlightNumber,
+              Flt_OperativeFlight.FlightCancelFlag,
+              ISNULL(Flt_OperativeFlight.OutboundFlightDelayReason, '') as flightRemarks,
+              CASE WHEN Flt_OperativeFlight.FlightType = 'C' THEN 'CAO' ELSE 'PAX' END flightType,
+              Flt_OperativeFlight.Created_DateTime,
+              Flt_OperativeFlight.LastUpdated_DateTime,
+              FORMAT(Flt_OperativeFlight_Segments.DateSTD, 'yyyyMMdd') as scheduleDate,
+              FORMAT(Flt_OperativeFlight_Segments.DateSTD, 'hhmmss') as scheduleTime,
+              CASE WHEN
+              Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} THEN 'OUT' ELSE NULL END inboudOutboundFlight
+       FROM Flt_OperativeFlight 
+              INNER JOIN Flt_OperativeFlight_Segments 
+              ON (Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID)
+              INNER JOIN Flt_OperativeFlight_HandlingArea on Flt_OperativeFlight_HandlingArea.FlightId = Flt_OperativeFlight.Flight_ID
+       WHERE
+              (Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} OR  Flt_OperativeFlight_Segments.FlightOFFPoint = #{tenantAirport})
+              AND Flt_OperativeFlight_Segments.SegmentLegFlag = 1 
+              AND ISNULL(Flt_OperativeFlight_Segments.LastUpdated_DateTime,Flt_OperativeFlight_Segments.Created_DateTime)   BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE()
+              AND Flt_OperativeFlight_HandlingArea.TerminalCode='T1'
+                       ORDER BY 1
+	</select>
+
+	<resultMap id="mssFlightData" type="com.ngen.cosys.model.MssModelOperativeFlightData">
+		<id column="Flight_ID" property="flightId" />
+		<result column="CarrierCode" property="airlineCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<!-- <result column="DateSTD" property="scheduleDate" />
+		<result column="DateSTD" property="scheduleTime" /> -->
+		<result column="FlightCancelFlag"  property="flightCancelFlag"  />
+		<result column="FlightType" property="flightType" />
+		<result column="Created_DateTime" property="createdBy" />
+		<result column="LastUpdated_DateTime" property="modifiedBy" />
+		<collection javaType="list" select="flightLegsData" column="{flightId=Flight_ID}"
+			ofType="com.ngen.cosys.model.FlightLegsMssModel"
+			property="legsList" />
+	</resultMap>
+	<resultMap id="flightLegsMap" type="com.ngen.cosys.model.FlightLegsMssModel">
+		<result column="FlightBoardPoint" property="boardPoint" />
+		<result column="FlightOffPoint" property="offPoint" />
+		<result column="FlightSegmentOrder" property="flightLegOrder" />
+		<result column="AircraftType" property="aircraftTypes" />
+		<!-- <result column="DateSTA" property="scheduledDate" />
+		<result column="DateETA" property="estimatedDate" />
+		<result column="DateATA" property="actualDate" /> -->
+	</resultMap>
+	<select id="flightLegsData" 
+	parameterType="com.ngen.cosys.model.MssModelOperativeFlightData"
+	resultMap="flightLegsMap">
+	SELECT FlightBoardPoint 
+		,FlightOffPoint 
+		,FlightSegmentOrder 
+		,AircraftType 
+		,FORMAT( DateSTA, 'yyyyMMdd' ) as scheduledDate 
+		,FORMAT( DateSTA, 'hhmmss' ) as scheduledTime 
+		,ISNULL(FORMAT( DateETA, 'yyyyMMdd'),'') as estimatedDate 
+		,ISNULL(FORMAT( DateETA, 'hhmmss' ),'') as estimatedTime 
+		,ISNULL(FORMAT( DateATA, 'yyyyMMdd'),'') as actualDate 
+		,ISNULL(FORMAT( DateATA, 'hhmmss' ),'') as actualTime
+	FROM flt_operativeflight_legs
+		<!-- LEFT OUTER JOIN Exp_FlightEvents
+		ON flt_operativeflight_legs.flight_id = Exp_FlightEvents.FlightId -->
+		<!-- LEFT OUTER JOIN Imp_FlightEvents
+		ON flt_operativeflight_legs.flight_id = Exp_FlightEvents.FlightId -->
+	WHERE flt_operativeflight_legs.flight_id = #{flightId}
+	</select>
+	
+	<select id="getMappingTableSummaryData" resultType="com.ngen.cosys.model.MappingTableSummaryModel">
+	SELECT REPLACE(STR(Exp_ShipmentBooking.BookingId,8),' ','0') as transactionSequenceNumber, 
+		Exp_ShipmentBooking.ShipmentNumber as mailBagDispatchIdentifier,
+		Exp_ShipmentBooking.Pieces as indicativeTotalPieces,
+		Exp_ShipmentBooking.CreatedDateTime as createdOn,
+		Exp_ShipmentBooking.LastUpdatedDateTime as modifiedOn
+	FROM Exp_ShipmentBooking 
+	INNER JOIN Exp_ShipmentFlightBookingDetail ON Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+	WHERE LEN(Exp_ShipmentBooking.ShipmentNumber) = 20 AND Exp_ShipmentFlightBookingDetail.BookingStatusCode = 'UU' 
+	AND CAST(ISNULL(Exp_ShipmentBooking.LastUpdatedDateTime, Exp_ShipmentBooking.CreatedDateTime) as DATE) BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE()
+	UNION 
+	SELECT DISTINCT REPLACE(STR(Exp_ShipmentBooking.BookingId,8),' ','0') as transactionSequenceNumber, 
+		 SUBSTRING(Exp_ShipmentBooking.ShipmentNumber, 0, 20) as mailBagDispatchIdentifier,
+		 Exp_ShipmentBooking.Pieces as indicativeTotalPieces,
+		Exp_ShipmentBooking.CreatedDateTime as createdOn,
+		Exp_ShipmentBooking.LastUpdatedDateTime as modifiedOn
+	 FROM Exp_ShipmentBooking 
+	 INNER JOIN Exp_ShipmentFlightBookingDetail ON Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+	 WHERE LEN(Exp_ShipmentBooking.ShipmentNumber) = 29 AND Exp_ShipmentFlightBookingDetail.BookingStatusCode = 'UU' 
+	 AND CAST(ISNULL(Exp_ShipmentBooking.LastUpdatedDateTime, Exp_ShipmentBooking.CreatedDateTime) as DATE) BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE()
+	 ORDER BY 1
+	</select>
+	
+	<select id="getDeletedMappingTableSummaryData" resultType="com.ngen.cosys.model.MappingTableSummaryModel">
+	SELECT REPLACE(STR(BookingId,8),' ','0') as transactionSequenceNumber, 
+		ShipmentNumber as mailBagDispatchIdentifier,
+		Pieces as indicativeTotalPieces,
+		CreatedDateTime as createdOn,
+		LastUpdatedDateTime as modifiedOn,
+		DeletedOn as deletedOn,
+	    DeletedBy as deletedBy
+		FROM Exp_ShipmentBooking_History 
+	WHERE LEN(ShipmentNumber) = 20
+	</select>
+	
+	<select id="getMappingTableDetailData" parameterType="java.util.Map" resultType="com.ngen.cosys.model.MappingTableDetailModel">
+	 SELECT 
+	 	REPLACE(STR(esb.BookingId,8),' ','0') as transactionSequenceNumber, 
+	 	esb.ShipmentNumber as mailBagIdentifier,
+	 	opflt.CarrierCode as indicativeOutgoingCarrier,
+	 	opflt.FlightNumber as indicativeOutgoingFlightNumber,
+	 	fltlgs.DateSTD as indicativeOutgoingFlightDate,
+	 	esb.CreatedDateTime as createdOn,
+	 	esb.LastUpdatedDateTime as modifiedOn
+	 FROM Exp_ShipmentBooking esb
+     LEFT JOIN Exp_ShipmentFlightBookingDetail esfbd ON esb.BookingId = esfbd.BookingId
+     INNER JOIN Flt_OperativeFlight opflt ON esfbd.FlightId = opflt.Flight_Id
+     INNER JOIN Flt_OperativeFlight_Legs fltlgs ON opflt.Flight_Id = fltlgs.Flight_ID 
+	 AND LEN(esb.ShipmentNumber) = 29
+	 AND fltlgs.FlightBoardPoint = #{tenantAirport}
+	 AND esfbd.BookingStatusCode = 'UU' 
+	 WHERE 
+	 	CAST(ISNULL(esb.LastUpdatedDateTime, esb.CreatedDateTime) as DATE) BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE()
+	</select>
+	
+	<select id="getDeletedMappingTableDetailData" parameterType="java.util.Map" resultType="com.ngen.cosys.model.MappingTableDetailModel">
+	SELECT REPLACE(STR(esb.BookingId,8),' ','0') as transactionSequenceNumber, 
+	 esb.ShipmentNumber as mailBagIdentifier,
+	 opflt.CarrierCode as indicativeOutgoingCarrier,
+	 opflt.FlightNumber as indicativeOutgoingFlightNumber,
+	 fltlgs.DateSTD as indicativeOutgoingFlightDate,
+	 esb.CreatedDateTime as createdOn,
+	 esb.LastUpdatedDateTime as modifiedOn,
+	 DeletedOn as deletedOn,
+     DeletedBy as deletedBy
+	 FROM Exp_ShipmentBooking_History esb
+     LEFT JOIN Exp_ShipmentFlightBookingDetail esfbd ON esb.BookingId = esfbd.BookingId
+     INNER JOIN Flt_OperativeFlight opflt ON esfbd.FlightId = opflt.Flight_Id
+     INNER JOIN Flt_OperativeFlight_Legs fltlgs ON opflt.Flight_Id = fltlgs.Flight_ID 
+	 AND LEN(esb.ShipmentNumber) = 29
+	 AND fltlgs.FlightBoardPoint = #{tenantAirport}
+	 AND esfbd.BookingStatusCode='UU'
+	</select>
+	
+	<select id="getEmbargoDeatils" resultType="com.ngen.cosys.model.EmbargoRulesMessageModel">
+	SELECT REPLACE(STR(AirmialEmabargoSetupId,8),' ','0') as transactionSequenceNumber,
+       REPLACE(STR(AirmialEmabargoSetupId,8),' ','0') as sharedKeyInformation
+      ,AgentCode as agentCode
+      ,IncomingCarrier as incomingCarrier
+      ,OutgoingCarrier as outgoingCarrier
+      ,OriginOfficeExchange as originIMPC
+      ,OriginCountry as originCountryCode
+      ,OriginCity as originCity
+      ,DestinationOfficeExchange as destinationIMPC
+      ,DestinationCountry as destinationCountry
+      ,DestinationCity as destinationCity
+      ,ISNULL(FORMAT( EffectivePeriodFrom, 'yyyyMMdd'),'') as effectivePeriodFrom
+      ,ISNULL(FORMAT( EffectivePeriodTo, 'yyyyMMdd'),'') as effectivePeriodTo
+      ,CreatedUser_Code as createdBy
+      ,Created_DateTime as createdOn
+      ,LastUpdatedUser_Code as modifiedBy
+      ,LastUpdated_DateTime as modifiedOn
+  	FROM Airmail_EmbargoSetup
+  	Where
+	  Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getEnroutementRules" parameterType="Map" resultType="com.ngen.cosys.model.EnroutementRulesMessagesModel">
+	  SELECT 
+	  	REPLACE(STR(TransitEnroutementInfoId,8),' ','0') as transactionSequenceNumber
+	  	,REPLACE(STR(TransitEnroutementInfoId,8),' ','0') as sharedKey
+	  	,IncomingCarrier as incomingCarrier
+      	,ISNULL(IncomingCountry,'SG') as destinationCountry
+      	,ISNULL(IncomingCity,#{tenantAirport}) as destinationCity
+      	,ISNULL(OutgoingCarrier,'SQ') as outgoingCarrier
+      	,ISNULL(OutgoingCountry,'**') as originCountryCode
+      	,ISNULL(OutgoingCity,'**') as originCity
+      	,NextDestination as nextOffPoint
+      	,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      	,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      	,CreatedUser_Code as createdBy
+      	,Created_DateTime as createdOn
+      	,LastUpdatedUser_Code as modifiedBy
+	  	,LastUpdated_DateTime as modifiedOn
+      FROM Mst_TransitEnroutementInfo
+      Where
+	  Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getDeletedEnroutementRules" resultType="com.ngen.cosys.model.EnroutementRulesMessagesModel">
+	   SELECT 
+	   	REPLACE(STR(TransitEnroutementInfoId,8),' ','0') as transactionSequenceNumber
+	   	,REPLACE(STR(TransitEnroutementInfoId,8),' ','0') as sharedKey
+	  	,IncomingCarrier as incomingCarrier
+      	,IncomingCountry as destinationCountry
+      	,IncomingCity as destinationCity
+      	,OutgoingCarrier as outgoingCarrier
+      	,OutgoingCountry as originCountryCode
+      	,OutgoingCity as originCity
+      	,NextDestination as nextOffPoint
+      	,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      	,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      	,Created_DateTime as createdOn
+	  	,LastUpdated_DateTime as modifiedOn
+	  	,DeletedOn as deletedOn
+      	,DeletedBy as deletedBy
+      FROM Mst_TransitEnroutementInfo_History
+	</select>
+	
+	<select id="getOuthouseMessages"  resultType="com.ngen.cosys.model.OuthouseTransferRulesMessagesModel">
+      SELECT REPLACE(STR(OuthouseTransferInfoId,8),' ','0') as transactionSequenceNumber,
+       REPLACE(STR(OuthouseTransferInfoId,8),' ','0') as sharedKey
+	  ,IncomingCarrier as incomingCarrier
+      ,OriginCountry as originCountryCode
+      ,OriginCity as originCity
+      ,DestinationCountry as destinationCountry
+      ,DestinationCity as destinationCity
+      ,NonAssistedCarrier as nonAssistantCarrier
+      ,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      ,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      ,Created_DateTime as createdOn
+	  ,LastUpdated_DateTime as modifiedOn
+      FROM Mst_OuthouseTransferInfo
+      Where
+	  Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getDeletedOuthouseMessages" resultType="com.ngen.cosys.model.OuthouseTransferRulesMessagesModel">
+	   SELECT REPLACE(STR(OuthouseTransferInfoId,8),' ','0') as transactionSequenceNumber,
+       REPLACE(STR(OuthouseTransferInfoId,8),' ','0') as sharedKey
+	  ,IncomingCarrier as incomingCarrier
+      ,OriginCountry as originCountryCode
+      ,OriginCity as originCity
+      ,DestinationCountry as destinationCountry
+      ,DestinationCity as destinationCity
+      ,NonAssistedCarrier as nonAssistantCarrier
+      ,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      ,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      ,Created_DateTime as createdOn
+	  ,LastUpdated_DateTime as modifiedOn
+	  ,DeletedOn as deletedOn
+	  ,DeletedBy as deletedBy
+      FROM Mst_OuthouseTransferInfo_History
+	</select>
+	
+	<select id="getCloseTransit" resultType="com.ngen.cosys.model.CloseTransitMessagesModel">
+	   <!-- SELECT 
+	   	REPLACE(STR(ClosedTransitInfoId,8),' ','0') as transactionSequenceNumber
+       	,REPLACE(STR(ClosedTransitInfoId,8),' ','0') as sharedKey
+	  	,ISNULL(OriginOffice,'**') as originIMPC
+      	,DestinationOffice as destinationIMPC
+      	,ISNULL(IncomingCarrier,'**') as incomingCarrier
+      	,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      	,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      	,Created_DateTime as createdOn
+	  	,LastUpdated_DateTime as modifiedOn
+      FROM Mst_ClosedTransitInfo -->
+      SELECT 
+	   	REPLACE(STR(AirmialCloseTransitSetupId,8),' ','0') as transactionSequenceNumber
+       	,REPLACE(STR(AirmialCloseTransitSetupId,8),' ','0') as sharedKey
+	  	,ISNULL(OriginOfficeExchange,'**') as originIMPC
+      	,DestinationOfficeExchange as destinationIMPC
+      	,ISNULL(IncomingCarrier,'**') as incomingCarrier
+      	,ISNULL(FORMAT( EffectivePeriodFrom, 'yyyyMMdd'),'') as effectivePeriodFrom
+      	,ISNULL(FORMAT( EffectivePeriodTo, 'yyyyMMdd'),'') as effectivePeriodTo
+      	,Created_DateTime as createdOn
+	  	,LastUpdated_DateTime as modifiedOn
+      FROM Airmail_CloseTransitSetup
+      Where
+	  Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getDeletedCloseTransit" resultType="com.ngen.cosys.model.CloseTransitMessagesModel">
+	SELECT REPLACE(STR(ClosedTransitInfoId,8),' ','0') as transactionSequenceNumber,
+	   REPLACE(STR(ClosedTransitInfoId,8),' ','0') as sharedKey,
+	  OriginOffice as originIMPC
+      ,DestinationOffice as destinationIMPC
+      ,IncomingCarrier as incomingCarrier
+      ,ISNULL(FORMAT( EffectiveStartDate, 'yyyyMMdd'),'') as effectivePeriodFrom
+      ,ISNULL(FORMAT( EffectiveEndDate, 'yyyyMMdd'),'') as effectivePeriodTo
+      ,Created_DateTime as createdOn
+	  ,LastUpdated_DateTime as modifiedOn
+	  ,DeletedOn as deletedOn
+	  ,DeletedBy as deletedBy
+      FROM Mst_ClosedTransitInfo_History
+	</select>
+	
+	<select id="getAgentListDetails" resultType="com.ngen.cosys.model.AgentListMessageModel">
+	SELECT REPLACE(STR(Mst_PostalAuthorityOpenOffficeInfo.PostalAuthorityOpenOffficeInfoId,8),' ','0') as transactionSequenceNumber,
+	 REPLACE(STR(Mst_PostalAuthorityOpenOffficeInfo.PostalAuthorityOpenOffficeInfoId,8),' ','0') as sharedKey
+     ,Customer_Master.CustomerCode as agentCode
+     ,Customer_Master.CustomerShortName as agentName
+     ,Mst_PostalAuthorityOpenOffficeInfo.EffectiveStartDate as periodFrom
+     ,Mst_PostalAuthorityOpenOffficeInfo.EffectiveEndDate as periodTo
+     ,Mst_PostalAuthorityOpenOffficeInfo.Created_DateTime as createdOn
+	 ,Mst_PostalAuthorityOpenOffficeInfo.LastUpdated_DateTime as modifiedOn
+     FROM Mst_PostalAuthorityOpenOffficeInfo
+     LEFT JOIN Customer_Master ON Mst_PostalAuthorityOpenOffficeInfo.CustomerId = Customer_Master.Customer_ID
+     LEFT JOIN Customer_types ON Customer_Master.Customer_ID = Customer_types.Customer_ID 
+    WHERE CustomerTypeCode = 'PA'
+	AND Mst_PostalAuthorityOpenOffficeInfo.Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getDeletedAgentListDetails" resultType="com.ngen.cosys.model.AgentListMessageModel">
+	SELECT REPLACE(STR(Mst_PostalAuthorityOpenOffficeInfo_History.PostalAuthorityOpenOffficeInfoId,8),' ','0') as transactionSequenceNumber, 
+	  REPLACE(STR(Mst_PostalAuthorityOpenOffficeInfo_History.PostalAuthorityOpenOffficeInfoId,8),' ','0') as sharedKey
+     ,Customer_Master.CustomerCode as agentCode
+     ,Customer_Master.CustomerShortName as agentName
+     ,Mst_PostalAuthorityOpenOffficeInfo_History.EffectiveStartDate as periodFrom
+     ,Mst_PostalAuthorityOpenOffficeInfo_History.EffectiveEndDate as periodTo
+     ,Mst_PostalAuthorityOpenOffficeInfo_History.Created_DateTime as createdOn
+	 ,Mst_PostalAuthorityOpenOffficeInfo_History.LastUpdated_DateTime as modifiedOn
+	 ,Mst_PostalAuthorityOpenOffficeInfo_History.DeletedOn as deletedOn
+	 ,Mst_PostalAuthorityOpenOffficeInfo_History.DeletedBy as deletedBy
+     FROM Mst_PostalAuthorityOpenOffficeInfo_History
+     LEFT JOIN Customer_Master ON Mst_PostalAuthorityOpenOffficeInfo_History.CustomerId = Customer_Master.Customer_ID
+     LEFT JOIN Customer_types ON Customer_Master.Customer_ID = Customer_types.Customer_ID 
+    WHERE CustomerTypeCode = 'PA'
+	</select>
+	
+	<select id="getXrayDetails" resultType="com.ngen.cosys.model.XRayRulesMessagesModel">
+	SELECT  REPLACE(STR(AirmialXrayId,8),' ','0') as transactionSequenceNumber, 
+	  AirmialXrayId as xrayId
+	  ,REPLACE(STR(CorrelationId,8),' ','0') as sharedKeyInformation
+      ,AgentCode as agentCode
+      ,OriginImpc as originIMPC
+      ,OriginCountry as originCountryCode
+      ,OriginCity as originCity
+      ,NextOffPoint as nextOffPoint
+      ,DestinationImpc as destinationIMPC
+      ,DestinationCountry as destinationCountry
+      ,DestinationCity as destinationCity
+      ,EffectivePeriodFrom as effctivePeriodFrom
+      ,EffectivePeriodTo as effectivePeriodTo
+      ,Created_DateTime as createdOn
+      ,LastUpdated_DateTime as modifiedOn
+   FROM XRay_Airmail
+   Where Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+	
+	<select id="getDeletedXrayDetails" resultType="com.ngen.cosys.model.XRayRulesMessagesModel">
+	SELECT  REPLACE(STR(AirmialXrayId,8),' ','0') as transactionSequenceNumber, 
+	   AirmialXrayId as xrayId
+	   ,REPLACE(STR(CorrelationId,8),' ','0') as sharedKeyInformation
+      ,AgentCode as agentCode
+      ,OriginImpc as originIMPC
+      ,OriginCountry as originCountryCode
+      ,OriginCity as originCity
+      ,NextOffPoint as nextOffPoint
+      ,DestinationImpc as destinationIMPC
+      ,DestinationCountry as destinationCountry
+      ,DestinationCity as destinationCity
+      ,EffectivePeriodFrom as effctivePeriodFrom
+      ,EffectivePeriodTo as effectivePeriodTo
+      ,CreatedDateTime as createdOn
+      ,LastUpdatedDateTime as modifiedOn
+	  ,DeletedOn as deletedOn
+	  ,DeletedBy as deletedBy
+   FROM XRay_Airmail_History
+	</select>
+	
+	<resultMap id="getAircraftTypesMap" type="com.ngen.cosys.model.AircraftTypesUldModel">
+		<result column="AircraftType" property="aircraftType" />
+	</resultMap>
+	
+	<select id="getAircraftTypes" parameterType="com.ngen.cosys.model.ULDBuildupRulesModel" resultMap="getAircraftTypesMap">
+		SELECT AircraftType from Uld_UldAircraftRegistration where UldCarrierCode = #{outgoingCarrier}
+	</select>
+	
+	<resultMap id="getUldBuildUpDetailsMap" type="com.ngen.cosys.model.ULDBuildupRulesModel">
+		<id property="outgoingCarrier" column="UldCarrierCode"/>
+		<id property="uldType" column="UldType" />
+		<collection  javaType="List" select="getAircraftTypes" column="{outgoingCarrier=UldCarrierCode}"
+			ofType="com.ngen.cosys.model.AircraftTypesUldModel" property="aircraftTypeContainers" />
+	</resultMap>
+	
+	<select id="getUldBuildUpDetails" resultMap="getUldBuildUpDetailsMap">
+	SELECT REPLACE(STR(a.UldCharacteristicsId,8),' ','0') as transactionSequenceNumber,
+		a.UldCarrierCode,
+      	a.UldType as uldType,
+	  CASE WHEN
+      a.UpperDeckMaximumQty > a.LowerDeckMaximumQty then a.UpperDeckMaximumQty
+	  else a.LowerDeckMaximumQty end maxWeightOfMailBag
+      ,a.Created_DateTime as createdOn
+      ,a.LastUpdated_DateTime as modifiedOn
+	  ,REPLACE(STR(a.UldCharacteristicsId,8),' ','0') as sharedKey
+      ,ISNULL(a.MaxMailbagCount,0) as maxNoOfMailBag
+  	FROM Uld_UldCharacteristics a 
+  	WHERE (CAST(a.Created_DateTime as DATE) BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE())
+		OR (CAST(a.LastUpdated_DateTime as DATE) BETWEEN DATEADD(mi,-5,getdate()) AND GETDATE())
+	</select>
+
+	<select id="getDeletedBuildUpDetails" resultType="com.ngen.cosys.model.ULDBuildupRulesModel">
+	SELECT  REPLACE(STR(UldCharacteristicsId,8),' ','0') as transactionSequenceNumber,
+      UldType as uldType,
+	  CASE WHEN
+      UpperDeckMaximumQty > LowerDeckMaximumQty then UpperDeckMaximumQty
+	  else LowerDeckMaximumQty end maxWeightOfMailBag
+      ,Created_DateTime as createdOn
+      ,LastUpdated_DateTime as modifiedOn
+	  ,REPLACE(STR(UldCharacteristicsId,8),' ','0') as sharedKey
+      ,MaxMailbagCount as maxNoOfMailBag
+	  ,DeletedOn as  deletedOn
+	  ,DeletedBy as deletedBy
+  	FROM Uld_UldCharacteristics_History
+  	WHERE (CAST(Uld_UldCharacteristics_History.Created_DateTime as DATE) BETWEEN GETDATE()-30 AND GETDATE())
+		OR (CAST(Uld_UldCharacteristics_History.LastUpdated_DateTime as DATE) BETWEEN GETDATE()-30 AND GETDATE())
+	</select>
+</mapper>

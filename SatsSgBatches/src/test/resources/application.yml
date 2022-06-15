@@ -1,0 +1,96 @@
+spring: 
+  profiles:
+    active: test  
+  datasource:
+    url: jdbc:h2:mem:ngenCosysDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    initialize: true
+  h2:
+    console:
+      enabled: true
+      path: /console
+      settings:
+        trace: true
+        web-allow-others: false
+  jmx:
+    default-domain: ${spring.application.name}
+    enabled: false
+        
+#--------------------------------------
+# ESB Connector
+#--------------------------------------
+esb:
+  connector:
+    hostname: localhost
+    portnumber: 8081
+    path-jms: /satssgesbconnector/cosys/api/jms/out
+
+# ===============================
+# = FILTER 
+# ===============================
+gui:
+  protocol: http
+  host: localhost
+  port: 8080
+
+# ===============================
+# = Locale Constants 
+# ===============================
+locale: en_US
+
+# ===============================
+# = SWAGGER Constants 
+# ===============================
+apiinfo:
+  contact: 
+    name: SATS
+    url: https://www.satscargo.com
+    email: 6541 3857/8/9
+  title: New Gen Cargo Management
+  description: ${apiinfo.title}
+  version: 1.0
+  termsOfServiceUrl: ${apiinfo.contact.url}
+  license: 100000
+  licenseUrl: ${apiinfo.contact.url}
+  
+ics-url-relative:
+  retrieve-uld-at-requested-lane: /localDeliveryRequest
+  operative-flight-details: /operativeFlightsRequest
+  fetch-uld-list: /fetchICSULDListRequest
+  fetch-ics-location: /fetchPCHSLocationRequest
+  
+# Discovery Configuration
+
+# Eureka
+eureka:
+  client:
+    enabled: false
+   
+#
+# Profile 'uat'
+#
+---
+spring:
+  profiles: uat
+eureka:
+  client:
+    enabled: true
+    region: default
+    serviceUrl:
+      defaultZone: http://discovery.local:9020/eureka
+      
+#
+# Profile 'prod'
+#
+---
+spring:
+  profiles: prod
+eureka:
+  client:
+    enabled: true
+    region: default
+    serviceUrl:
+      defaultZone: http://discovery.local:9020/eureka
+      

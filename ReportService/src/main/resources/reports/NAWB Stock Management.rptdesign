@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="carrriercode" id="109">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="category" id="110">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="stockID" id="111">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="awbNumber" id="112">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="166">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="nawb data Source" id="4">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCUAT</property>
+            <property name="odaUser">SATSUatAppUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0c0FwcCQxNTYl</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="nawbData Set1" id="6">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">issuedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">issuedStatus</text-property>
+                    <text-property name="heading">issuedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">reservedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">reservedStatus</text-property>
+                    <text-property name="heading">reservedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DuplicatedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DuplicatedStatus</text-property>
+                    <text-property name="heading">DuplicatedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DeletedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DeletedStatus</text-property>
+                    <text-property name="heading">DeletedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">processingStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">processingStatus</text-property>
+                    <text-property name="heading">processingStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CancelledStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CancelledStatus</text-property>
+                    <text-property name="heading">CancelledStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">BookedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">BookedStatus</text-property>
+                    <text-property name="heading">BookedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">printedStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">printedStatus</text-property>
+                    <text-property name="heading">printedStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CarrierCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <text-property name="heading">CarrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">StockId</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">StockId</text-property>
+                    <text-property name="heading">StockId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">StockCategoryCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">StockCategoryCode</text-property>
+                    <text-property name="heading">StockCategoryCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AWBNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AWBNumber</text-property>
+                    <text-property name="heading">AWBNumber</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters"/>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">issuedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">reservedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">DuplicatedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">DeletedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">processingStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">CancelledStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">BookedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">printedStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">CarrierCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">StockId</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">StockCategoryCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">AWBNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <method name="beforeOpen"><![CDATA[var carrriercode = params["carrriercode"].value;
+var category = params["category"].value;
+var stockID = params["stockID"].value;
+var awbNumber = params["awbNumber"].value;
+
+
+if(carrriercode != null &amp;&amp; carrriercode != ""){
+	this.queryText = this.queryText + "and  Com_AWBStock.CarrierCode = '"+carrriercode+"'";
+} 
+if(category != null &amp;&amp; category != ""){
+	this.queryText = this.queryText + "and  Com_AWBStock.StockCategoryCode = '"+category+"'";
+} 
+
+if(stockID != null &amp;&amp; stockID != ""){
+	this.queryText = this.queryText + "and  Com_AWBStock.StockId = '"+stockID+"'";
+} 
+
+if(awbNumber != null &amp;&amp; awbNumber != ""){
+	this.queryText = this.queryText + " and  Com_AWBStockDetails.AWBNumber = '"+awbNumber+"'";
+}
+
+this.queryText = this.queryText + "order by Com_AWBStock.StockId asc"
+
+]]></method>
+            <property name="dataSource">nawb data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">issuedStatus</property>
+                    <property name="nativeName">issuedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">reservedStatus</property>
+                    <property name="nativeName">reservedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">DuplicatedStatus</property>
+                    <property name="nativeName">DuplicatedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">DeletedStatus</property>
+                    <property name="nativeName">DeletedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">processingStatus</property>
+                    <property name="nativeName">processingStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">CancelledStatus</property>
+                    <property name="nativeName">CancelledStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">BookedStatus</property>
+                    <property name="nativeName">BookedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">printedStatus</property>
+                    <property name="nativeName">printedStatus</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">CarrierCode</property>
+                    <property name="nativeName">CarrierCode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">StockId</property>
+                    <property name="nativeName">StockId</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">StockCategoryCode</property>
+                    <property name="nativeName">StockCategoryCode</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">AWBNumber</property>
+                    <property name="nativeName">AWBNumber</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select 
+       case when (issued = 1) then
+              'Issued'
+       end issuedStatus,
+       case when (Reserved = 1) then
+              'Reserved'
+       end reservedStatus,
+
+	    case when (Duplicated = 1) then
+              'Duplicated'
+       end DuplicatedStatus,
+
+	    case when (Deleted = 1) then
+              'Deleted'
+       end DeletedStatus,
+
+	    case when (processing = 1) then
+              'processing'
+       end processingStatus,
+
+	    case when (Cancelled = 1) then
+              'Cancelled'
+       end CancelledStatus,
+
+	    case when (Booked = 1) then
+              'Booked'
+       end BookedStatus,
+
+	    case when (printed = 1) then
+              'printed'
+       end printedStatus,
+
+	   Com_AWBStock.CarrierCode,Com_AWBStock.StockId,Com_AWBStock.StockCategoryCode,Com_AWBStockDetails.AWBNumber
+from Com_AWBStockDetails inner join  Com_AWBStock
+on Com_AWBStock.AWBStockId=Com_AWBStockDetails.AWBStockId
+where 1=1]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CarrierCode</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CarrierCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CarrierCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>StockId</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>6</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>StockId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>StockId</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>StockCategoryCode</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>StockCategoryCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>StockCategoryCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Issued</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Issued</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Issued</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AWBNumber</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AWBNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AWBNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <label id="105">
+            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+            <property name="fontSize">14pt</property>
+            <property name="fontWeight">bold</property>
+            <property name="textAlign">center</property>
+            <text-property name="text">export.nawb.stock.mgmt.title</text-property>
+        </label>
+        <table id="7">
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">thin</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">thin</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">thin</property>
+            <property name="width">7.9375in</property>
+            <property name="dataSet">nawbData Set1</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">issuedStatus</property>
+                    <text-property name="displayName">issuedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["issuedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">reservedStatus</property>
+                    <text-property name="displayName">reservedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["reservedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">DuplicatedStatus</property>
+                    <text-property name="displayName">DuplicatedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DuplicatedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">DeletedStatus</property>
+                    <text-property name="displayName">DeletedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DeletedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">processingStatus</property>
+                    <text-property name="displayName">processingStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["processingStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CancelledStatus</property>
+                    <text-property name="displayName">CancelledStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CancelledStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">BookedStatus</property>
+                    <text-property name="displayName">BookedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["BookedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">printedStatus</property>
+                    <text-property name="displayName">printedStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["printedStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CarrierCode</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CarrierCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">StockId</property>
+                    <text-property name="displayName">StockId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["StockId"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">StockCategoryCode</property>
+                    <text-property name="displayName">StockCategoryCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["StockCategoryCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AWBNumber</property>
+                    <text-property name="displayName">AWBNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AWBNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="60">
+                <property name="width">0.4166666666666667in</property>
+            </column>
+            <column id="61">
+                <property name="width">0.40625in</property>
+            </column>
+            <column id="62">
+                <property name="width">0.6666666666666666in</property>
+            </column>
+            <column id="63">
+                <property name="width">0.6979166666666666in</property>
+            </column>
+            <column id="64">
+                <property name="width">0.4791666666666667in</property>
+            </column>
+            <column id="65">
+                <property name="width">0.4895833333333333in</property>
+            </column>
+            <column id="66">
+                <property name="width">0.4270833333333333in</property>
+            </column>
+            <column id="67">
+                <property name="width">0.46875in</property>
+            </column>
+            <column id="68">
+                <property name="width">0.4375in</property>
+            </column>
+            <column id="69">
+                <property name="width">0.4479166666666667in</property>
+            </column>
+            <column id="70">
+                <property name="width">0.6770833333333334in</property>
+            </column>
+            <column id="71">
+                <property name="width">0.7916666666666666in</property>
+            </column>
+            <header>
+                <row id="8">
+                    <property name="height">0.5729166666666666in</property>
+                    <cell id="9">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="72">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.carrierCode</text-property>
+                        </label>
+                    </cell>
+                    <cell id="10">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="73">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.stock.id</text-property>
+                        </label>
+                    </cell>
+                    <cell id="11">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="74">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.stock.category.code&#13;
+</text-property>
+                        </label>
+                    </cell>
+                    <cell id="12">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="75">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.awbNumber</text-property>
+                        </label>
+                    </cell>
+                    <cell id="13">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="78">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.booked.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="14">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="79">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.cancelled.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="15">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="80">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.deleted.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="16">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="81">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.duplicated.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="17">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="82">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.issued.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="18">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="83">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.printed.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="19">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="84">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.processing.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="20">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="85">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.reserved.status</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="21">
+                    <cell id="22">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="108">
+                            <property name="resultSetColumn">CarrierCode</property>
+                        </data>
+                    </cell>
+                    <cell id="23">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="88">
+                            <property name="resultSetColumn">StockId</property>
+                        </data>
+                    </cell>
+                    <cell id="24">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="89">
+                            <property name="resultSetColumn">StockCategoryCode</property>
+                        </data>
+                    </cell>
+                    <cell id="25">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="90">
+                            <property name="resultSetColumn">AWBNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="26">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="91">
+                            <property name="resultSetColumn">BookedStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="27">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="92">
+                            <property name="resultSetColumn">CancelledStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="28">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="93">
+                            <property name="resultSetColumn">DeletedStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="29">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="94">
+                            <property name="resultSetColumn">DuplicatedStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="30">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="95">
+                            <property name="resultSetColumn">issuedStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="31">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="96">
+                            <property name="resultSetColumn">printedStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="32">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="97">
+                            <property name="resultSetColumn">processingStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="33">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <data id="98">
+                            <property name="resultSetColumn">reservedStatus</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="47">
+                    <property name="height">0.010416666666666666in</property>
+                    <cell id="48"/>
+                    <cell id="49"/>
+                    <cell id="50"/>
+                    <cell id="51"/>
+                    <cell id="52"/>
+                    <cell id="53"/>
+                    <cell id="54"/>
+                    <cell id="55"/>
+                    <cell id="56"/>
+                    <cell id="57"/>
+                    <cell id="58"/>
+                    <cell id="59"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

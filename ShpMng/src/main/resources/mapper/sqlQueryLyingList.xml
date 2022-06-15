@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SearchLyingList">
+<select  id="searchlyingList" parameterType="com.ngen.cosys.shipment.airmail.model.SearchForLyingList"
+		resultMap="lyingListResponse">
+		SELECT
+			Shipment_Master.ShipmentId,
+			Shipment_Master.ShipmentNumber,
+			Shipment_Inventory.ShipmentLocation,
+			case when ISNULL(Uld_UldMaster.UldCarrierCode,'**') = '**' AND DATALENGTH(Shipment_Inventory.ShipmentLocation) &#60; 8 then 'Trolley'
+			else 'ULD' end as locationType,
+			case when ISNULL(Uld_UldMaster.UldCarrierCode,'**') = '**' AND DATALENGTH(Shipment_Inventory.ShipmentLocation) &#60; 8 then 2
+			else 1 end as orderbycls,
+			Shipment_Inventory.WarehouseLocation,
+			Shipment_Master.Destination,
+			Shipment_Master.Pieces,
+			Shipment_Master.Weight,
+			Shipment_HouseInformation.ShipmentHouseId,
+			Shipment_HouseInformation.Number as mailBagNumber,
+			Shipment_HouseInformation.DispatchNumber,
+			Shipment_HouseInformation.Pieces as piecesDetail,
+			Shipment_HouseInformation.Weight as weightDetail,
+			SUBSTRING(Shipment_HouseInformation.OriginOfficeExchange, 3,3) as org,
+			SUBSTRING(Shipment_HouseInformation.DestinationOfficeExchange, 3,3) as dest,
+			Shipment_HouseInformation.MailType,
+			Shipment_HouseInformation.NextDestination,
+			Shipment_Inventory.ShipmentInventory_Id,	
+			Shipment_Inventory.Flight_ID,
+			BookingFlightInfo.FlightKey bookedFlight,
+			BookingFlightInfo.DateSTD bookedFlightDate,			
+			MailManifestInfo.ULDNumber manifestULD,
+			ShipmentRemarks.shipmentRemarks
+		FROM
+			Shipment_Master inner join
+			Shipment_HouseInformation
+			on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+			inner join
+			Shipment_InventoryHouse
+			on Shipment_HouseInformation.ShipmentHouseId = Shipment_InventoryHouse.ShipmentHouseId inner join
+			Shipment_Inventory
+			on Shipment_InventoryHouse.ShipmentInventoryId = Shipment_Inventory.ShipmentInventory_Id
+			left join Uld_UldMaster on Shipment_Inventory.ShipmentLocation = Uld_UldMaster.UldKey
+			inner join 
+			Mst_Carrier carr 
+			on Shipment_Master.CarrierCode = carr.CarrierCode
+			left join
+			(
+				select
+					Flt_OperativeFlight.Flight_Id,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA
+				from
+					Flt_OperativeFlight inner join
+					Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+					and Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			)IncomingFlightInfo
+			on IncomingFlightInfo.Flight_ID = Shipment_Inventory.Flight_ID left join
+			(
+				select
+					Exp_ShipmentBooking.ShipmentNumber,
+					Flt_OperativeFlight.Flight_Id,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTD
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+					on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+					Flt_OperativeFlight
+					on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+					and Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+				where
+					Exp_ShipmentFlightBookingDetail.BookingStatusCode = 'UU'
+			)BookingFlightInfo
+			on BookingFlightInfo.ShipmentNumber = Shipment_HouseInformation.Number
+			left join
+			(
+				select
+					Exp_ManifestShipmentHouseInfo.Number,
+					Exp_ManifestULDInfo.ULDNumber,
+					Flt_OperativeFlight.Flight_ID,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTD
+				from
+					Exp_Manifest inner join
+					Flt_OperativeFlight
+					on Exp_Manifest.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+					and Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+					Exp_ManifestULDInfo
+					on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join
+					Exp_ManifestShipmentInfo
+					on
+					Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join
+					Exp_ManifestShipmentHouseInfo
+					on Exp_ManifestShipmentInfo.ManifestShipmentInfoId = Exp_ManifestShipmentHouseInfo.ManifestShipmentInfoId
+			)MailManifestInfo
+			on MailManifestInfo.Number = Shipment_HouseInformation.Number left join
+			(
+				select outerRemarks.ShipmentNumber, outerRemarks.ShipmentDate, outerRemarks.ShipmentId, substring((
+				Select ''+innerRemarks.ShipmentRemarks AS [text()]
+					From Shipment_Remarks as innerRemarks
+					Where innerRemarks.ShipmentNumber = outerRemarks.ShipmentNumber and 
+							innerRemarks.ShipmentDate = outerRemarks.ShipmentDate and 
+							innerRemarks.Flight_ID is null and 
+							innerRemarks.ShipmentRemarks is not null
+				ORDER BY innerRemarks.ShipmentNumber, innerRemarks.ShipmentDate
+				For XML PATH ('')), 1, 1000) as shipmentRemarks
+				from
+					Shipment_Remarks as outerRemarks 
+				where
+					outerRemarks.ShipmentRemarks is not null
+				group by outerRemarks.ShipmentNumber, outerRemarks.ShipmentDate, outerRemarks.ShipmentId
+			)ShipmentRemarks 
+				on (Shipment_Master.ShipmentNumber = ShipmentRemarks.ShipmentNumber and 
+					Shipment_Master.ShipmentDate = ShipmentRemarks.ShipmentDate) OR
+					(Shipment_Master.ShipmentId = ShipmentRemarks.ShipmentId) and					 
+					ShipmentRemarks.shipmentRemarks is not null
+		WHERE
+			Shipment_Master.ShipmentType = 'MAIL'
+				AND Shipment_Master.Destination = #{destination}
+				AND carr.CarrierCode = #{carriercode}
+			order by orderbycls,ShipmentLocation, ShipmentNumber
+</select>
+
+<resultMap id="lyingListResponse"
+		type="com.ngen.cosys.shipment.airmail.model.LyingListContainer">
+		<id column="ShipmentId" property="shipmentId" />	
+		<result column="ShipmentLocation" property="storeLocation"></result>
+		<result column="WarehouseLocation" property="warehouseLocation"></result>
+		<result column="Destination" property="destinationResp"></result>
+		<result column="Pieces" property="pieces"></result>
+		<result column="Weight" property="weights"></result>
+		<result column="locationType" property="locationType"></result>
+
+		<collection property="lyingListShipment" javaType="List"
+			ofType="com.ngen.cosys.shipment.airmail.model.LyingListShipment">
+			<id column="ShipmentId" property="shipmentId" />
+			<id column="ShipmentInventory_Id" property="shpInventoryId" />
+			<id column="Flight_ID" property="inventoryFlightId" />
+			<id column="ShipmentHouseId" property="shipmentHouseId" />
+			<result column="DispatchNumber" property="dispatchNumber"></result>
+			<result column="mailBagNumber" property="mailBagNumber"></result>
+			<result column="piecesDetail" property="piecesDetail"></result>
+			<result column="weightDetail" property="weightDetail"></result>
+			<result column="MailType" property="mailType"></result>
+			<result column="org" property="org"></result>
+			<result column="dest" property="dest"></result>
+			<result column="NextDestination" property="nextDest"></result>
+			<result column="bookedFlight" property="bookingFlightDetail"></result>
+			<result column="bookedFlightDate" property="bookedFlightDateDetail"></result>	
+			<result column="shipmentRemarks" property="remarks"></result>
+		</collection>
+	</resultMap>
+	
+
+	
+</mapper>

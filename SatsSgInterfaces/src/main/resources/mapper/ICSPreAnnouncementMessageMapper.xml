@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ICSPreAnnouncementMessageMapper">
+	
+	<select id="getICSPreannouncementMessageData" parameterType="Map"
+	 resultType="com.ngen.cosys.ics.model.ULD">
+    SELECT top(1) Imp_InboundContainers.ULDNumber AS containerId,
+              Imp_InboundContainers.CreatedDateTime AS uldCreateDate,
+              Imp_InboundContainers.LastUpdatedDateTime AS uldUpdateDate,
+              'N' AS throughServiceFlag,
+              'N' AS sttFlag,
+               Imp_InboundContainers.PHCFlag AS perishableFlag,
+               Imp_InboundContainers.ContentCode AS uldContentCode,
+               Imp_InboundContainers.UldStatus AS uldStatus,
+               flightinfo.FlightID as flightId,                                                           
+               flightinfo.incomingFlightCarrier AS incomingFlightCarrier,
+               flightinfo.incomingFlightNumber AS incomingFlightNumber,
+               flightinfo.incomingFlightDate AS incomingFlightDate,
+               flightOUT.outgoingFlightCarrier AS outgoingFlightCarrier,
+               flightOUT.outgoingFlightNumber AS outgoingFlightNumber,
+               flightOUT.outgoingFlightDate AS outgoingFlightDate,
+               Imp_InboundContainers.Origin AS uldFlightOriginPoint,
+               Imp_InboundContainers.Destination AS uldFlightOffPoint,
+               Imp_InboundContainers.CapturedManual AS ManualInputFlag,
+               Imp_InboundContainers.HandlingAreaCode AS cargoTerminal,
+               Imp_InboundContainers.HandlingInstructionForWarehouse AS uldRemark,
+               Imp_InboundContainers.ConnectingFlightId AS connetingFlightId,
+               (select locationcode from whs_location loc join Whs_AllocateWorkStationToAirside airside
+                      on loc.whslocationid=airside.whslocationid where airside.workstationid=                                   
+                      Imp_InboundContainers.ICSOutputLocation) AS pchsDestination,
+                         flightinfo.flightKey AS flightKey,
+               'IN' uldStatus,
+               substring(Imp_InboundContainers.SourceOfInformation, 0, 4) sourceIdentifier,
+               CASE WHEN Imp_InboundContainers.ICSOutputLocation=(select locationcode from whs_location loc join Whs_AllocateWorkStationToAirside airside
+                    on loc.whslocationid=airside.whslocationid where airside.workstationid=                                   
+                    Imp_InboundContainers.ICSOutputLocation) then ' ' else  Imp_InboundContainers.ICSOutputLocation end warehouseDestination,
+               CASE 
+                    WHEN (ValSHCContainerInfo.valShcCount > 0)
+                   THEN 1
+                    ELSE 0
+                    END valuableFlag
+              FROM Imp_InboundContainers
+              INNER JOIN (
+                     SELECT Flt_operativeflight.Flight_ID AS flightid,
+                           Flt_operativeflight.CarrierCode AS incomingFlightCarrier,
+                           Flt_operativeflight.FlightNumber AS incomingFlightNumber,
+                           Flt_operativeflight.FlightKey AS flightKey,
+                           Flt_OperativeFlight_Legs.DateSTA AS incomingFlightDate,
+                           Flt_OperativeFlight_Legs.DateATA AS ATA
+                     FROM Flt_operativeflight
+                     INNER JOIN Flt_OperativeFlight_Legs
+                           ON Flt_OperativeFlight_Legs.Flight_ID = Flt_operativeflight.Flight_ID
+                           AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+                     ) flightinfo
+                     ON flightinfo.flightid = Imp_InboundContainers.IncomingFlightId
+              LEFT JOIN (
+                     SELECT Flt_operativeflight.Flight_ID AS flightid,
+                           Flt_operativeflight.CarrierCode AS outgoingFlightCarrier,
+                           Flt_operativeflight.FlightNumber AS outgoingFlightNumber,
+                           Flt_OperativeFlight_Legs.DateSTD AS outgoingFlightDate
+                     FROM Flt_operativeflight
+                     INNER JOIN Flt_OperativeFlight_Legs
+                           ON Flt_OperativeFlight_Legs.Flight_ID = Flt_operativeflight.Flight_ID
+                                  AND Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+                     ) flightOUT
+                     ON flightOUT.flightid = Imp_InboundContainers.ConnectingFlightId
+              LEFT JOIN (
+                     SELECT Imp_InboundContainersSHC.ImpInboundContainersId,
+                           count(1) valShcCount
+                     FROM Imp_InboundContainersSHC
+                     INNER JOIN Mst_AssociateSHCByHandlingGroup
+                           ON Imp_InboundContainersSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                     INNER JOIN Mst_SHCHandlingGroup
+                           ON Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                     WHERE Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'VAL'
+                     GROUP BY Imp_InboundContainersSHC.ImpInboundContainersId
+                     ) ValSHCContainerInfo
+                     ON Imp_InboundContainers.ImpInboundContainersId = ValSHCContainerInfo.ImpInboundContainersId
+                                    WHERE Imp_InboundContainers.ContentCode != 'M' AND
+                     Imp_InboundContainers.ULDNUMBER = #{param} and SourceOfInformation!='CPM'
+                                    order by flightinfo.incomingFlightDate desc
+		</select>
+
+	
+	<select id="fetchUpdatedOperativeFlightDetails" parameterType="java.lang.String"
+	resultType="com.ngen.cosys.ics.model.ICSOperativeFlightModel">
+		SELECT 'UPDATE' as operationalDirection, opr.carrierCode as flightCarrier,
+		opr.flightNumber as flightNumber,
+		oprLegs.flightboardpoint as boardPoint,
+		CASE oprLegs.flightboardpoint WHEN #{tenantAirport} THEN 'OU' ELSE 'IN' END AS
+		flightType,
+		CASE oprLegs.flightboardpoint WHEN #{tenantAirport} THEN CAST(oprLegs.datestd AS DATE)
+		ELSE CAST(oprLegs.datesta AS DATE) END AS flightDate,
+		CASE oprLegs.flightboardpoint WHEN #{tenantAirport} THEN CAST(oprLegs.datestd AS TIME)
+		ELSE CAST(oprLegs.datesta AS TIME) END AS flightTime,
+		(
+		SELECT flt_operativeflight_LEGS.FlightOffPoint + ', ' FROM
+		flt_operativeflight, flt_operativeflight_LEGS
+		WHERE flt_operativeflight.flight_id = flt_operativeflight_LEGS.flight_id
+		AND flt_operativeflight.flight_id = opr.flight_id
+		ORDER BY flt_operativeflight_LEGS.FlightSegmentOrder FOR XML path('')
+		) AS offPointsCSV
+		FROM flt_operativeflight opr INNER JOIN flt_operativeflight_LEGS oprLegs
+		ON opr.flight_id = oprLegs.flight_id WHERE opr.flight_id=#{flightId}
+</select>
+
+</mapper>

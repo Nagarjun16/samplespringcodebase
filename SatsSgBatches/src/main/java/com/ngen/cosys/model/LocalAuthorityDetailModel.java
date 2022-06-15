@@ -1,0 +1,40 @@
+package com.ngen.cosys.model;
+
+import java.math.BigInteger;
+import java.time.LocalDateTime;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.springframework.validation.annotation.Validated;
+
+import com.ngen.cosys.framework.model.BaseBO;
+
+import io.swagger.annotations.ApiModel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@XmlRootElement
+@ApiModel
+@NoArgsConstructor
+@Validated
+public class LocalAuthorityDetailModel extends BaseBO {
+   /**
+    * 
+    */
+   private static final long serialVersionUID = 1L;
+   private BigInteger customShipmentLocalAuthorityRequirementDetailId;
+   private BigInteger customShipmentLocalAuthorityRequirementId;
+   private BigInteger shipmentMasterLocalAuthInfoId;
+   private BigInteger shipmentId;
+   private String referenceNumber;
+   private String license;
+   private String remarks;
+   private BigInteger appointedAgent;
+   private String deliveryOrderNo;
+   private String tsRedocFlightKey;
+   private String cancellationReasonCode;
+   private LocalDateTime tsRedocFlightDate;
+}

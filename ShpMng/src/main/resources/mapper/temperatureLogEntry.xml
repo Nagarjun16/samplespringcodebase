@@ -1,0 +1,1264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="temperatureLog">
+
+	<resultMap id="getTemperatureLogEntryModels"
+		type="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogEntry">
+		<id property="shipmentId" column="ShipmentId" jdbcType="INTEGER" />
+		<result column="Temperature" property="temperature" />
+		<result column="CapturedOn" property="capturedOn" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="Activity" property="activity" />
+		<result column="ShipmentDescription" property="shipmentDescription" />
+		<result column="LocationCode" property="locationCode" />
+	</resultMap>
+	
+	<resultMap id="getShipmentTemperatureLog"
+		type="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogResponse">
+		<id property="shipmentId" column="ShipmentId"/>
+		<result column="SVC" property="svc" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />		
+		<result column="Weight" property="weight" />
+		<result column="ChargeCode" property="chargeCode" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="WeightUnitCode" property="weightCode" />
+		<result column="RequestedTemperatureRange" property="temperatureRange" />
+		<collection property="temperatureLogEntryData" javaType="List"
+			ofType="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogEntry"
+			select="sqlGetShipmentTemperatureInfo" column="shipmentId=shipmentId" />
+	</resultMap>
+
+
+	<select id="fetchShipmentTemperature"
+		parameterType="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureSearch"
+		resultMap="getShipmentTemperatureLog">
+		select
+			Shipment_Master.WeightUnitCode,
+			Shipment_Master.SVC,
+			Shipment_Master.ShipmentNumber,
+			Shipment_Master.ShipmentId,
+			Shipment_Master.Origin,
+			Shipment_Master.Destination,
+			Shipment_Master.Pieces,
+			Shipment_Master.Weight,
+			Shipment_OtherChargeInfo.ChargeCode,
+			isnull(Shipment_Master.RequestedTemperature, Exp_eAcceptanceDocumentInformation.RequestedTemperatureRange) RequestedTemperatureRange
+		FROM 
+			Shipment_Master left join 
+			Shipment_OtherChargeInfo 
+				on Shipment_Master.ShipmentId = Shipment_OtherChargeInfo.ShipmentId left join
+			Exp_eAcceptanceDocumentInformation
+				on Shipment_Master.ShipmentNumber = Exp_eAcceptanceDocumentInformation.ShipmentNumber and
+					Shipment_Master.ShipmentDate = Exp_eAcceptanceDocumentInformation.ShipmentDate
+		where
+			Shipment_Master.ShipmentNumber=#{shipmentNumber} and
+			Shipment_Master.ShipmentDate = #{shipmentDate}
+	</select>
+
+	<select id="sqlGetShipmentTemperatureInfo" resultMap="getTemperatureLogEntryModels"
+		parameterType="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogEntry">
+		select
+			ShipmentId,
+			Com_ShipmentTemperatureLogEntry.ShipmentTemperatureLogEntryId,
+			Com_ShipmentTemperatureLogEntry.Temperature,
+			Com_ShipmentTemperatureLogEntry.CapturedOn,
+			Com_ShipmentTemperatureLogEntry.Activity,
+			Com_ShipmentTemperatureLogEntry.ShipmentDescription,
+			Com_ShipmentTemperatureLogEntry.LocationCode
+		from
+			Com_ShipmentTemperatureLogEntry
+		where
+			ShipmentId=#{shipmentId}
+	</select>
+	
+	<insert id="saveTemperatureLogEntry"
+		parameterType="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogEntryList">
+		insert into Com_ShipmentTemperatureLogEntry(
+			ShipmentId,
+			Temperature,
+			CapturedOn,
+			Activity,
+			ShipmentDescription,
+			LocationCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{temperature},
+			#{capturedOn},
+			#{activity},
+			#{shipmentDescription},
+			#{locationCode},
+			#{createdBy},
+			#{createdOn}			
+		)
+	</insert>
+
+	<delete id="deleteTemperatureLogEntry"
+		parameterType="com.ngen.cosys.shipment.temperatureLogEntry.model.TemperatureLogEntryList">
+		delete from Com_ShipmentTemperatureLogEntry where ShipmentTemperatureLogEntryId = #{ShipmentTemperatureLogEntryId}
+	</delete>
+
+	<!-- Cool Port Shipment Monitoring -->
+		
+	<resultMap id="getCoolportShipments"
+		type="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringResponse">
+		<collection property="coolportMonitoringDetailData"
+			javaType="List"
+			ofType="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringDetail">
+			<result property="uldNumber" column="ULDNumber" />
+			<result property="awbNumber" column="ShipmentNumber" />
+			<result property="origin" column="Origin" />
+			<result property="destination" column="Destination" />
+			<result property="pieces" column="Pieces" />
+			<result property="weight" column="Weight" />
+			<result property="natureOfGoods" column="NatureOfGoodsDescription" />			
+			<result property="shc" column="shcs" />
+			<result property="shipmentDate" column="ShipmentDate" />
+			<result property="bookingDetail" column="InboundFlightInfo" />
+			<result property="ata" column="ATA"  />
+			<result property="eta" column= "ETA" />
+			<result property="sta" column="STA"  />
+			<result property="flightDelay" column="FlightDelay"  />
+			<result property="currentTemparature" column="TemperatureLogged"  />
+			<result property="remark" column="ShipmentRemarks" />
+			<result property="temparature" column="RequestedTemperature"  />
+			<result property="wareHouseLocation" column="WarehouseLocation" />			
+			<result property="ffmOrBookingIndicator" column="ReceviedFromFFM" />
+			<result property="transferType" column="TransferType" />
+		</collection>
+	</resultMap>
+	
+	<resultMap id="getCoolportShipmentsExport"
+		type="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringResponse">
+		<collection property="coolportMonitoringDetailData"
+			javaType="List"
+			ofType="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringDetail">
+			<result property="uldNumber" column="ULDNumber" />
+			<result property="awbNumber" column="ShipmentNumber" />
+			<result property="origin" column="Origin" />
+			<result property="destination" column="Destination" />
+			<result property="pieces" column="Pieces" />
+			<result property="weight" column="Weight" />
+			<result property="natureOfGoods" column="NatureOfGoodsDescription" />
+			<result property="shc" column="shcs" />
+			<result property="shipmentDate" column="ShipmentDate" />
+			<result property="bookingDetail" column="BookingFlightInfo" />
+			<result property="sta" column="STD" />
+			<result property="eta" column="ETD" />
+			<result property="ata" column="ATD"  />			
+			<result property="flightDelay" column="FlightDelay"  />			
+			<result property="currentTemparature" column="TemperatureLogged"  />
+			<result property="remark" column="shipmentRemarks" />
+			<result property="temparature" column="RequestedTemperature"  />			
+			<result property="wareHouseLocation" column="shipmentWarehouseLocations" />
+			<result property="ffmOrBookingIndicator" column="ffmOrBookingIndicator" />
+			<result property="transferType" column="TransferType" />
+		</collection>
+	</resultMap>
+	
+	<select id="fetchcCoolportShipments"
+		parameterType="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringSearch"
+		resultMap="getCoolportShipments">
+		<![CDATA[
+			with ArrivalManifestShipmentInfo AS(
+				select
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,	
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,	
+					Imp_ArrivalManifestShipmentInfo.Origin,
+					Imp_ArrivalManifestShipmentInfo.Destination,
+					Imp_ArrivalManifestShipmentInfo.Piece as Pieces,
+					Imp_ArrivalManifestShipmentInfo.Weight as Weight,
+					Imp_ArrivalManifestByFlight.FlightID as InboundFlightId,
+					inboundFlight.FlightKey + '/' + upper(cast(format(inboundFlightLeg.DateSTA,'ddMMMyyyy') as varchar)) as InboundFlightInfo, 	
+					inboundFlight.FlightCancelFlag,
+					inboundFlight.FlightRestoredFlag,
+					inboundFlight.ParkingBayArrivalAircraft,
+					format(inboundFlightLeg.DateSTA, 'HH:mm') as STA,
+					format(inboundFlightLeg.DateETA, 'HH:mm') as ETA,
+					format(inboundFlightLeg.DateATA, 'HH:mm') as ATA,
+					case
+						when inboundFlight.InboundFlightDelayFlag = 1 then
+							'Y'
+						else
+							''
+						end as FlightDelay,	
+					Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+					Imp_ArrivalManifestULD.ImpArrivalManifestULDId,
+					Imp_ArrivalManifestULD.ULDNumber,
+					Imp_ArrivalManifestShipmentInfo.TransferType,
+					inboundFlightLeg.DateATA,
+					inboundFlightLeg.DateETA,
+					inboundFlightLeg.DateSTA,
+					(select
+						string_agg(Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode, ' ')
+					from
+						Imp_ArrivalManifestByShipmentSHC inner join
+						Mst_AssociateSHCByHandlingGroup
+							on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+						Mst_SHCHandlingGroup
+							on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+					where
+						Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId and
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PER' and 
+						Mst_SHCHandlingGroup.Category = 'WH'
+					) as ShipmentShc
+				from
+					Imp_ArrivalManifestByFlight inner join
+				   	Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				   	Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				   	Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+				   	Flt_OperativeFlight inboundFlight
+						on Imp_ArrivalManifestByFlight.FlightId = inboundFlight.Flight_ID inner join
+				   	Flt_OperativeFlight_Legs inboundFlightLeg
+						on inboundFlight.Flight_ID = inboundFlightLeg.Flight_ID								
+				where
+					inboundFlightLeg.DateSTA between #{dateTimeFrom} and #{dateTimeTo}  and
+					inboundFlightLeg.FlightOffPoint = #{tenantAirport}
+		]]>		
+				<if test="carrierCode != null">
+					and inboundFlight.CarrierCode= #{carrierCode}
+				</if>
+				
+				<if test="carrierGroup != null">
+					and inboundFlight.CarrierCode in (
+						select
+							Mst_AssociateCarrierWithGroup.CarrierCode
+						from
+							Mst_CarrierGroup inner join
+							Mst_AssociateCarrierWithGroup
+								on Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+						where
+							Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+					)
+				</if>	
+		<![CDATA[  
+			)
+			select
+				ArrivalManifestShipmentInfo.ULDNumber,
+				ArrivalManifestShipmentInfo.ShipmentNumber,	
+				ArrivalManifestShipmentInfo.ShipmentDate,	
+				ArrivalManifestShipmentInfo.Origin,
+				ArrivalManifestShipmentInfo.Destination,
+				ArrivalManifestShipmentInfo.Pieces,
+				ArrivalManifestShipmentInfo.Weight,
+				ArrivalManifestShipmentInfo.InboundFlightId,
+				ArrivalManifestShipmentInfo.InboundFlightInfo, 	
+				ArrivalManifestShipmentInfo.FlightCancelFlag,
+				ArrivalManifestShipmentInfo.FlightRestoredFlag,
+				ArrivalManifestShipmentInfo.ParkingBayArrivalAircraft,
+				ArrivalManifestShipmentInfo.STA,
+				ArrivalManifestShipmentInfo.ETA,
+				ArrivalManifestShipmentInfo.ATA,
+				ArrivalManifestShipmentInfo.FlightDelay,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.RequestedTemperature,
+				Shipment_Master.NatureOfGoodsDescription,
+				ArrivalManifestShipmentInfo.ShipmentShc  as shcs,
+				(select
+						string_agg(cast(Shipment_Inventory.WarehouseLocation as NVARCHAR(MAX)), ' ')
+					from
+					(select	
+							distinct Shipment_Inventory.WarehouseLocation
+						from
+							 Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID =  Shipment_Master.ShipmentId and
+							Shipment_Inventory.Flight_ID = ArrivalManifestShipmentInfo.InboundFlightId
+					)Shipment_Inventory
+				) as WarehouseLocation,
+				ArrivalManifestShipmentInfo.TransferType,
+				(select
+						TOP 1 TemperatureLogInfo.Temperature
+					from(
+						select
+							Com_ShipmentTemperatureLogEntry.Temperature
+						from	
+							Com_ShipmentTemperatureLogEntry
+						where
+							Com_ShipmentTemperatureLogEntry.ShipmentId = Shipment_Master.ShipmentId 
+						) TemperatureLogInfo
+				) as TemperatureLogged,
+				isnull((select
+							STRING_AGG(cast(ShipmentRemarksInfo.ShipmentRemarks as NVARCHAR(MAX)), ', ')
+						from(
+							select
+								distinct Shipment_Remarks.ShipmentRemarks
+							from	
+								Shipment_Remarks
+							where
+								Shipment_Remarks.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+								Shipment_Remarks.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate and					
+								Shipment_Remarks.Flight_ID = ArrivalManifestShipmentInfo.InboundFlightId and
+								Shipment_Remarks.RemarkType in ('OSI', 'SSR', 'BDI')) ShipmentRemarksInfo),
+				(select
+					STRING_AGG(cast(ShipmentRemarksInfo.ShipmentRemarks as NVARCHAR(MAX)), ', ')
+				from(
+					select
+						distinct Shipment_Remarks.ShipmentRemarks
+					from	
+						Shipment_Remarks
+					where
+						Shipment_Remarks.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Shipment_Remarks.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate and
+						Shipment_Remarks.RemarkType in ('OSI', 'SSR', 'BDI')) ShipmentRemarksInfo)) as ShipmentRemarks,
+		 		(select 
+					case 
+						when count(1) > 0 then 
+							'Y' 
+						else 
+							'N' 
+						end isFFMProcessed
+					from 
+						Imp_FreightFlightManifestByShipment inner join
+						Imp_FreightFlightManifestULD 
+							on Imp_FreightFlightManifestByShipment.ImpFreightFlightManifestULDId = Imp_FreightFlightManifestULD.ImpFreightFlightManifestULDId inner join
+						Imp_FreightFlightManifestBySegment
+							on Imp_FreightFlightManifestULD.ImpFreightFlightManifestBySegmentId = Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestBySegmentId inner join
+						Imp_FreightFlightManifestByFlight
+							on Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId
+					where 
+						Imp_FreightFlightManifestByShipment.AwbNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Imp_FreightFlightManifestByShipment.AwbDate = ArrivalManifestShipmentInfo.ShipmentDate and
+						Imp_FreightFlightManifestByFlight.FlightId = ArrivalManifestShipmentInfo.InboundFlightId
+				) as ReceviedFromFFM
+			from
+				Shipment_Master inner join
+				ArrivalManifestShipmentInfo
+					on Shipment_Master.ShipmentNumber = ArrivalManifestShipmentInfo.ShipmentNumber and
+						Shipment_Master.ShipmentDate = ArrivalManifestShipmentInfo.ShipmentDate
+			where
+				exists(
+					select
+						Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+					from
+						Mst_AssociateSHCByHandlingGroup inner join
+						Mst_SHCHandlingGroup
+							on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+					where
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PER' and
+						Mst_SHCHandlingGroup.Category = 'WH' and
+						exists (select value FROM string_split(ArrivalManifestShipmentInfo.ShipmentShc, ' ') where value = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode)
+				) and not exists(
+					select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                            on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                    where
+                        Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'DGR' and
+                        Mst_SHCHandlingGroup.Category = 'WH' and
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode not in (
+                        select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                            on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                            Where   Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('CDP'))
+                            and
+						exists (select value FROM string_split(ArrivalManifestShipmentInfo.ShipmentShc, ' ') where value = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode)
+				
+				
+				)
+			order by
+				coalesce(ArrivalManifestShipmentInfo.DateATA,ArrivalManifestShipmentInfo.DateETA,isnull(ArrivalManifestShipmentInfo.DateSTA, getdate() + 10)) asc
+		]]>
+	</select>
+
+
+
+	<select id="fetchcCoolportShipmentsExport"
+		parameterType="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringSearch"
+		resultMap="getCoolportShipmentsExport">
+		<![CDATA[
+			With TemperatureSubGroupDetails AS(
+				select
+					Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailDescription,
+					Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode
+				from
+					Mst_CodeAdministration_SubGroupDetails
+				where
+					Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode = 'TemperatureRange'
+			), PERSHCGroup AS(
+				select
+					Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+				from
+					Mst_AssociateSHCByHandlingGroup inner join
+					Mst_SHCHandlingGroup
+						on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PER' and
+					Mst_SHCHandlingGroup.Category = 'WH'
+			), OutboundPERBookingInfo AS(
+				select
+					*
+				from(
+					select
+						Flt_OperativeFlight.CarrierCode,
+						Exp_ShipmentBooking.ShipmentNumber,
+						Exp_ShipmentBooking.ShipmentDate,
+						Exp_ShipmentBooking.Origin,
+						Exp_ShipmentBooking.Destination,
+						Exp_ShipmentBooking.Pieces,
+						Exp_ShipmentBooking.GrossWeight as Weight,
+						Exp_ShipmentBooking.NatureOfGoodsDescription,
+						Flt_OperativeFlight.FlightKey,
+						Flt_OperativeFlight_Legs.DateSTD,
+						Flt_OperativeFlight_Legs.DateETD,
+						Flt_OperativeFlight_Legs.DateATD,
+						Flt_OperativeFlight_Segments.FlightOffPoint,
+						case 
+							when (Exp_ShipmentFlightBookingDetail.ThroughTransitFlag = 1) then
+								'TTH'
+							else
+								''
+							end TransferType,
+						Flt_OperativeFlight.FlightKey + '/' + upper(cast(format(Flt_OperativeFlight_Legs.DateSTD,'ddMMMyyyy') as varchar)) + '/' + Flt_OperativeFlight_Segments.FlightOffPoint as BookingFlightInfo, 						
+						format(Flt_OperativeFlight_Legs.DateSTD, 'HH:mm') as STD,
+						format(Flt_OperativeFlight_Legs.DateETD, 'HH:mm') as ETD,
+						format(Flt_OperativeFlight_Legs.DateATD, 'HH:mm') as ATD,
+						case	
+							when Flt_OperativeFlight.OutboundFlightDelayFlag = 1 then
+								'Y'
+							else
+								''
+							end as FlightDelay,
+						isnull(string_agg(cast(Exp_ShipmentFlightBookingDetailSHC.SpecialHandlingCode as NVARCHAR(MAX)), ' '),
+							(select
+									string_agg(cast(Shipment_MasterSHC.SpecialHandlingCode as NVARCHAR(MAX)), ' ')
+								from 
+									Shipment_Master inner join
+									Shipment_MasterSHC
+										on Shipment_Master.ShipmentId = Shipment_MasterSHC.ShipmentId
+								where
+									Shipment_Master.ShipmentNumber = Exp_ShipmentBooking.ShipmentNumber and
+									Shipment_Master.ShipmentDate = Exp_ShipmentBooking.ShipmentDate)) as ShipmentShc
+						from 
+							Exp_ShipmentBooking inner join
+							Exp_ShipmentFlightBookingDetail 
+								on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+							Flt_OperativeFlight 
+								on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID inner join
+							Flt_OperativeFlight_Segments
+								on	Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and
+									Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} and
+									Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId  inner join			
+							Flt_OperativeFlight_Legs 
+								on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+									Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} left join
+							Exp_ShipmentFlightBookingDetailSHC
+								on Exp_ShipmentFlightBookingDetail.FlightBookingId = Exp_ShipmentFlightBookingDetailSHC.FlightBookingId
+						where
+							Exp_ShipmentFlightBookingDetail.BookingStatusCode <> 'XX' and
+							Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1  and
+							Flt_OperativeFlight_Segments.DateSTD between #{dateTimeFrom} and #{dateTimeTo}
+			]]>
+						<if test="carrierCode != null">
+							and Flt_OperativeFlight.CarrierCode = #{carrierCode}
+						</if>
+						<if test="carrierGroup != null">
+							and Flt_OperativeFlight.CarrierCode in (
+								select
+									Mst_AssociateCarrierWithGroup.CarrierCode
+								from
+									Mst_AssociateCarrierWithGroup inner join
+									Mst_CarrierGroup
+										on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+								where
+									Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+							 )
+						</if>
+			<![CDATA[
+					group by
+						Flt_OperativeFlight.CarrierCode,
+						Exp_ShipmentBooking.ShipmentNumber,
+						Exp_ShipmentBooking.ShipmentDate,
+						Exp_ShipmentBooking.Origin,
+						Exp_ShipmentBooking.Destination,
+						Exp_ShipmentBooking.Pieces,
+						Exp_ShipmentBooking.GrossWeight,
+						Exp_ShipmentBooking.NatureOfGoodsDescription,
+						Flt_OperativeFlight.FlightKey,
+						Flt_OperativeFlight_Legs.DateSTD,
+						Flt_OperativeFlight_Legs.DateETD,
+						Flt_OperativeFlight_Legs.DateATD,
+						Flt_OperativeFlight_Segments.FlightOffPoint,
+						Exp_ShipmentFlightBookingDetail.ThroughTransitFlag,
+						Flt_OperativeFlight.FlightKey,
+						Flt_OperativeFlight_Legs.DateSTD,
+						Flt_OperativeFlight_Segments.FlightOffPoint,
+						Flt_OperativeFlight_Legs.DateETD,
+						Flt_OperativeFlight.OutboundFlightDelayFlag
+				)BookingInfo
+				where
+					exists(
+						select
+							1
+						from
+							PERSHCGroup 
+						where				
+							exists (select value from string_split(BookingInfo.ShipmentShc, ' ') where value = PERSHCGroup.SpecialHandlingCode)
+					)
+			), OutboundPrelodgePERInfo AS(
+				select 
+					*
+				from(
+					select
+						Agt_PrelodgeExportDocuments.CarrierCode,
+						Agt_PrelodgeExportDocuments.ShipmentNumber,
+						Agt_PrelodgeExportDocuments.ShipmentDate,
+						Agt_PrelodgeExportDocuments.DocumentOrigin as Origin,
+						Agt_PrelodgeExportDocuments.DocumentDestination as Destination, 
+						Agt_PrelodgeExportDocuments.DocumentPieces as Pieces,
+						Agt_PrelodgeExportDocuments.DocumentWeight as Weight,
+						Agt_PrelodgeExportDocuments.NatureOfGoodsDescription,
+						string_agg(Agt_PrelodgeExportDocuments_BUP_ULD.UldNumber, ' ') as ULDNumber,	
+						null TransferType,	
+						isnull(OutboundPERBookingInfo.FlightKey, Agt_PrelodgeExportDocuments.FlightKey) + '/' + 
+									upper(cast(format(isnull(OutboundPERBookingInfo.DateSTD,Agt_PrelodgeExportDocuments.FlightDate),'ddMMMyyyy') as varchar)) + '/' + 
+									OutboundPERBookingInfo.FlightOffPoint as BookingFlightInfo, 						
+						OutboundPERBookingInfo.STD,
+						OutboundPERBookingInfo.ETD,
+						OutboundPERBookingInfo.ATD,	
+						OutboundPERBookingInfo.DateSTD,
+						OutboundPERBookingInfo.DateATD,	
+						OutboundPERBookingInfo.DateETD,
+						OutboundPERBookingInfo.FlightDelay,
+						string_agg(cast(Agt_PrelodgeExportDocumentsSHC.SpecialHandlingCode as NVARCHAR(MAX)), ' ') as ShipmentShc,
+						case
+							when OutboundPERBookingInfo.FlightKey is not null then
+								'Y'
+							else
+								'N'
+							end BookingStatus,
+						TemperatureSubGroupDetails.AdministrationSubGroupDetailDescription as RequestedTemperature
+					from
+						Agt_PrelodgeExportDocuments inner join
+						Agt_PrelodgeExportDocumentsSHC
+							on Agt_PrelodgeExportDocuments.PrelodgeDocumentId = Agt_PrelodgeExportDocumentsSHC.PrelodgeDocumentId left join
+						Agt_PrelodgeExportDocuments_BUP_ULD
+							on Agt_PrelodgeExportDocuments.PrelodgeDocumentId = Agt_PrelodgeExportDocuments_BUP_ULD.PrelodgeDocumentId left join
+						OutboundPERBookingInfo
+							on Agt_PrelodgeExportDocuments.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+								Agt_PrelodgeExportDocuments.ShipmentDate = OutboundPERBookingInfo.ShipmentDate left join
+						TemperatureSubGroupDetails
+							on Agt_PrelodgeExportDocuments.RequestedTemperatureRange = TemperatureSubGroupDetails.AdministrationSubGroupDetailCode
+					where
+							Agt_PrelodgeExportDocuments.CreatedDateTime between #{dateTimeFrom} and #{dateTimeTo} and
+							(Agt_PrelodgeExportDocuments.ShipmentStatus = 'SERVICING' OR  Agt_PrelodgeExportDocuments.ShipmentStatus = 'OPEN')
+			]]>
+						<if test="carrierCode != null">
+							and Agt_PrelodgeExportDocuments.CarrierCode = #{carrierCode}
+						</if>
+						<if test="carrierGroup != null">
+							and Agt_PrelodgeExportDocuments.CarrierCode in (
+								select
+									Mst_AssociateCarrierWithGroup.CarrierCode
+								from
+									Mst_AssociateCarrierWithGroup inner join
+									Mst_CarrierGroup
+										on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+								where
+										Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+								 )
+						</if>
+			<![CDATA[
+					group by
+						OutboundPERBookingInfo.CarrierCode, 
+						Agt_PrelodgeExportDocuments.CarrierCode,
+						Agt_PrelodgeExportDocuments.ShipmentNumber,
+						Agt_PrelodgeExportDocuments.ShipmentDate,
+						Agt_PrelodgeExportDocuments.DocumentOrigin,
+						Agt_PrelodgeExportDocuments.DocumentDestination,
+						Agt_PrelodgeExportDocuments.DocumentPieces,
+						Agt_PrelodgeExportDocuments.DocumentWeight,
+						Agt_PrelodgeExportDocuments.NatureOfGoodsDescription,
+						OutboundPERBookingInfo.FlightKey,
+						Agt_PrelodgeExportDocuments.FlightKey,
+						OutboundPERBookingInfo.DateSTD,
+						Agt_PrelodgeExportDocuments.FlightDate,
+						OutboundPERBookingInfo.FlightOffPoint ,
+						OutboundPERBookingInfo.STD,
+						OutboundPERBookingInfo.ETD,
+						OutboundPERBookingInfo.ATD,	
+						OutboundPERBookingInfo.DateSTD,
+						OutboundPERBookingInfo.DateATD,	
+						OutboundPERBookingInfo.DateETD,
+						OutboundPERBookingInfo.FlightDelay,
+						TemperatureSubGroupDetails.AdministrationSubGroupDetailDescription
+				)AgentPrelogdeInfo
+				where		
+					exists(
+						select
+							1
+						from
+							PERSHCGroup 
+						where				
+							exists (select value from string_split(AgentPrelogdeInfo.ShipmentShc, ' ') where value = PERSHCGroup.SpecialHandlingCode)
+					)
+			), OutboundEAcceptancePERInfo AS(
+				select
+					*
+				from(
+					select
+						Exp_eAcceptanceDocumentInformation.AcceptedDateTime,
+						Exp_eAcceptanceDocumentInformation.CarrierCode,
+						Exp_eAcceptanceDocumentInformation.ShipmentNumber,
+						Exp_eAcceptanceDocumentInformation.ShipmentDate,
+						Exp_eAcceptanceDocumentInformation.Origin,
+						Exp_eAcceptanceDocumentInformation.Destination,
+						Exp_eAcceptanceDocumentInformation.Piece as Pieces,
+						Exp_eAcceptanceDocumentInformation.Weight,
+						Exp_eAcceptanceDocumentInformation.NatureOfGoodsDescription,
+						isnull(string_agg(cast(Exp_eAcceptanceAutoWeigh.UldNumber as NVARCHAR(MAX)), ' '), 
+									string_agg(cast(Exp_EAcceptanceWeighing.UldNumber as NVARCHAR(MAX)),' ')) as ULDNumber,		
+						null as TransferType,
+						isnull(OutboundPERBookingInfo.FlightKey, Exp_eAcceptanceDocumentInformation.FirstBookedFlight) + '/' + upper(cast(format(isnull(OutboundPERBookingInfo.DateSTD,Exp_eAcceptanceDocumentInformation.FirstBookedFlightDate),'ddMMMyyyy') as varchar)) + '/' + OutboundPERBookingInfo.FlightOffPoint as BookingFlightInfo, 						
+						OutboundPERBookingInfo.STD,
+						OutboundPERBookingInfo.ETD,
+						OutboundPERBookingInfo.ATD,	
+						OutboundPERBookingInfo.DateSTD,
+						OutboundPERBookingInfo.DateATD,	
+						OutboundPERBookingInfo.DateETD,	
+						OutboundPERBookingInfo.FlightDelay,
+						(select
+                            	string_agg(cast(Exp_eAcceptanceDocumentInfoSHC.SpecialHandlingCode as NVARCHAR(MAX)), ' ')
+                            from
+                                Exp_eAcceptanceDocumentInfoSHC
+                            where
+                                Exp_eAcceptanceDocumentInfoSHC.DocumentInformationId =
+                                Exp_eAcceptanceDocumentInformation.DocumentInformationId )
+                             as ShipmentShc,
+						case
+							when OutboundPERBookingInfo.FlightKey is not null then
+								'Y'
+							else
+								'N'
+							end BookingStatus,
+						TemperatureSubGroupDetails.AdministrationSubGroupDetailDescription as RequestedTemperature,
+						null as ShipmentRemarks
+					from
+						Exp_eAcceptanceDocumentInformation left join
+						OutboundPERBookingInfo
+							on Exp_eAcceptanceDocumentInformation.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and 
+								Exp_eAcceptanceDocumentInformation.ShipmentDate = OutboundPERBookingInfo.ShipmentDate left join
+						Exp_eAcceptanceAutoWeighShipment
+							on Exp_eAcceptanceDocumentInformation.ShipmentNumber = Exp_eAcceptanceAutoWeighShipment.ShipmentNumber and
+								Exp_eAcceptanceDocumentInformation.ShipmentDate = Exp_eAcceptanceAutoWeighShipment.ShipmentDate left join
+						Exp_eAcceptanceAutoWeigh
+							on Exp_eAcceptanceAutoWeighShipment.AutoWeighBupHeaderId = Exp_eAcceptanceAutoWeigh.AutoWeighBupHeaderId left join
+						Exp_EAcceptanceWeighing		
+							on Exp_eAcceptanceDocumentInformation.DocumentInformationId = Exp_EAcceptanceWeighing.DocumentInformationId and
+								Exp_EAcceptanceWeighing.ULDNumber is not null left join
+						TemperatureSubGroupDetails
+							on Exp_eAcceptanceDocumentInformation.RequestedTemperatureRange = TemperatureSubGroupDetails.AdministrationSubGroupDetailCode
+					where
+						Exp_eAcceptanceDocumentInformation.CreatedDateTime between #{dateTimeFrom} and #{dateTimeTo} and
+						Exp_eAcceptanceDocumentInformation.Status not in ('REJECTED', 'RETURNED')
+			]]>
+					<if test="carrierCode != null">
+						and Exp_eAcceptanceDocumentInformation.CarrierCode = #{carrierCode}
+					</if>
+					<if test="carrierGroup != null">
+						and Exp_eAcceptanceDocumentInformation.CarrierCode in (
+							select
+								Mst_AssociateCarrierWithGroup.CarrierCode
+							from
+								Mst_AssociateCarrierWithGroup inner join
+								Mst_CarrierGroup
+									on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+							where
+								Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+						 )
+					</if>
+			<![CDATA[
+					group by
+						Exp_eAcceptanceDocumentInformation.AcceptedDateTime,
+						Exp_eAcceptanceDocumentInformation.CarrierCode,
+						Exp_eAcceptanceDocumentInformation.ShipmentNumber,
+						Exp_eAcceptanceDocumentInformation.ShipmentDate,
+						Exp_eAcceptanceDocumentInformation.Origin,
+						Exp_eAcceptanceDocumentInformation.Destination,
+						Exp_eAcceptanceDocumentInformation.Piece,
+						Exp_eAcceptanceDocumentInformation.Weight,
+						Exp_eAcceptanceDocumentInformation.NatureOfGoodsDescription,	
+						OutboundPERBookingInfo.FlightKey,	
+						Exp_eAcceptanceDocumentInformation.FirstBookedFlight,
+						Exp_eAcceptanceDocumentInformation.FirstBookedFlightDate,
+						OutboundPERBookingInfo.FlightOffPoint,
+						OutboundPERBookingInfo.STD,
+						OutboundPERBookingInfo.ETD,
+						OutboundPERBookingInfo.ATD,	
+						OutboundPERBookingInfo.DateSTD,
+						OutboundPERBookingInfo.DateATD,	
+						OutboundPERBookingInfo.DateETD,	
+						OutboundPERBookingInfo.FlightDelay,						
+						TemperatureSubGroupDetails.AdministrationSubGroupDetailDescription,
+						Exp_eAcceptanceDocumentInformation.DocumentInformationId
+				)AcceptanceInfo
+				where
+					exists(
+						select
+							1
+						from
+							PERSHCGroup 
+						where				
+							exists (select value from string_split(AcceptanceInfo.ShipmentShc, ' ') where value = PERSHCGroup.SpecialHandlingCode)
+				)
+			), OutboundTranshipmentPERInfo AS(
+				select
+					*
+				from(
+					select
+						Flt_OperativeFlight.CarrierCode,
+						Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+						Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+						Imp_ArrivalManifestShipmentInfo.Origin,
+						Imp_ArrivalManifestShipmentInfo.Destination,
+						Imp_ArrivalManifestShipmentInfo.Piece as Pieces,
+						Imp_ArrivalManifestShipmentInfo.Weight,
+						Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+						Imp_ArrivalManifestULD.ULDNumber as ULDNumber,
+						Imp_ArrivalManifestShipmentInfo.TransferType,
+						isnull(OutboundPERBookingInfo.BookingFlightInfo, 
+							BookingFlight.FlightKey + '/' + 
+							upper(cast(format(BookingFlightLeg.DateSTD,'ddMMMyyyy') as varchar)) + '/' + 
+							BookingFlightSegment.FlightOffPoint ) as BookingFlightInfo, 						
+						isnull(OutboundPERBookingInfo.STD, format(BookingFlightLeg.DateSTD, 'HH:mm')) as STD,
+						isnull(OutboundPERBookingInfo.ETD, format(BookingFlightLeg.DateETD, 'HH:mm')) as ETD,
+						isnull(OutboundPERBookingInfo.ATD, format(BookingFlightLeg.DateATD, 'HH:mm')) as ATD,
+						isnull(OutboundPERBookingInfo.DateSTD, BookingFlightLeg.DateSTD) as DateSTD,
+						isnull(OutboundPERBookingInfo.DateATD, BookingFlightLeg.DateATD) as DateATD,	
+						isnull(OutboundPERBookingInfo.DateETD, BookingFlightLeg.DateETD) as DateETD,
+						isnull(OutboundPERBookingInfo.FlightDelay, iif(BookingFlight.OutboundFlightDelayFlag = 1, 'Y' ,'')) as FlightDelay,
+						case
+							when isnull(OutboundPERBookingInfo.FlightKey, BookingFlight.FlightKey) is not null then
+								'Y'
+							else
+								'N'
+							end BookingStatus,
+						(
+								select 
+									string_agg(cast(Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode as NVARCHAR(MAX)), ' ')
+								from
+									Imp_ArrivalManifestByShipmentSHC
+								where
+									Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId
+							) as ShipmentShc,
+						null as ShipmentRemarks
+					from
+						Imp_ArrivalManifestByFlight inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Imp_ArrivalManifestULD
+							on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+						Flt_OperativeFlight
+							on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+						Flt_OperativeFlight_Legs
+							on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+								Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} left join
+						OutboundPERBookingInfo
+							on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+								Imp_ArrivalManifestShipmentInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate left join
+						Flt_OperativeFlight BookingFlight
+							on Imp_ArrivalManifestShipmentInfo.BookingFlightId = BookingFlight.Flight_ID left join
+						Flt_OperativeFlight_Legs BookingFlightLeg
+							on BookingFlight.Flight_ID = BookingFlightLeg.Flight_ID and
+								BookingFlightLeg.FlightBoardPoint = #{tenantAirport} left join
+						Flt_OperativeFlight_Segments BookingFlightSegment
+							on BookingFlight.Flight_ID = BookingFlightSegment.Flight_ID and
+								Imp_ArrivalManifestShipmentInfo.FlightSegmentId = BookingFlightSegment.FlightSegmentId
+					where
+						Flt_OperativeFlight_Legs.DateSTA between #{dateTimeFrom} and #{dateTimeTo} and
+						(Imp_ArrivalManifestShipmentInfo.Origin not in (#{tenantAirport}, #{tenantCity}) and  Imp_ArrivalManifestShipmentInfo.Destination not in (#{tenantAirport}, #{tenantCity})) and
+						exists(
+							select
+								Imp_InboundContainers.ULDNumber
+							from
+								Imp_InboundContainers
+							where 					
+								Imp_InboundContainers.IncomingFlightId = Imp_ArrivalManifestByFlight.FlightId  and
+								Imp_InboundContainers.ULDNumber = Imp_ArrivalManifestULD.ULDNumber and
+								Imp_InboundContainers.PHCFlag = 1					
+						) 
+			]]>
+					<if test="carrierCode != null">
+						and Flt_OperativeFlight.CarrierCode = #{carrierCode}
+					</if>
+					<if test="carrierGroup != null">
+						and Flt_OperativeFlight.CarrierCode in (
+							select
+								Mst_AssociateCarrierWithGroup.CarrierCode
+							from
+								Mst_AssociateCarrierWithGroup inner join
+								Mst_CarrierGroup
+									on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+							where
+								Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+						 )
+					</if>
+			<![CDATA[						
+				)ArrivalManifestShipmentInfo
+				where
+					exists(
+						select
+							1
+						from
+							PERSHCGroup 
+						where				
+							exists (select value FROM string_split(ArrivalManifestShipmentInfo.ShipmentShc, ' ') where value = PERSHCGroup.SpecialHandlingCode)
+					)
+			), OutboundLoadedPERInfo AS(
+				select
+					Shipment_Master.CarrierCode,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber as ULDNumber,
+					null as TransferType,
+						Flt_OperativeFlight.FlightKey + '/' + upper(cast(format(Flt_OperativeFlight_Legs.DateSTD,'ddMMMyyyy') as varchar)) + '/' + Flt_OperativeFlight_Segments.FlightOffPoint as BookingFlightInfo, 						
+					format(Flt_OperativeFlight_Legs.DateSTD, 'HH:mm') as STD,
+					format(Flt_OperativeFlight_Legs.DateETD, 'HH:mm') as ETD,
+					format(Flt_OperativeFlight_Legs.DateATD, 'HH:mm') as ATD,
+					Flt_OperativeFlight_Legs.DateSTD,
+					Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight_Legs.DateETD,
+					case	
+						when Flt_OperativeFlight.OutboundFlightDelayFlag = 1 then
+							'Y'
+						else
+							''
+						end as FlightDelay,
+					'Y' as BookingStatus,
+					Shipment_Master.RequestedTemperature,
+					string_agg(cast(Exp_LoadedShipmentSHCInfo.SpecialHandlingCode as NVARCHAR(MAX)), ' ') as ShipmentShc,
+					null as ShipmentRemarks
+				from
+					Exp_AssignedULDTrolleyToFlight inner join
+					Exp_LoadedShipmentInfo
+						on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join
+					Flt_OperativeFlight 
+						on Exp_AssignedULDTrolleyToFlight.FlightId = Flt_OperativeFlight.Flight_Id inner join
+					Flt_OperativeFlight_Legs 
+						on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id and 
+							Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+					Flt_OperativeFlight_Segments 
+						on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Segments.Flight_Id and
+							Exp_AssignedULDTrolleyToFlight.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+					Exp_FlightEvents
+						on Flt_OperativeFlight.Flight_Id = Exp_FlightEvents.FlightId inner join
+					Shipment_Master
+						on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId left join
+					Exp_LoadedShipmentSHCInfo
+						on Exp_LoadedShipmentInfo.LoadedShipmentInfoId = Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId
+				where
+					Flt_OperativeFlight_Segments.DateSTD between #{dateTimeFrom} and #{dateTimeTo} and
+					Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} and
+					Exp_AssignedULDTrolleyToFlight.UsedForPerishableContainer = 1
+		]]>
+				<if test="carrierCode != null">
+					and Flt_OperativeFlight.CarrierCode = #{carrierCode}
+				</if>
+				<if test="carrierGroup != null">
+					and Flt_OperativeFlight.CarrierCode in (
+						select
+							Mst_AssociateCarrierWithGroup.CarrierCode
+						from
+							Mst_AssociateCarrierWithGroup inner join
+							Mst_CarrierGroup
+								on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+						where
+							Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup}
+					 )
+				</if>
+		<![CDATA[
+				group by
+					Shipment_Master.CarrierCode,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Segments.FlightOffPoint,
+					Flt_OperativeFlight_Legs.DateSTD,
+					Flt_OperativeFlight_Legs.DateETD,
+					Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight.OutboundFlightDelayFlag,
+					Shipment_Master.RequestedTemperature
+			)
+			select
+				OutboundPERShipmentInfo.AcceptedDateTime,
+				OutboundPERShipmentInfo.CarrierCode,
+				OutboundPERShipmentInfo.ShipmentNumber,
+				OutboundPERShipmentInfo.ShipmentDate,
+				OutboundPERShipmentInfo.Origin,
+				OutboundPERShipmentInfo.Destination,
+				OutboundPERShipmentInfo.Pieces,
+				OutboundPERShipmentInfo.Weight,
+				OutboundPERShipmentInfo.NatureOfGoodsDescription,
+				OutboundPERShipmentInfo.ULDNumber,
+				OutboundPERShipmentInfo.TransferType,
+				OutboundPERShipmentInfo.BookingFlightInfo,
+				OutboundPERShipmentInfo.STD,				
+				OutboundPERShipmentInfo.ETD,
+				OutboundPERShipmentInfo.ATD,				
+				OutboundPERShipmentInfo.FlightDelay,
+				OutboundPERShipmentInfo.BookingStatus as ffmOrBookingIndicator,
+				(select string_agg(cast(value as NVARCHAR(MAX)), ' ' ) FROM string_split(OutboundPERShipmentInfo.ShipmentShc, ' ')
+		 			where value in (select PERSHCGroup.SpecialHandlingCode from PERSHCGroup)) as shcs,
+				OutboundPERShipmentInfo.RequestedTemperature,
+				(select 
+					STRING_AGG(cast(Shipment_Remarks.ShipmentRemarks as NVARCHAR(MAX)), ' ')
+				from
+					Shipment_Remarks 
+				where							
+					Shipment_Remarks.ShipmentNumber = OutboundPERShipmentInfo.ShipmentNumber and
+					Shipment_Remarks.ShipmentDate = OutboundPERShipmentInfo.ShipmentDate and
+					Shipment_Remarks.RemarkType in ('OSI', 'SSR', 'BDI')) as shipmentRemarks,
+				(select
+					Com_ShipmentTemperatureLogEntry.Temperature
+				from(select
+						Com_ShipmentTemperatureLogEntry.ShipmentId,
+						max(CapturedOn) CapturedOn
+					from
+						Com_ShipmentTemperatureLogEntry
+					where
+						Com_ShipmentTemperatureLogEntry.ShipmentId = Shipment_Master.ShipmentId
+					group by
+						Com_ShipmentTemperatureLogEntry.ShipmentId
+					) TemepratureInfo inner join
+					Com_ShipmentTemperatureLogEntry
+						on TemepratureInfo.ShipmentId = Com_ShipmentTemperatureLogEntry.ShipmentId 
+				where
+					Com_ShipmentTemperatureLogEntry.CapturedOn = TemepratureInfo.CapturedOn
+			) as ata,
+				(select
+						string_agg(cast(Shipment_Inventory.WarehouseLocation as NVARCHAR(MAX)), ' ')
+					from(select
+							distinct Shipment_Inventory.WarehouseLocation
+						from
+							Shipment_Inventory inner join
+							Shipment_Master
+								on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+						where	
+							Shipment_Master.ShipmentNumber = OutboundPERShipmentInfo.ShipmentNumber and
+							Shipment_Master.ShipmentDate = OutboundPERShipmentInfo.ShipmentDate) Shipment_Inventory
+				) as ShipmentWarehouseLocations
+			from
+			(select
+				null as AcceptedDateTime,
+				OutboundPERBookingInfo.CarrierCode,
+				OutboundPERBookingInfo.ShipmentNumber,
+				OutboundPERBookingInfo.ShipmentDate,
+				OutboundPERBookingInfo.Origin,
+				OutboundPERBookingInfo.Destination,
+				OutboundPERBookingInfo.Pieces,
+				OutboundPERBookingInfo.Weight,
+				OutboundPERBookingInfo.NatureOfGoodsDescription,
+				null as ULDNumber,
+				OutboundPERBookingInfo.TransferType,
+				OutboundPERBookingInfo.BookingFlightInfo,
+				OutboundPERBookingInfo.STD,				
+				OutboundPERBookingInfo.ETD,
+				OutboundPERBookingInfo.ATD,		
+				OutboundPERBookingInfo.DateSTD,		
+				OutboundPERBookingInfo.DateATD,
+				OutboundPERBookingInfo.DateETD,			
+				OutboundPERBookingInfo.FlightDelay,
+				'Y' as BookingStatus,
+				OutboundPERBookingInfo.ShipmentShc,
+				(select 
+						TOP 1 RequestedTemperature 
+					from 
+						OutboundEAcceptancePERInfo
+					where
+						OutboundEAcceptancePERInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+						OutboundEAcceptancePERInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate
+				) as RequestedTemperature
+			from
+				OutboundPERBookingInfo
+			where	
+				not exists(
+					select 
+						null
+					from			
+						OutboundPrelodgePERInfo
+					where	
+						OutboundPrelodgePERInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+						OutboundPrelodgePERInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate	
+				) and
+				not exists(
+					select 
+						null
+					from			
+						OutboundEAcceptancePERInfo
+					where	
+						OutboundEAcceptancePERInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+						OutboundEAcceptancePERInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate		
+				) and
+				not exists(
+					select 
+						null
+					from			
+						OutboundTranshipmentPERInfo
+					where	
+						OutboundTranshipmentPERInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+						OutboundTranshipmentPERInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate	
+				)and not exists(
+					select 
+						null
+					from			
+						OutboundLoadedPERInfo
+					where	
+						OutboundLoadedPERInfo.ShipmentNumber = OutboundPERBookingInfo.ShipmentNumber and
+						OutboundLoadedPERInfo.ShipmentDate = OutboundPERBookingInfo.ShipmentDate	
+				)
+			union all
+			select
+				null as AcceptedDateTime,
+				OutboundPrelodgePERInfo.CarrierCode,
+				OutboundPrelodgePERInfo.ShipmentNumber,
+				OutboundPrelodgePERInfo.ShipmentDate,
+				OutboundPrelodgePERInfo.Origin,
+				OutboundPrelodgePERInfo.Destination,
+				OutboundPrelodgePERInfo.Pieces,
+				OutboundPrelodgePERInfo.Weight,
+				OutboundPrelodgePERInfo.NatureOfGoodsDescription,
+				OutboundPrelodgePERInfo.ULDNumber,
+				OutboundPrelodgePERInfo.TransferType,
+				OutboundPrelodgePERInfo.BookingFlightInfo,
+				OutboundPrelodgePERInfo.STD,				
+				OutboundPrelodgePERInfo.ETD,
+				OutboundPrelodgePERInfo.ATD,	
+				OutboundPrelodgePERInfo.DateSTD,		
+				OutboundPrelodgePERInfo.DateATD,
+				OutboundPrelodgePERInfo.DateETD,
+				OutboundPrelodgePERInfo.FlightDelay,
+				OutboundPrelodgePERInfo.BookingStatus,
+				OutboundPrelodgePERInfo.ShipmentShc,
+				OutboundPrelodgePERInfo.RequestedTemperature
+			from
+				OutboundPrelodgePERInfo
+			where		
+				not exists(
+					select 
+						null
+					from			
+						OutboundEAcceptancePERInfo
+					where	
+						OutboundEAcceptancePERInfo.ShipmentNumber = OutboundPrelodgePERInfo.ShipmentNumber and
+						OutboundEAcceptancePERInfo.ShipmentDate = OutboundPrelodgePERInfo.ShipmentDate		
+				) and
+				not exists(
+					select 
+						null
+					from			
+						OutboundTranshipmentPERInfo
+					where	
+						OutboundTranshipmentPERInfo.ShipmentNumber = OutboundPrelodgePERInfo.ShipmentNumber and
+						OutboundTranshipmentPERInfo.ShipmentDate = OutboundPrelodgePERInfo.ShipmentDate	
+				) and
+				not exists(
+					select 
+						null
+					from			
+						OutboundLoadedPERInfo
+					where	
+						OutboundLoadedPERInfo.ShipmentNumber = OutboundPrelodgePERInfo.ShipmentNumber and
+						OutboundLoadedPERInfo.ShipmentDate = OutboundPrelodgePERInfo.ShipmentDate	
+				)
+			union all
+			select
+				OutboundEAcceptancePERInfo.AcceptedDateTime,
+				OutboundEAcceptancePERInfo.CarrierCode,
+				OutboundEAcceptancePERInfo.ShipmentNumber,
+				OutboundEAcceptancePERInfo.ShipmentDate,
+				OutboundEAcceptancePERInfo.Origin,
+				OutboundEAcceptancePERInfo.Destination,
+				OutboundEAcceptancePERInfo.Pieces,
+				OutboundEAcceptancePERInfo.Weight,
+				OutboundEAcceptancePERInfo.NatureOfGoodsDescription,
+				OutboundEAcceptancePERInfo.ULDNumber,
+				OutboundEAcceptancePERInfo.TransferType,
+				OutboundEAcceptancePERInfo.BookingFlightInfo,
+				OutboundEAcceptancePERInfo.STD,				
+				OutboundEAcceptancePERInfo.ETD,
+				OutboundEAcceptancePERInfo.ATD,	
+				OutboundEAcceptancePERInfo.DateSTD,		
+				OutboundEAcceptancePERInfo.DateATD,
+				OutboundEAcceptancePERInfo.DateETD,
+				OutboundEAcceptancePERInfo.FlightDelay,
+				OutboundEAcceptancePERInfo.BookingStatus,
+				OutboundEAcceptancePERInfo.ShipmentShc,
+				OutboundEAcceptancePERInfo.RequestedTemperature
+			from
+				OutboundEAcceptancePERInfo
+			where	
+				not exists(
+					select 
+						null
+					from			
+						OutboundTranshipmentPERInfo
+					where	
+						OutboundTranshipmentPERInfo.ShipmentNumber = OutboundEAcceptancePERInfo.ShipmentNumber and
+						OutboundTranshipmentPERInfo.ShipmentDate = OutboundEAcceptancePERInfo.ShipmentDate	
+				)and not exists(
+					select 
+						null
+					from			
+						OutboundLoadedPERInfo
+					where	
+						OutboundLoadedPERInfo.ShipmentNumber = OutboundEAcceptancePERInfo.ShipmentNumber and
+						OutboundLoadedPERInfo.ShipmentDate = OutboundEAcceptancePERInfo.ShipmentDate	
+				)
+			union all
+			select
+				null as AcceptedDateTime,
+				OutboundLoadedPERInfo.CarrierCode,
+				OutboundLoadedPERInfo.ShipmentNumber,
+				OutboundLoadedPERInfo.ShipmentDate,
+				OutboundLoadedPERInfo.Origin,
+				OutboundLoadedPERInfo.Destination,
+				OutboundLoadedPERInfo.Pieces,
+				OutboundLoadedPERInfo.Weight,
+				OutboundLoadedPERInfo.NatureOfGoodsDescription,
+				OutboundLoadedPERInfo.ULDNumber,
+				OutboundLoadedPERInfo.TransferType,
+				OutboundLoadedPERInfo.BookingFlightInfo,
+				OutboundLoadedPERInfo.STD,				
+				OutboundLoadedPERInfo.ETD,
+				OutboundLoadedPERInfo.ATD,	
+				OutboundLoadedPERInfo.DateSTD,		
+				OutboundLoadedPERInfo.DateATD,
+				OutboundLoadedPERInfo.DateETD,
+				OutboundLoadedPERInfo.FlightDelay,
+				OutboundLoadedPERInfo.BookingStatus,
+				OutboundLoadedPERInfo.ShipmentShc,
+				isnull(OutboundLoadedPERInfo.RequestedTemperature,
+							(select 
+									TOP 1 RequestedTemperature 
+								from 
+									OutboundEAcceptancePERInfo
+								where
+									OutboundEAcceptancePERInfo.ShipmentNumber = OutboundLoadedPERInfo.ShipmentNumber and
+									OutboundEAcceptancePERInfo.ShipmentDate = OutboundLoadedPERInfo.ShipmentDate
+							)) as RequestedTemperature
+			from
+				OutboundLoadedPERInfo
+			where	
+				not exists(
+					select 
+						null
+					from			
+						OutboundTranshipmentPERInfo
+					where	
+						OutboundTranshipmentPERInfo.ShipmentNumber = OutboundLoadedPERInfo.ShipmentNumber and
+						OutboundTranshipmentPERInfo.ShipmentDate = OutboundLoadedPERInfo.ShipmentDate	
+				)	
+			union all
+			select
+				null as AcceptedDateTime,
+				OutboundTranshipmentPERInfo.CarrierCode,
+				OutboundTranshipmentPERInfo.ShipmentNumber,
+				OutboundTranshipmentPERInfo.ShipmentDate,
+				OutboundTranshipmentPERInfo.Origin,
+				OutboundTranshipmentPERInfo.Destination,
+				OutboundTranshipmentPERInfo.Pieces,
+				OutboundTranshipmentPERInfo.Weight,
+				OutboundTranshipmentPERInfo.NatureOfGoodsDescription,
+				OutboundTranshipmentPERInfo.ULDNumber,
+				OutboundTranshipmentPERInfo.TransferType,
+				OutboundTranshipmentPERInfo.BookingFlightInfo,
+				OutboundTranshipmentPERInfo.STD,				
+				OutboundTranshipmentPERInfo.ETD,
+				OutboundTranshipmentPERInfo.ATD,
+				OutboundTranshipmentPERInfo.DateSTD,		
+				OutboundTranshipmentPERInfo.DateATD,
+				OutboundTranshipmentPERInfo.DateETD,
+				OutboundTranshipmentPERInfo.FlightDelay,
+				OutboundTranshipmentPERInfo.BookingStatus,
+				OutboundTranshipmentPERInfo.ShipmentShc,
+				null as RequestedTemperature
+			from	
+				OutboundTranshipmentPERInfo
+			where
+				not exists(
+					select 
+						null
+					from			
+						OutboundPrelodgePERInfo
+					where	
+						OutboundPrelodgePERInfo.ShipmentNumber = OutboundTranshipmentPERInfo.ShipmentNumber and
+						OutboundPrelodgePERInfo.ShipmentDate = OutboundTranshipmentPERInfo.ShipmentDate		
+				) and
+				not exists(
+					select 
+						null
+					from			
+						OutboundEAcceptancePERInfo
+					where	
+						OutboundEAcceptancePERInfo.ShipmentNumber = OutboundTranshipmentPERInfo.ShipmentNumber and
+						OutboundEAcceptancePERInfo.ShipmentDate = OutboundTranshipmentPERInfo.ShipmentDate	
+				)
+			)OutboundPERShipmentInfo left join
+				Shipment_Master
+					on OutboundPERShipmentInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						OutboundPERShipmentInfo.ShipmentDate = Shipment_Master.ShipmentDate
+			where
+				 not exists(
+					select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                            on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                    where
+                        Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'DGR' and
+                        Mst_SHCHandlingGroup.Category = 'WH' and
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode not in (
+                        select
+                        Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+                    from
+                        Mst_AssociateSHCByHandlingGroup inner join
+                        Mst_SHCHandlingGroup
+                        on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                         Where     Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('CDP'))
+                         and
+						exists (select value FROM string_split(OutboundPERShipmentInfo.ShipmentShc, ' ') where value = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode)
+				
+				
+				)	
+			order by
+				coalesce(OutboundPERShipmentInfo.DateATD,OutboundPERShipmentInfo.DateETD, isnull(OutboundPERShipmentInfo.DateSTD, getdate() + 10)) asc
+	]]>			
+	</select>
+
+	<update id="updateTemparatureRange"
+		parameterType="com.ngen.cosys.shipment.coolportmonitoring.model.CoolportMonitoringSearch">
+		update Shipment_master
+		set 
+			RequestedTemperature = #{temparature},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			ShipmentNumber = #{awbNumber}
+	</update>
+
+</mapper>

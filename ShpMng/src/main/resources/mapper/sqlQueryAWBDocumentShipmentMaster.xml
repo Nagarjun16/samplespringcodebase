@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AWBDocumentMapper">
+
+	<!-- Get direct consignee customer id -->
+	<select id="sqlGetDefaultDirectConsigneeCustomerId"
+		resultType="java.math.BigInteger">
+		select
+			TOP 1 Customer_ID
+		from
+			Customer_Master
+		where
+			CustomerCode = 'IXX'
+	</select>    
+	
+	<!-- Get direct shipper customer id -->
+	<select id="sqlGetDefaultDirectShipperCustomerId"
+		resultType="java.math.BigInteger">
+		select
+			TOP 1 Customer_ID
+		from
+			Customer_Master
+		where
+			CustomerCode = 'EXX'
+	</select>
+
+	<!-- Validation check for import shipment customer info -->
+	<select id="sqlCheckValidConsignee"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Boolean">
+		select 
+			case
+				when(count(1) > 0) then
+					1
+				else
+					0
+				end result
+		from 
+			Customer_Master inner join
+			Customer_Types
+				on Customer_Master.Customer_ID = Customer_Types.Customer_ID
+		where
+			Customer_Types.CustomerTypeCode in ('CNE', 'AGT') and
+			(Customer_Master.CustomerCode = #{customerCode} and 
+				Customer_Master.CustomerShortName = #{customerName})
+	</select>
+	
+	<select id="sqlCheckValidShipper"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Boolean">
+		select 
+			case
+				when(count(1) > 0) then
+					1
+				else
+					0
+				end result
+		from 
+			Customer_Master inner join
+			Customer_Types
+				on Customer_Master.Customer_ID = Customer_Types.Customer_ID
+		where
+			Customer_Types.CustomerTypeCode in ('SHP', 'AGT') and
+			(Customer_Master.CustomerCode = #{customerCode} and 
+				Customer_Master.CustomerShortName = #{customerName})
+	</select>
+	
+	<select id="sqlCheckAppointedAgentExists"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Boolean">		
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Customer_AppointedAgent inner join
+			Customer_Master
+				on Customer_AppointedAgent.Customer_ID = Customer_Master.Customer_ID
+		where
+			(Customer_Master.CustomerCode = #{customerCode} and 
+				Customer_Master.CustomerShortName = #{customerName}) and
+			getdate() between Customer_AppointedAgent.EffectiveDate and isnull(Customer_AppointedAgent.ExpiryDate, getdate() + 10) and
+			Customer_AppointedAgent.DelegationAgreementType = 'IBR'
+	</select>
+	
+	<select id="sqlCheckValidConsigneeAppointedAgent"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Boolean">		
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Customer_AppointedAgent inner join
+			Customer_Master
+				on Customer_AppointedAgent.AgentCustomer_ID = Customer_Master.Customer_ID
+		where
+			Customer_AppointedAgent.DelegationAgreementType = 'IBR' and
+			Customer_Master.CustomerCode = #{appointedAgentCode} and
+			getdate() between 
+								Customer_AppointedAgent.EffectiveDate and 
+								isnull(Customer_AppointedAgent.ExpiryDate, getdate() + 10) and
+			exists(
+				select
+					1
+				from
+					Customer_Master
+				where
+					CustomerCode = #{customerCode} and
+					Customer_Master.DeRegisterDate is null and
+					Customer_Master.Customer_ID = Customer_AppointedAgent.Customer_ID
+		
+			) and
+			Customer_Master.DeRegisterDate is null
+	</select>
+	
+	<select id="sqlGetValidAppointedAgent"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.math.BigInteger">		
+		select
+		    top(1)
+			Customer_Master.Customer_ID
+		from
+			Customer_AppointedAgent inner join
+			Customer_Master
+				on Customer_AppointedAgent.Customer_ID = Customer_Master.Customer_ID
+		where
+			Customer_AppointedAgent.DelegationAgreementType = 'IBR' and
+			Customer_Master.CustomerCode = #{appointedAgentCode} and
+			getdate() between 
+								Customer_AppointedAgent.EffectiveDate and 
+								isnull(Customer_AppointedAgent.ExpiryDate, getdate() + 10) and
+			Customer_Master.DeRegisterDate is null
+	</select>
+
+
+	<select id="sqlIsValidAppointedAgentId"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Boolean">		
+		select case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result from Customer_Master master inner join Customer_Types type 
+		on master.Customer_ID = type.Customer_ID where 
+		type.CustomerTypeCode = 'AGT'
+		and CustomerCode = #{appointedAgentCode}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityInfo"
+		id="ShipmentLocalAuthorityResultMap">
+		<id column="ShipmentMasterLocalAuthInfoId" property="shipmentMasterLocalAuthInfoId" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="Type" property="type" />
+		<collection property="details">
+			<id column="ShipmentMasterLocalAuthInfoId" property="shipmentMasterLocalAuthInfoId" />
+			<id column="ShipmentMasterLocalAuthInfoDtlsId" property="shipmentMasterLocalAuthInfoDtlsId" />
+			<result column="License" property="license" />
+			<result column="Remarks" property="remarks" />
+			<result column="ReferenceNumber" property="referenceNumber" />
+			<result column="TransactionSequenceNo" property="transactionSequenceNo" />
+		</collection>
+	</resultMap>
+
+	<insert id="sqlInsertShipmentDeliveryRequestLocalAuthorityDetail"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityDetails"
+		keyColumn="ShipmentMasterLocalAuthInfoDtlsId" keyProperty="shipmentMasterLocalAuthInfoDtlsId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterLocalAuthorityDetails(
+		ShipmentMasterLocalAuthInfoId,
+			ReferenceNumber,
+			CustomerAppAgentId,
+			License,
+			Remarks,
+			TransactionSequenceNo,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentMasterLocalAuthInfoId},
+			#{referenceNumber},
+			#{customerAppAgentId},
+			#{license},
+			#{remarks},
+			#{transactionSequenceNo},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertShipmentDeliveryRequestLocalAuthority"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityInfo"
+		keyColumn="ShipmentMasterLocalAuthInfoId" keyProperty="shipmentMasterLocalAuthInfoId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterLocalAuthorityInfo(
+			ShipmentId,
+			Type,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{type},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<select id="getShipmentMasterLocalAuthorityInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityInfo"
+		resultType="java.math.BigInteger">
+		select 
+		 ShipmentMasterLocalAuthInfoId
+		from
+		 Shipment_MasterLocalAuthorityInfo
+		where ShipmentId = #{shipmentId}
+	</select>
+
+	<resultMap id="ShipmentRemarksMap"
+		type="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentdate" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="RemarkType" property="remarkType" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="ShipmentRemarks" property="shipmentRemarks" />
+		<result column="ShipmentType" property="shipmentType" />
+	</resultMap>
+
+	<sql id="ShipmentRemarks_Base_Column_List">
+		ShipmentNumber,
+		ShipmentDate,
+		ShipmentId,
+		RemarkType,
+		Flight_ID,
+		ShipmentRemarks,
+		ShipmentType,
+		CreatedUser_Code,
+		Created_DateTime,
+		LastUpdatedUser_Code,
+		LastUpdated_DateTime
+	</sql>
+
+	<select id="sqlGetShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel"
+		resultMap="ShipmentRemarksMap">
+		select
+		<include refid="ShipmentRemarks_Base_Column_List" />
+		from
+		Shipment_Remarks
+		where
+		Flight_ID = #{flightId}
+		<choose>
+			<when test="shipmentId != null">
+				AND ShipmentId like #{shipmentId}
+			</when>
+			<when test="shipmentNumber != null and shipmentdate != null">
+				AND (ShipmentNumber = #{shipmentNumber} and
+				ShipmentDate = #{shipmentdate})
+			</when>
+			<otherwise>
+				AND 1=1
+			</otherwise>
+		</choose>
+		AND RemarkType = #{remarkType}
+	</select>
+
+
+	<insert id="sqlInsertShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		insert into Shipment_Remarks(
+		<include refid="ShipmentRemarks_Base_Column_List" />
+		) values(
+		#{shipmentNumber},
+		#{shipmentdate},
+		#{shipmentId},
+		#{remarkType},
+		#{flightId},
+		#{shipmentRemarks},
+		#{shipmentType},
+		#{createdBy},
+		#{createdOn},
+		#{modifiedBy},
+		#{modifiedOn}
+		)
+	</insert>
+	
+	<delete id="deleteForUpdateAWBSHCDetailsShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShc">
+		delete from Shipment_MasterSHC where ShipmentId = #{shipmentId}
+	</delete>
+
+	<delete id="sqlDeleteShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterRoutingInfo">
+		delete from Shipment_MasterRoutingInfo where ShipmentId = #{shipmentId}
+	</delete>
+
+	<delete id="deleteForUpdateAWBShipperContactInfoDetailsShipmentMaster"
+		parameterType="java.lang.String">
+		delete from Shipment_MasterCustomerContactInfo where ShipmentCustomerAddInfoId =#{shipmentCustomerAddInfoId}
+	</delete>
+
+
+	<update id="updateAWBRoutingShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterRoutingInfo">
+		UPDATE
+			Shipment_MasterRoutingInfo
+		SET 
+			FromPoint = #{fromPoint},
+			Carrier = = #{carrier}
+		WHERE 
+			ShipmentMasterRoutingId = #{shipmentMasterRoutingId}
+	</update>
+
+	<update id="updateAWBSSROSIDetailsShipmentMasterByShipment"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		UPDATE
+			Shipment_Remarks
+		SET
+			ShipmentRemarks = #{shipmentRemarks}
+		WHERE
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate} and
+			RemarkType = #{remarkType} and
+			ShipmentRemarks = #{shipmentRemarks}
+	</update>
+
+	<update id="updateAWBSSROSIDetailsShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		UPDATE
+			Shipment_Remarks
+		SET
+			ShipmentRemarks = #{shipmentRemarks}
+		WHERE
+			ShipmentRemark_Id = #{shipmentRemarksId}
+		AND
+			RemarkType = #{remarkType}
+	</update>
+	<!-- end of update -->
+
+
+	<!--OVERSEASE CONSIGNEE -->
+	<select id="sqlGetCustomerInfoShipmentMaster" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.shipment.awb.model.OverseasConsignee">
+		SELECT COUNT(*)
+		FROM
+		Customer_OverseasConsignee where
+		ConsigneeName =#{consigneeName} and
+		DestinationCode =
+		#{destinationCode}
+	</select>
+
+	<insert id="insertOverseasConsigneeShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.OverseasConsignee"
+		useGeneratedKeys="true" keyProperty="overseasConsignee_ID" keyColumn="OverseasConsignee_ID">
+		INSERT INTO Customer_OverseasConsignee(
+			DestinationCode,
+			ConsigneeName,
+			ConsigneeAddress,
+			ConsigneePlace,
+			ConsigneeState,
+			CountryCode,
+			ConsigneePostalCode,
+			ConsigneePhone,
+			CreatedUser_Code,
+			Created_DateTime
+		)values(
+			#{destinationCode},
+			#{consigneeName},
+			#{consigneeAddress},
+			#{consigneePlace},
+			#{consigneeState},
+			#{CountryCode},
+			#{consigneePostalCode},
+			#{consigneePhone},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+
+	<update id="updateOverseasConsigneeShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.OverseasConsignee">
+		UPDATE
+			Customer_OverseasConsignee
+		SET
+			DestinationCode = #{destinationCode},
+			ConsigneeName = #{consigneeName},
+			ConsigneeAddress = #{consigneeAddress},
+			ConsigneePlace = #{consigneePlace},
+			ConsigneeState = #{consigneeState},
+			CountryCode = #{CountryCode},
+			ConsigneePostalCode = #{consigneePostalCode},
+			ConsigneePhone = #{consigneePhone},
+			CreatedUser_Code = #{createdBy},
+			Created_DateTime = #{createdOn}
+		WHERE
+			OverseasConsignee_ID = #{overseasConsignee_ID}
+	</update>
+
+	<!-- END OVERSEASE CONSIGNEE -->
+	<!-- balck listed Awb number -->
+	<select id="checkBlacklistShipment2" parameterType="com.ngen.cosys.shipment.model.FetchFWBRequest"
+		resultType="java.lang.Integer"> select count(*) from Mst_BlackListedShipments
+		where
+		Mst_BlackListedShipments.ShipmentNumber = #{shipmentNumber}
+	</select>
+
+
+	<!--Shipment Master Query START -->
+	<select id="sqlCheckForPartShipment" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.math.BigInteger">
+		select
+			 count(1) 
+		from
+			Imp_ArrivalManifestShipmentInfo
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate} and
+			(ShipmentDescriptionCode = 'P' OR ShipmentDescriptionCode = 'D')		
+	</select>
+	
+	<select id="isPoGenerated" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.math.BigInteger">
+		select
+			count(*)
+		from
+			imp_deliveryRequest 
+		where
+			ShipmentId = #{shipmentId} and Status='COMPLETED'
+	</select> 
+	
+	<select id="isShipmentLoaded" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.math.BigInteger">
+		select
+			count(*)
+		from
+			Exp_LoadedShipmentInfo 
+		where
+			ShipmentId = #{shipmentId}
+	</select> 
+	
+	<select id="getShipmentType" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.lang.String">
+		 select
+			ShipmentType
+		from
+			shipment_master 
+		where
+			ShipmentId = #{shipmentId}
+	</select> 
+
+	<select id="sqlCheckForSVCShipment" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.lang.Boolean">
+		select
+			case when count(shipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Exp_ShipmentBooking
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate} and
+			ServiceFlag = 1
+	</select>
+
+
+	<select id="sqlCheckShipmentMasterExists" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_Master
+		where
+			ShipmentType = #{shipmentType} and
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}
+	</select>
+
+	<insert id="sqlInsertShipmentMaster" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		keyColumn="ShipmentId" keyProperty="shipmentId" useGeneratedKeys="true">
+		insert into Shipment_Master(
+			ShipmentType,
+			ShipmentNumber,
+			ShipmentDate,
+			SVC,
+			PartShipment,
+			Origin,
+			Destination,
+			Pieces,
+			Weight,
+			ChargeableWeight,
+			WeightUnitCode,
+			NatureOfGoodsDescription,
+			DocumentReceivedOn,
+			DocumentPouchReceivedOn,
+			Console,
+			ManuallyCreated,
+			CarrierCode,
+			OVCDReasonCode,
+			PhotoCopy,
+			CreatedUserCode,
+			CreatedDateTime
+			<if test="handledByDOMINT != null">
+				,HandledByDOMINT
+			</if>
+			<if test="handledByMasterHouse != null and handledByMasterHouse != ''">
+				,HandledByMasterHouse
+			</if>
+		)values(
+			#{shipmentType},
+			#{shipmentNumber},
+			#{shipmentdate},
+			#{svc},
+			#{partShipment},
+			#{origin},
+			#{destination},
+			#{pieces},
+			#{weight},
+			#{chargeableWeight},
+			#{weightUnitCode},
+			#{natureOfGoodsDescription},
+			#{documentReceivedOn},
+			#{documentPouchReceivedOn},
+			#{manuallyCreated},
+			#{console},
+			#{carrierCode},
+			#{ovcdReasonCode},
+			#{photoCopyReceivedOn},
+			#{createdBy},
+			#{createdOn}
+			<if test="handledByDOMINT != null">
+				,#{handledByDOMINT}
+			</if>
+			<if test="handledByMasterHouse != null and handledByMasterHouse != ''">
+				,#{handledByMasterHouse}
+			</if>
+		)
+	</insert>
+	<update id="sqlUpdateShipmentMaster" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		 update Shipment_Master
+              set
+                     SVC = #{svc},
+                     PartShipment = #{partShipment},
+                     Origin = cast(#{origin} as varchar),
+                     Destination = cast(#{destination} as varchar),
+                     Pieces = cast(#{pieces} as numeric),
+                     Weight = #{weight},
+                     ChargeableWeight=#{chargeableWeight},
+                     WeightUnitCode = cast(#{weightUnitCode} as varchar),
+                     NatureOfGoodsDescription = cast(#{natureOfGoodsDescription} as varchar),
+                     DocumentReceivedOn = cast(#{documentReceivedOn} as datetime),
+                     DocumentPouchReceivedOn = cast(#{documentPouchReceivedOn} as datetime),
+                     PhotoCopy = cast(#{photoCopyReceivedOn} as datetime),
+                     ManuallyCreated = #{manuallyCreated},
+                     Console=#{console},
+                     CarrierCode = cast(#{carrierCode} as varchar),
+                     OVCDReasonCode = cast(#{ovcdReasonCode} as varchar),    
+                     ChangeToTranshipmentOn=cast(#{changeToTranshipmentOn} as datetime),
+                     CancelledOn = null
+                     <if test="handledByMasterHouse != null">
+						,HandledByMasterHouse = #{handledByMasterHouse}
+					</if>
+					<if test="handledByDOMINT != null and handledByMasterHouse != ''">
+				   	  	,HandledByDOMINT=#{handledByDOMINT}
+				   	</if>
+                     ,LastUpdatedUserCode = #{modifiedBy}
+                     ,LastUpdatedDateTime =getDate()            
+               where
+                     ShipmentNumber = cast(#{shipmentNumber} as varchar) and
+                     ShipmentDate = cast(#{shipmentdate} as datetime)   
+
+	</update>
+	<update id="sqlUpdateShipmentType" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		update Shipment_Master
+		set
+		    ShipmentType=#{shipmentType},
+		    ShipmentTypeConvertDate=cast(#{couToCommercialDate} as date),
+		    ShipmentTypeConvertFrom=#{shipmentTypeConvertFrom},
+		    LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getDate()
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}
+	</update>
+	<select id="sqlGetShipmentMasterDestination"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.String">
+		select
+			Destination
+		from
+			Shipment_Master
+		where
+			ShipmentId = #{ShipmentId} 
+	</select>
+	<select id="sqlcheckImportShipment"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.Boolean">
+		select
+			case
+				when Origin != (select top 1 parametervaluechar from app_systemparameters where parametercode='BASE_PORT')
+				and Destination = (select top 1 parametervaluechar from app_systemparameters where parametercode='BASE_PORT')
+				then 1
+				else 0 end importShipment
+		from
+			Shipment_Master
+		where
+			ShipmentId = #{ShipmentId} 
+	</select>
+	<select id="sqlGetShipmentMasterId"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.math.BigInteger">
+		select
+			ShipmentId
+		from
+			Shipment_Master
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}
+	</select>
+	<!--Shipment Master Query END -->
+
+<select id="sqlGetShipmentId" parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+resultType="com.ngen.cosys.shipment.awb.model.AWB">
+		select ShipmentId from Shipment_Master
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}
+	</select>	<!--Shipment Master Routing Info Query START -->
+	<select id="sqlGetShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterRoutingInfo"
+		resultType="java.lang.Boolean">
+		select
+			case when count(1) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_MasterRoutingInfo
+		where
+			FromPoint = #{fromPoint} and
+			Carrier = #{carrier} and
+			ShipmentId = #{shipmentId}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterRoutingInfo"
+		keyColumn="ShipmentMasterRoutingId" keyProperty="shipmentMasterRoutingId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterRoutingInfo(
+			ShipmentId,
+			FromPoint,
+			Carrier,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentId},
+			#{fromPoint},
+			#{carrier},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<!--Shipment Master Routing Info Query END -->
+
+	<!--Shipment Master SHC Handling Group Query START -->
+	<select id="sqlGetShipmentMasterShcHandlingGroup"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShcHandlingGroup"
+		resultType="java.lang.Boolean">
+		select
+		case when count(ShipmentMasterSHCHandlGrpId) > 0 then
+		1
+		else
+		0
+		end result
+		from
+		Shipment_MasterSHCHandlingGroup
+		where
+		ShipmentId =
+		#{shipmentId} and
+		HandlingGroupId = #{handlingGroupId}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterShcHandlingGroup"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShcHandlingGroup">
+		insert into Shipment_MasterSHCHandlingGroup(
+			ShipmentId,
+			HandlingGroupId,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentId},
+			#{handlingGroupId},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<!--Shipment Master SHC Handling Group Query END -->
+
+	<!--Shipment Master SHC Query START -->
+	<select id="sqlGetShipmentMasterShc" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShc"
+		resultType="java.lang.Boolean">
+		select 
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result 
+		from 
+			Shipment_MasterSHC 
+		where
+			ShipmentId = #{shipmentId} and
+			SpecialHandlingCode = #{specialHandlingCode}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterShc" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShc"
+		keyColumn="ShipmentMasterSHCId" keyProperty="shipmentMasterSHCId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterSHC(
+			ShipmentId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{specialHandlingCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<!--Shipment Master SHC Query END -->
+
+	<!-- Shipment Other Charge Info Query -->
+	<select id="sqlGetShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentOtherChargeInfo"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentOtherChargesId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_OtherChargeInfo
+		where
+			ShipmentId = #{shipmentId}
+	</select>
+
+	<insert id="sqlInsertShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentOtherChargeInfo"
+		keyColumn="ShipmentOtherChargesId" keyProperty="shipmentOtherChargesId"
+		useGeneratedKeys="true">
+		insert into Shipment_OtherChargeInfo(
+			ShipmentId,
+			CustomsOrigin,
+			ChargeCode,
+			CollectBankEndorsementClearanceLetter,
+			Currency,
+			DueFromAirline,
+			DueFromAgent,
+			FreightCharges,
+			CreatedUserCode,
+			CreatedDateTime,ExchangeRate,
+			ValuationCharges,
+			Tax,
+			CCFee,
+			TotalCollectChargesChargeAmount,
+			DestinationCurrencyChargeAmount,
+			Total
+		)values(
+			#{shipmentId},
+			#{customsOrigin},
+			#{chargeCode},
+			#{collectBankEndorsementClearanceLetter},
+			#{currency},
+			#{dueFromAirline},
+			#{dueFromAgent},
+			#{freightCharges},
+			#{createdBy},
+			#{createdOn},
+			#{exchangeRate},
+			#{valuationCharges},
+			#{tax},
+			#{ccFee},
+			#{totalCollectChargesChargeAmount},
+			#{destinationCurrencyChargeAmount}
+	       ,#{total}
+		)
+	</insert>
+	<update id="sqlUpdateShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentOtherChargeInfo">
+		update Shipment_OtherChargeInfo
+		set
+			CustomsOrigin = #{customsOrigin},
+			ChargeCode = #{chargeCode},
+			CollectBankEndorsementClearanceLetter =	#{collectBankEndorsementClearanceLetter},
+			Currency = #{currency},
+			DueFromAirline = #{dueFromAirline},
+			DueFromAgent = #{dueFromAgent},
+			FreightCharges = #{freightCharges},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn},
+			ExchangeRate=#{exchangeRate},
+			ValuationCharges=#{valuationCharges},
+			Tax=#{tax},
+			CCFee=#{ccFee},
+			TotalCollectChargesChargeAmount=#{totalCollectChargesChargeAmount},
+			DestinationCurrencyChargeAmount=#{destinationCurrencyChargeAmount}
+				,Total=#{total}
+		where
+			ShipmentId = #{shipmentId}
+	</update>
+	<!-- Shipment Other Charge Info QUERY ENDS -->
+
+	<!-- Shipment Master customer address info Mapper Starts -->
+	<select id="sqlGetShipmentMasterCustomerAddressInfo" 
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerAddressInfo"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentCustomerAddInfoId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_MasterCustomerAddressInfo
+		where
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerAddressInfo"
+		keyColumn="ShipmentCustomerAddInfoId" keyProperty="shipmentCustomerAddInfoId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerAddressInfo(
+			ShipmentCustomerInfoId,
+			StreetAddress,
+			Place,
+			Postal,
+			StateCode,
+			CountryCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentCustomerInfoId},
+			#{streetAddress },
+			#{place},
+			#{postal},
+			#{stateCode},
+			#{countryCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<update id="sqlUpdateShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerAddressInfo">
+		update Shipment_MasterCustomerAddressInfo
+		set
+			StreetAddress = #{streetAddress},
+			Place = #{place},
+			Postal = #{postal},
+			StateCode = #{stateCode},
+			CountryCode = #{countryCode},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</update>
+
+
+	<!-- Shipment Master customer address info Mapper End -->
+
+	<!-- Shipment Master customer contact info Mapper Starts -->
+	<select id="sqlGetShipmentMasterCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo"
+		resultType="java.lang.String">		
+		SELECT ShipmentCustomerAddInfoId  FROM Shipment_MasterCustomerAddressInfo where ShipmentCustomerInfoId=#{id}		
+	</select>
+
+	<insert id="sqlInsertShipmentMasterCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo"
+		keyColumn="ShipmentCustomerContInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerContactInfo(		
+			ShipmentCustomerAddInfoId,			
+			ContactTypeCode,
+			ContactTypeDetail,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentCustomerAddInfoId},			
+			#{contactTypeCode},
+			#{contactTypeDetail},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<update id="sqlUpdateShipmentMasterCustomerContactInfoInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo">
+		update Shipment_MasterCustomerContactInfo
+		set
+			ContactTypeCode = #{contactTypeCode},			
+			ContactTypeDetail = #{contactTypeDetail},	
+			LastUpdatedUserCode = #{modifiedBy},		
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			shipmentCustomerAddInfoId = #{id}
+	</update>
+	<!-- Shipment Master customer contact info Mapper End -->
+	
+	<insert id="sqlInsertIvrsCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo"
+		keyColumn="IVRSNotificationContactInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		insert into IVRS_NotificationContactInfo (
+		    CustomerType,				
+			ContactTypeCode,
+			ContactTypeDetail,
+			ShipmentId,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{customerType},			
+			#{contactTypeCode},
+			#{contactTypeDetail},
+			#{shipmentId},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<update id="sqlUpdateIvrsCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo">
+		update IVRS_NotificationContactInfo
+		set
+			ContactTypeCode = #{contactTypeCode},			
+			ContactTypeDetail = #{contactTypeDetail},
+			CustomerType = #{customerType},	
+			LastUpdatedUserCode = #{modifiedBy},		
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			IVRSNotificationContactInfoId = #{id}
+	</update>
+	
+	<delete id="sqlDeleteIvrsCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo">
+		DELETE FROM IVRS_NotificationContactInfo WHERE  IVRSNotificationContactInfoId = #{id}
+	</delete>
+	
+
+	<!-- Shipment Master Local Authority -->
+
+	<delete id="deleteLocalAuthInfoDetails"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityInfo">
+		DELETE FROM Shipment_MasterLocalAuthorityDetails
+		WHERE
+		ShipmentMasterLocalAuthInfoId = #{shipmentMasterLocalAuthInfoId}
+		
+	</delete>
+
+	<delete id="deleteLocalAuthInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityInfo">
+		DELETE FROM Shipment_MasterLocalAuthorityInfo
+		WHERE
+		ShipmentId = #{shipmentId} 
+	</delete>
+	<!-- End Shipment Master Local Authority -->
+
+
+	<!-- Shipment Master customer info Mapper Starts -->
+	<select id="sqlGetShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		resultType="java.lang.Integer">		
+		select
+			ShipmentCustomerInfoId 
+		from
+			Shipment_MasterCustomerInfo
+		where
+			ShipmentId = #{shipmentId} and
+			CustomerType = #{customerType}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo"
+		keyColumn="ShipmentCustomerInfoId" keyProperty="id" useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerInfo(
+			ShipmentId,
+			CustomerType,
+			CustomerCode,
+			CustomerName,
+			AccountNumber,
+			OverseasCustomer,
+			AppointedAgent,
+			ContactEmail,
+			NotifyPartyCode,
+			NotifyPartyName,
+			AuthorizedPersonnel,
+			AuthorizationRemarks,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{customerType},
+			#{customerCode},
+			#{customerName},
+			#{accountNumber},
+			#{overseasCustomer},
+			#{appointedAgent},			
+			#{contactEmail},
+			#{notifyPartyCode},
+			#{notifyPartyName},
+			#{authorizedPersonnel},
+			#{authorizationRemarks},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<update id="sqlUpdateShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo">
+		update Shipment_MasterCustomerInfo
+		set
+			CustomerCode = #{customerCode},
+			CustomerName = #{customerName },
+			AccountNumber = #{accountNumber},
+			OverseasCustomer = #{overseasCustomer},			
+			AppointedAgent = #{appointedAgent},	
+			ContactEmail = #{contactEmail},
+			NotifyPartyCode = #{notifyPartyCode},
+			NotifyPartyName = #{notifyPartyName},
+			AuthorizedPersonnel = #{authorizedPersonnel},
+			AuthorizationRemarks = #{authorizationRemarks},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}			
+		where
+			ShipmentId = #{shipmentId} and
+			CustomerType = #{customerType}
+	</update>
+	<!-- Shipment Master customer info Mapper End -->
+
+	<!-- Shipment Master handling area Mapper Starts -->
+	<select id="sqlGetShipmentMasterHandlingArea"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterHandlingArea"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterHandlAreaId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_MasterHandlingArea
+		where
+			ShipmentId = #{shipmentId} and
+			HandledBy = #{handledBy}
+	</select>
+	<insert id="sqlInsertShipmentMasterHandlingArea"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterHandlingArea"
+		keyColumn="ShipmentMasterHandlAreaId" keyProperty="shipmentMasterHandlAreaId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterHandlingArea(
+			ShipmentId,
+			HandledBy,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{handledBy},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+		
+	<update id="sqlupdateShipmentMasterVerification" parameterType="com.ngen.cosys.shipment.awb.model.AWB">	
+	 UPDATE Imp_ShipmentVerification
+		   SET DocumentReceivedFlag = #{docRecieved}
+		      ,PhotoCopyAwbFlag = #{copyAwb}
+		      ,DocumentPouchReceivedFlag= #{pouchRecieved},checkList=#{checkList}
+		 WHERE FlightId = #{flightId}
+		       AND ShipmentId = #{shipmentId}
+	</update>
+	 
+	<insert id="sqlInsertShipmentMasterVerification" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	
+	INSERT INTO Imp_ShipmentVerification
+           (FlightId
+           ,ShipmentId
+           ,DocumentReceivedFlag
+           ,PhotoCopyAwbFlag
+           ,DocumentPouchReceivedFlag
+           ,CreatedUserCode
+           ,CreatedDateTime,
+           checklist
+          )
+     VALUES(#{flightId},#{shipmentId},#{docRecieved},#{copyAwb},#{pouchRecieved},#{createdBy},#{createdOn},#{checkList})
+	</insert>  
+	
+	<select id="getAwbFlightdetails" 
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB" 
+		resultType="java.math.BigInteger">
+	<![CDATA[
+	     SELECT 	     	   
+	       Flt_OperativeFlight.Flight_ID 
+	     from 
+	     	Flt_OperativeFlight inner join 
+	     	Flt_OperativeFlight_Legs  
+		 		ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID  
+		 where 
+		 	Flt_OperativeFlight.FlightKey=#{flightKey} and 
+		 	cast(Flt_OperativeFlight_Legs.DateSTA as date)=cast(#{flightDate} as date) and 
+		 	Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and  
+		 	Flt_OperativeFlight.FlightCancelFlag = 'A' and
+		 	(isNull(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA) - ((select cast(ParameterValueChar as numeric) from App_SystemParameters where ParameterCode='ARRIVALFLIGHT_CHECK')/24)) < DATEADD(HH, 8, GETDATE()) 
+	]]>	 	
+   </select> 
+   
+   <!-- Shipment Master handling area Mapper End -->
+   
+   <!-- fetch exchange Rate -->
+   <select id="fetchExchangeRate"
+   		parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+   		resultType="java.math.BigDecimal">
+   		select
+			TOP 1 ExchangeRateInfo.ExchangeRate
+		from(select 
+				Billing_CurrencyExchangeRate.CurrencyCode,
+				Billing_CurrencyExchangeRate.ExchangeRate,
+				isnull(Billing_CurrencyExchangeRate.CarrierCode,'CX') CarrierCode,
+				ValidFrom,
+				ValidTill
+			from 
+				Billing_CurrencyExchangeRate
+			where 
+				CurrencyCode =  #{otherChargeInfo.currency} and  
+				cast(isnull((select isnull(DocumentReceivedOn, isnull(Photocopy, getdate())) 
+				from Shipment_Master where ShipmentId = #{shipmentId}), getdate()) as date) between cast(ValidFrom as date) and 
+				isNull(cast(ValidTill as date),cast(getDate()+1 as date))
+		)ExchangeRateInfo
+		where
+			ExchangeRateInfo.CarrierCode = #{carrierCode} or ExchangeRateInfo.CarrierCode = 'CX'
+			order by ValidFrom desc
+   </select>
+   <!-- fetch exchange Rate ends -->
+   
+   <select id="getIrregularityCount"
+   			parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+   			resultType="java.lang.Integer">
+   			 select Count(*) from Shipment_Irregularity where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentdate}
+   </select>
+   
+   <select id="getTracingCount"
+   			parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+   			resultType="java.lang.Integer">
+   			 select Count(*) from Com_TracingShipmentInfo where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentdate}
+   </select>
+   <insert id="sqlCreateTracing" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	
+	  INSERT INTO Com_TracingShipmentInfo 
+	        ("CaseNumber", "CaseStatus", "IrregularityTypeCode", "ImportExportIndicator", 
+			 "TracingCreatedFor", "Origin", "Destination", "TotalPieces", "TotalWeight",
+			 "IrregularityPieces", "IrregularityWeight", 
+			 "ImportUserCode", "ImportStaffNumber", "ImportStaffName", "ExportUserId",
+			 "ExportStaffNumber", "ExportStaffName", "FollowupDate", "ReasonForClosing", 
+			 "JustifiableCaseFlag", "Remarks", "ClosedOn", "Source", "CreatedUserCode", 
+			 "CreatedDateTime", "LastUpdatedUserCode", "LastUpdatedDateTime", "ShipmentNumber", 
+			 "ShipmentDate", "HouseNumber", "FlightKey", "FlightDate", "CarrierCode", 
+			 "BoardingPoint", "OffPoint", "AgentCode", "HandlingArea") 
+	 VALUES 
+			(#{caseNumber}, 'INPROGRESS', 'OVCD', 'I', 'AWB', #{origin},
+			 #{destination}, #{pieces}, #{weight}, #{irregularityPieces}, 
+			 #{irregularityWeight}, NULL, NULL, NULL, 
+			 NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+			 NULL, NULL, #{createdBy}, #{createdOn}, NULL, NULL, 
+			 #{shipmentNumber}, #{shipmentdate}, NULL, #{flightKey}, 
+			 #{flightDate}, #{carrierCode}, #{origin},
+			 #{destination}, NULL, NULL);
+	
+	</insert>  
+
+   <!-- delete record from FWB -->   
+    <delete id="deleteRemarksSSRFWB" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		delete from Shipment_Remarks where ShipmentId = #{shipmentId} and RemarkType = #{remarkType}
+	</delete>
+
+	<delete id="deleteRemarksOSIFWB" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		delete from Shipment_Remarks where ShipmentId = #{shipmentId} and RemarkType = #{remarkType}
+	</delete>	
+	
+	<delete id="deleteAWBShipperContactInfoFWB"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerContactInfo">
+		delete from Shipment_MasterCustomerContactInfo where ShipmentCustomerAddInfoId = #{shipmentCustomerAddInfoId}
+	</delete>	
+	
+	<delete id="deleteAWBShipperAddInfoFWB"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerAddressInfo">
+		delete from Shipment_MasterCustomerAddressInfo where ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</delete>
+		
+	<delete id="deleteAWBShipperInfoFWB" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerInfo">
+		delete from Shipment_MasterCustomerInfo where ShipmentId = #{shipmentId} and CustomerType = #{customerType}
+	</delete>
+	
+	<delete id="deleteAWBRoutingFWB" parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterRoutingInfo">
+		delete from Shipment_MasterRoutingInfo where ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteAWBSHCFWB"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterShc">
+		delete from Shipment_MasterSHC where ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteAWBFromFWB" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	    delete from Shipment_OtherChargeInfo where ShipmentId = #{shipmentId}
+		delete from Shipment_Master where ShipmentId = #{shipmentId}
+	</delete>   
+   <!-- END DELETE OPERATION -->
+   <update id="sqlUpdateShipmentMasterFromFwb" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		update Shipment_Master
+		set
+			SVC = #{svc},
+			PartShipment = #{partShipment},
+			Origin = #{origin},
+			Destination = #{destination},
+			Pieces = #{pieces},
+			Weight = #{weight},
+			WeightUnitCode = #{weightUnitCode},
+			NatureOfGoodsDescription = #{natureOfGoodsDescription},
+			DocumentReceivedOn = #{documentReceivedOn},
+			DocumentPouchReceivedOn = #{documentPouchReceivedOn},
+			PhotoCopy = #{photoCopyReceivedOn},
+			CarrierCode = #{carrierCode},
+			OVCDReasonCode = #{ovcdReasonCode}
+			<if test="handledByMasterHouse != null">
+				,HandledByMasterHouse = #{handledByMasterHouse}
+			</if>
+			<if test="handledByDOMINT != null and handledByMasterHouse != ''">
+				,HandledByDOMINT=#{handledByDOMINT}
+			</if>
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = getDate()
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}  
+			and (DocumentReceivedOn is null and PhotoCopy is null)
+	</update>
+	<update 
+		id="sqlNullifyDeliveredOnInShipmentMaster"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		update 
+			Shipment_Master
+		set
+			DeliveredOn = null,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getDate()
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate}
+	</update>
+
+	<select id="sqlGetShipmentCustomerInfoIdForShipper" 
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.lang.String">
+			SELECT ShipmentCustomerInfoId
+			FROM Shipment_MasterCustomerInfo
+			WHERE shipmentId = #{shipmentId}
+				AND customerType = #{shipper.customerType}
+	</select>
+
+	<select id="sqlGetShipmentCustomerInfoIdForConsignee" 
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="java.lang.String">
+			SELECT ShipmentCustomerInfoId
+			FROM Shipment_MasterCustomerInfo
+			WHERE shipmentId = #{shipmentId}
+				AND customerType = #{consignee.customerType}
+	</select>
+
+
+	<select id="sqlGetShipmentCustomerAddInfoId" 
+		parameterType="java.lang.String"
+		resultType="java.lang.String">
+			SELECT ShipmentCustomerAddInfoId
+			FROM Shipment_MasterCustomerAddressInfo
+			WHERE ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</select>
+	
+	<delete id="sqlDeleteShipmentMasterCustomerContactInfo"
+		parameterType="java.lang.String">
+			DELETE
+			FROM Shipment_MasterCustomerContactInfo
+			WHERE ShipmentCustomerAddInfoId = #{shipmentCustomerAddInfoId}
+	</delete>
+
+	<delete id="sqlDeleteShipmentMasterCustomerAddressInfo"
+		parameterType="java.lang.String">
+			DELETE
+			FROM Shipment_MasterCustomerAddressInfo
+			WHERE ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</delete>
+
+	<delete id="sqlDeleteShipmentMasterCustomerInfoForShipper"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+			DELETE
+			FROM Shipment_MasterCustomerInfo
+			WHERE shipmentId = #{shipmentId}
+				AND customerType = #{shipper.customerType}
+	</delete>
+	
+	<delete id="sqlDeleteShipmentMasterCustomerInfoForConsignee"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+			DELETE
+			FROM Shipment_MasterCustomerInfo
+			WHERE shipmentId = #{shipmentId}
+				AND customerType = #{consignee.customerType}
+	</delete>
+	
+	<select id="sqlIsValidCurrency"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentOtherChargeInfo"
+		resultType="java.lang.Boolean">		
+		SELECT
+		case when count(CurrencyCode) > 0 then
+				1
+			else
+				0
+			end result
+		FROM 
+			Mst_Currency
+		WHERE
+			CurrencyCode = #{currency}
+	</select>
+	
+	<select id="getAllAppointedAgents"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB"
+		resultType="com.ngen.cosys.shipment.awb.model.ShipmentMasterCustomerAddressInfo">		
+		select
+			distinct
+			Customer_Master.CustomerCode AS code,
+			Customer_Master.CustomerShortName AS name,
+			Customer_Master.Customer_ID AS shipmentCustomerInfoId,
+			Customer_Master.CorrespondenceAddress AS streetAddress,
+			Customer_Master.CorrespondencePlace AS place,
+			Customer_Master.CorrespondenceStateCode AS stateCode,
+			Customer_Master.CorrespondencePostalCode AS postal,
+			Customer_Master.CorrespondenceCityCode AS cityCode,
+			Customer_Master.CorrespondenceCountryCode AS countryCode,
+			Customer_Master.AccountNumber AS accountNumber,
+			Customer_AppointedAgent.ContractTerms AS authorizationRemarks,
+			(select
+				string_agg(ContactTypeCode, ',')
+			from
+				Customer_Contacts INNER JOIN  
+				Customer_ContactsDtl 
+					on Customer_ContactsDtl.CustomerContacts_ID = Customer_Contacts.CustomerContacts_ID 
+				where
+					Customer_Contacts.Customer_ID = Customer_Master.Customer_ID) as contactType,
+			(select
+				string_agg(ContactTypeDetail, ',')
+			from
+				Customer_Contacts INNER JOIN  
+				Customer_ContactsDtl 
+					on Customer_ContactsDtl.CustomerContacts_ID = Customer_Contacts.CustomerContacts_ID 
+				where
+					Customer_Contacts.Customer_ID = Customer_Master.Customer_ID) as contactTypeDetails
+		from
+			Customer_Master left join
+			Customer_AppointedAgent  
+				on Customer_AppointedAgent.AgentCustomer_ID = Customer_Master.Customer_ID and
+					Customer_AppointedAgent.Customer_ID = #{customerId} and
+					Customer_AppointedAgent.AgentCustomer_ID = #{appointedAgent} and
+					Customer_AppointedAgent.ExpiryDate is null and
+					Customer_AppointedAgent.DelegationAgreementType = 'IBR'
+		where
+			Customer_Master.CustomerCode = #{appointedAgentCode} and	
+			Customer_Master.DeRegisterDate is null			
+	</select>
+	
+	<!-- Update origin/destination/piece/weight for other sources -->
+	<update id="sqlUpdateOriginDestinationPrelodgeFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">		
+	<![CDATA[
+		update Agt_PrelodgeExportDocuments
+		set
+			DocumentOrigin = #{origin},
+			DocumentDestination = #{destination}
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationArrivalManifestFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentInfo
+		set
+			Origin = cast(#{origin} as varchar),
+			Destination = cast(#{destination} as varchar)
+		where 
+			ShipmentNumber = cast(#{shipmentNumber} as varchar) and
+            ShipmentDate = cast(#{shipmentdate} as date)
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationBookingFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[
+		update Exp_ShipmentBooking
+		set
+			Origin = #{origin},
+			Destination = #{destination},
+			Pieces = #{pieces},
+			GrossWeight = #{weight},
+			NatureOfGoodsDescription = #{natureOfGoodsDescription}
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationAcceptanceFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[
+		update Exp_EAcceptanceDocumentInformation
+		set
+			Origin = #{origin},
+			Destination = #{destination},
+			NatureOfGoodsDescription = #{natureOfGoodsDescription},
+			SVC=#{svc}
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			Status not in ('REJECTED', 'RETURNED')
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationFWBFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[
+		update Shipment_FreightWayBill
+		set
+			Origin = #{origin},
+			Destination = #{destination},
+			NatureOfGoodsDescription = #{natureOfGoodsDescription}
+		where 
+			AwbNumber = #{shipmentNumber} and 
+			AwbDate = #{shipmentdate} and 
+			ReceivedManuallyFlag = 1
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationFHLFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[		
+		update Shipment_FreightHouseListByAWB
+		set
+			Origin = #{origin},
+			Destination = #{destination}
+		where 
+			AwbNumber = #{shipmentNumber} and 
+			AwbDate = #{shipmentdate} and 
+			exists(
+				select
+					null
+				from
+					Shipment_FreightHouseListByHAWB
+				where
+					Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId and 
+					Shipment_FreightHouseListByHAWB.ReceivedManually = 1
+			)
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationCustomsFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[		
+		update Custom_ShipmentInfo
+		set
+			Origin = #{origin},
+			FinalDestination = #{destination}
+		where 
+			CustomShipmentInfoId in (
+				select
+					CustomShipmentInfoId
+				from
+					Custom_ShipmentInfo
+				where		
+					ShipmentNumber = #{shipmentNumber} and
+					(Origin <> #{origin} OR FinalDestination <> #{destination}))
+			
+	]]>
+	</update>
+	
+	<update id="sqlUpdateOriginDestinationExportManifestFromAWBDocument" parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+	<![CDATA[		
+		update Exp_ManifestShipmentInfo
+		set
+			Origin = #{origin},
+			Destination = #{destination}
+		where 
+			ShipmentId = #{shipmentId}			
+	]]>
+	</update>
+	
+	<update id="sqlClearShipmentVerificationForFlightFromAwbDocument"
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		update imp_shipmentverification
+		set
+			DocumentReceivedFlag = 0,
+			PhotoCopyAwbFlag = 1,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime	= #{modifiedOn}
+		where
+			FlightId = #{flightId} and
+			ShipmentId = #{shipmentId} 
+	</update>
+	
+	<delete id="sqlDeleteShipmentVerificationFromAwbDocument"  
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+			DELETE
+			FROM imp_shipmentverification
+			WHERE FlightId = #{flightId}
+				AND ShipmentId = #{shipmentId} 
+				AND not exists(
+					select
+						null
+					from
+						Imp_BreakDownULDTrolleyInfo
+					where
+						Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = imp_shipmentverification.ImpShipmentVerificationId				
+				)
+	</delete>
+	
+	<update id="sqlUpdateShipmentMasterDocumentReceivedOnFromAwbDocument" 
+		parameterType="com.ngen.cosys.shipment.awb.model.AWB">
+		<![CDATA[
+			UPDATE Shipment_Master
+				SET DocumentReceivedOn = NULL,
+					PhotoCopy = NULL,
+					LastUpdatedUserCode = #{modifiedBy},
+                    LastUpdatedDateTime =getDate()
+				WHERE ShipmentId = #{shipmentId} and
+				not exists(
+					select
+						null
+					from
+						Imp_ShipmentVerification
+					where
+						Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId and
+						Imp_ShipmentVerification.FlightId <> #{flightId} and
+						isnull(Imp_ShipmentVerification.DocumentReceivedFlag, 0) = 0 and
+						isnull(Imp_ShipmentVerification.PhotoCopyAwbFlag,0) = 0
+				)
+		]]>
+	</update>
+	
+	<select id="sqlCheckIsValidLocalAuthorityExemptionCode"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentMasterLocalAuthorityDetails"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select
+			count(1)
+		from
+			Mst_AcesCode
+		where
+			AcesCode = #{referenceNumber}
+	]]>
+	</select>
+	
+</mapper>

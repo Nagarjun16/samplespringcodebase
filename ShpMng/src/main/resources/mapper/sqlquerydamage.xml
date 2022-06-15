@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CaptureDamageModel">
+
+	<insert id="sqlInsertDamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel"
+		keyColumn="DamageInfoId" keyProperty="damageInfoId" useGeneratedKeys="true">
+		INSERT INTO Com_DamageInfo
+		(ReferenceId,Content,Remarks,CreatedUser_Code,Created_DateTime,FlightId,EntityType,EntityKey,EntityDate,FlightSegmentId)
+		VALUES
+		(#{referenceId},#{content},#{remark},#{createdBy},GETDATE(),#{flightId},#{entityType},#{entityKey},#{entityDate},#{flightSegmentId})
+	</insert>
+	
+	<insert id="sqlInsertHawbDamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel"
+		keyColumn="DamageInfoId" keyProperty="damageInfoId" useGeneratedKeys="true">
+		INSERT INTO Com_DamageInfo
+		(ReferenceId,Content,Remarks,CreatedUser_Code,Created_DateTime,FlightId,EntityType,EntityKey,EntityDate,FlightSegmentId,SubEntityKey)
+		VALUES
+		(#{referenceId},#{content},#{remark},#{createdBy},GETDATE(),#{flightId},#{entityType},#{entityKey},#{entityDate},#{flightSegmentId},#{subEntityKey})
+	</insert>
+	<insert id="sqlInsertDamageDetailsshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageDetails"
+		keyColumn="DamageLineItemsId" keyProperty="damageLineItemsId"
+		useGeneratedKeys="true">
+		INSERT INTO Com_DamageLineItems
+		(DamageInfoId,NatureOfDamage,DamagedPieces,Severity,Occurrence,CreatedUser_Code,Created_DateTime,EntityType,EntityKey,EntityDate,Remarks)
+		VALUES
+		(#{damageInfoId},#{natureOfDamage},#{damagePieces},#{severity},#{occurrence},#{createdBy},GETDATE(),#{entityType},#{entityKey},#{entityDate},#{lineRemarks})
+	</insert>
+	
+	<insert id="sqlInsertnatureofdamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageNatureModel">
+		INSERT INTO
+		Com_DamageLineItemsConditions(DamageLineItemsId,NatureOfDamage,CreatedUserCode,CreatedDateTime)
+		VALUES
+		(#{damageLineItemsId},#{natureOfDamage},#{createdBy},GETDATE())
+	</insert>	
+
+	<update id="sqlUpdateDamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel">
+		UPDATE Com_DamageInfo
+		SET
+			Content = #{content},
+			Remarks = #{remark},
+			FlightId=#{flightId},
+			FlightSegmentId=#{flightSegmentId},
+			LastUpdatedUser_Code = #{createdBy},
+			LastUpdated_DateTime = GETDATE(),
+			EntityType = #{entityType},
+			EntityKey = #{entityKey},
+			EntityDate=#{entityDate}
+		WHERE
+			DamageInfoId = #{damageInfoId}
+	</update>
+	
+	<update id="sqlUpdateHawbDamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel">
+		UPDATE Com_DamageInfo
+		SET
+			Content = #{content},
+			Remarks = #{remark},
+			FlightId=#{flightId},
+			FlightSegmentId=#{flightSegmentId},
+			LastUpdatedUser_Code = #{createdBy},
+			LastUpdated_DateTime = GETDATE(),
+			EntityType = #{entityType},
+			EntityKey = #{entityKey},
+			EntityDate=#{entityDate},
+			subEntityKey=#{subEntityKey}
+		WHERE
+			DamageInfoId = #{damageInfoId}
+	</update>
+	
+	<update id="sqlUpdateDamageDetailsshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageDetails">
+		UPDATE Com_DamageLineItems
+		SET
+			DamageInfoId = #{damageInfoId},
+			NatureOfDamage =#{natureOfDamage},
+			DamagedPieces = #{damagePieces},
+			Severity = #{severity},
+			Occurrence = #{occurrence},
+			EntityType = #{entityType},
+			EntityKey = #{entityKey},
+			EntityDate=#{entityDate},
+			Remarks=#{lineRemarks},
+			LastUpdatedUser_Code = #{createdBy},
+			LastUpdated_DateTime = getDate()
+		WHERE
+			DamageLineItemsId = #{damageLineItemsId}
+	</update>
+	
+	<update id="sqlUpdatenatureshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageNatureModel">
+		UPDATE Com_DamageLineItemsConditions
+   		SET
+      		NatureOfDamage = #{natureOfDamage},
+      		LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = getDate()
+ 		WHERE
+ 			DamageLineItemsConditionsId =#{damageLineItemsConditionsId} 
+	</update>
+
+    <select id= "getDamageCodeForMail" parameterType="java.lang.String"  resultType="java.lang.String">
+    SELECT
+        Attribute1  
+    FROM
+        Mst_CodeAdministration_SubGroupDetails
+    WHERE
+        AdministrationSubGroupCode = 'Nature_Of_Damage_Mail' and
+        AdministrationSubGroupDetailCode = #{natureOfDamage}
+    </select>     
+    
+	<select id="selectidofdamageinfoshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel"
+		resultType="java.lang.Integer">		
+		SELECT
+			DamageInfoId
+		FROM
+			Com_DamageInfo
+		WHERE 
+			EntityKey = #{entityKey}  AND  EntityType = #{entityType}
+			<if test="flightId != null">
+				and FlightId = #{flightId}
+			</if>
+           <if test="subEntityKey != null">
+				and SubEntityKey= #{subEntityKey}
+			</if>			
+			<if test="flightId == null">
+			and FlightId is null
+			</if>
+	</select>
+	
+	<delete id="sqldeletedamagedetailsshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageDetails">
+		delete from Com_DamageLineItems WHERE DamageLineItemsId=#{damageLineItemsId}
+	</delete>
+	
+	<delete id="sqldeletenatureofdamageshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageDetails">
+		delete from Com_DamageLineItemsConditions where DamageLineItemsId=#{damageLineItemsId}
+	</delete>
+	
+	<select id="sqlFetchflightIdshp" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel"
+		resultType="java.math.BigInteger">
+		select
+			Flt_OperativeFlight.Flight_ID
+		from 
+			Flt_OperativeFlight inner join 
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+		where
+			Flt_OperativeFlight.FlightKey=#{flight} and 
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date) and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+	</select>
+	
+	<resultMap type="com.ngen.cosys.damage.model.CaptureDamageModel"
+		id="fetchResultMap">
+		<id column="DamageInfoId" property="damageInfoId" />
+		<id column="EntityType" property="entityType" />
+		<id column="EntityKey" property="entityKey" />
+		<result column="FlightId" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="FlightKey" property="flight" />
+		<result column="DateSTA" property="flightDate"/>
+		<result column="Content" property="content" />
+		<result column="Remarks" property="remark" />
+		<collection property="captureDetails" javaType="List"
+			ofType="com.ngen.cosys.damage.model.CaptureDamageDetails">
+		<result column="DamageLineItemsId" property="damageLineItemsId" />
+		<result column="DamagedPieces" property="damagePieces" />
+		<result column="Severity" property="severity" />
+		<result column="lineRemarks" property="lineRemarks" />
+		<result column="Occurrence" property="occurrence" />
+		<collection javaType="List" property="listNatureOfDamage"
+			ofType="java.lang.String">
+			<result column="NatureOfDamage" property="listNatureOfDamage" />
+		</collection>
+		</collection>
+	</resultMap>
+	
+	<select id="sqlfetchAllRecordshp" 
+		resultMap="fetchResultMap" 
+		parameterType="com.ngen.cosys.damage.model.SearchDamageDetails">
+		SELECT
+			Com_DamageInfo.DamageInfoId,
+			Com_DamageInfo.Content,
+			Com_DamageInfo.Remarks,
+			Com_DamageInfo.FlightId,
+			Com_DamageInfo.FlightSegmentId,
+			Com_DamageInfo.EntityType,
+			Com_DamageInfo.EntityKey,
+			Com_DamageInfo.EntityDate,
+			Com_DamageLineItems.DamageLineItemsId,
+			Com_DamageLineItems.DamageInfoId,
+			Com_DamageLineItems.DamagedPieces,
+			Com_DamageLineItems.Severity,
+			Com_DamageLineItems.Remarks as lineRemarks,
+			Com_DamageLineItems.Occurrence,
+			Com_DamageLineItemsConditions.DamageLineItemsConditionsId,
+			Com_DamageLineItemsConditions.DamageLineItemsId,
+			Com_DamageLineItemsConditions.NatureOfDamage,
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight_Legs.DateSTA
+		FROM 
+			Com_DamageInfo LEFT JOIN 
+			Com_DamageLineItems
+				ON Com_DamageInfo.DamageInfoId=Com_DamageLineItems.DamageInfoId LEFT JOIN 
+			Com_DamageLineItemsConditions
+				ON Com_DamageLineItems.DamageLineItemsId=Com_DamageLineItemsConditions.DamageLineItemsId LEFT JOIN 
+			Flt_OperativeFlight
+				ON Flt_OperativeFlight.Flight_id = Com_DamageInfo.FlightId LEFT JOIN  
+			Flt_OperativeFlight_Legs  
+				ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		WHERE 
+			Com_DamageInfo.EntityKey = #{entityKey} and
+			Com_DamageInfo.EntityType = #{entityType}
+			<if test="flight != null">
+				and Flt_OperativeFlight.FlightKey = #{flight} and
+				cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+			</if>
+	</select>
+	
+	
+		<select id="sqlfetchAllHawbRecordshp" 
+		resultMap="fetchHawbResultMap" 
+		parameterType="com.ngen.cosys.damage.model.SearchDamageDetails">
+		SELECT
+			Com_DamageInfo.DamageInfoId,
+			Com_DamageInfo.Content,
+			Com_DamageInfo.Remarks,
+			Com_DamageInfo.FlightId,
+			Com_DamageInfo.FlightSegmentId,
+			Com_DamageInfo.EntityType,
+			Com_DamageInfo.EntityKey,
+			Com_DamageInfo.SubEntityKey,
+			Com_DamageInfo.EntityDate,
+			Com_DamageLineItems.DamageLineItemsId,
+			Com_DamageLineItems.DamageInfoId,
+			Com_DamageLineItems.DamagedPieces,
+			Com_DamageLineItems.Severity,
+			Com_DamageLineItems.Remarks as lineRemarks,
+			Com_DamageLineItems.Occurrence,
+			Com_DamageLineItemsConditions.DamageLineItemsConditionsId,
+			Com_DamageLineItemsConditions.DamageLineItemsId,
+			Com_DamageLineItemsConditions.NatureOfDamage,
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight_Legs.DateSTA,
+			Shipment_HouseInformation.ShipmentHouseId
+		FROM 
+			Com_DamageInfo 
+			INNER JOIN Shipment_HouseInformation ON Com_DamageInfo.SubEntityKey=Shipment_HouseInformation.Number and 
+			Shipment_HouseInformation.ShipmentId IN (select ShipmentId from Shipment_Master where ShipmentNumber=#{entityKey}
+			and ShipmentDate=#{entityDate}) 
+			LEFT JOIN 
+			Com_DamageLineItems
+				ON Com_DamageInfo.DamageInfoId=Com_DamageLineItems.DamageInfoId LEFT JOIN 
+			Com_DamageLineItemsConditions
+				ON Com_DamageLineItems.DamageLineItemsId=Com_DamageLineItemsConditions.DamageLineItemsId LEFT JOIN 
+			Flt_OperativeFlight
+				ON Flt_OperativeFlight.Flight_id = Com_DamageInfo.FlightId LEFT JOIN  
+			Flt_OperativeFlight_Legs  
+				ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		WHERE 
+			Com_DamageInfo.EntityKey = #{entityKey} and
+			Com_DamageInfo.EntityType = #{entityType} and Com_DamageInfo.SubEntityKey = #{subEntityKey}
+			<if test="flight != null">
+				and Flt_OperativeFlight.FlightKey = #{flight} and
+				cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+			</if>
+	</select>
+		
+	
+	<resultMap type="com.ngen.cosys.damage.model.CaptureDamageModel"
+		id="fetchHawbResultMap">
+		<id column="DamageInfoId" property="damageInfoId" />
+		<id column="EntityType" property="entityType" />
+		<id column="EntityKey" property="entityKey" />
+		<id column="SubEntityKey" property="subEntityKey" />
+		<result column="FlightId" property="flightId" />
+		<result column="ShipmentHouseId" property="shipmentHouseId"/>
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="FlightKey" property="flight" />
+		<result column="DateSTA" property="flightDate"/>
+		<result column="Content" property="content" />
+		<result column="Remarks" property="remark" />
+		<collection property="captureDetails" javaType="List"
+			ofType="com.ngen.cosys.damage.model.CaptureDamageDetails">
+		<result column="DamageLineItemsId" property="damageLineItemsId" />
+		<result column="DamagedPieces" property="damagePieces" />
+		<result column="Severity" property="severity" />
+		<result column="lineRemarks" property="lineRemarks" />
+		<result column="Occurrence" property="occurrence" />
+		<result column="Com_DamageInfo.SubEntityKey" property="subEntityKey" />
+		<collection javaType="List" property="listNatureOfDamage"
+			ofType="java.lang.String">
+			<result column="NatureOfDamage" property="listNatureOfDamage" />
+		</collection>
+		</collection>
+	</resultMap>
+	
+	<select id="sqlAwbchechshp" resultType="com.ngen.cosys.damage.model.CaptureDamageModel" parameterType="com.ngen.cosys.damage.model.SearchDamageDetails">
+		 select 
+		 	distinct Shipment_Master.NatureOfGoodsDescription as content,
+		 	Shipment_Master.Origin as origin,
+		 	Shipment_Master.ShipmentDate as entityDate
+		 from
+		 	Shipment_Master
+	      where 
+	      	ShipmentNumber = #{entityKey} and
+	      	ShipmentType = #{entityType}
+	</select>
+	
+	<select id="sqlGetFirstIncomingFlightInfo" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel" 
+		resultType="com.ngen.cosys.damage.model.CaptureDamageModel">
+		select	
+			Flt_OperativeFlight.FlightKey as flight,
+			Flt_OperativeFlight_Legs.DateSTA as flightDate,
+			Flt_OperativeFlight.Flight_ID as flightId,
+			Imp_ArrivalManifestBySegment.FlightSegmentId as flightSegmentId
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Flt_OperativeFlight
+				on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID  and Flt_OperativeFlight_Legs.FlightOffPoint=#{tenantAirport} 
+				inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{entityKey} and
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{entityDate}
+			<if test="subEntityKey != null">
+				and SubEntityKey= #{subEntityKey}
+			</if>
+		order by
+			Flt_OperativeFlight_Legs.DateSTA	
+			
+	</select>
+	
+	<select id="sqlFetchPiecesshp" resultType="java.math.BigInteger" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel">
+		select 
+			isnull(pieces, 0) 
+		from 
+			Shipment_Master 
+		where 
+			ShipmentNumber = #{entityKey} and
+	      	ShipmentType = #{entityType} and
+	      	ShipmentDate  = #{entityDate} 
+	</select>
+	
+	<select id="sqlFetchHawbPiecesshp" resultType="java.math.BigInteger" parameterType="com.ngen.cosys.damage.model.CaptureDamageModel">
+		select 
+			isnull(pieces, 0)
+		from 
+			Shipment_HouseInformation 
+		where 
+			ShipmentId=(select ShipmentId from Shipment_Master where ShipmentNumber = #{entityKey} and
+	      	ShipmentDate =#{entityDate}) and
+	      	Number=#{subEntityKey}
+	</select>
+	<select id="sqlcheckFileTokenExist" parameterType="com.ngen.cosys.damage.model.FileUpload" 
+			resultType="java.lang.Integer">
+		select 	
+			count(1)
+		from	
+			Com_UploadedDocumentStore
+		where
+			EntityType = #{entityType} and
+			EntityKey = #{entityKey}
+			<if test="subEntityKey != null">
+				and SubEntityKey= #{subEntityKey}
+			</if>
+	</select>
+	
+	<insert id="sqlinsertFileDetail" parameterType="com.ngen.cosys.damage.model.FileUpload"
+			useGeneratedKeys="true" 
+			keyProperty="uploadDocId" 
+			keyColumn="UploadedDocId">
+		INSERT INTO Com_UploadedDocumentStore
+		(
+			ReferenceId, Document, DocumentName, 
+			DocumentSize, DocumentFormat, DocumentDescription, 
+			DocumentType, DocumentTypeDescription, Remarks,
+			EntityType, EntityKey, EntityDate,
+			FlightId, AssociatedTo, Stage, 
+			CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+		)
+		VALUES
+		(
+			#{referenceId}, #{document}, #{documentName}, 
+			#{documentSize}, #{documentFormat}, #{documentDescription},
+			#{documentType}, #{documentTypeDescription},  #{remarks},
+			#{entityType},#{entityKey}, #{entityDate}, 
+			#{flightId}, #{associatedTo}, #{stage},
+			#{createdBy}, GETDATE(), NULL, NULL
+		)
+	</insert>
+	
+	<select id="sqlselectFileDetail" parameterType="com.ngen.cosys.damage.model.FileUpload"
+			resultType="com.ngen.cosys.damage.model.FileUpload">
+		SELECT 	
+			UploadedDocId AS "uploadDocId",
+			ReferenceId AS "referenceId", 
+			Document AS "document", 
+			DocumentName AS "documentName", 
+			DocumentSize AS "documentSize", 
+			DocumentFormat AS "documentFormat", 
+			DocumentDescription AS "documentDescription", 
+			DocumentType AS "documentType", 
+			DocumentTypeDescription AS "documentTypeDescription", 
+			Remarks AS "remarks",
+			EntityType AS "entityType", 
+			EntityKey AS "entityKey", 
+			EntityDate AS "entityDate",
+			FlightId AS "flightId",
+			AssociatedTo AS "associatedTo", 
+			Stage AS "stage",
+			CreatedUserCode AS userCode, CreatedDateTime AS documentTime
+		FROM	
+			Com_UploadedDocumentStore
+			<where>
+				1 = 1
+				<if test="entityType == null or entityType == '' or entityKey == null or entityKey == ''">
+					AND 1 = 2
+				</if>
+				<if test="entityType != null and entityType != ''">
+					AND EntityType = #{entityType}
+				</if>
+				<if test="entityKey != null and entityKey != ''">
+					AND EntityKey = #{entityKey}
+				</if> 
+				<if test="referenceId != null">
+					AND ReferenceId = #{referenceId}
+				</if>
+				<if test="stage != null">
+					AND Stage = #{stage}
+				</if>			
+			</where>
+	</select>
+	
+	<select id="sqlselectFileDetailForEmail" parameterType="com.ngen.cosys.damage.model.FileUpload"
+			resultType="com.ngen.cosys.damage.model.FileUpload">
+		SELECT 	
+			UploadedDocId AS "uploadDocId",
+			ReferenceId AS "referenceId", 
+			Document AS "document", 
+			DocumentName AS "documentName", 
+			DocumentSize AS "documentSize", 
+			DocumentFormat AS "documentFormat", 
+			DocumentDescription AS "documentDescription", 
+			DocumentType AS "documentType", 
+			DocumentTypeDescription AS "documentTypeDescription", 
+			Remarks AS "remarks",
+			EntityType AS "entityType", 
+			EntityKey AS "entityKey", 
+			EntityDate AS "entityDate",
+			FlightId AS "flightId",
+			AssociatedTo AS "associatedTo", 
+			Stage AS "stage",
+			CreatedUserCode AS userCode, CreatedDateTime AS documentTime
+		FROM	
+			Com_UploadedDocumentStore
+			<where>
+				<if test="entityType != null and entityType != ''">
+					AND EntityType = #{entityType}
+				</if>
+				<if test="entityKey != null and entityKey != ''">
+					AND EntityKey = #{entityKey}
+				</if>
+			</where>
+	</select>
+		
+	<select id="sqlselectFileDetailForDownload" parameterType="com.ngen.cosys.damage.model.FileUpload"
+			resultType="com.ngen.cosys.damage.model.FileUpload">
+		SELECT 	
+			UploadedDocId AS "uploadDocId",
+			ReferenceId AS "referenceId", 
+			Document AS "document", 
+			DocumentName AS "documentName", 
+			DocumentSize AS "documentSize", 
+			DocumentFormat AS "documentFormat", 
+			DocumentDescription AS "documentDescription", 
+			DocumentType AS "documentType", 
+			DocumentTypeDescription AS "documentTypeDescription", 
+			Remarks AS "remarks",
+			EntityType AS "entityType", 
+			EntityKey AS "entityKey", 
+			EntityDate AS "entityDate",
+			FlightId AS "flightId",
+			AssociatedTo AS "associatedTo", 
+			Stage AS "stage",
+			CreatedUserCode AS userCode, CreatedDateTime AS documentTime
+		FROM	
+			Com_UploadedDocumentStore
+		WHERE	
+			ReferenceId = #{referenceId}
+	</select>	
+	
+	<update id="sqlupdateFileDetail" parameterType="com.ngen.cosys.damage.model.FileUpload">
+		UPDATE 	Com_UploadedDocumentStore
+		SET		Document = #{document},
+				DocumentName = #{documentName}, 
+				DocumentSize = #{documentSize}, 
+				DocumentFormat = #{documentFormat}, 
+				DocumentDescription = #{documentDescription}, 
+				DocumentType = #{documentType}, 
+				DocumentTypeDescription = #{documentDescription}, 
+				Remarks = #{remarks},
+				FlightId = #{flightId},
+				AssociatedTo = #{associatedTo}, 
+				Stage = #{stage}, 
+				LastUpdatedUserCode = #{modifiedBy}, 
+				LastUpdatedDateTime = GETDATE()
+		WHERE	EntityType = #{entityType}
+		AND		EntityKey = #{entityKey}
+		AND 	UploadedDocId = #{uploadDocId}
+	</update>
+	
+	<delete id="sqldeleteFileDetailOne" parameterType="com.ngen.cosys.damage.model.FileUpload">
+		DELETE 	FROM Com_UploadedDocumentStore
+		WHERE	EntityType = #{entityType}
+		AND		EntityKey = #{entityKey}
+		AND 	UploadedDocId = #{uploadDocId}
+	</delete>
+	
+	<select id="getManifestFlightDetails" 
+		resultMap="fetchFlightDetails" 
+		parameterType="com.ngen.cosys.damage.model.SearchDamageDetails">
+	 	select 
+			Flt_OperativeFlight.flight_Id,
+			Flt_OperativeFlight.flightKey,
+			Flt_OperativeFlight_Legs.DateSTA as flightDate,
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+			Flt_OperativeFlight_Segments.FlightSegmentId
+		from 	
+		   	Imp_ArrivalManifestByFlight inner join 
+			Flt_OperativeFlight 
+				on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs 
+			    on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID and
+			    	Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+			Imp_ArrivalManifestBySegment 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Flt_OperativeFlight_Segments 
+				on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+			Imp_ArrivalManifestULD 
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo 
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where 	
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{entityKey} and
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{entityDate}
+			<if test="flight != null">
+				and Flt_OperativeFlight.FlightKey = #{flight} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+			</if>
+			<if test="subEntityKey != null">
+				and SubEntityKey= #{subEntityKey}
+			</if>
+		order by 
+			Imp_ArrivalManifestShipmentInfo.CreatedDateTime desc	
+	</select>
+	
+     <resultMap type="com.ngen.cosys.damage.model.CaptureDamageModel"
+		id="fetchFlightDetails">
+		<result column="Flight_Id" property="flightId" />
+		<result column="FlightKey" property="flight" />
+		<result column="flightDate" property="flightDate"/>
+		<result column="NatureOfGoodsDescription" property="content"/>
+		<result column="FlightSegmentId" property="flightSegmentId"/>
+	</resultMap>
+	
+	<select id="fetchManifestFlightDetailsMobile" 
+		resultMap="fetchFlightDetailsMobile" 
+		parameterType="com.ngen.cosys.damage.model.SearchDamageDetails">
+	 	select distinct
+			Flt_OperativeFlight.flight_Id,
+			Flt_OperativeFlight.flightKey,
+			Flt_OperativeFlight_Legs.DateSTA as flightDate,
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+			Flt_OperativeFlight_Segments.FlightSegmentId
+		from 	
+		   	Imp_ArrivalManifestByFlight inner join 
+			Flt_OperativeFlight 
+				on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs 
+			    on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID and
+			    	Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+			Imp_ArrivalManifestBySegment 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Flt_OperativeFlight_Segments 
+				on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+			Imp_ArrivalManifestULD 
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo 
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where 	
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{entityKey} 
+			and Imp_ArrivalManifestShipmentInfo.ShipmentDate = 
+				(select top 1 shipmentdate from shipment_master where shipmentnumber = #{entityKey}  order by shipmentdate desc)
+			<if test="flight != null">
+				and Flt_OperativeFlight.FlightKey = #{flight} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+			</if>
+		order by 
+			Flt_OperativeFlight_Legs.DateSTA desc	
+	</select>
+	
+     <resultMap type="com.ngen.cosys.damage.model.CaptureDamageModel"
+		id="fetchFlightDetailsMobile">
+		<result column="Flight_Id" property="flightId" />
+		<result column="FlightKey" property="flight" />
+		<result column="flightDate" property="flightDate"/>
+		<result column="NatureOfGoodsDescription" property="content"/>
+		<result column="FlightSegmentId" property="flightSegmentId"/>
+	</resultMap>
+	
+	
+	<select id="getcarrierCodeForAMailBag"  parameterType="java.lang.String"  resultType="java.lang.String" >
+		select 
+			TOP 1 CarrierCode 
+		from 
+			Shipment_Master 
+		where 
+			ShipmentNumber = SUBSTRING(#{carrierCode},1,20) and 
+			ShipmentType = 'MAIL'
+	</select>
+	
+		 <select id="getRegistraion"  
+	 resultType="java.lang.String">
+select ParameterValueChar as registration
+	 from App_SystemParameters
+ where ParameterCode='BIL_COM_REG_NO'
+
+	</select>
+	<select id="getDocumentRemarks"  
+	 resultMap="fetchDocumentRemark">
+		select DocumentName,Remarks from Com_UploadedDocumentStore
+			where 
+		EntityType=#{entityType} and
+			EntityKey=#{entityKey} and
+			AssociatedTo=#{associatedTo} and
+			Stage=#{stage}
+	</select>
+	<resultMap type="com.ngen.cosys.damage.model.CaptureDamageDetails"
+		id="fetchDocumentRemark">
+		<result column="DocumentName" property="documentName" />
+		<result column="Remarks" property="lineRemarks" />
+	</resultMap>
+	
+	
+	<select id="checkHandledByHouse" parameterType="com.ngen.cosys.damage.model.SearchDamageDetails"
+		resultType="com.ngen.cosys.damage.model.SearchDamageDetails">
+		select
+		count(shi.ShipmentId) as houseCount, SM.HandledByMasterHouse as handledByHouse, sm.origin as origin , sm.destination as destination  from
+		shipment_master sm left join Shipment_HouseInformation shi on
+		sm.ShipmentId= shi.shipmentid
+		and sm.HandledByMasterHouse='H'
+		WHERE SM.ShipmentNumber=#{entityKey} and
+		cast(ShipmentDate as date) = cast(#{entityDate} as date)
+		group by sm.HandledByMasterHouse,
+		sm.origin, sm.destination
+	</select>
+	
+</mapper>

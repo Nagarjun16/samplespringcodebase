@@ -1,0 +1,29 @@
+package com.ngen.cosys.satssginterfaces.mss.dao;
+
+import com.ngen.cosys.framework.exception.CustomException;
+import com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentAirmailInterfaceModel;
+import com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentHouseAirmailInterfaceModel;
+import com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentInventoryAirmailInterfaceModel;
+import com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentShcAirmailInterfaceModel;
+
+public interface InboundBreakdownAirmailInterfaceDAO {
+	
+    public Integer insertBreakDownULDTrolleyInfo(InboundBreakdownShipmentAirmailInterfaceModel inboundBreakdownShipmentModel)throws CustomException;
+    public Integer updateBreakDownULDTrolleyInfo(InboundBreakdownShipmentAirmailInterfaceModel inboundBreakdownShipmentModel)throws CustomException;
+    public InboundBreakdownShipmentAirmailInterfaceModel selectBreakDownULDTrolleyInfo(InboundBreakdownShipmentAirmailInterfaceModel inboundBreakdownShipmentModel)throws CustomException;
+    
+    
+    public InboundBreakdownShipmentInventoryAirmailInterfaceModel selectInboundBreakdownShipmentInventoryModel(InboundBreakdownShipmentInventoryAirmailInterfaceModel inboundBreakdownShipmentInventoryModel)throws CustomException;
+    public Integer insertBreakDownStorageInfo(InboundBreakdownShipmentInventoryAirmailInterfaceModel inboundBreakdownShipmentInventoryModel)throws CustomException;
+    public Integer updateBreakDownStorageInfo(InboundBreakdownShipmentInventoryAirmailInterfaceModel inboundBreakdownShipmentInventoryModel)throws CustomException;
+    
+    public Boolean checkBreakDownStorageSHCInfo(InboundBreakdownShipmentShcAirmailInterfaceModel inboundBreakdownShipmentShcModel)throws CustomException;
+    public Integer insertBreakDownStorageSHCInfo(InboundBreakdownShipmentShcAirmailInterfaceModel inboundBreakdownShipmentShcModel)throws CustomException;
+    public Integer updateBreakDownStorageSHCInfo(InboundBreakdownShipmentShcAirmailInterfaceModel inboundBreakdownShipmentShcModel)throws CustomException;
+    
+    public Boolean checkBreakDownShipmentHouseModel(InboundBreakdownShipmentHouseAirmailInterfaceModel inboundBreakdownShipmentHouseModel)throws CustomException;
+    public Integer insertBreakDownShipmentHouseModel(InboundBreakdownShipmentHouseAirmailInterfaceModel inboundBreakdownShipmentHouseModel)throws CustomException;
+    public Integer updateBreakDownShipmentHouseModel(InboundBreakdownShipmentHouseAirmailInterfaceModel inboundBreakdownShipmentHouseModel)throws CustomException;
+    
+
+}

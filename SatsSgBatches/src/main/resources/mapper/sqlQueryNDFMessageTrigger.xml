@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="NDFmessageMapper">
+<select id="getTerminalsAndTelexAddressForNDF" parameterType="java.util.Map" resultMap="getTerminalsAndTelexAddressForNDFMap">
+select 
+		Interface_MessageTypes.MessageType,
+		Interface_MessageTypesAddressGroup.HandlingArea,
+		Interface_MessageTelexAddressGroup.InterfaceMessageTelexAddressGroupId interfaceMessageTelexAddressGroupId
+		from
+		Interface_MessageTypes
+		inner join
+		Interface_MessageTypesAddressGroup
+		on
+		Interface_MessageTypesAddressGroup.InterfaceMessageTypesId=Interface_MessageTypes.InterfaceMessageTypesId
+		inner join
+		Interface_MessageTelexAddressGroup
+		on
+		Interface_MessageTelexAddressGroup.InterfaceMessageTelexAddressGroupId=Interface_MessageTypesAddressGroup.InterfaceMessageTelexAddressGroupId
+		where 
+		Interface_MessageTypes.MessageType=#{messageType}
+
+</select>
+<resultMap id="getTerminalsAndTelexAddressForNDFMap" type="com.ngen.cosys.message.ndf.model.NdfMessageModel">
+<id column="interfaceMessageTelexAddressGroupId" property="interfaceMessageTelexAddressGroupId" />
+<result column="HandlingArea" property="handlingArea" />
+<collection 
+property="telexAddress"
+ofType="java.lang.String"
+select ="getTelexAddressForNdf"
+javaType="List"
+column="{interfaceMessageTelexAddressGroupId=interfaceMessageTelexAddressGroupId} "/>
+</resultMap>
+<select id="getTelexAddressForNdf" parameterType="com.ngen.cosys.message.ndf.model.NdfMessageModel" resultType="java.lang.String" >
+select 
+		Interface_MessageTelexAddressGroupInfo.TelexAddress
+		from
+		Interface_MessageTelexAddressGroupInfo
+		where 
+		Interface_MessageTelexAddressGroupInfo.InterfaceMessageTelexAddressGroupId=#{interfaceMessageTelexAddressGroupId}
+
+</select>
+<select id="getOriginatorAddressForNDF" resultType="java.lang.String">
+	select parameterValueChar from App_SystemParameters where  parametercode ='COSYS_TELEX_ADDRESS'
+</select>
+
+<select id="getPastDaysTotriggerNDF" resultType="java.math.BigInteger">
+		select isnull(ParameterValueChar,ParameterValueNum)  from App_SystemParameters where  parametercode ='NDF_PREVIOUS_DAYS'
+</select>
+</mapper>

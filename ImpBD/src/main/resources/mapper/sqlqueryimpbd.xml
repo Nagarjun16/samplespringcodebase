@@ -1,0 +1,1844 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ImpBDMapper">
+	<!-- Print AWB barcode queries -->
+	<select id="isAWBExists" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		select count(1) from Imp_ArrivalManifestShipmentInfo where
+		ShipmentNumber =
+		#{awbNumber}
+	</select>
+	
+	<select id="checkShipmentExistInShipmentMaster" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select ShipmentId from shipment_master where
+		ShipmentNumber =#{awbNumber}
+	</select>
+
+	<!-- Display Incoming Flight Query -->
+	<select id="getIncomingFlight"
+		parameterType="com.ngen.cosys.impbd.model.IncomingFlightQuery"
+		resultType="com.ngen.cosys.impbd.model.IncomingFlightModel">
+		With IncomingFlightSegments AS(select
+			Flt_OperativeFlight.Flight_ID,
+			Flt_OperativeFlight.CarrierCode,
+			Flt_OperativeFlight.FlightNumber,
+			Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight.FlightType,
+			Flt_OperativeFlight.ParkingBayArrivalAircraft,
+			Flt_OperativeFlight.InboundAircraftRegNo,
+			Flt_OperativeFlight_Segments.FlightBoardPoint,
+			Flt_OperativeFlight_Segments.FlightOffPoint,
+			Flt_OperativeFlight_Segments.DateSTD,
+			Flt_OperativeFlight_Segments.FlightSegmentOrder,
+			case 
+				when Flt_OperativeFlight.FlightCancelFlag = 'D' then 
+					'CANCELED'
+				when isnull(Flt_OperativeFlight.ApronFlag, 0) = 1 then
+					'APRON FLT'	
+				when Flt_OperativeFlight.FlightRestoredFlag is not null then 
+					'RESTORED'
+				when Flt_OperativeFlight.InboundFlightDelayFlag = 1 then 
+					'DELAYED'
+				else 
+					Flt_OperativeFlight.FlightStatus end FlightStatus,
+			case	
+				when (select 
+							count(1)
+						from
+							Imp_FreightFlightManifestByFlight inner join									
+							Imp_FreightFlightManifestBySegment 
+								on Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId										
+						where
+							Imp_FreightFlightManifestByFlight.FlightId = Flt_OperativeFlight_Segments.Flight_ID and
+							Imp_FreightFlightManifestBySegment.MessageStatus = 'PROCESSED' and
+							Imp_FreightFlightManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId) > 0 then
+					1
+				else
+					0
+				end FFMProcessed
+				
+		from
+			Flt_OperativeFlight inner join	
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+			Flt_OperativeFlight_Segments
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID 
+		where
+			Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as datetime) between #{fromDate} and #{toDate}
+			<if test="flightKey != null and flightKey !='' ">
+				and Flt_OperativeFlight.FlightNumber=#{flightKey}
+			</if>
+			<if test="carrierGp != null and carrierGp != '' ">
+				and Flt_OperativeFlight.CarrierCode in (
+					select 
+						Mst_AssociateCarrierWithGroup.CarrierCode
+					from
+						Mst_AssociateCarrierWithGroup inner join
+						Mst_CarrierGroup
+							on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+					where
+						Mst_CarrierGroup.CarrierGroupCode = #{carrierGp}
+				)							
+			</if>
+			<if test="carrierCode != null and carrierCode != '' ">
+				and Flt_OperativeFlight.CarrierCode = #{carrierCode}	
+			</if>
+			<if test="terminalPoint != null and terminalPoint !='' ">
+				and exists(
+					select
+						1
+					from
+						Flt_OperativeFlight_HandlingArea
+					where
+						Flt_OperativeFlight_HandlingArea.FlightId = Flt_OperativeFlight.Flight_ID and
+						Flt_OperativeFlight_HandlingArea.TerminalCode = #{terminalPoint}
+				)
+			</if>
+			
+		),
+		FlightLegInformation AS (
+                select
+                    Flt_OperativeFlight_Legs.Flight_ID,
+                    Flt_OperativeFlight_Legs.DateSTA,
+                    Flt_OperativeFlight_Legs.DateSTD,
+                    Flt_OperativeFlight_Legs.DateETA,
+                    Flt_OperativeFlight_Legs.DateATA,
+                    Flt_OperativeFlight_Legs.AirCraftType,
+                    Flt_OperativeFlight_Legs.FlightBoardPoint,
+                    Flt_OperativeFlight_Legs.DomesticFlightFlag,
+                    Flt_OperativeFlight_Legs.FlightOffPoint,
+                    case
+                        when Flt_OperativeFlight_Legs.AircraftRegCode is null then
+                            (select
+                                    Imp_FreightFlightManifestByFlight.AircraftRegCode
+                                from
+                                    Imp_FreightFlightManifestByFlight
+                                where
+                                    Imp_FreightFlightManifestByFlight.FlightId = Flt_OperativeFlight_Legs.Flight_ID)
+                        else
+                            Flt_OperativeFlight_Legs.AircraftRegCode
+                        end AircraftRegCode,
+                    case    
+                        when Imp_FlightEvents.RampCheckInCompletedAt is not null then
+                            'Y'                
+                        end as RampCheckedIn,
+                    case    
+                        when Imp_FlightEvents.DocumentVerificationCompletedAt is not null then
+                            'Y'                
+                        end as DocumentCompleted,
+                    case    
+                        when Imp_FlightEvents.BreakDownCompletedAt is not null then
+                            'Y'                
+                        end as BreakDownCompleted,
+                    case    
+                        when Imp_FlightEvents.ThroughTransitWorkingListFinalizedAt is not null then
+                            'Y'                
+                        end as ThroughTransitFinalized,
+                    case    
+                        when Imp_FlightEvents.ShortTransitBulkShipmentExists = 1 then
+                            'Y'                
+                        end as ShortTransitBulkShipmentExists,
+                    case    
+                        when Imp_FlightEvents.FlightDiscrepncyListSentAt is not null then
+                            'Y'                
+                        end as FDLSent
+                from
+                    Flt_OperativeFlight_Legs inner join
+                    Imp_FlightEvents
+                        on Flt_OperativeFlight_Legs.Flight_ID = Imp_FlightEvents.FlightId
+                where 1=1
+            )
+		
+		
+		select
+            IncomingFlightSegments.Flight_ID as flightId,
+            IncomingFlightSegments.FlightKey as flight,
+            IncomingFlightSegments.DateSTD,
+            IncomingFlightSegments.FlightBoardPoint as boardPoint,
+			IncomingFlightSegments.FlightOffPoint as offPoint,
+            FlightLegInformation.DateSTA as sta,
+            FlightLegInformation.DateETA as eta,
+            FlightLegInformation.DateATA as ata,
+            flightInfoSTD.DateSTD as flightDate,
+            IncomingFlightSegments.ParkingBayArrivalAircraft as bay,
+            FlightLegInformation.AircraftType as aircraft,
+            IncomingFlightSegments.FlightType as flightType,
+            Flt_OperativeFlight_Attributes.CustomsFlightNumber as customsImportFlightNumber,
+			Flt_OperativeFlight_Attributes.CustomsFlightDate as customsImportFlightDate,
+            isnull(IncomingFlightSegments.InboundAircraftRegNo, FlightLegInformation.AircraftRegCode) as registration,
+            case
+                when IncomingFlightSegments.FFMProcessed = 1 then
+                    'Y'
+                else
+                    ''
+                end ffmStatus,
+            FlightLegInformation.ThroughTransitFinalized as throughTransit,    
+            FlightLegInformation.ShortTransitBulkShipmentExists as shortTransit,
+            FlightLegInformation.RampCheckedIn as rampcheck,
+            FlightLegInformation.DocumentCompleted as documentVerification,
+            FlightLegInformation.BreakDownCompleted as breakdown,
+            FlightLegInformation.FDLSent as fdlSent,
+            CASE
+            WHEN
+            IncomingFlightSegments.FlightStatus = 'DEP' then ''
+			else  IncomingFlightSegments.FlightStatus
+            end as status,
+            format(FlightLegInformation.DateSTA, 'HHmm') + '/' + format(FlightLegInformation.DateSTA, 'dd') as staWithDate,
+            case
+                when datediff(day, FlightLegInformation.DateETA, FlightLegInformation.DateSTA) > 0 then
+                    format(FlightLegInformation.DateETA, 'HHmm') + '/' +             
+                        format(FlightLegInformation.DateETA, 'dd')
+                else
+                    format(FlightLegInformation.DateETA, 'HHmm') 
+                end as etaWithDate,
+            case
+                when datediff(day, FlightLegInformation.DateATA, FlightLegInformation.DateSTA) > 0 then
+                    format(FlightLegInformation.DateATA, 'HHmm') + '/' +             
+                        format(FlightLegInformation.DateATA, 'dd')
+                else
+                    format(FlightLegInformation.DateATA, 'HHmm') 
+                end as ataWithDate,
+			Flt_OperativeFlight_Attributes.WarehouseLevel warehouseLevel,
+			Flt_OperativeFlight_Attributes.BuBdOffice buBdOffice,
+			Flt_OperativeFlight_Attributes.Gate gate,
+			Flt_OperativeFlight_Attributes.ArrDepStatus arrDepStatus,
+			(SELECT ((CASE WHEN ISNULL(LastUpdatedUser_Code,CreatedUser_Code) LIKE '%BATCH%' THEN 'SYSTETM'
+					  WHEN ISNULL(LastUpdatedUser_Code,CreatedUser_Code) LIKE '%MESSAGE%' THEN 'SYSTETM'
+					  ELSE ISNULL(LastUpdatedUser_Code,CreatedUser_Code)
+				 END))+ '/' +
+			CONVERT(VARCHAR(11),ISNULL(Flt_OperativeFlight_Legs.LastUpdated_DateTime, Flt_OperativeFlight_Legs.Created_DateTime),106) 
+		 FROM Flt_OperativeFlight_Legs 
+		WHERE Flight_ID = IncomingFlightSegments.Flight_ID
+		  AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}) staffIDAndDate,
+		  (SELECT STRING_AGG (Remarks,',') FROM Flt_OperativeFlight_Remarks 
+		  WHERE Flt_OperativeFlight_Remarks.FlightType = 'I' AND Flight_ID = IncomingFlightSegments.Flight_ID) remark,
+		  (select Customer_Master.CustomerCode from Customer_Master where Customer_Master.Customer_ID= Flt_OperativeFlight_Attributes.RHO AND Flt_OperativeFlight_Attributes.FlightType = 'I') rho,
+		  (case when datediff(MINUTE, FlightLegInformation.DateETA, FlightLegInformation.DateSTA) > 0 then 'YELLOW'
+                  else 'NORMAL'
+             end ) etdDiff            
+        from
+            IncomingFlightSegments left join
+            FlightLegInformation
+                on IncomingFlightSegments.Flight_ID = FlightLegInformation.Flight_ID
+                and FlightLegInformation.FlightOffPoint = #{tenantAirport}
+			left join FlightLegInformation flightInfoSTD
+                on IncomingFlightSegments.Flight_ID = flightInfoSTD.Flight_ID
+                and IncomingFlightSegments.FlightBoardPoint =flightInfoSTD.FlightBoardPoint left join 
+            Flt_OperativeFlight_Attributes 
+				on IncomingFlightSegments.Flight_ID = Flt_OperativeFlight_Attributes.Flight_ID and Flt_OperativeFlight_Attributes.FlightType = 'I'
+		where
+		<![CDATA[
+			cast(FlightLegInformation.DateSTA as datetime) 
+							between #{fromDate} and #{toDate}
+							
+		]]>
+		<if test="domesticFlightFlag != null and domesticFlightFlag !='' or domesticFlightFlag == 0">
+			and FlightLegInformation.DomesticFlightFlag = #{domesticFlightFlag}
+			</if>
+			
+		<if test="buBdOffice != null">
+            and Flt_OperativeFlight_Attributes.BuBdOffice = #{buBdOffice}
+        </if>
+        <if test="warehouseLevel != null">
+            and Flt_OperativeFlight_Attributes.WarehouseLevel = #{warehouseLevel}
+        </if>
+        <if test="flightType != null">
+          	and IncomingFlightSegments.FlightType = #{flightType}
+        </if>
+        <if test="arrDepStatus != null">
+            and Flt_OperativeFlight_Attributes.ArrDepStatus = #{arrDepStatus}
+        </if>
+        <if test="rho != null">
+            and Flt_OperativeFlight_Attributes.RHO = #{rho}
+        </if>
+        <if test="arrDepStatus != null">
+        	and Flt_OperativeFlight_Attributes.ArrDepStatus = #{arrDepStatus}
+        </if>
+		order by
+			FlightLegInformation.DateSTA asc,
+			IncomingFlightSegments.FlightSegmentOrder
+	</select>
+	
+	<select id="getIncomingTelexMessage"
+		parameterType="com.ngen.cosys.impbd.model.IncomingFlightQuery"
+		resultType="java.lang.String">
+		select message from Interface_IncomingMessageLog where 
+				MessageType='TLX' 
+				and FlightNumber=#{flightKey} 
+				and InterfacingSystem='MANUAL' 
+				and	cast( FlightOriginDate as date) = cast(#{fromDate} as date) 
+				order by CreatedDateTime
+			
+	</select>
+	<resultMap id="getincomingFlight"
+		type="com.ngen.cosys.impbd.model.IncomingFlightModel">
+		<id property="flightId" column="flightId" />
+		<result property="flight" column="flight" />
+		<result property="flightDate" column="flightDate" />
+		<result property="bay" column="bay" />
+		<result property="flightType" column="flightType" />
+		<result property="status" column="status" />
+		<result property="boardPoint" column="boardPoint" />
+		<result property="sta" column="sta" />
+		<result property="eta" column="eta" />
+		<result property="ata" column="ata" />
+		<result property="aircraft" column="aircraft" />
+		<result property="registration" column="registration" />
+		<result property="throughTransit" column="throughTransit" />
+		<result property="shortTransit" column="shortTransit" />
+		<result property="rampcheck" column="rampcheck" />
+		<result property="documentVerification" column="documentVerification" />
+		<result property="breakdown" column="breakdown" />
+		<result property="ffmStatus" column="ffmStatus" />
+		<result property="customsImportFlightNumber" column="customsImportFlightNumber" />
+		<result property="customsImportFlightDate" column="customsImportFlightDate" />
+		<result property="warehouseLevel" column="warehouseLevel" />
+		<result property="buBdOffice" column="buBdOffice" />
+		<result property="gate" column="gate" />
+		<result property="staffIDAndDate" column="staffIDAndDate" />
+		<result property="remark" column="remark" />
+		<result property="rho" column="rho" />
+		<result property="etdDiff" column="etdDiff" />
+	</resultMap>
+
+
+	<select id="configurableFromTime"
+		parameterType="java.lang.String" resultType="long">
+		select ParameterValueNum
+		AS fromTime
+		from App_SystemParameters where
+		ParameterCode='DISPLAY_INCOMING_FLIGHT_FROM_TIME'
+	</select>
+	<select id="configurableToTime" parameterType="java.lang.String"
+		resultType="long">
+		select ParameterValueNum as toTime
+		from App_SystemParameters
+		where
+		ParameterCode='DISPLAY_INCOMING_FLIGHT_TO_TIME'
+	</select>
+	<select id="getMyFlightDetails"
+		parameterType="com.ngen.cosys.impbd.model.DisplayIncomigFlightConfigurationTime"
+		resultType="com.ngen.cosys.impbd.model.IncomingFlightModel">
+	
+	   select fltopr.Flight_ID flightId,fltopr.flightkey flight,fltopr.flightOrigindate flightDate from 	
+	   Resource_StaffShiftInfo staffinfo inner join Resource_StaffAllocatedFlightInfo fltinfo
+	   on staffinfo.ResourceStaffShiftInfoId=fltinfo.ResourceStaffShiftInfoId join 
+	   Flt_OperativeFlight fltopr on fltopr.flight_id=fltinfo.flightid
+       where staffinfo.StaffIdNumber=(select StaffIdNumber from Adm_UserProfile where UserLoginCode=#{loggedInUser})
+	
+	</select>
+
+	<select id="getShpInfo" parameterType="java.lang.String"
+		resultMap="printAWBBarCodeMapper">
+	<!-- 	select fgt.FlightId as flightId
+		,seg.FlightSegmentId as
+		segmentId
+		,shp.Origin as origin
+		,shp.Destination as destination
+		,shp.natureOfGoodsDescription as natureOfGoodsDescription
+		,shp.Piece
+		as
+		pieces
+		,shp.Weight as weight
+		from Imp_ArrivalManifestByFlight
+		fgt,Imp_ArrivalManifestBySegment seg,Imp_ArrivalManifestULD
+		uld,Imp_ArrivalManifestShipmentInfo shp
+		where
+		fgt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+		and seg.ImpArrivalManifestBySegmentId =
+		uld.ImpArrivalManifestBySegmentId
+		and uld.ImpArrivalManifestULDId =
+		shp.ImpArrivalManifestULDId
+		and shp.ShipmentNumber= #{awbNumber} -->
+		
+		select distinct(fgt.FlightId) as flightId,opflight.FlightKey
+		FROM Flt_OperativeFlight opflight JOIN Imp_ArrivalManifestByFlight fgt ON opflight.Flight_ID=fgt.FlightId
+		JOIN Imp_ArrivalManifestBySegment seg ON fgt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+		JOIN Imp_ArrivalManifestULD uld ON 	 seg.ImpArrivalManifestBySegmentId =uld.ImpArrivalManifestBySegmentId
+		JOIN Imp_ArrivalManifestShipmentInfo shp ON uld.ImpArrivalManifestULDId =shp.ImpArrivalManifestULDId
+		JOIN Flt_OperativeFlight_legs legs ON legs.Flight_ID=opflight.Flight_ID
+		WHERE shp.ShipmentNumber=#{awbNumber}
+		
+	</select>
+	
+	
+	<select id="getAWBBarCodePrintDetailsByFlightId" parameterType="com.ngen.cosys.impbd.model.AWBPrintRequest"
+		resultMap="printAWBBarCodeMapper">
+	<!-- 	select fgt.FlightId as flightId
+		,seg.FlightSegmentId as
+		segmentId
+		,shp.Origin as origin
+		,shp.Destination as destination
+		,shp.natureOfGoodsDescription as natureOfGoodsDescription
+		,shp.Piece
+		as
+		pieces
+		,shp.Weight as weight
+		from Imp_ArrivalManifestByFlight
+		fgt,Imp_ArrivalManifestBySegment seg,Imp_ArrivalManifestULD
+		uld,Imp_ArrivalManifestShipmentInfo shp
+		where
+		fgt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+		and seg.ImpArrivalManifestBySegmentId =
+		uld.ImpArrivalManifestBySegmentId
+		and uld.ImpArrivalManifestULDId =
+		shp.ImpArrivalManifestULDId
+		and shp.ShipmentNumber= #{awbNumber} -->
+		
+		select distinct fgt.FlightId as flightId,opflight.FlightKey,opflight.CarrierCode
+		,seg.FlightSegmentId as
+		segmentId
+		,shp.Origin as origin
+		,shp.Destination as destination
+		,shp.ShipmentNumber,shp.Svc,shp.ShipmentDate
+		FROM Flt_OperativeFlight opflight JOIN Imp_ArrivalManifestByFlight fgt ON opflight.Flight_ID=fgt.FlightId
+		JOIN Imp_ArrivalManifestBySegment seg ON fgt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+		JOIN Imp_ArrivalManifestULD uld ON 	 seg.ImpArrivalManifestBySegmentId =uld.ImpArrivalManifestBySegmentId
+		JOIN Imp_ArrivalManifestShipmentInfo shp ON uld.ImpArrivalManifestULDId =shp.ImpArrivalManifestULDId
+		JOIN Flt_OperativeFlight_legs legs ON legs.Flight_ID=opflight.Flight_ID
+		WHERE shp.ShipmentNumber=#{awbNumber} and fgt.FlightId=#{flight}
+		
+	</select>
+	
+	<resultMap id="printAWBBarCodeMapper" type="com.ngen.cosys.impbd.model.AWBPrintResponse">
+		<result property="awbNumber" column="ShipmentNumber" />
+		<result property="flight" column="flightId" />
+		<result property="flightKey" column="FlightKey" />
+		<result property="origin" column="origin" />
+		<result property="desination" column="destination" />
+		<result property="natureOfGoodsDescription" column="natureOfGoodsDescription" />
+		<result property="weight" column="weight" />
+		<result property="pieces" column="pieces" />
+		<result property="segmentId" column="segmentId" />
+		
+		<result property="svc" column="Svc" />
+		<result property="shipmentDate" column="ShipmentDate" />
+			<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="totalPieces" column="TotalPieces" />
+			<result property="shipmentDescriptionCode" column="ShipmentDescriptionCode" />
+		<result property="customsOriginCode" column="CustomsOriginCode" />
+		<result property="customsReference" column="CustomsReference" />
+		
+		<result property="carrierCode" column="CarrierCode" />
+		
+		
+		<result property="documentReceivedFlag" column="DocumentReceivedFlag" />
+		<result property="photoCopyAwbFlag" column="PhotoCopyAwbFlag" />
+		<result property="documentPouchReceivedFlag" column="DocumentPouchReceivedFlag" />
+		<result property="barcodePrintedFlag" column="BarcodePrintedFlag" />
+	</resultMap>
+	
+	<select id="getCheckShipmentVerificationDetails" parameterType="com.ngen.cosys.impbd.model.AWBPrintRequest"
+		resultMap="printAWBBarCodeMapper">
+		select shipment.DocumentReceivedFlag,shipment.PhotoCopyAwbFlag,shipment.DocumentPouchReceivedFlag,shipment.BarcodePrintedFlag 
+		,shipment.FlightId as flightId  FROM Imp_ShipmentVerification shipment
+		JOIN shipment_master sm  on shipment.ShipmentId=sm.ShipmentId where sm.ShipmentNumber=#{awbNumber} and shipment.FlightId=#{flight}
+	</select>
+	
+	<select id="getcheckShipmentReceiveOriginallyStatus" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.model.AWBPrintRequest">
+		select 
+		  DocumentReceivedOn as documentReceivedValue,
+		  PhotoCopy as photoCopyValue
+		 from shipment_master sm where sm.ShipmentNumber=#{awbNumber}
+	</select>
+	
+	<select id="getcheckShipmentIrregularityDetails" parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse"
+	resultType="java.lang.Integer">
+		select count(1) from Shipment_Irregularity where
+		ShipmentNumber=#{awbNumber} and Flight_ID=#{flight}
+	</select>
+	
+	<select id="getFlightIdByFlightKey" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.impbd.model.AWBPrintRequest">
+		WITH OPERATIVE_FLIGHT AS (
+		SELECT
+		opflight.Flight_ID,opflight.FlightKey,legs.FlightBoardPoint,legs.FlightOffPoint,FlightSegmentOrder,
+		legs.DateSTD,legs.DateSTA,CASE WHEN legs.FlightBoardPoint=#{tenantAirport} THEN
+		legs.DateSTD ELSE legs.DateSTA END AS FLIGHT_DATE
+		FROM Flt_OperativeFlight opflight
+		JOIN flt_operativeflight_legs legs ON legs.Flight_ID=opflight.Flight_ID
+		WHERE opflight.FlightKey=#{flightKeyId} AND legs.FlightOffPoint=#{tenantAirport} 
+		)
+		SELECT OPERATIVE_FLIGHT.Flight_ID FROM OPERATIVE_FLIGHT WHERE
+		CONVERT(DATE,FLIGHT_DATE)=#{flightDate}
+
+
+	</select>
+	
+	
+	<insert id="saveBarCodeShipmentMasterDeatils"
+		parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse"
+		useGeneratedKeys="true" keyProperty="shipmentId" keyColumn="ShipmentId"
+		>
+		INSERT INTO
+		Shipment_Master
+		(ShipmentType
+		,ShipmentNumber
+		,ShipmentDate
+		,SVC
+		,Origin
+		,Destination
+		,Pieces
+		,Weight
+		,WeightUnitCode
+		,NatureOfGoodsDescription
+		,CarrierCode
+		,CreatedUserCode
+		,CreatedDateTime
+		,DocumentReceivedOn,
+		ManuallyCreated)
+		VALUES
+		(#{shipmentType}
+		,#{awbNumber}
+		,getdate()
+		,#{svc}
+		,#{origin}
+		,#{desination}
+		,#{pieces}
+		,#{weight}
+		,#{weightUnitCode}
+		,#{natureOfGoodsDescription}
+		,#{carrierCode},
+		'TEST',
+		 GETDATE()
+		,GETDATE()
+		,#{manuallyCreated}
+		)
+	</insert>
+	
+	<insert id="saveBarCodeShipmentVerificationDeatils"
+		parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse">
+		INSERT INTO
+		Imp_ShipmentVerification
+		(FlightId
+		,ShipmentId
+		,BreakDownPieces
+		,BreakDownWeight
+		,PhotoCopyAwbFlag
+		,DocumentPouchReceivedFlag
+		,BarcodePrintedFlag
+		,CreatedUserCode
+		,CreatedDateTime
+		 )
+		VALUES
+		(#{flight}
+		,#{shipmentId}
+		,#{pieces}
+		,#{weight}
+		,#{photoCopyAwbFlag}
+		,#{documentPouchReceivedFlag}
+		,#{barcodePrintedFlag}
+		,'TEST',
+		GETDATE()
+		)
+	</insert>
+	
+	<update id="updateBarCodeShipmentVerificationDeatils"
+		parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse">
+		update Imp_ShipmentVerification set PhotoCopyAwbFlag=#{photoCopyAwbFlag} where ShipmentId=#{shipmentId} and FlightId=#{flight}
+	</update>
+	<update id="updateShipementMasterDataForBarcode" parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse"> 
+		update Shipment_Master SET PhotoCopy = #{photoCopyAwbFlag} where ShipmentId = #{shipmentId} 
+	</update>
+	<insert id="saveShipmentIrregularityDetails"
+		parameterType="com.ngen.cosys.impbd.model.AWBPrintResponse">
+		INSERT INTO
+		Shipment_Irregularity
+		(ShipmentNumber
+		,TransactionSequenceNo
+		,Flight_ID
+		,CargoIrregularityCode
+		,Pieces
+		,Weight
+		,IrregularityRemarks
+		,ShipmentDate
+		,CreatedUser_Code
+		,Created_DateTime
+		 )
+		VALUES
+		(#{awbNumber},
+		#{transactionSequenceNo},
+		#{flight},
+		#{cargoIrregularityCode},
+		#{pieces},
+		#{weight},
+		#{irregularityRemarks},
+		<if test="shipmentDate != null">
+			#{shipmentDate},
+		</if>
+		<if test="shipmentDate == null">
+			GETDATE(),
+		</if>
+		
+		'TEST',
+		GETDATE()
+		)
+	</insert>
+	
+	
+	
+	<insert id="createVerficationDocumnet"
+		parameterType="com.ngen.cosys.model.SegmentModel">
+		INSERT INTO
+		Imp_ShipmentVerification
+		(FlightId
+		,SegmentId
+		,ShipmentId
+		,Origin
+		,NatureOfGoodsDescription
+		,ManifestPieces
+		,ManifestWeight
+		,DocumentReceivedFlag
+		,DocumentPouchReceivedFlag
+		,CreatedUserCode
+		,CreatedDateTime
+		,Destination)
+		VALUES
+		(#{flightId}
+		,#{segmentId}
+		,(Select
+		ShipmentId from Shipment_Master where
+		ShipmentNumber = #{awbNumber})
+		,#{origin}
+		,#{natureOfGoodsDescription}
+		,#{pieces}
+		,#{weight}
+		,1
+		,1
+		,#{tenantAirport}
+		,#{createdOn}
+		,#{destination})
+	</insert>
+	<!-- Print AWB barcode queries End -->
+
+	<insert id="insertInboundTrolly"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundTrolly"
+		useGeneratedKeys="true" keyProperty="impHandOverId"
+		keyColumn="ImpHandOverId">
+		INSERT
+		INTO Imp_HandOver (
+		FlightId
+		,HandedOverAt
+		,TractorNumber
+		,HandedOverBy
+		,StartedAt
+		,CompletedAt
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		,TripId)
+		VALUES(
+		#{flightId}
+		,#{handedOverArea}
+		,#{tractorNumber}
+		,#{handedOverBy}
+		,CURRENT_TIMESTAMP
+		,CURRENT_TIMESTAMP
+		,#{createdBy}
+		,CURRENT_TIMESTAMP
+		,#{modifiedBy}
+		,CURRENT_TIMESTAMP
+		,#{tripId}
+		)
+	</insert>
+	<update id="updateInboundTrolly"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		UPDATE
+		Imp_HandOver SET FlightId =
+		#{flightId},HandedOverAt =
+		#{handedOverArea},TractorNumber =
+		#{tractorNumber},HandedOverBy =
+		#{handedOverBy},StartedAt =
+		CURRENT_TIMESTAMP,
+		CompletedAt =
+		CURRENT_TIMESTAMP,
+		CreatedDateTime =
+		CURRENT_TIMESTAMP,
+		LastUpdatedDateTime = CURRENT_TIMESTAMP,
+		TripId =
+		#{tripId}
+		WHERE
+		FlightId = #{flightId} AND ImpHandOverId =
+		#{impHandOverId}
+	</update>
+	<select id="getidInImp"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		SELECT TOP 1 ImpHandOverId
+		prelodgeDocumentId FROM
+		Imp_HandOver ORDER BY
+		ImpHandOverId DESC;
+	</select>
+	<select id="fetchInboundTrollyList"
+		resultMap="handoverInboundTrolly"
+		parameterType="com.ngen.cosys.model.FlightModel">
+		SELECT
+			T2.FlightId,
+			T2.ImpHandOverId,T2.HandedOverAt,T2.TractorNumber,T2.HandedOverBy,T2.TripId,
+			T2.StartedAt,T2.CreatedDateTime,
+			T3.ContainerTrolleyNumber,T3.UsedAsTrolley,
+			T1.FlightKey,T1.FlightOriginDate,T1.Flight_ID
+		FROM
+			Imp_HandOver T2 
+			  inner join 
+			Flt_OperativeFlight T1 on T2.FlightId = T1.Flight_ID 
+		      inner join 
+			Flt_OperativeFlight_Legs T4 on T4.Flight_Id=T1.Flight_ID 
+			  left join
+			Imp_HandOverContainerTrolleyInformation T3 on T3.ImpHandOverId =T2.ImpHandOverId
+		WHERE T1.FlightKey = #{flightNumber} AND
+			CAST( T4.DateSTA as date) = #{flightDate}
+		
+	</select>
+
+	<resultMap id="handoverInboundTrolly"
+		type="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		<id property="impHandOverId" column="ImpHandOverId" />
+		<!-- <result property="flightNumber" column="FlightId" /> -->
+		<result property="startedAt" column="StartedAt" />
+		<result property="impHandOverId" column="ImpHandOverId" />
+		<result property="handedOverArea" column="HandedOverAt" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handedOverBy" column="HandedOverBy" />
+		<result property="startedAt" column="StartedAt" />
+		<result property="completedAt" column="CompletedAt" />
+		<result property="createdOn" column="CreatedDateTime" />
+		<result property="tripId" column="TripId" />
+		<association property="flight"
+			javaType="com.ngen.cosys.model.FlightModel">
+			<id property="flightId" column="Flight_ID" />
+			<result property="flightId" column="Flight_ID" />
+			<result property="flightNumber" column="FlightKey" />
+			<result property="flightDate" column="FlightOriginDate" />
+		</association>
+		<collection property="handoverInboundContainerTrolly"
+			ofType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly"
+			resultMap="fetchContainerTrollyList">
+		</collection>
+	</resultMap>
+	<resultMap id="fetchContainerTrollyList"
+		type="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		<id property="impHandOverContainerTrolleyInformationId"
+			column="ImpHandOverContainerTrolleyInformationId" />
+		<result column="ImpHandOverId" property="impHandOverId" />
+		<result column="ContainerTrolleyNumber" property="containerTrolleyNumber" />
+		<result column="UsedAsTrolley" property="usedAsTrolley" />
+	</resultMap>
+
+
+	<select id="findInboundTrollyId"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		SELECT ContainerTrolleyNumber containerTrolleyNumber,
+		ImpHandOverId
+		impHandOverId FROM
+		Imp_HandOverContainerTrolleyInformation where ContainerTrolleyNumber =
+		#{containerTrolleyNumber} AND ImpHandOverId = #{impHandOverId}
+	</select>
+	<insert id="insertTrollyData"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly"
+		useGeneratedKeys="true"
+		keyProperty="impHandOverContainerTrolleyInformationId"
+		keyColumn="ImpHandOverContainerTrolleyInformationId">
+		INSERT INTO Imp_HandOverContainerTrolleyInformation (
+		ImpHandOverId
+		,ContainerTrolleyNumber
+		,UsedAsTrolley
+		,CapturedManual
+		,SourceOfInformation
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime)
+		VALUES(
+		#{impHandOverId}
+		,#{containerTrolleyNumber}
+		,#{usedAsTrolley}
+		,#{capturedManual}
+		,#{sourceOfInformation}
+		,#{createdBy}
+		,CURRENT_TIMESTAMP
+		,#{modifiedBy}
+		,CURRENT_TIMESTAMP
+		)
+	</insert>
+	<update id="updateTrollyData"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		UPDATE
+		Imp_HandOverContainerTrolleyInformation SET
+		ImpHandOverId =
+		#{impHandOverId},ContainerTrolleyNumber =
+		#{containerTrolleyNumber},UsedAsTrolley =
+		#{usedAsTrolley},CapturedManual = #{capturedManual},
+		SourceOfInformation = #{sourceOfInformation}
+		WHERE
+		ContainerTrolleyNumber = #{containerTrolleyNumber} AND ImpHandOverId =
+		#{impHandOverId}
+	</update>
+
+	<delete id="deleteTrollyNo"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		delete from Imp_HandOverContainerTrolleyInformation
+		where
+		ContainerTrolleyNumber = #{containerTrolleyNumber}
+	</delete>
+	<select id="fetchInboundTrollyContainer"
+		resultMap="handoverInboundTrolly"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		SELECT
+		APED.ImpHandOverId
+		,APED.FlightId
+		,APED.HandedOverAt
+		,APED.TractorNumber
+		,APED.HandedOverBy
+		,APED.StartedAt
+		,APED.CompletedAt
+		,APE.ContainerTrolleyNumber
+		,APE.UsedAsTrolley
+		FROM Imp_HandOver APED
+		INNER JOIN
+		Imp_HandOverContainerTrolleyInformation APE ON APED.ImpHandOverId =
+		APE.ImpHandOverId WHERE APED.FlightId =
+		#{flightId} AND APED.StartedAt
+		= #{startedAt} AND HandedOverBy = #{handedOverBy}
+	</select>
+	
+	<select id="fetchInboundTrollyDetails"
+		resultMap="handoverInboundTrollyList"
+		parameterType="com.ngen.cosys.model.FlightModel">
+	<![CDATA[
+		select
+			T2.FlightId FlightId,
+			T2.ImpHandOverId,
+			T2.HandedOverAt,
+			T2.TractorNumber,
+			T2.HandedOverBy,
+			T2.StartedAt,
+			T2.CompletedAt,
+			T2.TripId,
+			T3.ContainerTrolleyNumber,
+			T3.UsedAsTrolley,
+			case
+				when (select 
+							count(1) 
+						from 
+							Imp_RampCheckIn 
+						where 
+							Imp_RampCheckIn.FlightId = T2.FlightId and 
+							Imp_RampCheckIn.ULDNumber = T3.ContainerTrolleyNumber and 
+							Imp_RampCheckIn.CheckedInAt is not null
+					) > 0 then
+						1
+				else
+					0
+				end as CheckInCompleted,
+			case
+				when T2.CompletedAt is not null then
+					1
+				else
+					0
+				end as	HandOverCompleted					
+		from
+			Imp_HandOver T2 left join
+			Imp_HandOverContainerTrolleyInformation T3 
+				on T2.ImpHandOverId = T3.ImpHandOverId
+		where 
+			T2.ImpHandOverId = #{impHandOverId}
+	]]>	
+	</select>
+	
+	<resultMap id="handoverInboundTrollyList"
+		type="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		<id property="impHandOverId" column="ImpHandOverId" />
+		<result property="flightId" column="FlightId" />
+		<result property="startedAt" column="StartedAt" />
+		<result property="impHandOverId" column="ImpHandOverId" />
+		<result property="handedOverArea" column="HandedOverAt" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handedOverBy" column="HandedOverBy" />
+		<result property="startedAt" column="StartedAt" />
+		<result property="completedAt" column="CompletedAt" />
+		<result property="tripId" column="TripId" />
+		<collection property="handoverInboundContainerTrolly"
+			ofType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly"
+			column="ImpHandOverId" resultMap="fetchContainerTrollyLists">
+		</collection>
+	</resultMap>
+	
+	<resultMap id="fetchContainerTrollyLists"
+		type="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		<id property="impHandOverContainerTrolleyInformationId"
+			column="ImpHandOverContainerTrolleyInformationId" />
+		<result column="ImpHandOverId" property="impHandOverId" />
+		<result column="ContainerTrolleyNumber"
+			property="containerTrolleyNumber" />
+		<result column="UsedAsTrolley" property="usedAsTrolley" />
+		<result column="CheckInCompleted" property="checkInCompleted" />
+		<result column="HandOverCompleted" property="handOverCompleted" />
+	</resultMap>
+	
+	<select id="getFlightId"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+	<![CDATA[
+		select 
+			Flt_OperativeFlight.Flight_ID as flightId
+		from 
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+		where
+			Flt_OperativeFlight.FlightKey = #{flightNumber} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date) and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+	]]>		
+	</select>
+	
+	<select id="tripDetails"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		select TOP 1 TractorNumber
+		as tractorNumber, HandedOverBy
+		as
+		handedOverBy,
+		TripId as tripId from
+		Imp_HandOver where TractorNumber
+		=
+		#{tractorNumber} and HandedOverBy =
+		#{handedOverBy}
+		ORDER BY
+		ImpHandOverId DESC;
+	</select>
+	
+	<select id="getAnnoucementTable"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultMap="cargoPreannouncemetResultMap">
+	<![CDATA[
+	select
+                     *
+              from(  
+                     select 
+                           ImpInboundContainersId AS cargoPreAnnouncementId,
+                           IncomingFlightId AS incomingFlightId,
+                           ULDNumber AS uldNumber,
+                           SourceOfInformation AS announcementSourceType,
+                           Origin AS uldBoardPoint,
+                           containers.ContentCode AS contentCode,
+                           UldStatus AS uldStatus,
+                           Destination AS uldOffPoint,
+                           TransferType AS transferType,
+                           LoadedWith AS uldLoadedWith,
+                           PHCFlag AS phcFlag,
+                           ICSOutputLocation AS icsOutputLocation,
+                           HandlingMode AS handlingMode,
+                           ConnectingFlightId AS connectingFlightId,
+                           HandlingAreaCode AS handlingAreaCode,
+                           WarehouseDestination AS warehouseLocationCode,
+                           HandlingInstructionForRamp AS rampHandlingInstructions,
+                           HandlingInstructionForWarehouse AS warehouseHandlingInstructions,
+                           CapturedManual AS manualFlag,
+                           ManualUpdate as manualUpdateFlag,
+                           (select 
+                                         flightkey
+                                  from 
+                                         Flt_OperativeFlight opt,
+                                         Flt_OperativeFlight_Legs leg
+                                  where 
+                                         opt.Flight_ID = connectingFlightId and 
+                                         opt.Flight_ID = leg.Flight_ID and 
+                                         leg.FlightBoardPoint = #{tenantAirport} ) AS flight,
+                           (select 
+                                         DateSTD
+                                  from 
+                                         Flt_OperativeFlight_Legs leg
+                                  where 
+                                         Flight_ID = connectingFlightId and 
+                                         leg.FlightBoardPoint = #{tenantAirport}
+                           ) AS DATE,
+                           (select
+                                         Flt_OperativeFlight_Segments.FlightSegmentOrder
+                                  from
+                                         Flt_OperativeFlight_Segments
+                                  where
+                                         Flt_OperativeFlight_Segments.FlightBoardPoint = containers.Origin and
+                                         Flt_OperativeFlight_Segments.Flight_ID = containers.IncomingFlightId and
+                                         Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+                           ) as FlightSegmentOrder,
+                           isnull(Uld_ContentCodes.SortingOrder, 2) as ContentCodeSortingOrder,
+                           substring(containers.ULDNumber, 0, 4) as ULDPart1,
+                           substring(substring(containers.ULDNumber, 4, 12), 0, patindex('%[a-zA-Z]%', substring(containers.ULDNumber, 4, 12))) as ULDPart2,
+                           substring(substring(containers.ULDNumber, 4, 12), patindex('%[A-Za-z]%', substring(containers.ULDNumber, 4, 12)), 12) as ULDPart3,
+                         case  
+                                  when SourceOfInformation = 'MANUAL' then
+                                         998
+                                  when SourceOfInformation = 'AM' then
+                                         999
+                                  when SourceOfInformation = 'FFM' then
+                                         1000                                  
+                                  else
+                                         1003
+                                  end as SourceOfInformationSortingOrder  
+                     from 
+                           Imp_InboundContainers containers inner join
+                           Flt_OperativeFlight opt
+                                  on containers.IncomingFlightId = opt.Flight_ID inner join
+                           Uld_ContentCodes
+                                  on containers.ContentCode = Uld_ContentCodes.ContentCode
+                     where  
+                           IncomingFlightId = #{flightId}
+                                              and SourceOfInformation in ('FFM','AM','MANUAL')
+                                    
+				)PreannouncementInfo   
+		UNION  
+ 			  select
+                     *
+              from(   
+                     select 
+                           ImpInboundContainersId AS cargoPreAnnouncementId,
+                           IncomingFlightId AS incomingFlightId,
+                           ULDNumber AS uldNumber,
+                           SourceOfInformation AS announcementSourceType,
+                           Origin AS uldBoardPoint,
+                           containers.ContentCode AS contentCode,
+                           UldStatus AS uldStatus,
+                           Destination AS uldOffPoint,
+                           TransferType AS transferType,
+                           LoadedWith AS uldLoadedWith,
+                           PHCFlag AS phcFlag,
+                           ICSOutputLocation AS icsOutputLocation,
+                           HandlingMode AS handlingMode,
+                           ConnectingFlightId AS connectingFlightId,
+                           HandlingAreaCode AS handlingAreaCode,
+                           WarehouseDestination AS warehouseLocationCode,
+                           HandlingInstructionForRamp AS rampHandlingInstructions,
+                           HandlingInstructionForWarehouse AS warehouseHandlingInstructions,
+                           CapturedManual AS manualFlag,
+                           ManualUpdate as manualUpdateFlag,
+                           (select 
+                                         flightkey
+                                  from 
+                                         Flt_OperativeFlight opt,
+                                         Flt_OperativeFlight_Legs leg
+                                  where 
+                                         opt.Flight_ID = connectingFlightId and 
+                                         opt.Flight_ID = leg.Flight_ID and 
+                                         leg.FlightBoardPoint = #{tenantAirport} ) AS flight,
+                           (select 
+                                         DateSTD
+                                  from 
+                                         Flt_OperativeFlight_Legs leg
+                                  where 
+                                         Flight_ID = connectingFlightId and 
+                                         leg.FlightBoardPoint = #{tenantAirport}
+                           ) AS DATE,
+                           (select
+                                         Flt_OperativeFlight_Segments.FlightSegmentOrder
+                                  from
+                                         Flt_OperativeFlight_Segments
+                                  where
+                                         Flt_OperativeFlight_Segments.FlightBoardPoint = containers.Origin and
+                                         Flt_OperativeFlight_Segments.Flight_ID = containers.IncomingFlightId and
+                                         Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+                           ) as FlightSegmentOrder,
+                           isnull(Uld_ContentCodes.SortingOrder, 2) as ContentCodeSortingOrder,
+                           substring(containers.ULDNumber, 0, 4) as ULDPart1,
+                           substring(substring(containers.ULDNumber, 4, 12), 0, patindex('%[a-zA-Z]%', substring(containers.ULDNumber, 4, 12))) as ULDPart2,
+                           substring(substring(containers.ULDNumber, 4, 12), patindex('%[A-Za-z]%', substring(containers.ULDNumber, 4, 12)), 12) as ULDPart3,
+                           case 
+                                   
+                                  when SourceOfInformation = 'UCM' then
+                                         1001
+                                  when SourceOfInformation = 'CPM' then
+                                         1002
+                                  else
+                                         1003
+                                  end as SourceOfInformationSortingOrder  
+                     from 
+                           Imp_InboundContainers containers inner join
+                           Flt_OperativeFlight opt
+                                  on containers.IncomingFlightId = opt.Flight_ID inner join
+                           Uld_ContentCodes
+                                  on containers.ContentCode = Uld_ContentCodes.ContentCode
+                     where  
+                           IncomingFlightId = #{flightId}
+                                              and SourceOfInformation in ('UCM','CPM')  
+	]]>
+			<if test="screenFunction == 'MAIL'.toString()">
+			    and (containers.handlingAreaCode in ('T1','EHUB','AFT1') or  containers.ContentCode= 'M')
+			</if>
+			<if test="screenFunction == 'CARGO'.toString()">
+				and (containers.handlingAreaCode  NOT IN ('T1', 'EHUB', 'AFT1') OR containers.handlingAreaCode is null)
+			</if>
+	<![CDATA[
+		)PreannouncementInfo
+		order by
+		SourceOfInformationSortingOrder,
+			ContentCodeSortingOrder,
+                     FlightSegmentOrder,
+                     ULDPart1,
+                     ULDPart2,
+                     ULDPart3 
+	]]>
+	</select>
+
+
+	<resultMap id="cargoPreannouncemetResultMap"
+		type="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		<result column="cargoPreAnnouncementId"
+			property="cargoPreAnnouncementId" />
+		<result column="incomingFlightId" property="incomingFlightId" />
+		<result column="uldNumber" property="uldNumber" />
+		<result column="uldBoardPoint" property="uldBoardPoint" />
+		<result column="contentCode" property="contentCode" />
+		<result column="uldStatus" property="uldStatus" />
+		<result column="uldOffPoint" property="uldOffPoint" />
+		<result column="transferType" property="transferType" />
+		<result column="uldLoadedWith" property="uldLoadedWith" />
+		<result column="phcFlag" property="phcFlag" />
+		<result column="icsOutputLocation" property="icsOutputLocation" />
+		<result column="handlingMode" property="handlingMode" />
+		<result column="handlingAreaCode" property="handlingAreaCode" />
+		<result column="warehouseLocationCode" property="warehouseLocationCode" />
+		<result column="rampHandlingInstructions" property="rampHandlingInstructions" />
+		<result column="warehouseHandlingInstructions" property="warehouseHandlingInstructions" />
+		<result column="warehouseLocationCode" property="warehouseLocationCode" />
+		<result column="manualFlag" property="manualFlag" />
+		<result column="manualUpdateFlag" property="manualUpdateFlag" />
+		<result column="announcementSourceType" property="announcementSourceType" />
+		<result column="shcCode" property="shcCode" />
+		<collection property="specialHandlingCodes" javaType="list"
+			ofType="com.ngen.cosys.impbd.model.CargPreAnnouncementShcModel"
+			select="getAnnoucementSHCTable"
+			column="bhShipmentNumber=cargoPreAnnouncementId" />
+	</resultMap>
+
+	<select id="getAnnoucementSHCTable"
+		resultType="com.ngen.cosys.impbd.model.CargPreAnnouncementShcModel"
+		resultMap="cargoPreannouncemetSHCResultMap">
+	<![CDATA[
+		select 
+			specialHandlingCode
+		from(
+			select 
+				distinct
+				Imp_InboundContainersSHC.SpecialHandlingCode as specialHandlingCode,
+				Mst_SpecialHandlingCode.SpecialHandlingPriority
+			from
+				Imp_InboundContainersSHC inner join 
+				Mst_SpecialHandlingCode
+					on Imp_InboundContainersSHC.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode inner join
+				Mst_AssociateSHCByHandlingGroup 
+					on Imp_InboundContainersSHC.SpecialHandlingCode=Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join 
+				Mst_SHCHandlingGroup 
+					on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+			where
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PRN' and
+				ImpInboundContainersId = #{bhShipmentNumber}
+		)SHCInfo
+			order by SpecialHandlingPriority asc	
+	]]>
+	</select>
+
+	<resultMap id="cargoPreannouncemetSHCResultMap"
+		type="com.ngen.cosys.impbd.model.CargPreAnnouncementShcModel">
+		<result column="specialHandlingCode"
+			property="preSpecialHandlingCode" />
+	</resultMap>
+
+	<update id="updateCargoPreAnnouncement"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+
+		UPDATE
+		Imp_InboundContainers
+		SET
+		ULDNumber=#{uldNumber}
+		,ContentCode=#{contentCode}
+		,UldStatus=#{uldStatus}
+		,Destination=#{uldOffPoint}
+		,TransferType=#{transferType}
+		,LoadedWith=#{uldLoadedWith}
+		,PHCFlag=#{phcFlag}
+		,ICSOutputLocation=#{icsOutputLocation}
+		,HandlingMode=#{handlingMode}
+		,ConnectingFlightId=#{bookingFlightId}
+		,WarehouseDestination =#{warehouseLocationCode}
+		,HandlingAreaCode = #{handlingAreaCode}
+		,HandlingInstructionForRamp = #{rampHandlingInstructions}
+		,HandlingInstructionForWarehouse = #{warehouseHandlingInstructions}
+		,CapturedManual=#{manualFlag}
+		,ManualUpdate=#{manualUpdateFlag}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = GETDATE()
+		WHERE ImpInboundContainersId = #{cargoPreAnnouncementId}
+
+	</update>
+	
+	<update id="updateCargoPreAnnouncement_by_manifest"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+
+		UPDATE
+		Imp_InboundContainers
+		SET
+		ULDNumber=#{uldNumber}
+		,ContentCode=#{contentCode}
+		,UldStatus=#{uldStatus}
+		,Destination=#{uldOffPoint}
+		,CapturedManual=#{manualFlag}
+		,ManualUpdate=#{manualUpdateFlag}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = GETDATE()
+		WHERE ImpInboundContainersId = #{cargoPreAnnouncementId}
+
+	</update>
+
+
+	<update id="updateCargoPreAnnouncement_RamCheckIn"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+
+		UPDATE Imp_RampCheckIn
+		SET
+		ULDNumber=#{uldNumber}
+		,TransferType = #{transferType}
+		,ContentCode = #{contentCode}
+		,Remarks =
+		#{rampHandlingInstructions}
+		,PHCFlag = #{phcFlag}
+		,CheckedInArea=
+		#{handlingAreaCode}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = GETDATE()
+		WHERE FlightId=#{flightId} and
+		ImpRampCheckInId=#{rampCheckinId}
+	</update>
+
+
+
+	<delete id="deleteCargoPreannouncement"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		delete
+		from Imp_InboundContainersSHC where
+		ImpInboundContainersId=#{cargoPreAnnouncementId}
+		
+		delete from
+		Imp_InboundContainers where
+		ImpInboundContainersId=#{cargoPreAnnouncementId}
+	</delete>
+
+	<insert id="insertCargoPreannouncement"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		useGeneratedKeys="true" keyProperty="cargoPreAnnouncementId"
+		keyColumn="ImpInboundContainersId">
+
+		INSERT INTO Imp_InboundContainers
+		( ULDNumber
+		,IncomingFlightId
+		,Origin
+		,ContentCode
+		,UldStatus
+		,Destination
+		,TransferType
+		,LoadedWith
+		,PHCFlag
+		,ICSOutputLocation
+		,HandlingMode
+		,ConnectingFlightId
+		,HandlingAreaCode
+		,WarehouseDestination
+		,HandlingInstructionForRamp
+		,HandlingInstructionForWarehouse
+		,CapturedManual
+		,SourceOfInformation
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(#{uldNumber}
+		,#{flightId}
+		,#{uldBoardPoint}
+		,#{contentCode}
+		,#{uldStatus}
+		,#{uldOffPoint}
+		,#{transferType}
+		,#{uldLoadedWith}
+		,#{phcFlag}
+		,#{icsOutputLocation}
+		,#{handlingMode}
+		,(select opt.Flight_id
+		from Flt_OperativeFlight opt ,Flt_OperativeFlight_Legs
+		leg where
+		opt.FlightKey=RTRIM(LTRIM(#{flight})) and cast(leg.DateSTD
+		as date)=
+		cast( RTRIM(LTRIM(#{date})) as date) and
+		opt.Flight_ID=leg.Flight_ID
+		and leg.FlightBoardPoint =#{tenantAirport})
+		,#{handlingAreaCode}
+		,#{warehouseLocationCode}
+		,#{rampHandlingInstructions}
+		,#{warehouseHandlingInstructions}
+		,#{manualFlag}
+		,#{announcementSourceType}
+		,#{createdBy}
+		,GETDATE()
+		)
+	</insert>
+
+
+	<insert id="insertCargoPreannouncement_RamCheckIn"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement" keyColumn="ImpRampCheckInId" keyProperty="rampCheckinId"
+		useGeneratedKeys="true" >
+		INSERT Imp_RampCheckIn
+		(FlightId
+		,ULDNumber
+		,TransferType
+		,ContentCode
+		,Remarks
+		,PHCFlag
+		,CheckedInArea
+		,ManualFlag
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(#{flightId}
+		,#{uldNumber}
+		,#{transferType}
+		,#{contentCode}
+		,#{rampHandlingInstructions}
+		,#{phcFlag}
+		,#{handlingAreaCode}
+		,'false'
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+
+
+	<resultMap id="cargoPreannouncemetFlightResultMap"
+		type="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		<result column="flightId" property="flightId" />
+		<result column="flight" property="flight" />
+		<result column="date" property="date" />
+		<result column="sta" property="sta" />
+		<result column="eta" property="eta" />
+		<result column="ata" property="ata" />
+		<result column="status" property="status" />
+		<result column="screenFunction" property="screenFunction" />
+		<result column="BreakBulk" property="bulk" />
+		<collection property="cargoPreAnnouncementSegList"
+			javaType="list"
+			ofType="com.ngen.cosys.impbd.model.CargoPreAnnouncementSeg"
+			select="getCargoPreAnnouncementSegList"
+			column="{flightId = flightId,screenFunction = screenFunction}" />
+		<collection property="cargoPreAnnouncementList"
+			javaType="list"
+			ofType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+			select="getAnnoucementTable"
+			column="{flightId = flightId,screenFunction = screenFunction}" />
+		<collection property="cargoPreAnnouncementBulkShipmentList"
+			javaType="list"
+			ofType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBulkShipment"
+			select="getCargoPreAnnouncementBulkShipmentList"
+			column="{flightId = flightId,screenFunction = screenFunction}" />
+		<collection property="shcListForPHC"
+			javaType="list"
+			ofType="com.ngen.cosys.impbd.model.CargoSHCModel"
+			select="getSHCList"
+			column="{flightId = flightId,screenFunction = screenFunction}"
+			 />
+	</resultMap>
+	<select id="getAnnoucementFlight"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultMap="cargoPreannouncemetFlightResultMap">
+		SELECT 
+		   flt.Flight_ID flightId, 
+		   flt.FlightKey flight,
+		   leg.DateSTA date,
+		   leg.DateSTA sta , 
+		   leg.DateETA eta , 
+		   leg.DateATA ata , 
+		   case when flt.FlightCancelFlag='A' 
+		      then 'Active Flight' 
+		        WHEN flt.FlightCancelFlag='D' 
+		      THEN 'Cancelled Flight' end as status,
+		   #{screenFunction} screenFunction,
+		   fltevent.BreakBulk
+		FROM 
+		  Flt_OperativeFlight flt, Flt_OperativeFlight_Legs leg ,Imp_FlightEvents fltevent 
+		where 
+		  flt.flight_id=leg.Flight_ID and fltevent.flightId=flt.flight_id and cast(leg.DateSTA as date)=cast(#{date} as date) and
+		  flt.FlightKey=#{flight} and FlightOffPoint = #{tenantAirport}
+
+	</select>
+
+
+	<select id="isCargoPreAnnouncementRecordExist"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		select ImpInboundContainersId as cargoPreAnnouncementId
+		from Imp_InboundContainers
+		where IncomingFlightId=#{incomingFlightId}
+		and ULDNumber=#{uldNumber}
+	</select>
+	
+	<select id="getUldNumberforUpdate"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		select ULDNumber as uldNumber
+		from Imp_InboundContainers
+		where IncomingFlightId=#{incomingFlightId}
+		and ImpInboundContainersId=#{cargoPreAnnouncementId}
+	</select>
+
+	<update id="cargoPrefinalize"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		update
+		Imp_FlightEvents Set
+			InboundULDListFinalizedAt=#{finalizedAt},
+			InboundULDListFinalizedBy=#{finalizedBy},
+			LastUpdatedUserCode = #{finalizedBy},
+		    LastUpdatedDateTime = #{finalizedAt}
+		where 
+			FlightId=#{flightId}
+	</update>
+	<update id="updateManualFlagOnFinalise"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		update Imp_InboundContainers set ManualUpdate=1 where IncomingFlightId=#{flightId}
+	</update>
+	<update id="cargoPreunfinalize"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		update
+		Imp_FlightEvents Set
+			InboundULDListFinalizedAt=NULL,
+			InboundULDListFinalizedBy=NULL,
+			LastUpdatedUserCode = #{finalizedBy},
+		    LastUpdatedDateTime = #{finalizedAt}
+	    where
+			FlightId=#{flightId}
+	</update>
+
+	<update id="mailPrefinalize"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		update
+		Imp_FlightEvents Set
+		MailInboundULDListFinalizedBy=#{createdBy},
+		MailInboundULDListFinalizedAt=GETDATE() where FlightId=#{flightId}
+	</update>
+	<update id="mailPreunfinalize"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		update
+		Imp_FlightEvents Set
+		MailInboundULDListFinalizedBy=NULL,
+		MailInboundULDListFinalizedAt=NULL
+		where FlightId=#{flightId}
+	</update>
+
+	<select id="isFinalizeORunFinalize"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="java.lang.Boolean">
+		<if test="screenFunction != 'MAIL'.toString()">
+			SELECT CASE WHEN InboundULDListFinalizedBy is NOT NULL and
+			InboundULDListFinalizedAt is NOT NULL THEN 1 ELSE 0 END as
+			finalzeAndunFinalize FROM Imp_FlightEvents where FlightId=#{flightId}
+		</if>
+		<if test="screenFunction == 'MAIL'.toString()">
+			SELECT CASE WHEN MailInboundULDListFinalizedBy is NOT NULL
+			and
+			MailInboundULDListFinalizedAt is NOT NULL THEN 1 ELSE 0 END as
+			finalzeAndunFinalize FROM Imp_FlightEvents where FlightId=#{flightId}
+		</if>
+	</select>
+	
+	<select id="preAnnoucementfinlazedInfo"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO">
+		select  
+	     InboundULDListFinalizedAt finalizedAt,
+		 InboundULDListFinalizedBy finalizedBy
+	    from 
+		 Imp_FlightEvents  
+        where FlightId=#{flightId}
+	</select>
+
+	<select id="getCargoPreAnnouncementSegList"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncementSeg"
+		resultMap="cargoPreannouncemetSegMap">
+		select Flight_ID as flightId , FlightBoardPoint as
+		flightBoardPoint,
+		FlightOffPoint as flightOffPoint, FlightSegmentOrder
+		as
+		flightSegmentOrder from Flt_OperativeFlight_Legs where Flight_ID
+		=#{flightId} order by FlightSegmentOrder ASC
+	</select>
+
+	<resultMap id="cargoPreannouncemetSegMap"
+		type="com.ngen.cosys.impbd.model.CargoPreAnnouncementSeg">
+		<result column="flightId" property="flightId" />
+		<result column="flightBoardPoint" property="flightBoardPoint" />
+		<result column="flightOffPoint" property="flightOffPoint" />
+		<result column="flightSegmentOrder"
+			property="flightSegmentOrder" />
+	</resultMap>
+
+	<select id="isExistRampcheckin"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="java.math.BigInteger">
+		select Top(1) ImpRampCheckInId from
+		Imp_RampCheckIn where
+		FlightId=#{flightId} and ULDNumber=#{uldNumber}
+	</select>
+
+
+	<insert id="insertCargopreannouncementShc"
+		parameterType="com.ngen.cosys.impbd.model.CargPreAnnouncementShcModel">
+		INSERT INTO Imp_InboundContainersSHC
+		(ImpInboundContainersId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime)
+		VALUES
+		( #{id}
+		,#{preSpecialHandlingCode}
+		,#{createdBy}
+		,GETDATE()
+		,#{modifiedBy}
+		,GETDATE())
+	</insert>
+
+	<insert id="insertCargopreannouncementRampcheckinShc"
+		parameterType="com.ngen.cosys.impbd.model.CargPreAnnouncementShcModel"
+		keyColumn="ImpRampCheckInULDSHCId" keyProperty="rampShcid"
+		useGeneratedKeys="true" >
+		INSERT INTO Imp_RampCheckInULDSHC
+		(ImpRampCheckInId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime)
+		VALUES
+		( 
+		 #{id}
+		,#{preSpecialHandlingCode}
+		,#{createdBy}
+		,GETDATE()
+		,#{modifiedBy}
+		,GETDATE()
+		)
+	</insert>
+
+
+
+	<delete id="deleteCargoPreannouncementShc"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		delete
+		from Imp_InboundContainersSHC where
+		ImpInboundContainersId=#{cargoPreAnnouncementId}
+	</delete>
+
+
+	<delete id="deleteCargoPreannouncementRampShc"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		delete
+		from Imp_RampCheckInULDSHC where
+		ImpRampCheckInId=#{cargoPreAnnouncementId}
+	</delete>
+
+
+	<update id="updateDateTrolley"
+		parameterType="com.ngen.cosys.impbd.model.FlightEventsModel">
+		UPDATE
+		Imp_FlightEvents SET FirstULDTowedBy =
+		#{firstULDTowedBy},FirstULDTowedAt =
+		#{firstULDTowedAt},LastULDTowedBy
+		=
+		#{lastULDTowedBy},LastULDTowedAt = #{lastULDTowedAt}
+		WHERE FlightId =
+		#{flightId}
+	</update>
+	<select id="checkFlightTrolley"
+		parameterType="com.ngen.cosys.impbd.model.FlightEventsModel"
+		resultType="com.ngen.cosys.impbd.model.FlightEventsModel">
+		select FlightId flightId,
+		FirstULDTowedBy
+		firstULDTowedBy,FirstULDTowedAt
+		firstULDTowedAt,LastULDTowedBy
+		lastULDTowedBy,LastULDTowedAt lastULDTowedAt from
+		Imp_FlightEvents
+		WHERE FlightId = #{flightId}
+	</select>
+	<select id="fetchData"
+		parameterType="com.ngen.cosys.impbd.model.HandoverInboundTrolly"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundTrolly">
+		SELECT StartedAt startedAt, CompletedAt completedAt FROM
+		Imp_HandOver where ImpHandOverId =
+		#{impHandOverId}
+		and FlightId =
+		#{flightId}
+	</select>
+	<update id="updateData"
+		parameterType="com.ngen.cosys.impbd.model.FlightEventsModel">
+		UPDATE
+		Imp_FlightEvents SET
+		LastULDTowedBy =
+		#{lastULDTowedBy},LastULDTowedAt = #{lastULDTowedAt}
+		WHERE FlightId =
+		#{flightId}
+	</update>
+
+	<select id="getCargoPreAnnouncementBulkShipmentList"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBulkShipment"
+		resultMap="cargoPreAnnouncementBulkShipmentMap">
+		
+			SELECT 'BULK' AS shipmentType,
+				count(*) as 'totalShipments'
+				FROM Imp_ArrivalManifestShipmentInfo shp
+				INNER JOIN Imp_ArrivalManifestULD uld ON uld.ImpArrivalManifestULDId = shp.ImpArrivalManifestULDId
+				INNER JOIN Imp_ArrivalManifestBySegment seg ON seg.ImpArrivalManifestBySegmentId = uld.ImpArrivalManifestBySegmentId
+				INNER JOIN Imp_ArrivalManifestByFlight flt ON flt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+				WHERE flt.flightid = #{flightId}
+					AND uld.uldNumber IS NULL
+			
+			UNION
+			
+			SELECT 'ST BULK' AS shipmentType
+				,count(*) AS totalShipments
+			FROM Imp_ArrivalManifestByFlight
+			INNER JOIN Imp_ArrivalManifestBySegment ON Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId
+			LEFT JOIN Imp_ArrivalManifestULD ON Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId
+			LEFT JOIN Imp_ArrivalManifestShipmentInfo ON Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			WHERE Imp_ArrivalManifestByFlight.FlightId = #{flightId}
+				AND Imp_ArrivalManifestShipmentInfo.TransferType = 'ST'
+	</select>
+
+	<select id="getSHCList"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="com.ngen.cosys.impbd.model.CargoSHCModel"
+		resultMap="shcListMap">
+		select shcc.SpecialHandlingCode as shc from Mst_SHCHandlingGroup
+		       shcg JOIN Mst_AssociateSHCByHandlingGroup shcc
+		              on
+		              shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		              where
+		             
+		              shcg.SHCHandlingGroupCode='PER'
+			
+	</select>
+	<select id="getPRNSHCList"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="java.lang.String">
+        select 
+				distinct
+				Mst_SpecialHandlingCode.SpecialHandlingCode as shc
+		from
+			
+				Mst_SpecialHandlingCode
+					inner join
+				Mst_AssociateSHCByHandlingGroup 
+					on Mst_SpecialHandlingCode.SpecialHandlingCode=Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join 
+				Mst_SHCHandlingGroup 
+					on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+		where
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PRN' 
+			
+	</select>
+	
+	<select id="getPRNGroupSHCList"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncementBO"
+		resultType="java.lang.String">
+		select 
+		     shcc.SpecialHandlingCode as shc 
+		from Mst_SHCHandlingGroup
+		    shcg JOIN Mst_AssociateSHCByHandlingGroup shcc on
+		    shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		where
+		 shcg.SHCHandlingGroupCode in
+		(
+		 select 
+			 shcc.SpecialHandlingCode as shc 
+		 from Mst_SHCHandlingGroup
+		      shcg JOIN Mst_AssociateSHCByHandlingGroup shcc on
+		      shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		 where
+		      shcg.SHCHandlingGroupCode='PRN'
+		 )
+			
+	</select>
+
+	<resultMap id="cargoPreAnnouncementBulkShipmentMap"
+		type="com.ngen.cosys.impbd.model.CargoPreAnnouncementBulkShipment">
+		<result column="shipmentType" property="shipmentType" />
+		<result column="totalShipments" property="totalShipments" />
+	</resultMap>
+
+	<resultMap id="shcListMap"
+		type="com.ngen.cosys.impbd.model.CargoSHCModel">
+		<result column="shc" property="shc" />
+	</resultMap>
+
+	<insert id="insertRampCheckIn"
+		parameterType="com.ngen.cosys.impbd.model.HandoverRampCheckInModel"
+		useGeneratedKeys="true" keyProperty="impRampCheckInId"
+		keyColumn="ImpRampCheckInId">
+		INSERT INTO Imp_RampCheckIn
+		(FlightId
+		,ULDNumber
+		,ContentCode
+		,UsedAsTrolley
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES(#{flightId}
+		,#{uldNumber}
+		,#{contentCode}
+		,#{usedAsTrolley}
+		,#{createdBy}
+		,CURRENT_TIMESTAMP)
+	</insert>
+
+	<select id="findInboundRampId"
+		resultType="com.ngen.cosys.impbd.model.HandoverRampCheckInModel">
+		SELECT FlightId
+		flightId,
+		ULDNumber
+		uldNumber FROM
+		Imp_RampCheckIn where
+		FlightId =
+		#{flightId} AND ULDNumber =
+		#{uldNumber}
+	</select>
+	<update id="updateRampData"
+		parameterType="com.ngen.cosys.impbd.model.HandoverRampCheckInModel">
+		UPDATE
+		Imp_RampCheckIn
+		SET
+		FlightId =
+		#{flightId},ULDNumber
+		=
+		#{uldNumber}
+		WHERE
+		FlightId =
+		#{flightId} AND ULDNumber =
+		#{uldNumber}
+	</update>
+	<select id="findcontentcode"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		select ContentCode
+		contentCode from Imp_InboundContainers
+		WHERE ULDNumber = #{containerTrolleyNumber} and IncomingFlightId=#{flightId}
+	</select>
+	<select id="findcontentcodetype"
+		resultType="com.ngen.cosys.impbd.model.HandoverInboundContainerTrolly">
+		select ApronCargoLocation apronCargoLocation from
+		Uld_ContentCodes
+		WHERE ContentCode = #{contentCode}
+	</select>	
+	<select id="isFlightExist" parameterType="com.ngen.cosys.impbd.model.FlightDetails" resultType="java.lang.Integer">
+			SELECT opt.Flight_id
+			FROM Flt_OperativeFlight opt,
+				Flt_OperativeFlight_Legs leg
+			WHERE opt.FlightKey = RTRIM(LTRIM(#{flightKey}))
+				AND cast(leg.DateSTD AS DATE) = cast(RTRIM(LTRIM(#{flightOriginDate})) AS DATE)
+				AND opt.Flight_ID = leg.Flight_ID
+				AND leg.FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<select id="findDuplicateTrolley"
+		resultType="java.lang.String">
+		select ContainerTrolleyNumber from
+		Imp_HandOverContainerTrolleyInformation
+		inner join Imp_HandOver on
+		Imp_HandOverContainerTrolleyInformation.ImpHandOverId=Imp_HandOver.ImpHandOverId
+		inner join Flt_OperativeFlight on Flt_OperativeFlight.Flight_ID=Imp_HandOver.FlightId
+		where Flt_OperativeFlight.FlightKey= #{flightNumber} and Flt_OperativeFlight.FlightOriginDate= #{flightDate} or Imp_HandOver.FlightId=#{flightId}
+	</select>
+	
+	<update id="updateBreakBulkStatus"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		BreakBulk = #{bulk}
+		WHERE
+		FlightId = #{incomingFlightId}
+	</update>
+	
+	<insert id="captureAuditTrailDetails" parameterType="java.util.Map" useGeneratedKeys="true" >
+	INSERT INTO CosysAudit
+           (EventDateTime
+           ,Actor
+           ,EventName
+           ,EventAction
+           ,EntityType
+           ,EntityValue
+           ,EventValue
+           ,AuditPlatform
+           ,EntityRef
+           ,EntityType2
+           ,EntityRef2
+           ,EntityValue2
+           ,EntityType3
+           ,EntityRef3
+           ,EntityValue3
+           ,TransactionId)
+     VALUES
+           (#{eventDateTime},
+           #{eventActor},
+           #{eventName},
+           #{eventAction},
+           #{entityType},
+           #{entityValue},
+           #{eventValue},
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null)
+	</insert>
+	
+	<select id="sqlCheckULDCheckedInForCargoPreannounce"
+		parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case when count(1) > 0 then 1 else 0 end result
+		from
+			Imp_RampCheckIn
+		where
+			Imp_RampCheckIn.FlightId = #{flightId} and
+			Imp_RampCheckIn.ULDNumber = #{uldNumber} and
+			Imp_RampCheckIn.CheckedInAt is not null				
+	]]>
+	</select>
+	
+	<select id="sqlCheckRampCheckInCompletedForHandoverTrolley"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end as completed
+		from
+			Imp_FlightEvents
+		where
+			Imp_FlightEvents.FlightId = #{flightId} and
+			Imp_FlightEvents.RampCheckInCompletedAt is not null
+	]]>
+	</select>
+	
+	
+</mapper>

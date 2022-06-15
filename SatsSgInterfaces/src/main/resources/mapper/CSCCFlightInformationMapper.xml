@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ngen.cosys.cscc.dao.FlightInformationDao">
+    <resultMap id="BaseResultMap" type="com.ngen.cosys.cscc.modal.FlightInform">
+        <result column="flightNo" jdbcType="VARCHAR" property="flightNo" />
+        <result column="importExport" jdbcType="VARCHAR" property="importExport" />
+        <result column="STA" jdbcType="VARCHAR" property="STA" />
+        <result column="ETA" jdbcType="VARCHAR" property="ETA" />
+        <result column="ATA" jdbcType="VARCHAR" property="ATA" />
+        <result column="flightType" jdbcType="VARCHAR" property="flightType" />
+        <result column="aircraftType" jdbcType="VARCHAR" property="aircraftType" />
+        <result column="bay" jdbcType="VARCHAR" property="bay" />
+        <result column="segment" jdbcType="VARCHAR" property="segment" />
+        <result column="REG" jdbcType="VARCHAR" property="REG" />
+        <result column="STD" jdbcType="VARCHAR" property="STD" />
+        <result column="ETD" jdbcType="VARCHAR" property="ETD" />
+        <result column="ATD" jdbcType="VARCHAR" property="ATD" />
+        <result column="palletTotal" jdbcType="INTEGER" property="palletTotal" />
+        <result column="palletCargoOffer" jdbcType="INTEGER" property="palletCargoOffer" />
+        <result column="palletCargoUsed" jdbcType="INTEGER" property="palletCargoUsed" />
+        <result column="containerTotal" jdbcType="INTEGER" property="containerTotal" />
+        <result column="containerCargoOffer" jdbcType="INTEGER" property="containerCargoOffer" />
+        <result column="containerCargoUsed" jdbcType="INTEGER" property="containerCargoUsed" />
+        <result column="lastULDTowIn" jdbcType="VARCHAR" property="lastULDTowIn" />
+        <result column="BDComplete" jdbcType="VARCHAR" property="BDComplete" />
+        <result column="DocComplete" jdbcType="VARCHAR" property="docComplete" />
+        <result column="NOTOC" jdbcType="VARCHAR" property="notoc" />
+        <result column="Manifest" jdbcType="VARCHAR" property="manifest" />
+        <result column="pouchComplete" jdbcType="VARCHAR" property="pouchComplete" />
+        <result column="DLS" jdbcType="VARCHAR" property="dls" />
+        <result column="firstDLS" jdbcType="VARCHAR" property="firstDLS" />
+        <result column="releaseTimingULD" jdbcType="VARCHAR" property="releaseTimingULD" />
+        <result column="NOTOCEntries" jdbcType="INTEGER" property="NOTOCEntries" />
+        <result column="flightComplete" jdbcType="VARCHAR" property="flightComplete" />
+        <result column="FFMReceived" jdbcType="VARCHAR" property="FFMReceived" />
+        <result column="FDLSent" jdbcType="VARCHAR" property="FDL" />
+        <result column="XAF1" jdbcType="VARCHAR" property="XAF1" />
+        <result column="XAF2" jdbcType="VARCHAR" property="XAF2" />
+        <result column="XAF3" jdbcType="VARCHAR" property="XAF3" />
+    </resultMap>
+
+  <select id="getExportFlightInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody" resultMap="BaseResultMap">
+        with flightInfo as (SELECT distinct flt.Flight_ID,
+                                            flt.FlightKey,
+                                            legs.DateSTD,
+                                            legs.DateETD,
+                                            legs.DateATD,
+                                            iif(flt.FlightType = 'P', 'PAX', 'FRT')      as FlightType,
+                                            legs.AircraftType                            as InboundAircraftType,
+                                            legs.AircraftType                            as OutboundAircraftType,
+                                            'SIN-'+(select string_agg(innsegments.FlightOffPoint, '-')
+                                                               within group ( order by innsegments.FlightSegmentOrder)
+                                             from Flt_OperativeFlight_Segments innsegments
+                                             where innsegments.Flight_ID = flt.Flight_ID
+                                               and innsegments.FlightBoardPoint = 'SIN') as outboundSegmentList,
+                                            flt.OutboundAircraftRegNo,
+                                            flt.ParkingBayDepAircraft,
+                                            (SELECT max(SentOn)
+                                             FROM Exp_DG_Flight_NOTOC
+                                             WHERE FlightId = flt.Flight_ID)             as NOTOC,
+                                            isnull(ManifestCompletedAt,FirstTimeManifestCompletedAt) as ManifestCompletedAt,
+                                            expEvents.DLSCompletedAt,
+                                            expEvents.FirstTimeDLSCompletedAt,
+                                            expEvents.FlightCompletedAt,
+                                            ali.ContainerForFlightUse,
+                                            ali.ContainerForCargoUse,
+                                            ali.PalletForFlightUse,
+                                            ali.PalletForCargoUse
+                            FROM Flt_OperativeFlight flt
+                                     INNER JOIN Flt_OperativeFlight_Legs legs
+                                                ON flt.Flight_ID = legs.Flight_ID and legs.FlightBoardPoint = 'SIN'
+                                     LEFT JOIN Exp_FlightEvents expEvents
+                                               ON expEvents.FlightID = flt.Flight_Id
+                                     left join Exp_AirlineLoadingInstructions ali on ali.FlightId = flt.Flight_ID
+                            where flt.GroundHandlerCode !='DNATA'
+                                <if test="flightNo != null and flightNo !=''">
+                                   AND flt.FlightKey = #{flightNo}
+                                   AND CAST(legs.DateSTD AS DATE) =  #{flightLocalDate}
+                                </if>
+                                <if test="fromTime != null and fromTime !=''">
+                                   AND legs.DateSTD BETWEEN #{dbFromTime} AND #{dbToTime}
+                                </if>
+                             ),
+             notocEntries as (
+                 SELECT flightId, SUM(ISNULL(totalSize, 0)) NOTOCEntries
+                 FROM (SELECT Exp_DG_Flight_NOTOC.flightId as flightId, COUNT(0) AS totalSize
+                       FROM Exp_DG_Flight_NOTOC
+                                INNER JOIN Exp_NOTOC_DGDetails
+                                           ON Exp_DG_Flight_NOTOC.notocid = Exp_NOTOC_DGDetails.notocid
+                                INNER JOIN Flt_OperativeFlight
+                                           ON Exp_DG_Flight_NOTOC.FlightId = Flt_OperativeFlight.flight_Id
+                                INNER JOIN Flt_OperativeFlight_Legs
+                                           ON Flt_OperativeFlight.flight_Id =
+                                              Flt_OperativeFlight_Legs.Flight_ID and
+                                              Flt_OperativeFlight_Legs.FlightBoardPoint = 'SIN'
+                                 where Flt_OperativeFlight.GroundHandlerCode !='DNATA'
+                                      <if test="flightNo != null and flightNo !=''">
+                                          AND Flt_OperativeFlight.FlightKey = #{flightNo}
+                                          AND CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) =  #{flightLocalDate}
+                                      </if>
+                                      <if test="fromTime != null and fromTime !=''">
+                                          AND Flt_OperativeFlight_Legs.DateSTD BETWEEN #{dbFromTime} AND #{dbToTime}
+                                      </if>
+                       GROUP BY Exp_DG_Flight_NOTOC.FlightId
+                       UNION ALL
+                       SELECT Exp_DG_Flight_NOTOC.flightId as flightId, count(0) AS totalSize
+                       FROM Exp_DG_Flight_NOTOC
+                                INNER JOIN Exp_NOTOC_OtherSpecialLoad
+                                           ON Exp_DG_Flight_NOTOC.notocid =
+                                              Exp_NOTOC_OtherSpecialLoad.NotocId
+                                INNER JOIN Flt_OperativeFlight
+                                           ON Exp_DG_Flight_NOTOC.FlightId = Flt_OperativeFlight.flight_Id
+                                INNER JOIN Flt_OperativeFlight_Legs
+                                           ON Flt_OperativeFlight.flight_Id =
+                                              Flt_OperativeFlight_Legs.Flight_ID and
+                                              Flt_OperativeFlight_Legs.FlightBoardPoint = 'SIN'
+                                  where Flt_OperativeFlight.GroundHandlerCode !='DNATA'
+                                      <if test="flightNo != null and flightNo !=''">
+                                          AND Flt_OperativeFlight.FlightKey = #{flightNo}
+                                          AND CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) =  #{flightLocalDate}
+                                      </if>
+                                      <if test="fromTime != null and fromTime !=''">
+                                          AND Flt_OperativeFlight_Legs.DateSTD BETWEEN #{dbFromTime} AND #{dbToTime}
+                                      </if>
+                       GROUP BY Exp_DG_Flight_NOTOC.FlightId) notocInfo
+                 group by flightid),
+             cargoULDUsed as (
+                 SELECT Exp_DLS.FlightId,
+                        sum(iif(isNull(Uld_UldType.palletCount, 0) > 0, 1, 0))    Pallet,
+                        sum(iif(isNull(Uld_UldType.ContainerCount, 0) > 0, 1, 0)) Container
+                 FROM Exp_DLS
+                          INNER JOIN Exp_DLSULDTrolley
+                                     ON Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+                          inner join flightInfo on flightInfo.Flight_ID = Exp_DLS.FlightId
+                          INNER JOIN Uld_UldMaster
+                                     ON Exp_DLSULDTrolley.ULDTrolleyNumber = Uld_UldMaster.UldKey
+                          INNER JOIN Uld_UldType
+                                     ON Uld_UldMaster.UldType = Uld_UldType.UldType
+                 WHERE Exp_DLSULDTrolley.ULDTrolleyNumber NOT LIKE 'BULK%'
+                 group by Exp_DLS.FlightId),
+             releasePouchinfo as (
+                 select flightInfo.Flight_ID                                       as flightId,
+                        max(iif(Exp_HandOver.CompletedAt >
+                                Exp_HandOverContainerTrolleyInfo.CreatedDateTime,
+                                Exp_HandOver.CompletedAt,
+                                Exp_HandOverContainerTrolleyInfo.CreatedDateTime)) as releaseTimingULD,
+                        max(Cdh_FlightPouch.PouchFinalizedDate)                    as pouchComplete
+                 from flightInfo
+                          left join Exp_HandOver on flightInfo.Flight_ID = Exp_HandOver.FlightId
+                     and Exp_HandOver.CompletedAt is not null
+                          left join Exp_HandOverContainerTrolleyInfo
+                                    on Exp_HandOver.ExpHandOverId = Exp_HandOverContainerTrolleyInfo.ExpHandOverId
+                          left join Cdh_FlightPouch on flightInfo.Flight_ID = Cdh_FlightPouch.FlightId
+                 group by flightInfo.Flight_ID
+             )
+
+
+        select flightInfo.FlightKey                           as flightNo,
+               'E'                                            as importExport,
+               null                                           as STA,
+               null                                           as ETA,
+               null                                           as ATA,
+               flightInfo.FlightType                          as flightType,
+               flightInfo.OutboundAircraftType                as aircraftType,
+               flightInfo.ParkingBayDepAircraft               as bay,
+               flightInfo.outboundSegmentList                 as segment,
+               flightInfo.OutboundAircraftRegNo               as REG,
+               format(flightInfo.DateSTD, 'dd/MM/yyyy HH:mm') as STD,
+               format(flightInfo.DateETD, 'dd/MM/yyyy HH:mm') as ETD,
+               format(flightInfo.DateATD, 'dd/MM/yyyy HH:mm') as ATD,
+               flightInfo.PalletForFlightUse                  as palletTotal,
+               flightInfo.PalletForCargoUse                   as palletCargoOffer,
+               cargoULDUsed.Pallet                            as palletCargoUsed,
+               flightInfo.ContainerForFlightUse               as containerTotal,
+               flightInfo.ContainerForCargoUse                as containerCargoOffer,
+               cargoULDUsed.Container                         as containerCargoUsed,
+               null                                           as lastULDTowIn,
+               null                                           as BDComplete,
+               null                                           as DocComplete,
+               format(DATEADD(hh,8,flightInfo.NOTOC), 'dd/MM/yyyy HH:mm')
+                   as NOTOC,
+               format(DATEADD(hh,8,flightInfo.ManifestCompletedAt), 'dd/MM/yyyy HH:mm')
+                   as Manifest,
+               format(DATEADD(hh,8,releasePouchinfo.pouchComplete), 'dd/MM/yyyy HH:mm')
+                   as pouchComplete,
+               format(DATEADD(hh,8,flightInfo.DLSCompletedAt), 'dd/MM/yyyy HH:mm')
+                   as DLS,
+               format(DATEADD(hh,8,flightInfo.FirstTimeDLSCompletedAt), 'dd/MM/yyyy HH:mm')
+                   as firstDLS,
+               format(DATEADD(hh,8,releasePouchinfo.releaseTimingULD), 'dd/MM/yyyy HH:mm')
+                   as releaseTimingULD,
+               notocEntries.NOTOCEntries                      as NOTOCEntries,
+               format(DATEADD(hh,8,flightInfo.FlightCompletedAt), 'dd/MM/yyyy HH:mm')
+                   as flightComplete,
+               null                                           as FFMReceived,
+               null                                           as FDLSent
+        from flightInfo
+                 left join notocEntries on notocEntries.FlightID = flightInfo.Flight_ID
+                 left join cargoULDUsed on cargoULDUsed.FlightId = flightInfo.Flight_ID
+                 left join releasePouchinfo on releasePouchinfo.flightId = flightInfo.Flight_ID
+        order by flightInfo.DateSTD
+  </select>
+  <select id="getImportFlightInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody" resultMap="BaseResultMap">
+      select flt.Flight_ID                                       as flightId,
+             flt.FlightKey                                       as flightNo,
+             'I'                                                 as importExport,
+             format(legs.DateSTA, 'dd/MM/yyyy HH:mm')            as STA,
+             format(legs.DateETA, 'dd/MM/yyyy HH:mm')            as ETA,
+             format(legs.DateATA, 'dd/MM/yyyy HH:mm')            as ATA,
+             iif(flt.FlightType = 'P', 'PAX', 'FRT')             as FlightType,
+             legs.AircraftType                                   as aircraftType,
+             flt.ParkingBayArrivalAircraft                       as bay,
+             (select string_agg(innsegments.FlightBoardPoint, '-')
+             within group ( order by innsegments.FlightSegmentOrder)
+             from Flt_OperativeFlight_Segments innsegments
+             where innsegments.Flight_ID = flt.Flight_ID
+             and innsegments.FlightOffPoint = 'SIN') + '-SIN' as segment,
+             flt.InboundAircraftRegNo                            as REG,
+             null                                                as STD,
+             null                                                as ETD,
+             null                                                as ATD,
+             null                                                as palletTotal,
+             null                                                as palletCargoOffer,
+             null                                                as palletCargoUsed,
+             null                                                as containerTotal,
+             null                                                as containerCargoOffer,
+             null                                                as containerCargoUsed,
+             format(dateadd(hh, 8,
+             importEvents.LastULDTowedAt),
+             'dd/MM/yyyy HH:mm')                                  as lastULDTowIn,
+             format(dateadd(hh, 8,
+             importEvents.BreakDownCompletedAt),
+             'dd/MM/yyyy HH:mm')                                  as BDComplete,
+             format(dateadd(hh, 8,
+             importEvents.DocumentVerificationCompletedAt),
+             'dd/MM/yyyy HH:mm')                                 as DocComplete,
+             null                                                as NOTOC,
+             null                                                as Manifest,
+             null                                                as pouchComplete,
+             null                                                as DLS,
+             null                                                as firstDLS,
+             null                                                as releaseTimeULD,
+             null                                                as NOTOCEntries,
+             null                                                as flightComplete,
+             null                                                as flightComplete,
+             iif(isnull(importEvents.FlightDiscrepancyMessageVersion, 0) > 0,
+             '1', null)                                      as FDLSent,
+             (select format(dateadd(hh, 8,
+             max(ffm.MessageProcessedDate)), 'dd/MM/yyyy HH:mm')
+             from Imp_FreightFlightManifestByFlight ffm
+             where ffm.FlightId = flt.Flight_ID)                as FFMReceived,
+             null                                                as XAF1,
+             null                                                as XAF2,
+             null                                                as XAF3
+        from Flt_OperativeFlight flt
+                 inner join Flt_OperativeFlight_Legs legs
+                            ON flt.Flight_ID = legs.Flight_ID and legs.FlightOffPoint = 'SIN'
+                 inner join Imp_FlightEvents importEvents on flt.Flight_ID = importEvents.FlightId
+         where flt.GroundHandlerCode !='DNATA'
+          <if test="flightNo != null and flightNo !=''">
+              AND flt.FlightKey = #{flightNo}
+              AND CAST(legs.DateSTA AS DATE) = #{flightLocalDate}
+          </if>
+          <if test="fromTime != null and fromTime !=''">
+              AND legs.DateSTA BETWEEN #{dbFromTime} AND #{dbToTime}
+          </if>
+        order by legs.DateSTA
+  </select>
+</mapper>

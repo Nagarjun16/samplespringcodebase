@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ContainerMovementMapper">
+
+	<update id="containerMovementStatusId" 
+		parameterType="com.ngen.cosys.ics.model.ContainerMovementModel">
+			UPDATE Shipment_Inventory
+			SET WarehouseLocation = #{pchsDestination},
+				LastUpdatedUser_Code = #{staffLoginId}
+			WHERE ShipmentLocation = #{containerId}
+	</update>
+	
+	<update id="containerMovementStatusIdForUldMaster" 
+		parameterType="com.ngen.cosys.ics.model.ContainerMovementModel">
+			UPDATE Uld_UldMaster
+			SET uldlocationcode = #{pchsDestination},
+			LastUpdatedUser_Code = #{staffLoginId}
+			WHERE uldkey = #{containerId}
+	</update>
+
+</mapper>

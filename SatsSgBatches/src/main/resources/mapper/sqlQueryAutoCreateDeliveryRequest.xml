@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoCreateDeliveryRequestBatchJobMapper">
+	
+	<select id="sqlQueryAutoCreateDeliveryRequest"
+		parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.events.payload.CreateDeliveryRequestStoreEvent">
+		<![CDATA[
+			select 
+				Agt_EDeliveryRequest.AgtEDeliveryRequestId eDeliveryRequestId,
+				Agt_EDeliveryRequest.ShipmentId shipmentId,
+				Agt_EDeliveryRequest.CustomerId requestedAgent,
+				Agt_EDeliveryRequest.CollectionHandlingArea handlingArea
+			from
+				Agt_EDeliveryRequest
+			where
+				(datediff(mi, convert(datetime, CONVERT(datetimeoffset, getDate())AT TIME
+                       ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone')),Agt_EDeliveryRequest.CollectionDate) between
+					(cast((select ParameterValueNum from App_SystemParameters where 
+					ParameterCode = 'AUTO_CREATE_DELIVERY_REQUEST_BEFORE_TIME') as int))
+					And (cast((select ParameterValueNum from App_SystemParameters 
+					where ParameterCode = 'AUTO_CREATE_DELIVERY_REQUEST_AFTER_TIME') as int))
+					) and
+				Agt_EDeliveryRequest.Status = 'PENDING'
+		]]>
+	</select>	
+	<select id="getPrinterNameForPickOrder"
+		parameterType="com.ngen.cosys.events.payload.CreateDeliveryRequestStoreEvent"
+		resultType="java.lang.String">
+		select
+		       top(1)Whs_LocationDeviceMapping.DeviceName
+		from
+		       Whs_Location inner join
+		       Whs_Sector
+		              on Whs_Location.WhsSectorId = Whs_Sector.WhsSectorId inner join
+		       Whs_Terminal
+		              on Whs_Sector.WhsTerminalId = Whs_Terminal.WhsTerminalId inner join
+		       Whs_LocationDeviceMapping
+		              on Whs_Location.WhsLocationId = Whs_LocationDeviceMapping.WhsLocationId
+		where
+		       Whs_LocationDeviceMapping.PrinterType = 'PO' and			     
+		       Whs_Terminal.TerminalCode = #{handlingArea} and
+		       Whs_Location.LocationCode = 'SSKPRINTER'       		
+	</select>
+	
+</mapper>

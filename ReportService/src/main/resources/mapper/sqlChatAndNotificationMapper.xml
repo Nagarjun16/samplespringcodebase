@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ChatAndNotificationMapper">
+	
+	<insert id="insertSystemNotificationDetails" 
+			parameterType="com.ngen.cosys.message.model.UserSystemNotification" 
+			useGeneratedKeys="true" 
+			keyProperty="userSystemNotificationId" keyColumn="User_SystemNotificationId">
+		INSERT INTO UserMsg_UserSystemNotificationMessage
+		(
+			ToUserId, ToGroupId, Message, 
+			Read, ReadDate, Important, 
+			Message_Exprity, Deadline, 
+			CreatedUserCode, CreatedDateTime
+		)
+		VALUES
+		(
+			#{toUserId}, #{userGroupId}, #{message}, 
+			#{read}, GETDATE(), #{important}, 
+			#{messageExprity}, #{deadline},
+			#{createdBy}, GETDATE()
+		)
+	</insert>
+	
+	
+	<resultMap id="userSystemNotificationMapper" type="com.ngen.cosys.message.model.UserSystemNotification">
+		<result property="awbNumber" column="User_SystemNotificationId" />
+		<result property="flight" column="ToUserId" />
+		<result property="flightKey" column="ToGroupId" />
+		<result property="origin" column="Message" />
+		<result property="desination" column="ReadStatus" />
+		<result property="natureOfGoodsDescription" column="ReadDate" />
+		<result property="weight" column="Important" />
+		<result property="pieces" column="Message_Exprity" />
+		<result property="segmentId" column="Deadline" />
+		
+		<result property="svc" column="Group_Name" />
+		<result property="shipmentDate" column="ShipmentDate" />
+			<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="totalPieces" column="TotalPieces" />
+			<result property="shipmentDescriptionCode" column="ShipmentDescriptionCode" />
+		<result property="customsOriginCode" column="CustomsOriginCode" />
+		<result property="customsReference" column="CustomsReference" />
+		
+		<result property="carrierCode" column="CarrierCode" />
+		
+		
+		<result property="documentReceivedFlag" column="DocumentReceivedFlag" />
+		<result property="photoCopyAwbFlag" column="PhotoCopyAwbFlag" />
+		<result property="documentPouchReceivedFlag" column="DocumentPouchReceivedFlag" />
+		<result property="barcodePrintedFlag" column="BarcodePrintedFlag" />
+	</resultMap>
+	
+	<select id="updateReportLog" parameterType="java.lang.String" resultMap="userSystemNotificationMapper">
+	
+	select sysmessage.User_SystemNotificationId,sysmessage.ToUserId,sysmessage.ToGroupId,sysmessage.Message,sysmessage.Read,sysmessage.ReadDate,sysmessage.Important,
+	sysmessage.Message_Exprity,sysmessage.Deadline,group.Group_Name FROM UserMsg_UserSystemNotificationMessage sysmessage
+	JOIN Adm_UserProfile profile ON sysmessage.ToUserId=profile.UserProfile_ID
+	LEFT JOIN UserMsg_UserChatGroup group ON group.Group_id =sysmessage.ToUserId
+	WHERE profile.UserProfile_ID=#{userId}
+	</select>
+	
+    
+	<select id="getAllUsers" parameterType="java.lang.String" resultType="com.ngen.cosys.message.model.UserDetails" >
+	    select Top(50) userProfile.UserShortName as userShortName, userProfile.UserLoginCode as userLoginCode from Adm_UserProfile userProfile
+	    <where>
+	         <if test="userShortName != null and userShortName !=''">
+				 userProfile.userShortName like #{userShortName} + '%'
+			</if>
+	      </where>
+	</select>
+	
+	<select id="getAllGroups" parameterType="java.lang.String" resultType="com.ngen.cosys.message.model.UserGroup" >
+	     select  ApplicationRoleCode as groupID, ApplicationRoleDescription as groupName from Adm_ApplicationRole
+	</select>
+	
+	<select id="getUserChatSummary" parameterType="com.ngen.cosys.message.model.Message" resultType="com.ngen.cosys.message.model.ChatSummaryMessage" >
+	   select (select Top(1)  UserLoginCode from Adm_UserProfile where UserProfile_ID=Msg.FromUserId ) as 'from',(select   UserLoginCode from Adm_UserProfile where UserProfile_ID=  Msg.ToUserId ) as 'to',Msg.Message as message,Msg.Created_DateTime as 'time',usermsg.numberOfMessages as 'unreadMessageCount','user' as messageType,adm.UserLoginCode as 'userLoginCode'
+        ,adm.UserPhotograph as userProfilePicture,adm.UserShortName as userShortName,null as flightId , null as flightSegmentOrder  from UserMsg_UserChatMessage Msg
+        inner join (select FromUserId, max (Created_DateTime) Created_DateTime, SUM(Case when ReadStatus=1 then 0 else 1 end) as numberOfMessages
+        from UserMsg_UserChatMessage
+        group by FromUserId,ToUserId) usermsg on Msg.FromUserId = usermsg.FromUserId and Msg.Created_DateTime = usermsg.Created_DateTime
+        inner join Adm_UserProfile adm on adm.UserProfile_ID=Msg.FromUserId
+        where Msg.ToUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to})
+
+        union all
+        select (select  Top(1)  UserLoginCode from Adm_UserProfile where UserProfile_ID=Msg.FromUserId ) as 'from',Convert(varchar,(select Top(1) Group_Id  from UserMsg_UserAssociateWithUserChatGroup where Group_Id=Msg.ToGroupId )) as 'to',Msg.Message as message,Msg.Created_DateTime as 'time',usermsg.numberOfMessages as 'unreadMessageCount','group' as messageType,Convert(varchar,(select top(1) Group_Id  from UserMsg_UserAssociateWithUserChatGroup where Group_Id=Msg.ToGroupId )) as 'userLoginCode'
+        ,null as userProfilePicture,usergroup.Group_Name as userShortName ,null as flightId , null as flightSegmentOrder from [UserMsg_UserGroupChatMessage] Msg
+        inner join (select  max (Created_DateTime) Created_DateTime, SUM(Case when 1=1 then 0 else 1 end) as numberOfMessages
+        from [UserMsg_UserGroupChatMessage]
+        group by ToGroupId) usermsg on  Msg.Created_DateTime = usermsg.Created_DateTime 
+        inner join [dbo].[UserMsg_UserChatGroup] usergroup on usergroup.Group_Id=Msg.ToGroupId
+		where Msg.ToGroupId in (select  Group_Id from UserMsg_UserAssociateWithUserChatGroup usersOfGroup where usersOfGroup.User_Id=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}))
+
+		<!-- union all
+		select (select  Top(1)  UserLoginCode from Adm_UserProfile where UserProfile_ID=Msg.FromUserId ) as 'from',Convert(varchar,Msg.Flight_ID) as 'to',
+		Msg.Message as message,Msg.Created_DateTime as 'time',null as 'unreadMessageCount','flight' as messageType,Convert(varchar,Msg.Flight_ID) as 'userLoginCode'
+        ,null as userProfilePicture,
+		Concat(fltOp.flightkey, '@', CONVERT(VARCHAR(5), ( CASE
+		WHEN fltOpL.flightboardpoint = 'SIN' THEN
+		fltOpL.datestd
+		WHEN fltOpL.flightoffpoint = 'SIN' THEN
+		fltOpL.datesta
+		END ), 103))as userShortName ,Msg.Flight_ID as flightId,Msg.FlightSegmentOrder as flightSegmentOrder from [UserMsg_UserGroupChatMessage] Msg
+        inner join (select  max (Created_DateTime) Created_DateTime, SUM(Case when 1=1 then 0 else 1 end) as numberOfMessages
+        from [UserMsg_UserGroupChatMessage]
+        group by Flight_ID) usermsg on  Msg.Created_DateTime = usermsg.Created_DateTime
+		inner join Flt_OperativeFlight fltOp on fltOp.Flight_ID=Msg.Flight_ID
+		INNER JOIN flt_operativeflight_legs fltOpL
+		ON fltOp.flight_id = fltOpL.flight_id and fltOpL.FlightSegmentOrder=Msg.FlightSegmentOrder
+		where Msg.Flight_ID in (select rsf.FlightId from Resource_StaffAllocatedFlightInfo rsf
+        inner join Resource_StaffShiftInfo rss
+        on rsf.ResourceStaffShiftInfoId=rss.ResourceStaffShiftInfoId
+        inner join Adm_UserProfile adm on adm.UserProfile_ID=rss.StaffIdNumber
+        where rss.StaffIdNumber =(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to})) -->
+        order by adm.UserShortName
+	</select>
+	
+	<select id="getChatSummaryByFromAndTo" parameterType="com.ngen.cosys.message.model.Message" resultType="com.ngen.cosys.message.model.ChatMessage" >
+	     select (select UserLoginCode from Adm_UserProfile where UserProfile_ID=  UsrMsg.FromUserId ) as 'from',
+	      (select  UserLoginCode from Adm_UserProfile where UserProfile_ID=  UsrMsg.ToUserId ) as 'to',UsrMsg.Message,
+	      UsrMsg.ReadStatus as readStatus,UsrMsg.Created_DateTime as 'time',adm.UserLoginCode as 'userLoginCode',adm.UserPhotograph as userProfilePicture,adm.UserShortName as userShortName
+         from UserMsg_UserChatMessage UsrMsg  
+		  inner join dbo.Adm_UserProfile adm on adm.UserProfile_ID=UsrMsg.FromUserId
+         where UsrMsg.FromUserId=(select UserProfile_ID 
+		 from Adm_UserProfile where UserLoginCode=#{from})  and UsrMsg.ToUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}) 
+		 or UsrMsg.FromUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}) and UsrMsg.ToUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from})
+		order by (UsrMsg.Created_DateTime)  
+	</select>
+	
+	<update id="updateUnReadMessages" parameterType="com.ngen.cosys.message.model.Message">
+	 update UserMsg_UserChatMessage set
+     ReadStatus=1 where ReadStatus=0 and (FromUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}) and ToUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}) or FromUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}) and ToUserId=(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}))
+	</update>
+	
+	<insert id="saveChatUserMessages" parameterType="com.ngen.cosys.message.model.Message">
+	insert into UserMsg_UserChatMessage(FromUserId,ToUserId,Message,ReadStatus,ReadDate,CreatedUser_Code,Created_DateTime)
+    values((select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}),(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{to}),#{message},0,GetDATE(),(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}),#{time});
+	</insert>
+	
+	<insert id="saveGroupMessages" parameterType="com.ngen.cosys.message.model.Message">
+	insert into UserMsg_UserGroupChatMessage(FromUserId,ToGroupId,Message,Created_DateTime,CreatedUser_Code)
+    values((select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}),(select Top(1) Group_Id  from UserMsg_UserAssociateWithUserChatGroup where Group_Id=#{to}),#{message},#{time},(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}));
+	</insert>
+	
+	<select id="getGroupChatByFromAndTo" parameterType="com.ngen.cosys.message.model.Message" resultType="com.ngen.cosys.message.model.ChatMessage" >
+	     select Top(40)  (select UserShortName from Adm_UserProfile where UserProfile_ID = userGroupChatMessage.FromUserId) as 'from' ,userGroupChatMessage.ToGroupId as 'to',userGroupChatMessage.Message,userGroupChatMessage.Created_DateTime as 'time',
+	    (select  Group_Name from UserMsg_UserChatGroup where Group_Id= #{to} ) as 'userLoginCode',null as userProfilePicture,null as userShortName
+         from  [dbo].UserMsg_UserGroupChatMessage userGroupChatMessage 
+         where userGroupChatMessage.ToGroupId = #{to}
+         order by (userGroupChatMessage.Created_DateTime)   
+	</select>
+	
+	<select id="getFlightGroupChatByFromAndTo" parameterType="com.ngen.cosys.message.model.Message" resultType="com.ngen.cosys.message.model.ChatMessage" >
+	    select Top(30)  (select UserShortName from Adm_UserProfile where UserProfile_ID = userGroupChatMessage.FromUserId) as 'from' ,userGroupChatMessage.Flight_ID as 'to',userGroupChatMessage.Message,userGroupChatMessage.Created_DateTime as 'time',
+	    Concat(fltOp.flightkey, '@', CONVERT(VARCHAR(5), ( CASE
+		WHEN fltOpL.flightboardpoint = #{tenantAirport} THEN
+		fltOpL.datestd
+		WHEN fltOpL.flightoffpoint = #{tenantAirport} THEN
+		fltOpL.datesta
+		END ), 103)) as 'userLoginCode',null as userProfilePicture,null as userShortName
+         from  [dbo].UserMsg_UserGroupChatMessage userGroupChatMessage 
+		 inner join Flt_OperativeFlight fltOp on fltOp.Flight_ID=userGroupChatMessage.Flight_ID
+		 INNER JOIN flt_operativeflight_legs fltOpL
+		 ON fltOp.flight_id = fltOpL.flight_id and fltOpL.FlightSegmentOrder=userGroupChatMessage.FlightSegmentOrder
+         where userGroupChatMessage.Flight_ID = #{to}
+         order by (userGroupChatMessage.Created_DateTime) 
+	
+	</select>
+	
+	
+	<insert id="saveGroupFlightMessages" parameterType="com.ngen.cosys.message.model.Message">
+	insert into UserMsg_UserGroupChatMessage(FromUserId,Message,Created_DateTime,CreatedUser_Code,Flight_ID,FlightSegmentOrder)
+    values((select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}),#{message},#{time},(select UserProfile_ID from Adm_UserProfile where UserLoginCode=#{from}),#{flightId},#{flightSegmentOrder});
+	</insert>
+	
+	
+	
+</mapper>

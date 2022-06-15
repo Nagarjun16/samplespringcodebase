@@ -1,0 +1,953 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentMasterMapper">
+
+	<!--Shipment Master Query START -->
+	<select id="sqlCheckForPartShipment"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Imp_ArrivalManifestShipmentInfo
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			ShipmentDescriptionCode in ('P','D')
+	</select>
+	
+	<select id="sqlCheckForSVCShipment"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Exp_ShipmentBooking
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			ServiceFlag = 1
+	</select>
+	
+	
+	<select id="sqlGetShipmentMaster"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		select
+			ShipmentId,
+			ManuallyCreated,
+			HandledByMasterHouse as handledByMasterHouse
+		from 
+			Shipment_Master
+		where 
+			ShipmentType = #{shipmentType} and
+			ShipmentNumber = #{shipmentNumber} and 
+			CAST(ShipmentDate AS DATE) = CAST(#{shipmentdate} AS DATE)
+	</select>
+	
+	<select id="sqlGetShipmentMasterInfoWithOutType"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		select
+			ShipmentId,
+			ManuallyCreated,
+			HandledByMasterHouse as handledByMasterHouse
+		from 
+			Shipment_Master
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			CAST(ShipmentDate AS DATE) = CAST(#{shipmentdate} AS DATE)
+	</select>
+	
+	<select id="sqlGetCOUShipment"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		select
+			ShipmentId,
+			ManuallyCreated,
+			HandledByMasterHouse as handledByMasterHouse
+		from 
+			Shipment_Master
+		where 
+			ShipmentType = 'CBV' and
+			ShipmentNumber = #{shipmentNumber} and 
+			CAST(ShipmentDate AS DATE) = CAST(#{shipmentdate} AS DATE)
+	</select>
+
+	<insert id="sqlInsertShipmentMaster"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		keyColumn="ShipmentId" keyProperty="shipmentId" useGeneratedKeys="true">
+		insert into Shipment_Master
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentType != null">
+				ShipmentType,
+			</if>
+			<if test="shipmentNumber != null">
+				ShipmentNumber,
+			</if>
+			<if test="shipmentdate != null">
+				ShipmentDate,
+			</if>			
+			<if test="svc != null">
+				SVC,
+			</if>
+			<if test="partShipment != null">
+				PartShipment,
+			</if>
+			<if test="origin != null">
+				Origin,
+			</if>
+			<if test="destination != null">
+				Destination,
+			</if>
+			<if test="piece != null">
+				Pieces,
+			</if>
+			<if test="weight != null">
+				Weight,
+			</if>
+			<if test="weightUnitCode != null">
+				WeightUnitCode,
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				NatureOfGoodsDescription,
+			</if>
+			<if test="documentReceivedOn != null">
+				DocumentReceivedOn,
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				DocumentPouchReceivedOn,
+			</if>
+			<if test="photoCopyReceivedOn != null">
+				PhotoCopy,
+			</if>			
+			<if test="manuallyCreated != null">
+				ManuallyCreated,
+			</if>
+			<if test="carrierCode != null">
+				CarrierCode,
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange,
+			</if>
+			<if test="mailCategory != null">
+				MailCategory,
+			</if>
+			<if test="mailSubCategory != null">
+				MailSubCategory,
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear,
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator,
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange,
+			</if>
+			<if test="handledByDOMINT != null">
+				HandledByDOMINT,
+			</if>
+			<if test="handledByMasterHouse != null">
+				HandledByMasterHouse,
+			</if>	
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>			
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentType != null">
+				#{shipmentType},
+			</if>
+			<if test="shipmentNumber != null">
+				#{shipmentNumber},
+			</if>
+			<if test="shipmentdate != null">
+				#{shipmentdate},
+			</if>
+			
+			<if test="svc != null">
+				#{svc},
+			</if>
+			<if test="partShipment != null">
+				#{partShipment},
+			</if>
+			<if test="origin != null">
+				#{origin},
+			</if>
+			<if test="destination != null">
+				#{destination},
+			</if>
+			<if test="piece != null">
+				#{piece},
+			</if>
+			<if test="weight != null">
+				#{weight},
+			</if>
+			<if test="weightUnitCode != null">
+				#{weightUnitCode},
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				#{natureOfGoodsDescription},
+			</if>
+			<if test="documentReceivedOn != null">
+				#{documentReceivedOn},
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				#{documentPouchReceivedOn},
+			</if>
+			<if test="photoCopyReceivedOn != null">
+				#{photoCopyReceivedOn},
+			</if>		
+			<if test="manuallyCreated != null">
+				#{manuallyCreated},
+			</if>
+			<if test="carrierCode != null">
+				#{carrierCode},
+			</if>
+			<if test="originOfficeExchange != null">
+				#{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				#{mailCategory},
+			</if>
+			<if test="mailSubCategory != null">
+				#{mailSubCategory},
+			</if>
+			<if test="dispatchYear != null">
+				#{dispatchYear},
+			</if>
+			<if test="registered != null">
+				#{registered },
+			</if>
+			<if test="destinationOfficeExchange != null">
+				#{destinationOfficeExchange},
+			</if>
+			<if test="handledByDOMINT != null">
+				#{handledByDOMINT},
+			</if>
+			<if test="handledByMasterHouse != null">
+				#{handledByMasterHouse},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>			
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMaster"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		update Shipment_Master
+		<set>			
+			<if test="svc != null">
+				SVC = #{svc},
+			</if>
+			<if test="partShipment != null">
+				PartShipment = #{partShipment},
+			</if>
+			<if test="origin != null">
+				Origin = #{origin},
+			</if>
+			<if test="destination != null">
+				Destination = #{destination},
+			</if>
+			<if test="piece != null">
+				Pieces = #{piece},
+			</if>
+			<if test="weight != null">
+				Weight = #{weight},
+			</if>
+			<if test="weightUnitCode != null">
+				WeightUnitCode = #{weightUnitCode},
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				NatureOfGoodsDescription = #{natureOfGoodsDescription},
+			</if>
+			<if test="documentReceivedOn != null">
+				DocumentReceivedOn =  isnull(DocumentReceivedOn, #{documentReceivedOn}),
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				DocumentPouchReceivedOn = #{documentPouchReceivedOn},
+			</if>		
+			<if test="photoCopyReceivedOn != null">
+				PhotoCopy = isnull(PhotoCopy, #{photoCopyReceivedOn}),
+			</if>		
+			<if test="carrierCode != null">
+				CarrierCode = #{carrierCode},
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange = #{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				MailCategory = #{mailCategory},
+			</if>
+			<if test="mailSubCategory != null">
+				MailSubCategory = #{mailSubCategory},
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear = #{dispatchYear},
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator = #{registered},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange = #{destinationOfficeExchange},
+			</if>
+			<if test="handledByDOMINT != null">
+				HandledByDOMINT = #{handledByDOMINT},
+			</if>
+			<if test="handledByMasterHouse != null and handledByMasterHouse != ''">
+				HandledByMasterHouse = #{handledByMasterHouse}
+			</if>
+		</set>
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	</update>
+	<!--Shipment Master Query END -->
+
+	<!--Shipment Master Routing Info Query START -->
+	<select id="sqlGetShipmentMasterRoutingInfo" 
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMasterRoutingInfo"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterRoutingId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterRoutingInfo
+		where
+			ShipmentId = #{shipmentId} and
+			FromPoint = #{fromPoint}
+	</select>
+	
+	<update 
+		id="sqlUpdateShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMasterRoutingInfo">
+		update Shipment_MasterRoutingInfo			
+		set
+			Carrier = upper(#{carrier}),
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentId = #{shipmentId} and
+			FromPoint = upper(#{fromPoint})			
+	</update>
+	
+	<insert id="sqlInsertShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMasterRoutingInfo"
+		keyColumn="ShipmentMasterRoutingId" keyProperty="shipmentMasterRoutingId" useGeneratedKeys="true">
+		insert into Shipment_MasterRoutingInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="fromPoint != null">
+				FromPoint,
+			</if>
+			<if test="carrier != null">
+				Carrier,
+			</if>
+			<if test="shipmentMasterRoutingId != null">
+				ShipmentMasterRoutingId,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="fromPoint != null">
+				upper(#{fromPoint}),
+			</if>
+			<if test="carrier != null">
+				upper(#{carrier}),
+			</if>
+			<if test="shipmentMasterRoutingId != null">
+				#{shipmentMasterRoutingId}
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!--Shipment Master Routing Info Query END -->
+	
+	<!--Shipment Master SHC Query START -->
+	<select id="sqlGetShipmentMasterShc"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMasterShc" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterSHCId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterSHC
+		where 
+			ShipmentId = #{shipmentId} and 
+			SpecialHandlingCode = #{specialHandlingCode}
+	</select>
+	
+	<insert id="sqlInsertShipmentMasterShc"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMasterShc"
+		keyColumn="ShipmentMasterSHCId" keyProperty="shipmentMasterSHCId" useGeneratedKeys="true">
+		insert into Shipment_MasterSHC
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="specialHandlingCode != null">
+				SpecialHandlingCode,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="specialHandlingCode != null">
+				#{specialHandlingCode},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!--Shipment Master SHC Query END -->
+		
+	<!-- Shipment Master House Info Starts -->	
+	<select id="sqlGetShipmentMasterHouseInformation" 
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel"
+		resultType="java.math.BigInteger">
+		select
+			ShipmentHouseId
+		from 
+			Shipment_HouseInformation
+		where 
+			ShipmentId = #{shipmentId} and 
+			Number = #{number} and 
+			ShipmentType = #{type}
+	</select>
+	<insert id="sqlInsertShipmentMasterHouseInformation"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel"
+		keyColumn="ShipmentHouseId" keyProperty="shipmentHouseId" useGeneratedKeys="true">
+		insert into Shipment_HouseInformation
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="type != null">
+				ShipmentType,
+			</if>
+			<if test="number != null">
+				Number,
+			</if>
+			<if test="pieces != null">
+				Pieces,
+			</if>
+			<if test="weight != null">
+				Weight,
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange,
+			</if>
+			<if test="mailCategory != null">
+				MailCategory,
+			</if>
+			<if test="mailSubType != null">
+				MailSubCategory,
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear,
+			</if>
+			<if test="dispatchNumber != null">
+				DispatchNumber,
+			</if>
+			<if test="receptacleNumber != null">
+				ReceptacleNumber,
+			</if>
+			<if test="lastBag != null">
+				LastBagIndicator,
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator,
+			</if>
+			<if test="nextDestination != null">
+				NextDestination,
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange,
+			</if>			
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime,
+			</if>
+			<if test="shipmentMailType != null">
+			    MailType
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="type != null">
+				#{type},
+			</if>
+			<if test="number != null">
+				#{number},
+			</if>
+			<if test="pieces != null">
+				#{pieces},
+			</if>
+			<if test="weight != null">
+				#{weight},
+			</if>
+			<if test="originOfficeExchange != null">
+				#{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				#{mailCategory},
+			</if>
+			<if test="mailSubType != null">
+				#{mailSubType},
+			</if>
+			<if test="dispatchYear != null">
+				#{dispatchYear},
+			</if>
+			<if test="dispatchNumber != null">
+				#{dispatchNumber},
+			</if>
+			<if test="receptacleNumber != null">
+				#{receptacleNumber},
+			</if>
+			<if test="lastBag != null">
+				#{lastBag},
+			</if>
+			<if test="registered != null">
+				#{registered},
+			</if>
+			<if test="nextDestination != null">
+				#{nextDestination},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				#{destinationOfficeExchange},
+			</if>			
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn},
+			</if>
+			<if test="shipmentMailType != null">
+				#{shipmentMailType}
+			</if>
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMasterHouseInformation" 
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel">
+		update
+			Shipment_HouseInformation
+		<set>
+			<if test="pieces != null">
+				Pieces = #{pieces},
+			</if>
+			<if test="weight != null">
+				Weight = #{weight},
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange = #{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				MailCategory = #{mailCategory},
+			</if>
+			<if test="mailSubType != null">
+				MailSubCategory = #{mailSubType},
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear = #{dispatchYear},
+			</if>
+			<if test="dispatchNumber != null">
+				DispatchNumber = #{dispatchNumber},
+			</if>
+			<if test="receptacleNumber != null">
+				ReceptacleNumber = #{receptacleNumber},
+			</if>
+			<if test="lastBag != null">
+				LastBagIndicator = #{lastBag},
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator = #{registered},
+			</if>
+			<if test="nextDestination != null">
+				NextDestination = #{nextDestination},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange = #{destinationOfficeExchange},
+			</if>			
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentId = #{shipmentId} and 
+			Number = #{number} and 
+			ShipmentType = #{type}
+	</update>
+	
+	<update id="sqlUpdateDocumentreceivedon"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		update Shipment_Master
+		<set>			
+			<if test="documentReceivedFlag == true">
+				DocumentReceivedOn = #{documentReceivedDateTime},
+			</if>
+			<if test="photoCopyAwbFlag == true">
+				PhotoCopy = #{photoCopyReceivedOn},
+			</if>
+			<if test="documentPouchReceivedFlag == true">
+				DocumentPouchReceivedOn = GETDATE(),
+			</if>
+			<if test="documentPouchReceivedFlag == false">
+				DocumentPouchReceivedOn = NULL
+			</if>
+		</set>
+		where 
+		    ShipmentId = #{shipmentId} 
+			
+	</update>
+	<!-- Shipment Master House Info End -->
+	
+	
+	<!-- Shipment Other Charge Info Query -->
+	<select id="sqlGetShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentOtherChargesId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_OtherChargeInfo
+		where 
+			ShipmentId = #{shipmentId}
+	</select>
+	
+	
+	<insert id="sqlInsertShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentOtherChargeInfo"
+		keyColumn="ShipmentOtherChargesId" keyProperty="shipmentOtherChargesId" useGeneratedKeys="true">
+		insert into Shipment_OtherChargeInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>		
+			<if test="customsOrigin != null">
+				CustomsOrigin,
+			</if>
+			<if test="chargeCode != null">
+				ChargeCode,
+			</if>			
+			<if test="currency != null">
+				Currency,
+			</if>
+			<if test="dueFromAirline != null">
+				DueFromAirline,
+			</if>
+			<if test="dueFromAgent != null">
+				DueFromAgent,
+			</if>
+			<if test="freightCharges != null">
+				FreightCharges,
+			</if>
+			<if test="valuationCharges != null">
+				ValuationCharges,
+			</if>
+			<if test="tax != null">
+				Tax,
+			</if>			
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="customsOrigin != null">
+				#{customsOrigin},
+			</if>
+			<if test="chargeCode != null">
+				#{chargeCode},
+			</if>		
+			<if test="currency != null">
+				#{currency},
+			</if>
+			<if test="dueFromAirline != null">
+				#{dueFromAirline},
+			</if>
+			<if test="dueFromAgent != null">
+				#{dueFromAgent},
+			</if>
+			<if test="freightCharges != null">
+				#{freightCharges},
+			</if>
+			<if test="valuationCharges != null">
+				#{valuationCharges},
+			</if>
+			<if test="tax != null">
+				#{tax},
+			</if>			
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	
+	<update id="sqlUpdateShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentOtherChargeInfo">
+		update Shipment_OtherChargeInfo
+		<set>
+			<if test="customsOrigin != null">
+				CustomsOrigin = #{customsOrigin},
+			</if>
+			<if test="chargeCode != null">
+				ChargeCode = #{chargeCode},
+			</if>
+			<if test="currency != null">
+				Currency = #{currency},
+			</if>
+			<if test="dueFromAirline != null">
+				DueFromAirline = #{dueFromAirline},
+			</if>
+			<if test="dueFromAgent != null">
+				DueFromAgent = #{dueFromAgent},
+			</if>
+			<if test="freightCharges != null">
+				FreightCharges = #{freightCharges},
+			</if>
+			<if test="valuationCharges != null">
+				ValuationCharges = #{valuationCharges},
+			</if>
+			<if test="tax != null">
+				Tax = #{tax},
+			</if>	
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentId = #{shipmentId}
+	</update>
+	
+	<select id="sqlGetEarliestDocumentReceiveDateForShipment" 
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.time.LocalDateTime">	
+		<![CDATA[		
+			select
+				min(FlightSTA.DateSTA) as FlightDate
+			from(
+			(select
+				case
+					when InboundFlightDelayFlag = 1 then
+						isnull(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA)
+					when (Flt_OperativeFlight_Legs.DateATA is not null and Flt_OperativeFlight_Legs.DateATA < Flt_OperativeFlight_Legs.DateSTA) then
+					    Flt_OperativeFlight_Legs.DateATA
+					else
+						Flt_OperativeFlight_Legs.DateSTA
+					end DateSTA
+			from 
+				Flt_OperativeFlight inner join
+				Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+			WHERE 
+				Flt_OperativeFlight.Flight_id = #{requestFlightId} and
+				Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			union all
+			select
+				case
+					when InboundFlightDelayFlag = 1 then
+						isnull(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA)
+					when (Flt_OperativeFlight_Legs.DateATA is not null and Flt_OperativeFlight_Legs.DateATA < Flt_OperativeFlight_Legs.DateSTA) then
+					    Flt_OperativeFlight_Legs.DateATA
+					else
+						Flt_OperativeFlight_Legs.DateSTA
+					end DateSTA
+			from
+				Imp_ShipmentVerification inner join				
+				Flt_OperativeFlight
+					on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_ID inner join
+				Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId
+			WHERE
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and
+				Imp_ShipmentVerification.FlightId <> #{requestFlightId} and
+				Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+				Shipment_Master.ShipmentDate = #{shipmentdate} and
+				Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport})
+			)FlightSTA
+		]]>
+	</select>
+		
+	<update id="sqlUpdateExportShipmentBooking"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		<![CDATA[
+		UPDATE Exp_ShipmentBooking
+		SET Pieces = #{piece},
+			GrossWeight =#{weight} 
+		WHERE ShipmentNumber = (select ShipmentNumber from Shipment_master where shipmentId=#{shipmentId})
+		]]>
+	</update>
+	
+	<insert id="sqlInsertShipmentHAWBinfo"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownHAWBModel"
+		keyColumn="ShipmentHouseId" keyProperty="shipmentHouseId" useGeneratedKeys="true">
+		insert into Shipment_HouseInformation
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId
+			</if>
+			<if test="shipmentType != null">
+				,ShipmentType
+			</if>
+			<if test="hawbNumber != null">
+				,Number
+			</if>
+			<if test="hawbPieces != null">
+				,Pieces
+			</if>
+			<if test="hawbWeight != null">
+				,Weight
+			</if>
+			<if test="hawbOrigin != null">
+				,Origin
+			</if>
+			<if test="hawbDestination != null">
+				,Destination
+			</if>
+			<if test="hawbChargebleWeight != null">
+				,ChargeableWeight
+			</if>
+			<if test="hawbNatureOfGoods != null">
+				,NatureOfGoodsDescription
+			</if>
+			<if test="createdBy != null">
+				,CreatedUserCode
+			</if>
+			<if test="createdOn != null">
+				,CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId}
+			</if>
+			<if test="shipmentType != null">
+				,#{shipmentType}
+			</if>
+			<if test="hawbNumber != null">
+				,#{hawbNumber}
+			</if>
+			<if test="hawbPieces != null">
+				,#{hawbPieces}
+			</if>
+			<if test="hawbWeight != null">
+				,#{hawbWeight}
+			</if>
+			<if test="hawbOrigin != null">
+				,#{hawbOrigin}
+			</if>
+			<if test="hawbDestination != null">
+				,#{hawbDestination}
+			</if>
+			<if test="hawbChargebleWeight != null">
+				,#{hawbChargebleWeight}
+			</if>
+			<if test="hawbNatureOfGoods != null">
+				,#{hawbNatureOfGoods}
+			</if>
+			<if test="createdBy != null">
+				,#{createdBy}
+			</if>
+			<if test="createdOn != null">
+				,#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	
+	<update id="sqlUpdateShipmentMasterhandledByMasterHouse"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		update Shipment_Master
+		<set>	
+		    ShipmentNumber = #{shipmentNumber}		
+			<if test="handledByDOMINT != null">
+				,HandledByDOMINT = #{handledByDOMINT}
+			</if>
+			<if test="handledByMasterHouse != null and handledByMasterHouse != ''">
+				,HandledByMasterHouse = #{handledByMasterHouse}
+			</if>
+			<if test="chargeableWeight != null and chargeableWeight != 0">
+				,ChargeableWeight = #{chargeableWeight}
+			</if>
+		</set>
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	</update>
+	
+   <delete id="deleteRoutingInfo"
+		parameterType="java.math.BigInteger">
+		delete Shipment_MasterRoutingInfo where
+		ShipmentId=#{shipmentId}
+	</delete>
+</mapper>

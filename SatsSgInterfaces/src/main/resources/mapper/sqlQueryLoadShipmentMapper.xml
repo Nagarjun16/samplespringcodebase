@@ -1,0 +1,1042 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="loadShipmentMapper">
+<!--STARTS MO  -->
+	<!-- Fetch Flight Info -->
+	 <select id="sqlGetFlightInfoForMo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.SearchLoadShipment"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.SearchLoadShipment">
+					         SELECT 
+                                   Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber as uldNumber
+                                  ,Exp_AssignedULDTrolleyToFlight.HeightCode
+                                  ,Exp_AssignedULDTrolleyToFlight.ContentCode
+                                  ,Exp_AssignedULDTrolleyToFlight.UsedForPerishableContainer
+                                  ,flightDetail.flightId as flightId
+                                  ,flightDetail.FlightKey as flightKey
+                                  ,flightDetail.FlightOriginDate as flightOriginDate
+                                  ,flightDetail.DateSTD as std
+                                  ,flightDetail.DateETD as etd
+                                  ,flightDetail.FlightStatus as flightStatus
+								  ,flightDetail.FlightType as flightType
+                                  ,'' AS segment
+                                  ,Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+							      ,               
+									 ( 
+										SUBSTRING(
+												      (SELECT 
+					                                                ' '+Exp_LoadedShipmentSHCInfo.SpecialHandlingCode                                                
+					                                  from 
+					                                                Exp_LoadedShipmentSHCInfo
+					                                  INNER JOIN 
+					                                                Mst_SpecialHandlingCode                  
+					                                  ON 
+					                                                Exp_LoadedShipmentSHCInfo.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode
+					                                  INNER JOIN
+					                                                Exp_LoadedShipmentInfo
+					                                  ON 
+					                                                Exp_LoadedShipmentInfo.LoadedShipmentInfoId = Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId								                            
+					                                  where 
+					                         			       Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+												      FOR XML PATH('')
+													  )
+												  ,2,1000
+									)) shc                      
+                     FROM 
+                     			  Exp_AssignedULDTrolleyToFlight
+                           INNER JOIN
+                           ( SELECT
+                                         Flt_OperativeFlight.Flight_ID as flightId
+                                         ,Flt_OperativeFlight.FlightKey
+                                         ,Flt_OperativeFlight.FlightOriginDate 
+                                         ,Flt_OperativeFlight_Legs.DateSTD 
+                                         ,Flt_OperativeFlight_Legs.DateETD
+                                         ,Flt_OperativeFlight.FlightStatus
+										 ,Flt_OperativeFlight.FlightType 
+                                  FROM
+                                         Flt_OperativeFlight 
+                                  INNER JOIN 
+                                         Flt_OperativeFlight_Legs
+                                  ON 
+                                         Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+                                  AND Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}	 
+                            ) flightDetail
+                     ON 
+                            flightDetail.flightId = Exp_AssignedULDTrolleyToFlight.FlightId                    
+                     WHERE
+                     			Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{uldNumber}
+	</select> 
+	
+	<!-- <select id="getAddAwbDetails"
+		parameterType="com.ngen.cosys.export.buildup.model.SearchShipmentUld"
+		resultMap="UldShipmentDataMap">
+		SELECT Shipment_Inventory.ShipmentInventory_Id,
+		case when Shipment_Inventory.Locked is NULL or Shipment_Inventory.Locked=0 
+		then 0
+		else 1 end Locked,
+		Shipment_Inventory.Shipment_ID,
+		Shipment_Inventory.ShipmentLocation,
+		Shipment_Inventory.Pieces,
+		Shipment_Inventory.Weight,
+		Shipment_Inventory.WarehouseLocation,
+		Shipment_Inventory.AssignedUldTrolley,
+		Shipment_Inventory.DryIceWeight
+		FROM
+		Shipment_Inventory
+		INNER JOIN 
+		Shipment_Master
+		ON Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+		WHERE 
+		Shipment_Master.ShipmentNumber = #{shipmentNumber}
+	</select> -->
+	<!-- <select id="getULDMaxWeightAccepted" 
+			parameterType="com.ngen.cosys.export.buildup.model.SearchLoadShipment"
+		resultType="java.math.BigDecimal">
+		select case when uldCont.UpperLowerDeckFlag='L' then
+		max(uldChar.LowerDeckMaximumQty) else max(uldChar.UpperDeckMaximumQty) end as
+		maxWeight
+		from Uld_UldCharacteristics uldChar,Uld_ContourIndicator
+		uldCont where
+		uldChar.ContourCode=uldCont.ContourCode 
+			<if test="heightCode != null">
+			AND uldChar.ContourCode=#{heightCode}
+		</if>
+		<if test="heightCode == null or heightCode == ''">
+			AND uldChar.ContourCode in (Select top 1
+			contourcode from
+			Uld_UldCharacteristics where
+			UldCarrierCode IN
+			(RIGHT(#{uldNumber},
+			2),RIGHT(#{uldNumber},3))
+			AND
+			UldType =
+			LEFT(#{uldNumber},
+			3))
+			</if>
+		and uldChar.uldtype=SUBSTRING(#{uldNumber},1,3) and
+		(uldChar.UldCarrierCode=RIGHT(#{uldNumber},3) or
+		uldChar.UldCarrierCode=RIGHT(#{uldNumber},2)) group by uldCont.UpperLowerDeckFlag	
+	</select> -->
+	
+<!-- END MO -->
+	<select id="sqlGetFlightInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.SearchLoadShipment"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.SearchBuildupFlight">
+		SELECT flight.Flight_ID as flightId,
+		flight.FlightKey,
+		leg.DateSTD AS flightOriginDate,
+		leg.DateSTD as std,
+		leg.DateETD as etd
+		FROM
+		Flt_OperativeFlight flight inner join
+		Flt_OperativeFlight_Legs leg ON
+		flight.Flight_ID = leg.Flight_ID
+		WHERE
+		flight.FlightKey =#{flightKey}
+		AND
+		CAST(leg.DateSTD as
+		Date) = CAST(#{flightOriginDate} as
+		Date)
+		and leg.FlightBoardPoint=#{tenantAirport}
+	</select>
+	<!-- Shipment Yet to be loaded Map start here -->
+
+	<!-- <resultMap id="ToBeLoadedMap"
+		type="com.ngen.cosys.export.buildup.model.ShipmentToBeLoaded">
+		<result property="segment" column="FlightOffPoint" />
+		<result property="segmentId" column="FlightSegmentId" />
+		<result property="shipmentId" column="ShipmentId" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="pieces" column="Pieces" />
+		<result property="weight" column="Weight" />
+		<result property="assignedPieces" column="assignedPieces" />
+		<result property="assignedWeight" column="assignedWeight" />
+		<result property="bookingPiecesWeight" column="bookingPiecesWeight" />
+		<result property="shipmentPiecesWeight" column="shipmentPiecesWeight" />
+		<result property="remainingPiecesWeight" column="remainingPiecesWeight" />
+
+		<collection property="shcList" javaType="List" ofType="java.lang.String"
+			select="sqlGetToBeLoadedSHC" column="shipmentId=ShipmentId" />
+
+		<collection property="tagNumberList" javaType="List"
+			ofType="java.lang.String" select="sqlGetToBeLoadedSHC" column="shipmentId=ShipmentId" />
+	</resultMap> -->
+
+	<!-- <select id="sqlGetToBeLoaded"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.SearchLoadShipment"
+		resultMap="ToBeLoadedMap">
+		      SELECT distinct
+              seg.FlightOffPoint,
+              seg.FlightSegmentId,
+              shpMaster.shipmentNumber, shpMaster.pieces,
+              shpMaster.ShipmentId, shpMaster.ShipmentDate,
+              shpMaster.NatureOfGoodsDescription,
+              shpMaster.weight,
+                       workShip.assignedPieces,
+                       workShip.assignedWeight,  
+                       concat(workShip.assignedPieces , '/',
+              workShip.assignedWeight) bookingPiecesWeight,
+                       concat(shpMaster.pieces , '/',
+              shpMaster.weight) shipmentPiecesWeight,        
+              concat((isnull(shpMaster.pieces,0)-isnull(loadShp.pcs,0)) , '/',
+              (shpMaster.weight -isnull(loadShp.wt,0))) remainingPiecesWeight
+              from
+          
+              Exp_WorkingListFlightDetails
+              workFlt, Exp_ShipmentFlightBookingDetail  fltBooking,
+              Exp_WorkingListShipment workShip,
+                       Exp_ShipmentBooking booking,
+              Shipment_Master shpMaster
+              left join (select sum(Pieces) pcs, sum(Weight) wt,ShipmentId from Exp_LoadedShipmentInfo group by ShipmentId) loadShp
+              ON loadShp.ShipmentId=shpMaster.ShipmentId  ,
+              Flt_OperativeFlight_Segments seg,
+              Flt_OperativeFlight flt,
+              Flt_OperativeFlight_Legs as fltlegs
+              where 
+              fltlegs.Flight_ID = flt.Flight_ID AND                 
+              workFlt.ExpWorkingListId =
+              workShip.ExpWorkingListID and
+              workShip.ShipmentId= shpMaster.ShipmentId
+              and
+              workFlt.FlightSegmentId=seg.FlightSegmentId
+                           and fltBooking.FlightSegmentId=seg.FlightSegmentId
+                     and  fltBooking.flightId = workflt.flightId and fltBooking.BookingCancellationFlag=0
+                       and  booking.BookingId=fltBooking.BookingId
+                       and booking.ShipmentNumber=shpMaster.ShipmentNumber
+                        and booking.ShipmentDate=shpMaster.ShipmentDate and
+              seg.Flight_ID =
+              flt.Flight_ID and flt.FlightKey=#{flightKey}
+              and
+              CAST(fltlegs.DateSTD as Date) = CAST(#{flightOriginDate} as Date)
+                     and (isnull(shpMaster.pieces,0)-isnull(loadShp.pcs,0)) &gt; 0
+              order by
+              seg.FlightSegmentId	
+	</select> -->
+
+	<select id="sqlGetToBeLoadedSHC" resultType="java.lang.String">
+		SELECT
+		SpecialHandlingCode
+		FROM Shipment_MasterSHC where
+		ShipmentId=#{shipmentId}
+	</select>
+
+	<select id="sqlGetToBeLoadedTagNumbers" resultType="java.lang.String">
+		SELECT
+		Number
+		FROM Shipment_HouseInformation where ShipmentId=#{shipmentId}
+	</select>
+
+	<!-- Shipment Yet to be loaded Map start here -->
+	<!-- Loaded Shipment Map start here -->
+	<select id="sqlGetLoadedShipment" resultMap="LoadedShipmentMap">
+		SELECT Distinct
+		seg.FlightOffPoint,
+		uld.ULDTrolleyNumber,
+		uld.assUldTrolleyId,
+		seg.FlightSegmentId,
+		shpMaster.ShipmentNumber,
+		shpMaster.ShipmentId,
+		shpMaster.NatureOfGoodsDescription,
+		shpInfo.Pieces,
+		shpInfo.Weight,
+		shpInfo.DryIceWeight,
+		shpInfo.LoadedShipmentInfoId
+		from
+		Shipment_Master	shpMaster,
+		Flt_OperativeFlight_Segments seg,
+		Flt_OperativeFlight flt,
+		Exp_LoadedShipmentInfo shpInfo,
+		Exp_AssignedULDTrolleyToFlight uld,
+		Flt_OperativeFlight_Legs as fltlegs
+		where
+		seg.Flight_ID = flt.Flight_ID AND
+		fltlegs.Flight_ID = flt.Flight_ID
+		and
+		seg.FlightSegmentId =
+		uld.FlightSegmentId and
+		uld.AssUldTrolleyId =
+		shpInfo.AssUldTrolleyId
+		and
+		shpInfo.ShipmentId = shpMaster.ShipmentId
+		and
+		flt.FlightKey= #{flightKey} and
+		CAST(fltlegs.DateSTD  as Date) = CAST(#{flightOriginDate} as Date)
+		<if test="segmentId !=null and segmentId != ''">
+			AND	seg.FlightSegmentId = #{segmentId}
+		</if>
+		<if test="uldNumber!=null and uldNumber!='' ">
+			AND uld.ULDTrolleyNumber = #{uldNumber}  
+		</if>
+			order by seg.FlightSegmentId
+	</select>
+
+	<resultMap id="LoadedShipmentMap"
+		type="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		<result property="segment" column="FlightOffPoint" />
+		<result property="segmentId" column="FlightSegmentId" />
+		<result property="loadedShipmentInfoId" column="LoadedShipmentInfoId" />
+		<result property="shipmentId" column="ShipmentId" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="loadedPieces" column="Pieces" />
+		<result property="loadedWeight" column="Weight" />
+		<result property="dryIceWeight" column="DryIceWeight"/>
+		<result property="assUldTrolleyNo" column="ULDTrolleyNumber" />
+		<collection property="shcList" javaType="List" ofType="java.lang.String"
+			select="sqlGetLoadedSHC" column="loadedShipmentInfoId=LoadedShipmentInfoId" />
+
+		<collection property="tagNumberList" javaType="List"
+			ofType="java.lang.String" select="sqlGetLoadedTagNumbers"
+			column="loadedShipmentInfoId=LoadedShipmentInfoId" />
+	</resultMap>
+
+	<select id="sqlGetLoadedSHC" resultType="java.lang.String">
+		select
+		SpecialHandlingCode FROM Exp_LoadedShipmentSHCInfo
+		Where
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+
+	<select id="sqlGetLoadedTagNumbers" resultType="java.lang.String">
+		SELECT
+		Number
+		FROM
+		Exp_LoadedShipmentHouseInfo where
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+	<!-- Loaded Shipment Map end here -->
+
+	<!-- Search shipment by Uld start here -->
+	<!-- <select id="sqlGetUldShipmentData"
+		parameterType="com.ngen.cosys.export.buildup.model.SearchShipmentUld"
+		resultMap="UldShipmentDataMap">
+		SELECT ShipmentInventory_Id,
+		case when Locked is NULL or Locked=0 then
+		0
+		else 1 end Locked,
+		Shipment_ID,
+		ShipmentLocation,
+		Pieces,
+		Weight,
+		WarehouseLocation,
+		AssignedUldTrolley,
+		DryIceWeight,
+		ActualWeightWeighed
+		FROM
+		Shipment_Inventory
+		WHERE
+		Shipment_ID=#{shipmentId} AND Flight_ID is null
+	</select> -->
+
+	<!-- <resultMap id="UldShipmentDataMap"
+		type="com.ngen.cosys.export.buildup.model.UldInventory">
+		<result property="shipmentInventoryId" column="ShipmentInventory_Id" />
+		<result property="shipmentLocation" column="ShipmentLocation" />
+		<result property="locked" column="Locked" />
+		<result property="locationPiecs" column="Pieces" />
+		<result property="locationWeight" column="Weight" />
+		<result property="warehouseLocation" column="WarehouseLocation" />
+		<result property="dryIceWeight" column="DryIceWeight" />
+		<result property="actualWeightWeighed" column="ActualWeightWeighed"/>
+		<collection property="shcList" javaType="List"
+			ofType="java.lang.String" select="sqlGetUldShipmentDataShc"
+			column="shipmentInventoryId=ShipmentInventory_Id" />
+		<collection property="tagNumberList" javaType="List"
+			ofType="java.lang.String" select="sqlGetUldShipmentDataTagNumber"
+			column="shipmentInventoryId=ShipmentInventory_Id" />
+	</resultMap> -->
+
+	<select id="sqlGetUldShipmentDataShc" resultType="java.lang.String">
+		select
+		SpecialHandlingCode FROM Shipment_InventorySHC Where
+		ShipmentInventoryId=#{shipmentInventoryId}
+	</select>
+	
+	<select id="sqlGetUldShipmentDataTagNumber" resultType="java.lang.String">
+		select info.Number 
+		from
+		Shipment_HouseInformation info,
+		Shipment_InventoryHouse house
+		where
+		info.ShipmentHouseId=house.ShipmentHouseId AND
+		ShipmentInventoryId=#{shipmentInventoryId}
+	</select>
+	<!-- Search shipment by Uld end here -->
+
+	<insert id="sqlInsertLoadShipment" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		INSERT INTO Exp_LoadedShipmentInfo ( AssUldTrolleyId
+		,ShipmentId ,Pieces
+		,Weight ,CreatedUserCode ,CreatedDateTime,
+		DryIceWeight) VALUES
+		(#{assUldTrolleyId},
+		#{shipmentId},
+		#{loadedPieces}, #{loadedWeight},
+		#{createdBy}, SYSDATETIME(),
+		#{moveDryIce})
+	</insert>
+
+	<update id="sqlUpdateLoadShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		UPDATE
+		Exp_LoadedShipmentInfo set Pieces=#{loadedPieces},
+		Weight=#{loadedWeight},
+		DryIceWeight=#{moveDryIce},
+		LastUpdatedUserCode=#{modifiedBy},
+		LastUpdatedDateTime=SYSDATETIME() WHERE
+		AssUldTrolleyId=#{assUldTrolleyId}
+		AND ShipmentId=#{shipmentId}
+	</update>
+
+	<select id="sqlCheckLoadShipmentPK" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment"
+		resultType="java.lang.Integer">
+		select Count(*) from Exp_LoadedShipmentInfo where
+		AssUldTrolleyId=#{assUldTrolleyId} AND
+		ShipmentId=#{shipmentId}
+	</select>
+
+	<update id="sqlUpdateInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		UPDATE
+		Shipment_Inventory set Pieces=#{locationPiecs},
+		Weight=#{locationWeight},
+		DryIceWeight=#{dryIceWeight},
+		LastUpdatedUser_Code=#{modifiedBy},
+		LastUpdated_DateTime=SYSDATETIME() WHERE
+		ShipmentInventory_Id=#{shipmentInventoryId}
+	</update>
+
+	<delete id="sqlDeleteInventory">
+		DELETE from
+		Shipment_Inventory where 
+		ShipmentInventory_Id=#{param} 
+	</delete>
+
+	<select id="sqlGetLoadedData" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		select
+		(case when Pieces is NULL then 0 else
+		Pieces end)
+		loadedPieces,
+		(case when Weight is NULL then 0.0 else
+		Weight end)
+		loadedWeight,
+		(case when DryIceWeight is NULL then 0.0 else
+		DryIceWeight end) dryIceWeight
+		from
+		Exp_LoadedShipmentInfo where
+		AssUldTrolleyId=#{assUldTrolleyId} AND
+		ShipmentId=#{shipmentId}
+	</select>
+
+	<select id="sqlGetLoadedWeight" parameterType="java.lang.Integer"
+		resultType="java.lang.Double">
+		select (case when sum(Weight) is NULL then 0 else
+		sum(Weight) end) loadedWeight from
+		Exp_LoadedShipmentInfo where
+		AssUldTrolleyId=#{param}
+	</select>
+
+	<insert id="insertSHC" parameterType="com.ngen.cosys.satssginterfaces.mss.model.SHCS">
+		INSERT INTO
+		Exp_LoadedShipmentSHCInfo
+		(
+		LoadedShipmentInfoId,
+		SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{loadedShipmentInfoId},
+		#{code}
+		,#{createdBy}
+		,getDate()
+		)
+	</insert>
+
+	<insert id="insertTagNo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse">
+		INSERT INTO
+		Exp_LoadedShipmentHouseInfo
+		(
+		LoadedShipmentInfoId
+		,Type
+		,Number
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(
+		#{loadedShipmentInfoId}
+		,#{type}
+		,#{number}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate()
+		)
+	</insert>
+
+	<select id="sqlGetLoadedShipmentInfoId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment"
+		resultType="java.lang.Integer">
+		select LoadedShipmentInfoId as loadedShipmentInfoId From
+		Exp_LoadedShipmentInfo where
+		AssUldTrolleyId=#{assUldTrolleyId} AND
+		ShipmentId=#{shipmentId}
+	</select>
+
+	<delete id="sqlDeleteInventorySHC" parameterType="java.lang.Integer">
+		DELETE from
+		Shipment_InventorySHC where
+		ShipmentInventoryId=#{param}
+	</delete>
+
+	<delete id="sqlDeleteLoadedSHC" parameterType="java.lang.Integer">
+		DELETE from
+		Exp_LoadedShipmentSHCInfo where
+		LoadedShipmentInfoId=#{param}
+	</delete>
+
+	<delete id="sqlDeleteLoadedTagNo" parameterType="java.lang.Integer">
+		DELETE from
+		Exp_LoadedShipmentHouseInfo where
+		LoadedShipmentInfoId=#{param}
+	</delete>
+
+
+	<delete id="sqlDeleteInventoryHouse" parameterType="java.lang.Integer">
+		DELETE
+		from
+		Shipment_InventoryHouse where
+		ShipmentInventoryId=#{param}
+	</delete>
+
+	<select id="sqlGetInventoryPiecesWeight" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		SELECT Pieces as locationPiecs, Weight as locationWeight
+		FROM Shipment_Inventory
+		WHERE
+		ShipmentInventory_Id=#{param}
+	</select>
+
+	<select id="sqlGetSHC" parameterType="com.ngen.cosys.satssginterfaces.mss.model.SHCS"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.SHCS">
+		SELECT SpecialHandlingCode as code,
+		LoadedShipmentInfoId as
+		loadedShipmentInfoId from
+		Exp_LoadedShipmentSHCInfo
+		WHERE
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+
+	<select id="sqlGetTagNo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse">
+		SELECT * from Exp_LoadedShipmentHouseInfo
+		WHERE
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+
+	<select id="sqlCheckUldTypeAndCarrierMatch" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="java.lang.Integer">
+		select
+		case when count(Uld_UldAircraftRegistration.UldType)
+		> 0 then
+		1
+		else
+		0
+		end result
+		from
+		Uld_UldAircraftRegistration,
+		Flt_OperativeFlight,
+		Flt_OperativeFlight_Legs
+		where
+		Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+		Uld_UldAircraftRegistration.AircraftType =
+		Flt_OperativeFlight_Legs.AircraftType and
+		Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} and
+		Flt_OperativeFlight.FlightKey =#{flightKey} and
+		CAST(Flt_OperativeFlight_Legs.DateSTD  as
+		Date) =
+		CAST(#{flightOriginDate} as
+		Date)
+		and
+		Uld_UldAircraftRegistration.UldType = #{uldType} and
+		(Uld_UldAircraftRegistration.UldCarrierCode = #{uldCarrierCode}
+		OR
+		Uld_UldAircraftRegistration.UldCarrierCode = #{uldCarrierCode2})
+	</select>
+
+	<select id="sqlCheckBypassUldTypeAndCarrierMatch" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight_Exceptions where
+		Flight_ID=#{flightId} and ExceptionType in ('ByPassULDType')
+		and
+		BypassULDType=#{uldType}
+	</select>
+
+	<select id="sqlCheckBypassWeightCheck" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight_Exceptions where
+		Flight_ID=#{flightId} and ExceptionType in ('ByPassULDMaxCheck')
+		and
+		BypassULDType=#{uldType}
+	</select>
+
+	<select id="sqlCheckCAOSHC" parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+		<!-- ASk 0 -->
+		select count (*) from Flt_OperativeFlight where FlightType='P' AND
+		Flight_ID=#{param}
+	</select>
+
+	<!-- <select id="sqlCheckNonColadableSHC" parameterType="com.ngen.cosys.export.buildup.model.BuildUpSHC"
+		resultType="com.ngen.cosys.export.buildup.model.BuildUpSHC">
+		select SpecialHandlingCode as shc1,
+		NonColoadableSpecialHandlingCode as
+		nonColoadableSHC
+		from
+		Mst_NonColoadableSpecialHandlingCode where SpecialHandlingCode
+		in(#{shc1},#{shc2}, #{shc3}, #{shc4}, #{shc5},
+		#{shc6}, #{shc7},
+		#{shc8}, #{shc9})
+	</select>
+ -->
+	<!-- <select id="sqlCheckPerisableSHC" parameterType="com.ngen.cosys.export.buildup.model.BuildUpSHC"
+		resultType="java.lang.Integer">
+		select count(*) from Mst_SHCHandlingGroup grp
+		,Mst_AssociateSHCByHandlingGroup ass
+		where
+		grp.MstSHCHandlingGroupID=ass.MstAssociateSHCByHandlingGroupId and
+		grp.SHCHandlingGroupCode ='PER' AND ass.SpecialHandlingCode in
+		(#{shc1},#{shc2}, #{shc3}, #{shc4}, #{shc5},
+		#{shc6}, #{shc7}, #{shc8},
+		#{shc9})
+	</select> -->
+
+	<select id="sqlCheckShipmentLock" parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+		select (case when Locked is NULL OR Locked = 0 then 0 else
+		1 end) locked from Shipment_Master where ShipmentId=#{param}
+	</select>
+
+	<select id="sqlCheckInventoryLock" parameterType="java.lang.Integer"
+		resultType="java.lang.Integer">
+		select (case when locked is NULL OR Locked = 0 then 0 else
+		1 end) locked from Shipment_Inventory where
+		ShipmentInventory_Id=#{param}
+	</select>
+
+	<select id="sqleAcceptanceDocCheck" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment">
+  		select case when PartConfirm is NULL then 0 else
+		PartConfirm end as partConfirm,
+		case when Returned is Null then 0 else
+		Returned end as returned,
+		case when Rejected is Null then 0 else
+		Rejected end as rejected,
+		case when FinalizeWeight is null then 0 else
+		FinalizeWeight end as finalizeWeight
+		FROM
+		Exp_eAcceptanceDocumentInformation, Shipment_Master where Exp_eAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber AND 
+		Exp_eAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate And ShipmentId=#{shipmentId}
+	</select>
+
+	<select id="sqlGetShipmentDetails" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.Shipment">
+		SELECT Origin as origin,
+		Destination as destination,
+		NatureOfGoodsDescription as natureOfGoods,
+		WeightUnitCode as
+		weightUnitCode,
+		ShipmentNumber as shipmentNumber
+		from Shipment_Master
+		where ShipmentId=#{param}
+	</select>
+
+	<select id="sqlGetBuildUpShipmentSHC" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.ManifestSHC">
+		SELECT SpecialHandlingCode as code FROM
+		Exp_LoadedShipmentSHCInfo
+		where
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+
+	<select id="sqlGetBuildUpShipmentHouse" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.ManifestHouse">
+		SELECT * from Exp_LoadedShipmentHouseInfo
+		WHERE
+		LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select>
+
+	<select id="sqlGetWorkingListData" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.Shipment">
+  		SELECT distinct
+		(case when AssignedPieces is
+		NULL then 0 else
+		AssignedPieces end)
+		assignedPieces,
+		(case when AssignedWeight is
+		NULL
+		then 0.0 else AssignedWeight end)
+		assignedWeight
+		FROM
+		Exp_WorkingListShipment,
+		Exp_WorkingListFlightDetails
+		WHERE Exp_WorkingListShipment.ExpWorkingListID=Exp_WorkingListFlightDetails.ExpWorkingListId
+		and ShipmentId=#{shipmentId} and FlightId=#{flightId} and Exp_WorkingListFlightDetails.FlightSegmentId=#{segmentId}
+	</select>
+
+	<select id="sqlGetULDData" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment">
+		SELECT FlightSegmentId as segmentId,
+		ContentCode as contentCode,
+		(case when
+		TrolleyInd is
+		NULL OR
+		TrolleyInd = 0
+		then 0 else
+		1
+		end)
+		trolleyInd,
+		(case when
+		TareWeight
+		is NULL
+		then 0 else TareWeight end)
+		tareWeight,
+		(case when
+		UsedForPerishableContainer is NULL OR
+		UsedForPerishableContainer = 0
+		then 0 else 1 end)
+		phcIndicator,
+		(case when UsedAsTrolley is NULL OR UsedAsTrolley = 0
+		then 0 else 1
+		end) usedAsTrolley,
+		(case when UsedAsStandBy
+		is NULL OR UsedAsStandBy =
+		0 then 0 else 1 end)
+		usedAsStandBy,
+		(case when Remarks is NULL
+		then ''
+		else Remarks end)
+		remarks
+		FROM
+		Exp_AssignedULDTrolleyToFlight
+		WHERE
+		FlightSegmentId=#{flightSegmentId} AND
+		AssUldTrolleyId=#{assUldTrolleyId}
+	</select>
+
+	<select id="sqlGetULDMaxWeight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="java.lang.Double">
+		select case when uldCont.UpperLowerDeckFlag='L' then
+		max(uldChar.LowerDeckMaximumQty) else max(uldChar.UpperDeckMaximumQty) end as
+		maxquantity
+		from Uld_UldCharacteristics uldChar,Uld_ContourIndicator
+		uldCont where
+		uldChar.ContourCode=uldCont.ContourCode and
+		uldChar.ContourCode=#{heightCode}
+		and uldChar.uldtype=#{uldType} and
+		(uldChar.UldCarrierCode=#{uldCarrierCode} or
+		uldChar.UldCarrierCode=#{uldCarrierCode2}) group by uldCont.UpperLowerDeckFlag	
+	</select>
+
+	<select id="sqlCheckIsULD" parameterType="java.lang.Integer"
+		resultType="java.lang.Boolean">
+		select case when count(AssUldTrolleyId) > 0 then
+		1 else 0 end from
+		Exp_AssignedULDTrolleyToFlight where
+		AssUldTrolleyId=#{param}
+		and 
+		(TrolleyInd = 1 or UsedAsTrolley = 1)
+	</select>
+
+	<select id="sqlcheckULDAssignTOFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+		resultType="java.lang.Boolean">
+		select case when (count (*) = 0) then 0 else 1 end from
+		Exp_AssignedULDTrolleyToFlight where FlightId=#{flightId} AND
+		AssUldTrolleyId=#{assUldTrolleyId}
+	</select>
+
+	<!-- <insert id="sqlBuildUpCompleted" parameterType="com.ngen.cosys.export.model.BuildUpCompleteEvent">
+		insert into
+		Exp_FlightEvents (FlightId, BuildupCompletedBy,
+		BuildupCompletedAt,
+		FirstTimeBuildCompletedBy,
+		FirstTimeBuildCompletedAt, CreatedDateTime,
+		CreatedUserCode)
+		Values (#{flightId}, #{buildupCompletedBy},
+		SYSDATETIME(),
+		#{firstTimeBuildCompletedBy}, SYSDATETIME())
+	</insert> -->
+
+	<!-- <select id="sqlGetBuildUpCompleted" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.export.model.BuildUpCompleteEvent">
+		select
+		FlightId as flightId,
+		BuildupCompletedAt as
+		buildupCompletedAt,
+		BuildupCompletedBy as buildupCompletedBy,
+		FirstTimeBuildCompletedAt as
+		firstTimeBuildCompletedAt,
+		FirstTimeBuildCompletedBy as
+		firstTimeBuildCompletedBy
+		from
+		Exp_FlightEvents where
+		FlightId=#{flightId}
+	</select> -->
+
+	<select id="sqlCheckIsEventPublished" parameterType="java.lang.Integer"
+		resultType="java.lang.Boolean">
+		select case when (count (*) = 0) then 0 else 1 end
+		from
+		Exp_FlightEvents where FlightId=#{flightId}
+	</select>
+
+	<!-- <update id="sqlUpdateBuildUpEvent" parameterType="com.ngen.cosys.export.model.BuildUpCompleteEvent">
+		UPDATE
+		Exp_FlightEvents set BuildupCompletedAt=SYSDATETIME(),
+		BuildupCompletedBy=#{buildupCompletedBy},
+		FirstTimeBuildCompletedAt=SYSDATETIME(),
+		FirstTimeBuildCompletedBy=#{firstTimeBuildCompletedBy}
+		WHERE
+		FlightId=#{flightId}
+	</update> -->
+	
+	<select id="sqlCheckEccSHC" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment"
+		resultType="java.lang.Integer">
+		select count(*) from Mst_SpecialHandlingCode shc
+	    inner join Mst_AssociateSHCByHandlingGroup shcjoint on
+	    shcjoint.SpecialHandlingCode = shc.SpecialHandlingCode
+	    inner join Mst_SHCHandlingGroup handlinggroup on
+	    handlinggroup.MstSHCHandlingGroupID = shcjoint.MstSHCHandlingGroupID 
+	    where shc.SpecialHandlingCode in 
+	    <foreach item="shcList" index="index" collection="shcList" open="("
+				separator="," close=")">
+				#{shcList.code}
+	    </foreach>
+	    and handlinggroup.SHCHandlingGroupCode in ('COU', 'XPS', 'EXP')
+	</select>
+	
+	<select id="sqlCheckULDExist" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+	resultType="java.lang.Boolean">
+	  	select case when (count (*) = 0) then 0 else 1 end  from Exp_AssignedULDTrolleyToFlight where ULDTrolleyNumber=#{assUldTrolleyNo}
+	  	AND FlightSegmentId=#{segmentId}
+	</select>
+	
+	<select id="sqlgetULDSegment" parameterType="java.lang.String"
+	resultType="java.lang.Integer">
+	select FlightSegmentId from Exp_AssignedULDTrolleyToFlight where ULDTrolleyNumber=#{param}
+	</select>
+	
+		
+	<select id="sqlGetInventoryForCommonService" parameterType="java.lang.Integer"
+		resultMap="commoLoadServiceMap">
+		SELECT ShipmentInventory_Id,
+		case when Locked is NULL or Locked=0 then
+		0
+		else 1 end Locked,
+		Shipment_ID,
+		ShipmentLocation,
+		Pieces,
+		Weight,
+		WarehouseLocation,
+		AssignedUldTrolley,
+		case when DryIceWeight is NULL then 0.0
+		else DryIceWeight end
+		FROM
+		Shipment_Inventory
+		Where Shipment_ID=#{shipmentId} and ReferenceDetails='UNLOADED'
+	</select>
+	
+	<resultMap id="commoLoadServiceMap"
+		type="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		<result property="shipmentInventoryId" column="ShipmentInventory_Id" />
+		<result property="locationPiecs" column="Pieces" />
+		<result property="locationWeight" column="Weight" />
+		<result property="dryIceWeight" column="DryIceWeight" />
+
+		<collection property="shcList" javaType="List"
+			ofType="java.lang.String" select="sqlgetCommmonLoadSHC"
+			column="shipmentInventoryId=ShipmentInventory_Id" />
+	</resultMap>
+	
+	<select id="sqlgetCommmonLoadSHC" resultType="java.lang.String">
+		select
+		SpecialHandlingCode FROM Shipment_InventorySHC Where
+		ShipmentInventoryId=#{shipmentInventoryId}
+	</select>
+	
+	<select id="sqlgetInventoryByMailBag" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment"
+	resultType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+  		select distinct inv.ShipmentInventory_Id as shipmentInventoryId,
+  		inv.Shipment_ID as shipmentId,
+  		inv.Pieces as locationPiecs,
+  		inv.Weight as locationWeight,
+  		 houseInfo.Number as number
+		from Shipment_Inventory inv, Shipment_InventoryHouse house,
+		Shipment_HouseInformation houseInfo where inv.ShipmentInventory_Id = house.ShipmentInventoryId
+		AND houseInfo.ShipmentHouseId = house.ShipmentHouseId And houseInfo.Number 
+						IN
+			<foreach item="item" index="index" collection="mailBagList"
+					open="(" separator="," close=")">
+					#{item.number}
+			</foreach>
+	</select>
+	
+	<select id="checkLoading" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		  select count(*) from Exp_AssignedULDTrolleyToFlight, Exp_LoadedShipmentInfo
+  		  where Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId
+          AND Exp_AssignedULDTrolleyToFlight.FlightId=#{param}
+	</select>
+	
+	<select id="getMailBagDetails" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse" resultType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse">
+  		select info.Number as number, 
+		house.pieces as pieces, 
+		house.weight as weight,
+		info.shipmentType as type
+		from
+		Shipment_HouseInformation info,
+		Shipment_InventoryHouse house
+		where
+		info.ShipmentHouseId=house.ShipmentHouseId AND
+		house.ShipmentInventoryId=#{shipmentInventoryId} AND info.number=#{number}
+	</select>
+	
+	<select id="isUldWeightCheckNotRequired" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UldShipment" resultType="java.lang.Boolean">
+		  Select case when count(*)=0 then 0 else 1 end from Flt_OperativeFlight_Exceptions where Flight_ID=#{flightId} AND ULD_Number=#{assUldTrolleyNo}
+	</select>
+	
+	<insert id="createInventory_Load" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		INSERT INTO Shipment_Inventory
+           (Shipment_ID, ShipmentLocation, Pieces, Weight, WarehouseLocation, Flight_ID, DryIceWeight,
+            HandlingArea,ActualWeightWeighed, AssignedUldTrolley, CreatedUser_Code, Created_DateTime)
+     	VALUES
+           (#{shipmentId}, #{shipmentLocation}, #{locationPiecs}, #{locationWeight}, #{warehouseLocation}, #{flightId}, #{dryIceWeight},
+		   #{handlingArea}, #{actuvalWeightWeighed}, #{assUldTrolleyNo}, #{createdBy}, getDate())
+	</insert>
+	
+	<select id="getWeighingId_Load" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment" resultType="java.math.BigInteger">
+		Select WeighingId as weighingId 
+		from Shipment_Inventory where ShipmentInventory_Id= #{shipmentInventoryId}
+	</select>
+	
+	<select id="isNewInventoryExist" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment" resultType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		Select Pieces as locationPiecs, Weight as locationWeight, DryIceWeight as  dryIceWeight, ActualWeightWeighed as actuvalWeightWeighed from Shipment_Inventory 
+		Where Shipment_ID=#{shipmentId} And  AssignedUldTrolley=#{assUldTrolleyNo} AND Flight_ID=#{flightId}
+	</select>
+	
+	<update id="updateNewInventoryLocation" parameterType="com.ngen.cosys.satssginterfaces.mss.model.LoadedShipment">
+		UPDATE
+		Shipment_Inventory set Pieces=#{locationPiecs},
+		Weight=#{locationWeight},
+		DryIceWeight=#{dryIceWeight},
+		ActualWeightWeighed=#{actuvalWeightWeighed},
+		LastUpdatedUser_Code=#{modifiedBy},
+		LastUpdated_DateTime=SYSDATETIME() 
+		WHERE
+		Flight_ID=#{flightId} and 
+		Shipment_ID=#{shipmentId} and
+		AssignedUldTrolley=#{assUldTrolleyNo}
+	</update>
+	
+	<select id="isPartConfirmOrFinalized" parameterType="java.math.BigInteger" resultType="java.lang.Boolean">
+		  Select case when PartConfirm=1 or FinalizeWeight=1 then 1 else 0 end from Exp_eAcceptanceDocumentInformation doc,  Shipment_Master shipMaster
+		  where doc.ShipmentNumber = shipMaster.ShipmentNumber AND
+		  shipMaster.ShipmentId=#{param}
+	</select>
+	
+	<select id="getShipmentNumber_Load" parameterType="java.math.BigInteger" resultType="java.lang.String">
+		select ShipmentNumber from Shipment_Master where ShipmentId=#{param} 
+	</select> 
+	
+	<!-- <select id="checkFlightRules_Load" parameterType="java.math.BigInteger" resultType="com.ngen.cosys.export.buildup.model.FlightRuleModel"> 
+		select case when NoMailFlag is null then 0 else NoMailFlag end noMailFlag,
+		case when NoCargoFlag is null then 0 else NoCargoFlag  end noCargoFlag, 
+		case when NoFreightLoading is null then 0 else NoFreightLoading end noFreightLoading, 
+		case when FlightTechnicalStopFlag is null then 0 else  FlightTechnicalStopFlag end flightTechnicalStopFlag
+		from Flt_OperativeFlight_Segments 
+		where FlightSegmentId=#{param}
+	</select> -->
+	
+	<select id ="getShipmentServiceFlag_Load" parameterType="java.lang.String" resultType="java.lang.Boolean">
+		select case when ServiceFlag is null then 0 else ServiceFlag end from Exp_ShipmentBooking where ShipmentNumber=#{param}
+	</select>
+	
+	<select id ="getWeightWeighed_Load" parameterType="java.math.BigInteger" resultType="java.math.BigDecimal">
+		select ActualWeightWeighed as actuvalWeightWeighed from Shipment_Inventory where ShipmentInventory_Id=#{param}
+	</select>
+	
+	<update id="udpateLaodedWeight_Laod" >
+		update Exp_LoadedShipmentInfo  set Weight=#{loadedWeight} Where ShipmentId=#{shipmentId} AND AssUldTrolleyId=#{assUldTrolleyId}
+	</update>
+	
+	<select id="getAssignUldTrolleyId_Load" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ULDIInformationDetails" resultType="java.math.BigInteger">
+		Select top(1)AssUldTrolleyId from Exp_AssignedULDTrolleyToFlight Where ULDTrolleyNumber=#{uldNumber}
+		<!-- <if test="uldNumber != null">
+			AND ULDTrolleyNumber=#{uldNumber}
+		</if> 
+		<if test="uldNumber == null">
+			AND ULDTrolleyNumber is NULL
+		</if> -->
+		
+	</select>
+	
+	<insert id="createAssingULDToFLigt_Load" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		useGeneratedKeys="true" keyProperty="assUldTrolleyId" keyColumn="AssUldTrolleyId">
+		INSERT INTO
+		Exp_AssignedULDTrolleyToFlight
+		(
+		FlightSegmentId
+		,ULDTrolleyNumber
+		,TrolleyInd
+		,TareWeight
+		,ContentCode
+		,HeightCode
+		,HandlingArea
+		,UsedForPerishableContainer
+		,UsedForExpressCourierContainer
+		,UsedAsTrolley
+		,UsedAsStandBy
+		,PriorityOfLoading
+		,Remarks
+		,LoadingStartedOn
+		,LoadingCompletedOn
+		,HandlingServiceGroup
+		,ReasonForMovement
+		,ULDTagPrintedOn
+		,GrossWeight
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		,FlightId
+		)
+		VALUES
+		(
+		(#{uld.segmentId})
+		,#{uld.uldTrolleyNo}
+		,#{uld.trolleyInd}
+		,#{uld.tareWeight}
+		,#{uld.contentCode}
+		,#{uld.heightCode}
+		,#{terminal}
+		,#{uld.phcFlag}
+		,#{uld.eccFlag}
+		,#{uld.trolleyFlag}
+		,#{uld.standByFlag}
+		,#{uld.priority}
+		,#{uld.remarks}
+		,#{uld.loadingStartedOn}
+		,#{uld.loadingCompletedOn}
+		,#{uld.handlingServiceGroupId}
+		,#{uld.reasonIdForMovement}
+		,#{uld.uldTagPrintedOn}
+		,#{uld.loadedWeight}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,#{modifiedOn}
+		,#{uld.flightId}
+		)
+	</insert>
+</mapper>

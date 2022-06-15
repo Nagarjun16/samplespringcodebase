@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ThroughTransitShipmentFinalizeMapper">
+
+	<select id="sqlGetThroughTransitFinalizedShipments" parameterType="Map"
+		resultType="com.ngen.cosys.events.payload.InboundShipmentBreakDownCompleteStoreEvent">
+	<![CDATA[
+		With GetCurrentTime As(
+			select 
+				convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		)
+		select					
+			Transhipment_TTWAConnectingFlight.InboundFlightId as flightId,
+			Shipment_Master.ShipmentId as shipmentId,
+			Shipment_master.ShipmentNumber as shipmentNumber,
+			'NEW' as status,
+			(isnull(LoadedShipmentInfo.LoadedPieces, 0) - isnull(Shipment_StatusUpdateEvent.StatusUpdatePieces, 0)) pieces,
+			(isnull(LoadedShipmentInfo.LoadedWeight, 0) - isnull(Shipment_StatusUpdateEvent.StatusUpdateWeight, 0)) weight,
+			Imp_FlightEvents.ThroughTransitWorkingListFinalizedAt as completedAt,
+			Imp_FlightEvents.ThroughTransitWorkingListFinalizedBy as completedBy,
+			'BATCHJOB' as createdBy,
+			getDate() as createdOn,
+			'BATCHJOB' as lastModifiedBy,
+			getDate() as lastModifiedOn
+		from	
+			Shipment_Master inner join
+			Transhipment_TTWAConnectingFlightShipment
+				on Shipment_Master.ShipmentNumber = Transhipment_TTWAConnectingFlightShipment.ShipmentNumber and
+					Shipment_Master.ShipmentDate = Transhipment_TTWAConnectingFlightShipment.ShipmentDate inner join
+			Transhipment_TTWAConnectingFlight
+				on Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId inner join
+			Transhipment_TTWAOutboundFlight
+				on Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId = Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId inner join
+			Imp_FlightEvents
+				on Transhipment_TTWAConnectingFlight.InboundFlightId = Imp_FlightEvents.FlightId inner join
+			Flt_OperativeFlight
+				on 	Imp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}  inner join
+			(select
+					Exp_LoadedShipmentInfo.ShipmentId,
+					sum(Exp_LoadedShipmentInfo.Pieces) LoadedPieces,
+					sum(Exp_LoadedShipmentInfo.Weight) LoadedWeight
+				from
+					Exp_AssignedULDTrolleyToFlight inner join
+					Exp_LoadedShipmentInfo
+						on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId				
+				group by
+					Exp_LoadedShipmentInfo.ShipmentId
+			) LoadedShipmentInfo
+				on Shipment_Master.ShipmentId = LoadedShipmentInfo.ShipmentId  left join
+			(select
+					Shipment_StatusUpdateEvent.ShipmentNumber,
+					Shipment_StatusUpdateEvent.ShipmentDate,
+					sum(Shipment_StatusUpdateEvent.StatusUpdatePieces) as StatusUpdatePieces,
+					sum(Shipment_StatusUpdateEvent.StatusUpdateWeight) as StatusUpdateWeight
+				from(
+					select                                
+						Shipment_StatusUpdateEvent.ShipmentNumber,
+						Shipment_StatusUpdateEvent.ShipmentDate,
+						Shipment_StatusUpdateEvent.Pieces as StatusUpdatePieces,
+						Shipment_StatusUpdateEvent.Weight as StatusUpdateWeight,
+						min(Shipment_StatusUpdateEvent.SequenceOrder) as SequenceOrder
+					from( select
+							rank() over(order by
+													Shipment_StatusUpdateEvent.ShipmentNumber,
+													Shipment_StatusUpdateEvent.ShipmentDate,
+													Shipment_StatusUpdateEvent.IncomingFlightId,
+													Shipment_StatusUpdateEvent.CreatedUserCode) as SequenceOrder,
+							Shipment_StatusUpdateEvent.ShipmentNumber,
+							Shipment_StatusUpdateEvent.ShipmentDate,
+							Shipment_StatusUpdateEvent.Pieces,
+							Shipment_StatusUpdateEvent.Weight
+						from
+							Shipment_StatusUpdateEvent
+						where
+							Shipment_StatusUpdateEvent.EventType = 'RCF'
+					)Shipment_StatusUpdateEvent                                      
+					group by
+							Shipment_StatusUpdateEvent.ShipmentNumber,
+							Shipment_StatusUpdateEvent.ShipmentDate,
+							Shipment_StatusUpdateEvent.Pieces,
+							Shipment_StatusUpdateEvent.Weight
+				)Shipment_StatusUpdateEvent
+			group by
+				Shipment_StatusUpdateEvent.ShipmentNumber,
+				Shipment_StatusUpdateEvent.ShipmentDate
+	    )Shipment_StatusUpdateEvent
+	            on Shipment_Master.ShipmentNumber = Shipment_StatusUpdateEvent.ShipmentNumber and
+	                    Shipment_Master.ShipmentDate = Shipment_StatusUpdateEvent.ShipmentDate
+		where
+			Shipment_Master.Origin not in ( #{tenantAirport} , #{tenantCity} ) and
+			(select CurrentTime from GetCurrentTime) >= 
+				coalesce(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA) and
+			abs(datediff(minute,
+						(select CurrentTime from GetCurrentTime) , 				 
+							coalesce(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA)) / (24 * 60))
+						<
+				(select ParameterValueNum from App_SystemParameters where ParameterCode = 'LAST_NO_DAYS_CONSIDER_THROUGH_TRANSIT_FLIGHT')
+		group by
+			Transhipment_TTWAConnectingFlight.InboundFlightId,
+			Shipment_Master.ShipmentId,
+			Shipment_Master.shipmentNumber,
+			Shipment_Master.Pieces,
+			Imp_FlightEvents.ThroughTransitWorkingListFinalizedAt,
+			Imp_FlightEvents.ThroughTransitWorkingListFinalizedBy,
+			LoadedShipmentInfo.LoadedPieces,
+			LoadedShipmentInfo.LoadedWeight,
+			Shipment_StatusUpdateEvent.StatusUpdatePieces,
+			Shipment_StatusUpdateEvent.StatusUpdateWeight	
+		having
+			(isnull(LoadedShipmentInfo.LoadedPieces,0) - isnull(Shipment_StatusUpdateEvent.StatusUpdatePieces, 0)) > 0	and		
+			isnull(Shipment_Master.Pieces,0) >= 
+					(isnull(LoadedShipmentInfo.LoadedPieces,0) - isnull(Shipment_StatusUpdateEvent.StatusUpdatePieces, 0))
+	]]>
+	</select>
+
+	<select id="sqlCheckDataSyncCREnabledBatch" resultType="java.lang.String">
+		<![CDATA[
+			select 
+				case when count(1) > 0 then	'Y' else 'N' end result
+			from  Cosys_FunctionReleaseInfo
+				where RequirementName ='DATA_SYNC_CR'
+				and DATEDIFF(d,GETDATE(),ReleaseDate) <= 0  
+		]]>
+	</select>
+	
+	<select id="sqlGetPartSuffixForTSM"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.String">
+	<![CDATA[
+		select
+			Shipment_Inventory.PartSuffix
+		from
+			Shipment_Inventory
+		where
+			Shipment_Inventory.AssignedUldTrolley is not null and
+			Shipment_Inventory.Shipment_ID = #{shipmentId} and
+			not exists(
+				select
+					null
+				from
+					DataSync_Out_Shipment_Info
+				where
+					DataSync_Out_Shipment_Info.ShipmentId = Shipment_Inventory.Shipment_ID and
+					DataSync_Out_Shipment_Info.ShipmentSuffix = Shipment_Inventory.PartSuffix
+			)
+	]]>
+	</select>
+
+
+	<select id="sqlCheckFlightHandledInSystem_Batch" parameterType="Map"
+		resultType="java.lang.Boolean">
+		SELECT case when count(1)>0 then '1' else '0' end
+		TthHandled  
+		From 
+	   		Flt_OperativeFlight_Legs 
+		where
+			 Flt_OperativeFlight_Legs.FlightOffPoint=#{tenantAirport}
+			and Flt_OperativeFlight_Legs.Flight_ID =#{param}
+			and (Flt_OperativeFlight_Legs.HandledInSystem=0 or
+		Flt_OperativeFlight_Legs.HandledInSystem is null)
+	</select>
+	<select id="sqlroutingConfigForTsm_Batch" parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+		select case when count(*) > 0 then 0
+		else 1 end handledSys
+		from DataSync_Special_Enroutement
+		where
+		FlightBoardingPoint='SIN'
+		and FlightOffPoint =(Select top(1) Destination from Shipment_master
+		where shipmentNumber =#{shipmentNumber})
+		and CarrierCode =(Select
+		top(1) CarrierCode from Shipment_master where shipmentNumber
+		=#{shipmentNumber})
+		and IsHandledSystem=1
+	</select>
+
+	<select id="sqlQueryBookingForTSM_Batch" parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+		select case when count(*) >0 then 1
+		else 0 end returnFlag
+		from Exp_ShipmentBooking expBkg
+		inner join Exp_ShipmentFlightBookingDetail expFltBkg
+		on expBkg.bookingid=expFltBkg.bookingid
+		inner join flt_operativeflight_legs fltLeg
+		on expFltBkg.flightId=fltLeg.flight_id and
+		expFltBkg.FlightOffPoint=fltLeg.FlightOffPoint
+		and expFltBkg.FlightBoardPoint=fltLeg.FlightBoardPoint
+		and expFltBkg.FlightBoardPoint='SIN'
+		where shipmentnumber=#{shipmentNumber}
+	</select>
+
+</mapper>

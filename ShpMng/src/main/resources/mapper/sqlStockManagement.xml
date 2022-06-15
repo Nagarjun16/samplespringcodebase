@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="StockManagementMapper">
+
+	<!-- <resultMap id="mapSelectStockSummary" type="com.ngen.cosys.shipment.stockmanagement.model.StockSummary"
+				autoMapping="false">
+		<id property="awbStockDetailsId" column="AWBStockDetailsId" jdbcType="INTEGER" />
+		<result property="awbStockId" column="AWBStockId" />
+		<collection property="stockDetails" javaType="List" 
+					ofType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail" 
+					select="sqlStockDetailsInSummary"
+					column="awbStockId=awbStockId" />
+	</resultMap> -->
+	
+	<insert id="insertStockDetail" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+		useGeneratedKeys="true" keyProperty="awbStockId"
+		keyColumn="AWBStockId">
+		INSERT INTO Com_AWBStock
+		(
+			CarrierCode, StockId, StockCategoryCode, FirstAWBNumber, 
+			NumberOfAWB, LowStockLimit, CreatedUser_Code, Created_DateTime,
+			LastUpdatedUser_Code, LastUpdated_DateTime
+		)
+		VALUES
+		(
+			#{carrierCode}, #{stockId}, #{stockCategoryCode}, #{firstAwbNumber}, 
+			#{numberOfAwb}, #{lowStockLimit}, #{createdBy}, GETDATE(),
+			NULL, NULL
+		)
+	</insert>
+	
+	<insert id="insertStockSummary" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary"
+		useGeneratedKeys="true" keyProperty="awbStockDetailsId"
+		keyColumn="AWBStockDetailsId">
+		INSERT INTO Com_AWBStockDetails
+		(
+			AWBStockId, AWBPrefix, AWBSuffix, AWBNumber, 
+			 
+			CreatedUser_Code, Created_DateTime,
+			LastUpdatedUser_Code, LastUpdated_DateTime,
+			Processing, Cancelled, Booked,
+			Printed, RePrinted, Duplicated
+		)
+		VALUES
+		<!-- <foreach item="stockDetail" collection="list" index="index" seperator=","> -->
+		(
+			#{awbStockId}, #{awbPrefix}, #{awbSuffix}, #{awbNumber},
+			
+			#{createdBy}, GETDATE(),
+			NULL, NULL,
+			NULL, NULL, NULL,
+			NULL, NULL, NULL
+		)
+		<!-- </foreach> -->
+	</insert>
+	
+	<!-- Select AWB Stock Detail for display -->
+	<select id="selectStockDetail" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+		resultType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail">
+		SELECT 	AWBStockId AS awbStockId, CarrierCode AS carrierCode, StockId AS stockId,
+				StockCategoryCode AS stockCategoryCode, FirstAWBNumber AS firstAwbNumber,
+				NumberOfAWB AS numberOfAwb, LowStockLimit AS lowStockLimit
+		FROM	Com_AWBStock
+		WHERE	AWBStockId 	= #{awbStockId}
+		AND		CarrierCode	= #{carrierCode}
+		AND		StockId		= #{stockId}
+	</select>
+	
+	<select id="checkDuplicateStock" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM	Com_AWBStock
+		WHERE	CarrierCode	= #{carrierCode}
+		AND		StockId		= #{stockId}
+	</select>
+	
+	<select id="checkPrefixValidity" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+	resultType="int">
+		SELECT COUNT(*)
+		FROM	Mst_CarrierPrefix
+		WHERE	AwbPrefix	=  SUBSTRING(#{firstAwbNumber}, 1, 3)
+		AND CarrierCode	= #{carrierCode}
+	</select>
+	
+	<select id="fetchLowStockLimit" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+		resultType="java.lang.Integer">
+		SELECT TOP 1 LowStockLimit 
+		FROM Com_AWBStock
+		WHERE	CarrierCode	= #{carrierCode}
+		AND StockCategoryCode = #{stockCategoryCode}
+	</select>
+	
+	
+	
+	<select id="checkDuplicateAWB" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary"
+	resultType="int">
+		SELECT COUNT(*)
+		FROM	Com_AWBStockDetails
+		WHERE	AWBNumber	= #{awbNumber}
+	</select>
+	
+	<select id="checkBlackListedAWB" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary"
+	resultType="int">
+		SELECT COUNT(*)
+		FROM	Mst_BlackListedShipments
+		WHERE	ShipmentNumber	= #{awbNumber}
+	</select>
+	
+	<select id="stockManagmentAWBModCheck" parameterType="java.lang.String"
+            resultType="int">
+            select AwbMODcheckFlag
+            from Mst_CarrierPrefix where
+            AwbPrefix =
+            #{awbPrefix}
+      </select> 
+	
+	<!-- Update LowStockLimit value for modify -->
+	<update id="updateStockDetail" parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail">
+		UPDATE	Com_AWBStock
+		SET		LowStockLimit = #{lowStockLimit},
+				LastUpdatedUser_Code = #{modifiedBy},
+				LastUpdated_DateTime = GETDATE()
+		WHERE	CarrierCode	= #{carrierCode}
+		AND StockCategoryCode = #{stockCategoryCode}
+	</update>
+	
+	<!-- <select id="selectStockSummary"
+			parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+			resultType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+		SELECT	SHDR.AWBStockId AS awbStockId, SHDR.CarrierCode AS carrierCode, SHDR.StockId AS stockId,
+				SHDR.StockCategoryCode AS stockCategoryCode, SHDR.LowStockLimit AS lowStockLimit,
+				SDTL.AWBStockDetailsId AS awbStockDetailsId, SHDR.AWBStockId AS awbStockId,
+				SDTL.AWBPrefix AS awbPrefix, SDTL.AWBSuffix AS awbSuffix, SDTL.AWBNumber AS awbNumber,
+				(SELECT CASE WHEN COUNT(Reserved) IS NULL THEN 0
+				ELSE COUNT(Reserved) END RESCNT 
+				FROM Com_AWBStockDetails 
+				WHERE AWBStockId = SHDR.AWBStockId
+				AND Reserved = 1) AS Reserved,
+				(SELECT CASE WHEN COUNT(Issued) IS NULL THEN 0
+				ELSE COUNT(Issued) END ISSCNT 
+				FROM Com_AWBStockDetails 
+				WHERE AWBStockId = SHDR.AWBStockId
+				AND Issued = 1) AS Issued,
+				(SELECT CASE WHEN COUNT(Deleted) IS NULL THEN 0
+				ELSE COUNT(Deleted) END DELCNT 
+				FROM Com_AWBStockDetails 
+				WHERE AWBStockId = SHDR.AWBStockId
+				AND Deleted = 1) AS Deleted,
+				SHDR.NumberOfAWB - (SELECT F1.RESCNT+F1.ISSCNT+F1.DELCNT FROM
+					(SELECT 
+						CASE WHEN COUNT(Reserved) IS NULL THEN 0 ELSE COUNT(Reserved) END RESCNT,
+						CASE WHEN COUNT(Issued) IS NULL THEN 0 ELSE COUNT(Issued) END ISSCNT,
+						CASE WHEN COUNT(Deleted) IS NULL THEN 0 ELSE COUNT(Deleted) END DELCNT
+					FROM Com_AWBStockDetails
+					WHERE AWBStockId = SHDR.AWBStockId
+					AND Reserved = 1 
+					AND Issued = 1 
+					AND Deleted = 1
+					) F1) AS Unused,
+				SHDR.NumberOfAWB As Total
+		FROM	Com_AWBStock SHDR, Com_AWBStockDetails SDTL 
+		WHERE	SHDR.AWBStockId = SDTL.AWBStockId
+		AND		(#{carrierCode} IS NULL OR SHDR.CarrierCode = #{carrierCode})
+		AND		(#{stockCategoryCode} IS NULL OR SHDR.StockCategoryCode = #{stockCategoryCode})
+		AND		(#{stockId} IS NULL OR SHDR.StockId = #{stockId})
+	</select> -->
+	
+	<select id="selectStockSummary"
+                     parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockDetail"
+                     resultType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+              SELECT SHDR.AWBStockId AS awbStockId, SHDR.CarrierCode AS carrierCode, SHDR.StockId AS stockId,
+                           SHDR.StockCategoryCode AS stockCategoryCode, SHDR.LowStockLimit AS lowStockLimit,
+                           SHDR.AWBStockId AS awbStockId,
+                           SHDR.CarrierCode AS carrierCode,
+                           SHDR.StockCategoryCode AS stockCategoryCode,
+                           SHDR.StockId AS stockId,
+                           SHDR.LowStockLimit AS lowStockLimit,
+                           <!-- SDTL.AWBStockDetailsId AS awbStockDetailsId, 
+                           SDTL.AWBPrefix AS awbPrefix, SDTL.AWBSuffix AS awbSuffix, SDTL.AWBNumber AS awbNumber, -->
+                           SUBSTRING(SHDR.FirstAWBNumber, 1, 3) AS awbPrefix,
+                           SUBSTRING(SHDR.FirstAWBNumber, 4, LEN(SHDR.FirstAWBNumber)) AS awbSuffix,
+                           <!-- Added for Next AWB Number -->
+                           SUBSTRING((SELECT MIN(AWBNumber) FROM Com_AWBStockDetails
+                           WHERE AWBStockId = SHDR.AWBStockId AND Reserved = 0 AND
+                                             Issued = 0 AND Deleted = 0 AND isnull(Processing, 0) = 0 AND Cancelled is NULL AND Booked is NULL AND
+                                             Printed is NULL AND RePrinted is NULL AND Duplicated is NULL
+                           ), 4, LEN(SHDR.FirstAWBNumber))
+                            AS nextAWBNumber,
+                            SUBSTRING((SELECT MAX(AWBNumber) FROM Com_AWBStockDetails
+                           WHERE AWBStockId = SHDR.AWBStockId AND Reserved = 0 AND
+                                             Issued = 0 AND Deleted = 0 AND isnull(Processing, 0) = 0 AND Cancelled is NULL AND Booked is NULL AND
+                                             Printed is NULL AND RePrinted is NULL AND Duplicated is NULL
+                           ), 4, LEN(SHDR.FirstAWBNumber))
+                            AS lastAWBNumber,
+                           <!-- End Next AWB Number -->
+                           (SELECT CASE WHEN COUNT(Reserved) IS NULL THEN 0
+                           ELSE COUNT(Reserved) END RESCNT 
+                           FROM Com_AWBStockDetails 
+                           WHERE AWBStockId = SHDR.AWBStockId
+                           AND Reserved = 1) AS Reserved,
+                           (SELECT CASE WHEN COUNT(Issued) IS NULL THEN 0
+                           ELSE COUNT(Issued) END ISSCNT 
+                           FROM Com_AWBStockDetails 
+                           WHERE AWBStockId = SHDR.AWBStockId
+                           AND Issued = 1) AS Issued,
+                           (SELECT CASE WHEN COUNT(Deleted) IS NULL THEN 0
+                           ELSE COUNT(Deleted) END DELCNT 
+                           FROM Com_AWBStockDetails 
+                           WHERE AWBStockId = SHDR.AWBStockId
+                           AND Deleted = 1) AS Deleted,
+                           (SELECT COUNT(*) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId)  - 
+                           (
+                                             SELECT COUNT(Reserved) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId AND (Reserved = 1 OR
+                                             Issued = 1 OR Deleted = 1 OR Processing = 1 OR Cancelled = 1 OR Booked = 1 OR
+                                             Printed = 1 OR RePrinted = 1 OR Duplicated = 1) 
+                                            ) AS unusedCount, 
+                           (SELECT COUNT(*) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId) As Total
+              FROM   Com_AWBStock SHDR
+                           <!-- , Com_AWBStockDetails SDTL --> 
+             <!-- WHERE -->
+              <where>
+                           <!-- SHDR.AWBStockId = SDTL.AWBStockId AND -->              
+                           <if test="carrierCode != null and carrierCode != ''">
+                                  SHDR.CarrierCode = #{carrierCode} 
+                           </if>
+                           <if test="stockCategoryCode != null and stockCategoryCode != ''">
+                                  AND SHDR.StockCategoryCode = #{stockCategoryCode}
+                           </if>
+                           <if test="stockId != null and stockId != ''">
+                                  AND SHDR.StockId = #{stockId}
+                           </if>
+                           <!-- (#{carrierCode} IS NULL OR SHDR.CarrierCode = #{carrierCode})
+              AND           (#{stockCategoryCode} IS NULL OR SHDR.StockCategoryCode = #{stockCategoryCode})
+              AND           (#{stockId} IS NULL OR SHDR.StockId = #{stockId}) -->
+              </where>
+       </select>
+
+
+
+	
+	<!-- <select id="archiveStockSummary"
+			parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary"
+			resultType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+		SELECT 	SHDR.CarrierCode AS carrierCode, SHDR.StockId AS stockId, 
+				SHDR.StockCategoryCode AS stockCategoryCode, SDTL.AWBNumber AS awbNumber,
+				CASE WHEN SDTL.Duplicated IS NULL THEN
+				 CASE WHEN SDTL.Deleted IS NULL THEN
+				  CASE WHEN SDTL.RePrinted IS NULL THEN
+				   CASE WHEN SDTL.Printed IS NULL THEN 
+				    CASE WHEN SDTL.Cancelled IS NULL THEN
+				     CASE WHEN SDTL.Booked IS NULL THEN 
+				      CASE WHEN SDTL.Processing IS NULL THEN 
+				       CASE WHEN SDTL.Reserved IS NULL THEN 'Unused'
+				      ELSE 'Processing' END
+					 ELSE 'Booked' END
+					ELSE 'Cancelled' END
+				   ELSE 'Printed' END
+				  ELSE 'Re-Printed' END
+				 ELSE 'Deleted' END
+				ELSE 'Duplicated' END END AS Status 
+		FROM 	Com_AWBStock SHDR, Com_AWBStockDetails SDTL
+		WHERE	SHDR.AWBStockId = SDTL.AWBStockId
+		<choose>
+			<when test="flagProcessing!=0">
+				AND	SDTL.Processing IS NOT NULL 
+			</when>
+			<when test="reserved!=0">
+				AND	SDTL.Reserved = '1'
+			</when>
+			<when test="flagBooked!=0">
+				AND	SDTL.Booked IS NOT NULL 
+			</when>
+			<when test="deleted!=0">
+				AND	SDTL.Deleted = '1'
+			</when>
+			<when test="flagCancelled!=0">
+				AND	SDTL.Cancelled IS NOT NULL
+			</when>
+			<when test="flagPrinted!=0">
+				AND	SDTL.Printed IS NOT NULL
+			</when>
+			<when test="flagReprinted!=0">
+				AND	SDTL.RePrinted IS NOT NULL
+			</when>
+			<when test="duplicated!=0">
+				AND	SDTL.Duplicated IS NOT NULL
+			</when>
+		</choose>
+		
+		<if test="sortByFlag!=0">
+		ORDER BY
+			Choose When : Refer sqlqueryagent.sql
+			<if test="sortByStockID!=0">
+				<if test="sortByCategory!=0">
+					<if test="sortByCarrierCode!=0">
+						<if test="sortByAwbNumber!=0">
+							SHDR.StockId, SHDR.CarrierCode, SHDR.StockCategoryCode, SDTL.AWBNumber;
+						</if>
+						<elseif>
+							
+						</elseif>
+					</if>
+				</if>
+			</if> 
+		</if>
+	</select> -->
+	
+	<select id="sqlupdateLeftStocksDeleted" 
+	parameterType="com.ngen.cosys.shipment.stockmanagement.model.StockSummary">
+	update 
+	    Com_AWBStockDetails 
+	     set
+	         Deleted= 1 , DeletedOn = getDate() ,
+	         LastUpdatedUser_Code = #{modifiedBy},
+	         LastUpdated_DateTime = #{modifiedOn}
+	where 
+	    AWBStockId = #{awbStockId}  and 
+		isnull(Processing, 0) != 1 and isnull(Issued, 0) != 1 and isnull(Reserved, 0)  != 1 and isnull(Duplicated, 0) != 1 and
+		isnull(Cancelled, 0) != 1 and isnull(Booked, 0) != 1 and isnull(Printed, 0) != 1 and isnull(RePrinted, 0) != 1
+	</select>
+	
+</mapper>

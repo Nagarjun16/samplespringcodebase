@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoCreateDeliveryRequestBatchJobMapper">
+
+	<select id="getFailedEvents" parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.events.payload.InterfaceMessageLogModel">
+		<![CDATA[
+		select 
+		   Interface_EventLog.EventLogId
+	      ,Interface_EventLog.EventType
+	      ,Interface_EventLog.EventPayloadType
+	      ,Interface_EventLog.FlightId
+	      ,Interface_EventLog.ShipmentId
+	      ,Interface_EventLog.UldNumber
+	      ,Interface_EventLog.EventPayloadKey
+	      ,Interface_EventLog.EventPayload
+	      ,Interface_EventLog.Status
+	      ,Interface_EventLog.CreatedUserCode
+	      ,Interface_EventLog.CreatedDateTime
+	      ,Interface_EventLog.LastUpdatedUserCode
+	      ,Interface_EventLog.LastUpdatedDateTime
+	      ,Interface_EventLog.FailedReason
+	      ,Interface_EventLog.LastFiredTime
+	      ,Interface_EventLog.RetryCount
+		  ,datediff(mi,Interface_EventLog.LastFiredTime,getdate()) lastFiredTimeDiff
+		  ,(select ParameterValueChar from App_SystemParameters where ParameterCode = 'REFIRE_FAILED_EVENTS_TIME') reFireConfigTime
+	  from Interface_EventLog
+	  where 
+		 datediff(mi,Interface_EventLog.CreatedDateTime,getdate()) > (select ParameterValueChar from App_SystemParameters where ParameterCode = 'REFIRE_FAILED_EVENTS_TIME')  
+		 and Interface_EventLog.Status in ('PROCESSING','FAILED')
+		 and isnull(Interface_EventLog.RetryCount,0) <(select ParameterValueChar from App_SystemParameters where ParameterCode = 'REFIRE_FAILED_EVENTS_RETRY_NO')
+		  and( isnull(FailedReason,'XX') not like 'Message Definition Not Configured%' and isnull(FailedReason,'XX') not like 
+		 'edi.no.msg.definition')
+		 and CreatedUserCode not in ('RESENDBATCH')
+		]]>
+	</select>
+
+	<update id="updateRetryCountForFailedEvents"
+		parameterType="com.ngen.cosys.events.payload.InterfaceMessageLogModel">
+		<![CDATA[
+			UPDATE 	Interface_EventLog
+			SET		RetryCount = isnull(RetryCount,0)+1, 
+					LastFiredTime = GETDATE(),
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	EventLogId = #{eventLogId}
+		]]>
+	</update>
+
+
+</mapper>

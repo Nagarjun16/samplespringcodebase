@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="operationalMessageMapper">
+
+
+	<select id="validationForAirportExistance"
+		parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*) from
+		mst_airport where airportcode=#{code}
+	</select>
+
+	<select id="validationForAirCraftType"
+		parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*) from
+		mst_aircrafttype where aircrafttype=#{aircraftCode}
+	</select>
+
+	<select id="validationForServiceType"
+		parameterType="java.lang.String" resultType="java.lang.Integer">
+		select case when count(1) > 0 then 1 else 0 end result from
+		Mst_OperativeFlight_ServiceTypes where FlightServiceType =
+		#{serviceType}
+	</select>
+
+	<select id="getServiceType" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select FlightServiceType from Mst_OperativeFlight_Icms_ServiceTypes where
+		FlightType = #{flightType}
+	</select>
+
+	<select id="fetchFlightId"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="java.math.BigInteger">
+		select Flight_ID from Flt_OperativeFlight where flightkey =#{flightKey} and
+		cast(FlightOriginDate as date) =cast(#{flightDate} as date)
+	</select>
+
+	<select id="fetchAircraftType"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="java.lang.String">
+		select max(AircraftType) from Flt_OperativeFlight_Legs where
+		Flight_ID=#{flightId}
+	</select>
+
+	<select id="validationForActiveArrivalFlightOverlapping"
+		parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight where flightkey = #{flightKey} and
+		cast(FlightOriginDate as date) =cast(#{dateSTD} as date) and
+		FlightCancelFlag='A'
+	</select>
+
+	<select id="validationForActiveDepartureFlightOverlapping"
+		parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight where flightkey = #{flightKey} and
+		cast(FlightOriginDate as date) =cast(#{dateSTA} as date) and
+		FlightCancelFlag='A'
+	</select>
+
+	<select id="validationForActiveFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight where flightkey = #{flightKey} and
+		cast(FlightOriginDate as date) =cast(#{flightDate} as date) and
+		FlightCancelFlag='A'
+	</select>
+
+	<select id="validationForCancelFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Flt_OperativeFlight where flightkey = #{flightKey} and
+		cast(FlightOriginDate as date) =cast(#{flightDate} as date) and
+		FlightCancelFlag='D' and FlightStatus = '0'
+	</select>
+
+	<select id="validateFlightBooking"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_ShipmentFlightBookingDetail where
+		FlightId=#{flightId} and
+		Exp_ShipmentFlightBookingDetail.BookingStatusCode !='XX'
+	</select>
+
+	<select id="validateArivalManifest"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Imp_ArrivalManifestByFlight where FlightId =#{flightId}
+	</select>
+
+	<select id="validateEXPFlightDeparted"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.String">
+		select FlightCompletedAt from Exp_FlightEvents where FlightId =#{flightId}
+	</select>
+
+	<select id="validateIMPFlightCompleted"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.String">
+		select FlightCompletedAt from Imp_FlightEvents where FlightId =#{flightId}
+	</select>
+	
+	<select id="validateIMPFlightDocumentVerified"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.String">
+		select DocumentVerificationCompletedAt from Imp_FlightEvents where FlightId =#{flightId}
+	</select>
+	
+	<select id="checkLegOrder"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="java.lang.String">
+		select FlightOffPoint from Flt_OperativeFlight_Legs where
+		Flight_ID=#{flightId} and FlightSegmentOrder=#{flightSegmentOrder}-1;
+	</select>
+
+	<select id="getWorkedOnLegInfo"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo">
+		select
+		FlightBoardPoint AS legOrigin
+		,FlightOffPoint AS legDestination
+		,DateSTD
+		,DateSTA
+		from Flt_OperativeFlight_Legs where Flight_ID=#{flightId} 
+		<if test="legOrigin.equals('SIN')">
+		and FlightBoardPoint='SIN'
+		</if>
+		<if test="legDestination.equals('SIN')">
+		and FlightOffPoint='SIN'
+		</if>;
+	</select>
+
+	<select id="validateAssignedULD"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_AssignedULDTrolleyToFlight
+		inner
+		join Exp_LoadedShipmentInfo on
+		Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId=
+		Exp_LoadedShipmentInfo.AssUldTrolleyId
+		where
+		Exp_AssignedULDTrolleyToFlight.FlightId=#{flightId}
+	</select>
+
+	<!-- <select id="validateDepartureManifest"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.Integer">
+			    <![CDATA[
+					select 
+						count(Exp_ShipmentBooking.ShipmentNumber)
+					from
+						Exp_ShipmentBooking inner join
+					    Exp_ShipmentFlightBookingDetail
+							on  Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+					where
+					    Exp_ShipmentFlightBookingDetail.FlightId = #{flightId} and 	
+						Exp_ShipmentFlightBookingDetail.FlightSegmentId in (
+							select 
+								Flt_OperativeFlight_Segments.FlightSegmentId 
+							from 
+								Flt_OperativeFlight_Segments 
+							where 
+								Flt_OperativeFlight_Segments.Flight_Id = #{flightId}    
+				]]>
+		<if test="segmentDestination != null">
+				<![CDATA[
+					and Flt_OperativeFlight_Segments.FlightOffPoint=#{segmentDestination}
+				]]>
+
+		</if>
+			<![CDATA[
+					)
+					and LEN(Exp_ShipmentBooking.ShipmentNumber) < 20
+			]]>
+	</select>-->
+	
+	<select id="validateDepartureManifest"
+			parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+			resultType="java.lang.Integer">	
+		select Case When count(*) = 0 then 0 else 1 end
+		from
+		Exp_FlightEvents FltEvent,
+		Flt_OperativeFlight Flight,
+		Flt_OperativeFlight_Legs Flightleg
+		where
+		Flight.Flight_ID = FltEvent.FlightId
+		and
+		Flight.Flight_ID = Flightleg.Flight_ID
+		and
+		Flight.FlightKey =#{flightKey}
+		and Flightleg.FlightBoardPoint=#{segmentOrigin}
+		and CAST(Flightleg.DateSTD as Date) =CAST(#{flightDate} as Date)
+		and ManifestCompletedAt is not null
+		and ManifestCompletedBy is not null
+	</select>
+	
+	<select id="validateFFMInfo"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo"
+		resultType="java.lang.Integer">
+	   <![CDATA[
+			select
+				count(Flt_OperativeFlight_Segments.FlightBoardPoint)
+			from
+				Imp_FreightFlightManifestByFlight inner join
+				Imp_FreightFlightManifestBySegment
+					on Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId inner join
+				Flt_OperativeFlight_Segments
+					on Imp_FreightFlightManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+			where
+				Imp_FreightFlightManifestByFlight.FlightId  = #{flightId}
+		]]>
+		<if test="segmentOrigin != null">
+			<![CDATA[
+				and Flt_OperativeFlight_Segments.FlightOffPoint=#{segmentOrigin}
+			]]>
+		</if>
+		<![CDATA[
+		and Imp_FreightFlightManifestBySegment.NilCargo <> 1
+		]]>
+	</select>
+
+	<!-- Handling Area Queries -->
+	<select id="sqlGetAircraftBodyType"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="java.lang.String">
+		select
+		AircraftBodyType
+		from
+		Mst_AircraftType
+		where
+		AircraftType = #{aircraftType}
+	</select>
+
+
+	<select id="sqlDeriveHandlingAreaForFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightHandlingArea">
+		With HandlingDefinition As(
+		select
+		Whs_HandlingConstraints.Name,
+		case
+		when (Whs_HandlingConstraints.ProcessHandled = 'BOTH') then
+		#{flightType}
+		else
+		Whs_HandlingConstraints.ProcessHandled
+		end HandlingAreaLevleProcessHandled,
+		isnull(Whs_HandlingConstraintsCarrier.CarrierCode,#{carrier}) Carrier,
+		case
+		when (Whs_HandlingConstraintsCarrier.ProcessHandled = 'BOTH') then
+		#{flightType}
+		else
+		Whs_HandlingConstraintsCarrier.ProcessHandled
+		end CarrerLevelProcessHandlied,
+		case
+		when Whs_HandlingConstraintsCarrier.AircraftBodyType = 'BOTH' then
+		#{aircraftBodyType}
+		else
+		Whs_HandlingConstraintsCarrier.AircraftBodyType
+		end as AircraftBodyType,
+		isnull(Whs_HandlingConstraintsCarrierAircraftType.AircraftType,#{aircraftType})
+		AircraftType,
+		Whs_Terminal.TerminalCode
+		from
+		Whs_HandlingConstraints inner join
+		Whs_HandlingConstraintsCarrier
+		on Whs_HandlingConstraints.WhsHandlingConstraintsId =
+		Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsId left join
+		Whs_HandlingConstraintsCarrierAircraftType
+		on Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsCarrierId =
+		Whs_HandlingConstraintsCarrierAircraftType.WhsHandlingConstraintsCarrierId
+		left join
+		Whs_AssociateHandlingConstraintWithArea
+		on Whs_HandlingConstraints.WhsHandlingConstraintsId =
+		Whs_AssociateHandlingConstraintWithArea.WhsHandlingConstraintsId and
+		Whs_AssociateHandlingConstraintWithArea.ReferenceType = 'TERMINAL'
+		inner join
+		Whs_Terminal
+		on Whs_AssociateHandlingConstraintWithArea.ReferenceId =
+		Whs_Terminal.WhsTerminalId
+		)select
+		HandlingDefinition.TerminalCode as terminalCode
+		from
+		HandlingDefinition
+		where
+		HandlingDefinition.Carrier = #{carrier} and
+		HandlingDefinition.AircraftBodyType = #{aircraftBodyType} and
+		HandlingDefinition.AircraftType = #{aircraftType}
+		<if test="flightType != null and flightType != 'BOTH'">
+			and (HandlingDefinition.CarrerLevelProcessHandlied = #{flightType} or
+			HandlingDefinition.HandlingAreaLevleProcessHandled = #{flightType})
+		</if>
+	</select>
+
+	<select id="sqlDeriveAllTerminalForFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightHandlingArea">
+		<!-- select TerminalCode from Whs_Terminal where SatelliteStationFlag = 
+			0 -->
+		select Whs_Terminal.TerminalCode as terminalCode
+		from
+		Whs_Terminal,Whs_HandlingConstraintsCarrier,
+		Whs_AssociateHandlingConstraintWithArea
+		where
+		Whs_Terminal.WhsTerminalId=Whs_AssociateHandlingConstraintWithArea.ReferenceId
+		and Whs_AssociateHandlingConstraintWithArea.ReferenceType='TERMINAL'
+		and
+		Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsId=Whs_AssociateHandlingConstraintWithArea.WhsHandlingConstraintsId
+		and Whs_HandlingConstraintsCarrier.CarrierCode= #{carrier}
+		and Whs_HandlingConstraintsCarrier.ProcessHandled
+		IN('EXPORT','IMPORT','BOTH')
+		and SatelliteStationFlag = 0
+
+	</select>
+
+
+	<delete id="deleteExistingFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		<!-- delete from Flt_OperativeFlight_Exceptions where Flight_ID=#{flightId}; -->
+		delete from Flt_OperativeFlight_HandlingArea where FlightId=#{flightId};
+		delete from Flt_OperativeFlight_Facts where Flight_ID =#{flightId};
+		delete from Customs_Flight where FlightKey=#{flightKey} and
+		cast(FlightOriginDate as date)=cast(#{flightDate} as date );
+		delete from Exp_FlightEvents where FlightId =#{flightId};
+		delete from Imp_FlightEvents where FlightId =#{flightId};
+		delete from Flt_OperativeFlight_Segments where Flight_ID=#{flightId};
+		delete from Flt_OperativeFlight_Legs where Flight_ID=#{flightId};
+		<!-- delete from Flt_OperativeFlightEvents where Flight_Id =#{flightId}; -->
+		delete from Flt_OperativeFlight where Flight_ID=#{flightId};
+	</delete>
+
+	<delete id="deleteExistingFlightLegs"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo">
+		delete from Flt_OperativeFlight_Legs where Flight_ID=#{flightId}
+		<if
+			test='legOrigin!=null and isDeleteLeg==false and legOrigin.equals("SIN")'>
+			and FlightBoardPoint!='SIN'
+		</if>
+		<if
+			test='legDestination!=null and isDeleteLeg==false and legDestination.equals("SIN")'>
+			and FlightOffPoint!='SIN'
+		</if>
+		<if
+			test='!legOrigin.equals("SIN") and !legDestination.equals("SIN") and isDeleteLeg==false'>
+			and FlightBoardPoint!='SIN' and FlightOffPoint!='SIN'
+		</if>
+
+	</delete>
+
+	<delete id="deleteExistingFlightSegments"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightSegmentInfo">
+		delete from Flt_OperativeFlight_Segments where Flight_ID=#{flightId}
+		<if
+			test='segmentOrigin!=null and isDeleteSegment==false and segmentOrigin.equals("SIN")'>
+			and FlightBoardPoint!='SIN'
+		</if>
+		<if
+			test='segmentDestination!=null and isDeleteSegment==false and segmentDestination.equals("SIN")'>
+			and FlightOffPoint!='SIN'
+		</if>
+		<if
+			test='!segmentOrigin.equals("SIN") and !segmentDestination.equals("SIN") and isDeleteSegment==false'>
+			and FlightBoardPoint!='SIN' and FlightOffPoint!='SIN'
+		</if>
+
+	</delete>
+	<!-- <delete id="deleteExistingFlightSegments" parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"> 
+		delete from Flt_OperativeFlight_Segments where Flight_ID=#{flightId} </delete> -->
+
+	<insert id="insertFltOperationalFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		useGeneratedKeys="true" keyColumn="Flight_ID" keyProperty="flightId">
+		INSERT INTO Flt_OperativeFlight
+		(FlightCancelFlag,
+		CarrierCode
+		,FlightNumber
+		,FlightKey
+		,FlightOriginDate
+		,FlightServiceType
+		,FlightType
+		,GroundHandlerCode
+		,InboundAircraftRegNo
+		,OutboundAircraftRegNo
+		,FlightAutoCompleteFlag
+		,ClosedForBooking
+		,CreatedUser_Code
+		,Created_DateTime
+		,ChangedByASM
+		)
+		VALUES
+		('A',
+		#{carrier}
+		,#{flightNo}
+		,#{flightKey}
+		,#{flightDate}
+		,#{serviceType}
+		,#{flightType}
+		, (select
+		case when (select GroundHandlerCode from
+		Mst_Carrier where
+		CarrierCode=#{carrier}) is not null
+		then ( select
+		GroundHandlerCode from Mst_Carrier where
+		CarrierCode=#{carrier})
+		else
+		'SATS'
+		end)
+		,#{inboundAircraftRegNo}
+		,#{outboundAircraftRegNo}
+		,#{flightAutoCompleteFlag}
+		,#{closedForBooking}
+		,#{createdUserId}
+		,GETDATE()
+		,#{changedByASM})
+	</insert>
+
+	<insert id="insertFltOperationalFlightLegs"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		INSERT INTO Flt_OperativeFlight_Legs
+		(Flight_ID
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightSegmentOrder
+		,DateSTD
+		,DateSTA
+		,DateETD
+		,DomesticFlightFlag
+		,AircraftRegCode
+		,AircraftType
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(#{flightId}
+		,#{legOrigin}
+		,#{legDestination}
+		,#{flightSegmentOrder}
+		,#{dateSTD}
+		,#{dateSTA}
+		,#{dateETD}
+		,0
+		,#{aircraftRegistrationNo}
+		,#{aircraftType}
+		,#{createdUserId}
+		,GETDATE())
+	</insert>
+
+	<insert id="insertFltOperationalFlightSegments"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		INSERT INTO Flt_OperativeFlight_Segments
+		(
+		Flight_ID
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightSegmentOrder
+		,DateSTD
+		,DateSTA
+		,SegmentLegFlag
+		,NoFreightLoading
+		,FlightTechnicalStopFlag
+		,NoCargoFlag
+		,NoMailFlag
+		,DomesticFlightFlag
+		,CreatedUser_Code
+		,Created_DateTime
+		)
+		VALUES
+		(
+		#{flightId}
+		,#{segmentOrigin}
+		,#{segmentDestination}
+		,#{segmentOrder}
+		,#{dateSTD}
+		,#{dateSTA}
+		,1
+		,#{noFreight}
+		,#{technicalStop}
+		,#{nilCargoIndicator}
+		,#{noMailFlag}
+		,0
+		,#{createdUserId}
+		,GETDATE()
+		)
+	</insert>
+
+
+	<insert id="insertFlightHandlingArea"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightHandlingArea">
+		INSERT INTO Flt_OperativeFlight_HandlingArea(
+		FlightId
+		,TerminalCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES(
+		#{flightId}
+		,#{terminalCode}
+		,#{createdUserId}
+		,GETDATE()
+		)
+	</insert>
+	<insert id="insertinExpFlightEventsTable"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		useGeneratedKeys="true" keyColumn="ExpFlightEventsId">
+		insert into Exp_FlightEvents
+		(FlightId,CreatedUserCode,CreatedDateTime)
+		values(#{flightId},#{createdUserId},GETDATE())
+	</insert>
+
+	<insert id="insertInImpFlightEventsTable"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"
+		useGeneratedKeys="true" keyColumn="ImpFlightEventsId">
+		insert into Imp_FlightEvents
+		(FlightId,CreatedUserCode,CreatedDateTime)
+		values(#{flightId},#{createdUserId},GETDATE())
+
+	</insert>
+
+	<insert id="insertFlightRemark"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		INSERT INTO Flt_OperativeFlight_Facts
+		(Flight_ID
+		,FactSequenceNo
+		,FactDescription
+		,CreatedUser_Code
+		,Created_DateTime
+		,LastUpdatedUser_Code
+		,LastUpdated_DateTime)
+		VALUES (
+		#{flightId}
+		,(SELECT (case when MAX (FactSequenceNo) is null then 1 else
+		MAX (FactSequenceNo) + 1 end ) txNumber FROM
+		Flt_OperativeFlight_Facts where Flight_ID =#{flightId})
+		,#{flightRemarks}
+		, #{createdUserId}
+		,GETDATE(),null,null)
+	</insert>
+
+	<insert id="insertIntoCustomsFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		INSERT INTO Customs_Flight
+		(FlightBoardPoint
+		,FlightOffPoint
+		,ImportExportIndicator
+		,FlightType
+		,CreatedUserCode
+		,CreatedDateTime
+		,FlightKey
+		,FlightOriginDate
+		,FlightDate)
+		VALUES(
+		#{loadingPoint}
+		,#{firstPointArrival}
+		,#{siType}
+		,(select FlightType from Mst_OperativeFlight_ServiceTypes where
+		FlightServiceType=#{serviceType})
+		,#{createdUserId}
+		,GETDATE()
+		,#{flightKey}
+		,cast(#{flightDate} as date)
+		,cast(#{flightDate} as date)
+		)
+
+	</insert>
+
+	<!-- <insert id ="insertFltOperativeFlightExceptions" parameterType = "com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo"> 
+		INSERT INTO Flt_OperativeFlight_Exceptions (Flight_ID ,ExceptionSequenceNo 
+		,ExceptionType ,CreatedUser_Code ,Created_DateTime) VALUES( #{flightId} ,'1' 
+		,'ICMS Exception' ,#{createdUserId} ,GETDATE() ) </insert> -->
+
+	<update id="updateFltOperativeFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		UPDATE
+		Flt_OperativeFlight
+		SET
+		<if test='serviceType !=null'>
+			FlightServiceType = #{serviceType},
+		</if>
+		ClosedForBooking = #{closedForBooking},
+		FlightAutoCompleteFlag = #{flightAutoCompleteFlag},
+		LastUpdatedUser_Code = #{modifiedUserId},
+		LastUpdated_DateTime = GETDATE()
+		WHERE
+		Flight_ID = #{flightId}
+	</update>
+	
+	<update id="UpdateTime"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo">
+		UPDATE
+		Flt_OperativeFlight_Legs
+		SET
+		<if test='stdDate!=null and stdTime !=null'>
+			DateSTD = (SELECT DATEADD(day, DATEDIFF(day, 0, #{stdDate}), #{stdTime})),
+		</if>
+		<if test='staDate!=null and staTime !=null'>
+			DateSTA = (SELECT DATEADD(day, DATEDIFF(day, 0, #{staDate}), #{staTime})),
+		</if>
+		AircraftType=#{aircraftType},
+		LastUpdatedUser_Code = #{modifiedUserId},
+		LastUpdated_DateTime = GETDATE()
+		WHERE
+		Flight_ID = #{flightId} and FlightBoardPoint=#{legOrigin} and FlightOffPoint=#{legDestination}
+	</update>
+
+	<update id="cancelFltOperationalFlight"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		UPDATE
+		Flt_OperativeFlight
+		SET
+		FlightCancelFlag = 'D'
+		,FlightStatus = '0'
+		,LastUpdatedUser_Code = #{modifiedUserId}
+		,LastUpdated_DateTime = GETDATE()
+		WHERE
+		flightkey = #{flightKey} and cast(FlightOriginDate as date) =cast(#{flightDate}
+		as date)
+	</update>
+
+	<update id="cancleFlightInCustoms"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		UPDATE
+		Customs_Flight
+		SET
+		FlightCancelFlag = 1
+		,LastUpdatedUserCode = #{modifiedUserId}
+		,LastUpdatedDateTime = GETDATE()
+		WHERE
+		FlightKey = #{flightKey}
+		AND
+		CAST(FlightOriginDate AS DATE) = CAST(#{flightDate} AS DATE)
+	</update>
+
+	<update id="updateFlightRemark"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		UPDATE
+		Flt_OperativeFlight_Facts
+		SET
+		FactDescription = #{flightRemarks}
+		,LastUpdatedUser_Code = #{modifiedUserId}
+		,LastUpdated_DateTime = GETDATE()
+		WHERE
+		Flight_ID = #{flightId}
+	</update>
+
+	<delete id="deleteFlightRemarks"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		delete from Flt_OperativeFlight_Facts where Flight_ID =#{flightId};
+	</delete>
+	<update id="updateAutoComFlag"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightInfo">
+		<![CDATA[
+			update Flt_OperativeFlight set FlightAutoCompleteFlag = 0 where Flight_ID = #{flightId}
+		]]>
+	</update>
+
+	<select id="checkForAutoCarrier"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where
+		carrierCode = #{carrier}
+		and (FlightNumber is null OR FlightNumber='')
+		and (AirportCode is null OR AirportCode='')
+	</select>
+
+
+	<select id="checkForAutoFlightWithCarrier"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where
+		carrierCode = #{carrier}
+		and FlightNumber like '%' + #{flightNumber} + '%'
+		and (AirportCode is null OR AirportCode ='')
+	</select> 
+
+	<select id="checkForAutoFlightWithDest"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where
+		carrierCode = #{carrier}
+		and FlightNumber like '%' + #{flightNumber} + '%'
+		and AirportCode= #{legDestination}
+	</select>
+
+	<select id="checkForAutoCarrierWithDest"
+		parameterType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where
+		carrierCode = #{carrier}
+		and (FlightNumber ='' OR  FlightNumber is NULL)
+		and AirportCode =#{legDestination}
+	</select>
+
+</mapper>

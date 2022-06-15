@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DamageSearchModel">
+<resultMap type="com.ngen.cosys.impbd.damage.model.DamageReportModel" 
+		id="CreateDamageReportResultMap">
+	    <id column="flightId" property="flightId"/>
+		<result column="flight" property="flight"/>
+		<result column="flightDate" property="flightDate"/>
+		<result column="WeatherCondition" property="weatherCondition"/>
+		<result column="CreatedUser_Code" property="preparedBy"/>
+		<result column="DamageCargoFinalizeAt" property="damageCargoFinalizeAt"/>
+		<result column="DamageCargoFinalizeBy" property="damageCargoFinalizeBy"/>
+		<!-- <collection javaType="List"
+			property="listDamageReportAWBDetails" 			
+			select="DamageReportAWBListInfo"
+			column="flightId"/> 
+		<collection javaType="List"
+			property="listDamageReportMailDetails"
+			select="DamageReportMailListInfo"
+			column="flightId"/>
+		<collection javaType="List"
+			property="listDamageReportULDDetails"
+			select="DamageReportULDListInfo"
+			column="flightId"/> -->
+		</resultMap>
+		<select id="DamageReportInfo"
+		parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel"
+		resultMap="CreateDamageReportResultMap">
+			SELECT Flt_OperativeFlight.Flight_ID AS flightId
+				,Flt_OperativeFlight.FlightKey AS flight
+				,Flt_OperativeFlight_Legs.DateSTA AS flightDate
+				,Imp_FlightEvents.WeatherCondition
+				,Imp_FlightEvents.DamageCargoFinalizeAt
+				,Imp_FlightEvents.DamageCargoFinalizeBy
+				,(select
+					STRING_AGG( Com_DamageInfo.CreatedUser_Code, ' ') 
+					from(select distinct Com_DamageInfo.CreatedUser_Code
+							from Com_DamageInfo where Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID) Com_DamageInfo) CreatedUser_Code
+			FROM Flt_OperativeFlight
+			INNER JOIN Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+				AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			INNER JOIN Imp_FlightEvents ON Imp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID			
+			WHERE Flt_OperativeFlight.FlightKey = #{flight}
+				AND cast(Flt_OperativeFlight_Legs.DateSTA AS DATE) = cast(#{flightDate} AS DATE)
+				GROUP BY 
+				 Flt_OperativeFlight.Flight_ID
+				,Flt_OperativeFlight.FlightKey
+				,Flt_OperativeFlight_Legs.DateSTA 
+				,Imp_FlightEvents.WeatherCondition
+				,Imp_FlightEvents.DamageCargoFinalizeAt
+				,Imp_FlightEvents.DamageCargoFinalizeBy
+		</select>
+			<select id="Damagestatus"
+		parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel"
+		resultType="java.lang.String">
+	with a as(
+		SELECT 
+				concat(Imp_FlightEvents.DamageCargoFinalizeBy,' ',format(Imp_FlightEvents.DamageCargoFinalizeAt,'ddMMMyyyy')) as damagestatus,
+				
+				upper((FORMAT(CAST((select convert
+(datetime,SWITCHOFFSET(converT(datetimeoffset,Imp_FlightEvents.DamageCargoFinalizeAt),(SELECT current_utc_offset
+                 FROM   sys.time_zone_info
+                 WHERE  NAME =
+(select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))))) as datetime),'HH:mm')))as damagetime
+			FROM Flt_OperativeFlight
+			INNER JOIN Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+				AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			INNER JOIN Imp_FlightEvents ON Imp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID			
+			WHERE Flt_OperativeFlight.FlightKey = #{flight}
+				AND cast(Flt_OperativeFlight_Legs.DateSTA AS DATE) = cast(#{flightDate} AS DATE)
+				)
+				select 
+				concat(a.damagestatus,' ',a.damagetime) as status
+				   from a
+		</select>
+<resultMap type="com.ngen.cosys.impbd.damage.model.DamageReportAWBDetails"
+			id="DamageReportAWBListInfoMap">
+			<id column="flightId" property="flightId"/>
+			<result column="NatureOfDamageBooleancrushed" property="NatureOfDamageBooleancrushed"/>
+			<result column="NatureOfDamageBooleanseam" property="NatureOfDamageBooleanseam"/>
+			<result column="NatureOfDamageBooleanpuncture" property="NatureOfDamageBooleanpuncture"/>
+			<result column="NatureOfDamageBooleantorn" property="NatureOfDamageBooleantorn"/>
+			<result column="NatureOfDamageBooleanwet" property="NatureOfDamageBooleanwet"/>
+			<result column="NatureOfDamageBooleanforeigntaping" property="NatureOfDamageBooleanforeigntaping"/>
+			<result column="NatureOfDamageBooleanothers" property="NatureOfDamageBooleanothers"/>
+			<result column="AWBNumber" property="entityKey"/>
+			<result column="DamagedPieces" property="damagePieces"/>
+			<result column="Content" property="content"/>
+			<result column="Severity" property="severity"/>
+			<result column="Occurrence" property="occurence"/>
+			<result column="Remarks" property="remark"/>
+			<result column="HAWBNumber" property="HAWBNumber"/>
+</resultMap>
+
+	<select id="DamageReportAWBListInfo"
+	parameterType="com.ngen.cosys.impbd.damage.model.DamageReportAWBDetails"
+	resultMap="DamageReportAWBListInfoMap">
+		SELECT DISTINCT
+	   Com_DamageInfo.EntityKey as AWBNumber,
+	   Com_DamageInfo.SubEntityKey as HAWBNumber,
+	   Com_DamageLineItems.Remarks,
+	   Com_DamageInfo.FlightId,
+	   Com_DamageInfo.Content,
+	   Com_DamageLineItems.DamagedPieces,
+	   Com_DamageInfo.CreatedUser_Code,
+	   Flt_OperativeFlight.FlightKey,
+	   CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) AS flightDate,
+	   Com_DamageInfo.EntityType AS entityType,
+	   Imp_FlightEvents.WeatherCondition,
+	   Com_DamageLineItems.Severity,
+	   Com_DamageLineItems.Occurrence,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Crushed') AS NatureOfDamageBooleancrushed,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Seams_Opened') AS NatureOfDamageBooleanseam,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Punctured') AS NatureOfDamageBooleanpuncture,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Torn') AS NatureOfDamageBooleantorn,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage IN('Wet/Damp')) AS NatureOfDamageBooleanwet,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Foreign_Taping') AS NatureOfDamageBooleanforeigntaping,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Others') AS NatureOfDamageBooleanothers
+	   FROM Com_DamageInfo
+	   LEFT JOIN Flt_OperativeFlight
+	   ON Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID
+	   LEFT JOIN Flt_OperativeFlight_Legs
+	   ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+	   LEFT JOIN Com_DamageLineItems
+	   ON Com_DamageInfo.DamageInFoId = Com_DamageLineItems.DamageInFoId
+	     LEFT JOIN Imp_FlightEvents
+	   ON Com_DamageInfo.FlightId = Imp_FlightEvents.FlightId
+				WHERE
+				Com_DamageInfo.EntityType = 'AWB'  
+				<if test="flight!=null and flight!='' ">
+				  AND Flt_OperativeFlight.FlightKey = #{flight}  
+				</if> 
+				
+				<if test="flightDate!=null">
+			AND cast(Flt_OperativeFlight_Legs.DateSTA AS DATE) = cast(#{flightDate} AS DATE)
+			AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				</if> 
+				
+			
+  </select>
+  <resultMap type="com.ngen.cosys.impbd.damage.model.DamageReportMailDetails"
+			id="DamageReportMailListInfoMap">
+			<id column="flightId" property="flightId"/>
+			<result column="NatureOfDamageBooleanalteredseals" property="NatureOfDamageBooleanalteredseals"/>
+			<result column="NatureOfDamageBooleanpuncture" property="NatureOfDamageBooleanpuncture"/>
+			<result column="NatureOfDamageBooleantorn" property="NatureOfDamageBooleantorn"/>
+			<result column="NatureOfDamageBooleanwet" property="NatureOfDamageBooleanwet"/>
+			<result column="NatureOfDamageBooleanothers" property="NatureOfDamageBooleanothers"/>
+			<result column="MAILNumber" property="entityKey"/>
+			<result column="DamagedPieces" property="damagePieces"/>
+			<result column="Severity" property="severity"/>
+			<result column="Occurrence" property="occurence"/>
+			<result column="Remarks" property="remark"/>
+			
+</resultMap>
+
+	<select id="DamageReportMailListInfo"
+	parameterType="com.ngen.cosys.impbd.damage.model.DamageReportMailDetails"
+	resultMap="DamageReportMailListInfoMap">
+		SELECT DISTINCT
+	   Com_DamageInfo.EntityKey as MAILNumber,
+	   Com_DamageInfo.Remarks,
+	   Com_DamageInfo.FlightId,
+	   Com_DamageInfo.Content,
+	   Com_DamageLineItems.DamagedPieces,
+	   Com_DamageInfo.CreatedUser_Code,
+	   Flt_OperativeFlight.FlightKey,
+	   CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) AS flightDate,
+	   Com_DamageInfo.EntityType AS entityType,
+	   Imp_FlightEvents.WeatherCondition,
+	   Com_DamageLineItems.Severity,
+	   Com_DamageLineItems.Occurrence,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'ALTERED SEALS') AS NatureOfDamageBooleanalteredseals,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'PLUNDERED') AS NatureOfDamageBooleanpuncture,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Torn') AS NatureOfDamageBooleantorn,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Wet') AS NatureOfDamageBooleanwet,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Others') AS NatureOfDamageBooleanothers
+	   FROM Com_DamageInfo
+	   LEFT JOIN Flt_OperativeFlight
+	   ON Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID
+	   LEFT JOIN Flt_OperativeFlight_Legs
+	   ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+	   LEFT JOIN Com_DamageLineItems
+	   ON Com_DamageInfo.DamageInFoId = Com_DamageLineItems.DamageInFoId
+	     LEFT JOIN Imp_FlightEvents
+	   ON Com_DamageInfo.FlightId = Imp_FlightEvents.FlightId
+		WHERE
+			 Com_DamageInfo.EntityType = 'MBN'
+			<if test="flight!=null and flight!='' ">
+				  AND Flt_OperativeFlight.FlightKey = #{flight}  
+				</if> 
+				
+				<if test="flightDate!=null">
+			AND cast(Flt_OperativeFlight_Legs.DateSTA AS DATE) = cast(#{flightDate} AS DATE)
+			AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				</if> 
+  </select>
+  
+  <resultMap type="com.ngen.cosys.impbd.damage.model.DamageReportULDDetails"
+			id="DamageReportULDListInfoMap">
+			<id column="flightId" property="flightId"/>
+			<result column="NatureOfDamageBooleanserusable" property="NatureOfDamageBooleanserusable"/>
+			<result column="NatureOfDamageBooleansernonusable" property="NatureOfDamageBooleansernonusable"/>
+			<result column="NatureOfDamageBooleannonservicable" property="NatureOfDamageBooleannonservicable"/>
+			<result column="ULDnumber" property="entityKey"/>
+			<result column="Occurrence" property="occurence"/>
+			<result column="Remarks" property="remark"/>
+			
+</resultMap>
+
+	<select id="DamageReportULDListInfo"
+	parameterType="com.ngen.cosys.impbd.damage.model.DamageReportULDDetails"
+	resultMap="DamageReportULDListInfoMap">
+		  SELECT DISTINCT
+	   Com_DamageInfo.EntityKey as ULDNumber,
+	   Com_DamageInfo.Remarks,
+	   Com_DamageInfo.FlightId,
+	   Com_DamageInfo.Content,
+	   Com_DamageLineItems.DamagedPieces,
+	   Com_DamageInfo.CreatedUser_Code,
+	   Flt_OperativeFlight.FlightKey,
+	   CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) AS flightDate,
+	   Com_DamageInfo.EntityType AS entityType,
+	   Imp_FlightEvents.WeatherCondition,
+	   Com_DamageLineItems.Severity,
+	   Com_DamageLineItems.Occurrence,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Serviceable-Usable' ) AS NatureOfDamageBooleanserusable,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Serviceable-NonUsable') AS NatureOfDamageBooleansernonusable,
+	(SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 0, 1)  FROM Com_DamageLineItemsConditions
+			WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+			AND Com_DamageLineItemsConditions.NatureOfDamage = 'Non-Serviceable') AS NatureOfDamageBooleannonservicable
+	   FROM Com_DamageInfo
+	   LEFT JOIN Flt_OperativeFlight
+	   ON Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID
+	   LEFT JOIN Flt_OperativeFlight_Legs
+	   ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+	   LEFT JOIN Com_DamageLineItems
+	   ON Com_DamageInfo.DamageInFoId = Com_DamageLineItems.DamageInFoId
+	     LEFT JOIN Imp_FlightEvents
+	   ON Com_DamageInfo.FlightId = Imp_FlightEvents.FlightId
+		WHERE 
+			 Com_DamageInfo.EntityType = 'ULD'
+			<if test="flight!=null and flight!='' ">
+				  AND Flt_OperativeFlight.FlightKey = #{flight}  
+				</if> 
+				
+				<if test="flightDate!=null">
+			AND cast(Flt_OperativeFlight_Legs.DateSTD AS DATE) = cast(#{flightDate} AS DATE)
+			AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				</if> 
+  </select>
+  
+ <update id="sqlUpdateDamageAddition" 
+    		parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel">
+    		UPDATE Imp_FlightEvents
+  			 SET
+     		 WeatherCondition =#{weatherCondition}
+ 			WHERE  FlightId = #{flightId}
+  </update>
+  <select id="sqlcheckInwardServiceReport"
+  		parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel"
+  		resultType="java.lang.String">
+  		select InwardServiceReportFinalizedBy from Imp_FlightEvents where FlightId= #{flightId}	
+  </select>
+  <update id="sqlFinalizeDamageCargo" parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel">
+  update Imp_FlightEvents
+		set
+			DamageCargoFinalizeBy = #{modifiedBy}, 
+			DamageCargoFinalizeAt = #{modifiedOn}
+		where
+			FlightId = #{flightId}
+  </update>
+  
+    <update id="sqlUnFinalizeDamageCargo" parameterType="com.ngen.cosys.impbd.damage.model.DamageReportModel">
+  update Imp_FlightEvents
+		set
+			DamageCargoFinalizeBy = null, 
+			DamageCargoFinalizeAt = null
+		where
+			FlightId = #{flightId}
+  </update>
+  
+</mapper>

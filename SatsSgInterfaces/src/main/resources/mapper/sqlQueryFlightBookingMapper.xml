@@ -1,0 +1,1828 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- <!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd"> -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BookingMessageMapper">
+
+	<select id="checkBookingExist" parameterType="java.lang.String" resultType="java.lang.String">
+	select BookingDetailsId from Exp_Icms_ShipmentIdentifierDetails where concat(ShipmentPrefix,MasterDocumentNumber)= #{awbNumber}
+	</select>
+
+	<delete id="deleteShipmentDetails" parameterType="java.lang.String">
+		 
+ 		delete from Exp_Icms_BookingConsigneeDetails  Where ShipmentDetailsId IN  (
+		select BCD.ShipmentDetailsId from Exp_Icms_BookingConsigneeDetails BCD
+		LEFT JOIN Exp_Icms_ShipmentDetails SD on SD.ShipmentDetailsId=BCD.ShipmentDetailsId
+		where SD.BookingDetailsId = #{bookingDetailsId}); 
+		
+		delete from Exp_Icms_BookingShipperDetails where ShipmentDetailsId IN (
+		select BSD.ShipmentDetailsId from Exp_Icms_BookingShipperDetails BSD
+		LEFT JOIN Exp_Icms_ShipmentDetails SD on SD.ShipmentDetailsId=BSD.ShipmentDetailsId
+		where SD.BookingDetailsId = #{bookingDetailsId}); 
+		
+		delete from Exp_Icms_ProductDetails where ShipmentDetailsId IN (
+		select PD.ShipmentDetailsId from Exp_Icms_ProductDetails PD
+		LEFT JOIN Exp_Icms_ShipmentDetails SD on SD.ShipmentDetailsId=PD.ShipmentDetailsId
+		where SD.BookingDetailsId = #{bookingDetailsId}); 
+	</delete>
+
+	<delete id="deleteBookingCommodityDetails" parameterType="java.lang.String">
+	 	delete from Exp_Icms_RatingDetails  Where BookingCommodityDetailsId IN  (
+		select RD.BookingCommodityDetailsId from Exp_Icms_RatingDetails RD
+		LEFT JOIN Exp_Icms_BookingCommodityDetails BCD on BCD.BookingCommodityDetailsId=RD.BookingCommodityDetailsId
+		where BCD.BookingDetailsId = #{bookingDetailsId}); 
+		
+		delete from Exp_Icms_DimensionDetails  Where BookingCommodityDetailsId IN  (
+		select DD.BookingCommodityDetailsId from Exp_Icms_DimensionDetails DD
+		LEFT JOIN Exp_Icms_BookingCommodityDetails BCD on BCD.BookingCommodityDetailsId=DD.BookingCommodityDetailsId
+		where BCD.BookingDetailsId = #{bookingDetailsId}); 
+	</delete>
+
+
+	<delete id="deleteBookingDetails" parameterType="java.lang.String">
+		  delete from Exp_Icms_BookingCommodityDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_ShipmentIdentifierDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_OtherChargeDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_BookingFlightDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_ShipmentDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_BookingDetails where BookingDetailsId=#{bookingDetailsId};
+		  delete from Exp_Icms_BookingFlightPairingDetails where BookingDetailsId=#{bookingDetailsId};
+		   
+	</delete>
+
+	<insert id="insertBookingDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingDetails"
+		useGeneratedKeys="true" keyColumn="BookingDetailsId" keyProperty="bookingDetailsId">
+	INSERT INTO Exp_Icms_BookingDetails
+		(
+		UBRNumber,
+		BookingStatus,
+		SLACPieces,
+		CapacityType,
+		BaselineStatus,
+		CCShipmentIndicator,
+		LatestAcceptanceTime,
+		LatestAcceptanceTimeUTC, 
+		ShipmentCategory,
+		UserStation,
+		IsSplitBooking,
+		BookingVersion,
+		AirFreightCharge,
+		WeightUnit,
+		VolumeUnit,
+		DimensionUnit,
+		LastUpdateSource,
+		IsAWBAutoPopulatedFromStock,
+		BookingDate,
+		BookingDateUTC, 
+		SCCCodes,
+		LatModifiedCounter,
+		AutoAllocationEligible,
+		<!-- UniqueReferenc,
+		serviceCargoClass,-->
+		BookingRemarks,
+		HandlingInformation,
+		CreatedUser_Code,
+		Created_DateTime,
+		LastUpdatedUser_Code,
+		LastUpdated_DateTime)
+		VALUES
+		(
+		#{ubrNumber},
+		#{bookingStatus},
+		#{slacPieces},
+		#{capacityType},
+		#{baselineStatus},
+		#{ccShipmentIndicator},
+		#{latestAcceptanceTime},
+		#{latestAcceptanceTimeUTC},
+		#{shipmentCategory},
+		#{userStation},
+		#{isSplitBooking},
+		#{bookingVersion},
+		#{airFreightCharge},
+		#{weightUnit},
+		#{volumeUnit},
+		#{dimensionUnit},
+		#{lastUpdateSource},
+		#{isAWBAutoPopulatedFromStock},
+		#{bookingDate},
+		#{bookingDateUTC}, 
+		#{sccCodes},
+		#{latModifiedCounter},
+		#{autoAllocationEligible},
+		<!--#{uniqueReference},
+		#{serviceCargoClass},-->
+		#{bookingRemarks}, 
+		#{handlingInformation},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE())
+	</insert>
+
+	<insert id="insertBookingCommodityDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingCommodityDetails"
+		useGeneratedKeys="true" keyColumn="BookingCommodityDetailsId" keyProperty="bookingCommodityDetailsId">
+	INSERT INTO Exp_Icms_BookingCommodityDetails
+		(
+		BookingDetailsId,
+		SerialNumber,
+		CommodityCode ,
+		Pieces ,
+		Weight,
+		DisplayWeight,
+		Volume ,
+		DisplayVolume ,
+		VolumeThreeDecimal,
+		ShipmentDescription,
+		SccCode ,
+		ChargeableWeight ,
+		DisplayChargableWeight,
+		<!-- handlingCodes , -->
+		CreatedUser_Code ,
+		Created_DateTime ,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime )
+		VALUES
+		(
+		#{bookingDetailsId},
+		#{serialNumber},
+		#{commodityCode} ,
+		#{pieces} ,
+		#{weight},
+		#{displayWeight},
+		#{volume} ,
+		#{displayGrossVolume} ,
+		#{volumeThreeDecimal},
+		#{shipmentDescription},
+		#{sccCode} ,
+		#{chargeableWeight} ,
+		#{displayChargableWeight},
+		<!-- #{handlingCodes} , -->
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE() )
+	</insert>
+
+
+	<insert id="insertBookingFlightDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails"
+		useGeneratedKeys="true" keyColumn="BookingFlightDetailsId" keyProperty="bookingFlightDetailsId">
+	INSERT INTO Exp_Icms_BookingFlightDetails
+		(
+		BookingDetailsId,
+		SerialNumber ,
+		SegmentOrigin ,
+		SegmentDestination ,
+		CarrierCode ,
+		FlightNumber ,
+		SegmentDepartureDate ,
+		SegmentDepartureDateUTC ,
+		Pieces ,
+		Weight ,
+		DisplayWeight ,
+		Volume ,
+		DisplayVolume ,
+		VolumeThreeDecimal ,
+		ConfirmedNumberOfPieces ,
+		ConfirmedWeight ,
+		ConfirmedVolume ,
+		AllotmentId ,
+		AircraftType ,
+		FlightBookingStatus ,
+		RouteNumber ,
+		FlightSegNumber ,
+		ShipmentRank ,
+		FlightDate ,
+		SegmentArrivalDate ,
+		SegmentArrivalDateUTC ,
+		SegmentSerialNumber ,
+		FlightCarrierId ,
+		FlightSequenceNumber ,
+		TruckIndicator ,
+		Remarks,
+		ErrorMessage,
+		CreatedUser_Code ,
+		Created_DateTime ,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime )
+		VALUES
+		(
+		#{bookingDetailsId},
+		#{serialNumber} ,
+		#{segmentOrigin} ,
+		#{segmentDestination} ,
+		#{carrierCode} ,
+		#{flightNumber} ,
+		#{segmentDepartureDate} ,
+		#{segmentDepartureDateUTC} ,
+		#{pieces} ,
+		#{weight} ,
+		#{displayWeight} ,
+		#{volume} ,
+		#{displayVolume} ,
+		#{volumeThreeDecimal} ,
+		#{confirmedNumberOfPieces} ,
+		#{confirmedWeight} ,
+		#{confirmedVolume} ,
+		#{allotmentId} ,
+		#{aircraftType} ,
+		#{flightBookingStatus} ,
+		#{routeNumber} ,
+		#{flightSegNumber} ,
+		#{shipmentRank} ,
+		#{flightDate} ,
+		#{segmentArrivalDate} ,
+		#{segmentArrivalDateUTC} ,
+		#{segmentSerialNumber} ,
+		#{flightCarrierId} ,
+		#{flightSequenceNumber} ,
+		#{truckIndicator} ,
+		#{remarks},
+		#{errorMessage},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE() )
+	</insert>
+	
+	<insert id="insertShipmentIdentifierDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.ShipmentIdentifierDetails"
+		useGeneratedKeys="true" keyColumn="ShipmentIdentifierDetailsId" keyProperty="shipmentIdentifierDetailsId">
+	INSERT INTO Exp_Icms_ShipmentIdentifierDetails
+		(
+		BookingDetailsId,
+		ShipmentPrefix ,
+		MasterDocumentNumber ,
+		SequenceNumber ,
+		DuplicateNumber ,
+		OwnerCode ,
+		IsNonStandard ,
+		CreatedUser_Code ,
+		Created_DateTime ,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime  )
+		VALUES
+		(
+		#{bookingDetailsId},
+		#{shipmentPrefix} ,
+		#{masterDocumentNumber} ,
+		#{sequenceNumber} ,
+		#{duplicateNumber} ,
+		#{ownerCode} ,
+		#{isNonStandard} ,
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE())
+	</insert>
+	
+	<insert id="insertOtherChargeDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.OtherChargeDetails"
+		useGeneratedKeys="true" keyColumn="OtherChargeDetailsId" keyProperty="otherChargeDetailsId">
+	INSERT INTO Exp_Icms_OtherChargeDetails
+		(
+		BookingDetailsId,
+		OtherChargeHeadCode,
+		OtherChargeHeadName,
+		OtherChargeAmount,
+		DueCarrierFlag,
+		DueAgentFlag,
+		TaxAmount,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime   )
+		VALUES
+		(
+		#{bookingDetailsId},
+		#{otherChargeHeadCode},
+		#{otherChargeHeadName},
+		#{otherChargeAmount},
+		#{dueCarrierFlag},
+		#{dueAgentFlag},
+		#{taxAmount},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()  )
+	</insert>
+
+	<insert id="insertShipmentDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.ShipmentDetails"
+		useGeneratedKeys="true" keyColumn="ShipmentDetailsId" keyProperty="shipmentDetailsId">
+	INSERT INTO Exp_Icms_ShipmentDetails
+		(
+		BookingDetailsId,
+		ShipmentOrigin ,
+		ShipmentDestination ,
+		ShippingDate ,
+		AgentCode ,
+		AgentName ,
+		BookingStation ,
+		CustomerCode ,
+		CustomerName ,
+		BookingSource ,
+		Currency ,
+		TotalNumberOfPieces ,
+		TotalWeight ,
+		TotalDisplayWeight ,
+		totalVolume ,
+		totalDisplayVolume ,
+		TotalVolumeThreeDecimal ,
+		IsAWBDataCaptureDone ,
+		LastUpdateIcmsUser_Code,
+		LastUpdateIcms_DateTime,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime     )<!-- lastUpdateUser,lastUpdateTime -->
+		VALUES
+		(
+		#{bookingDetailsId},
+		#{shipmentOrigin} ,
+		#{shipmentDestination} ,
+		#{shippingDate} ,
+		#{agentCode} ,
+		#{agentName} ,
+		#{bookingStation} ,
+		#{customerCode} ,
+		#{customerName} ,
+		#{bookingSource} ,
+		#{currency} ,
+		#{totalNumberOfPieces} ,
+		#{totalWeight} ,
+		#{totalDisplayWeight} ,
+		#{totalVolume} ,
+		#{totalDisplayVolume} ,
+		#{totalVolumeThreeDecimal} ,
+		#{isAWBDataCaptureDone} ,
+		#{lastUpdateUser},
+		#{lastUpdateTime},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()   )
+	</insert>
+
+	<insert id="insertFlightPairingDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.FlightDetails"
+		useGeneratedKeys="true" keyColumn="BookingFlightPairingDetailsId" keyProperty="bookingFlightPairingDetailsId">
+	INSERT INTO Exp_Icms_BookingFlightPairingDetails
+		(
+		BookingDetailsId ,
+		AWBNumber ,
+		FlightNumber ,
+		FlightDate ,
+		SegmentOrigin ,
+		SegmentDestination ,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime    )
+		VALUES
+		(
+		#{bookingDetailsId} ,
+		#{awbNumber} ,
+		#{flightNumber} ,
+		#{flightDate} ,
+		#{segmentOrigin} ,
+		#{segmentDestination} ,
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE() )
+	</insert>
+	<insert id="insertBookingShipperDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingShipperDetails"
+		useGeneratedKeys="true" keyColumn="BookingShipperDetailsId" keyProperty="bookingShipperDetailsId">
+	INSERT INTO Exp_Icms_BookingShipperDetails
+		(
+		ShipmentDetailsId,
+		CustomerCode ,
+		CustomerName ,
+		CustomerFirstAddress ,
+		CustomerCity ,
+		CustomerState ,
+		CustomerCountry ,
+		CustomerPostalCode ,
+		CustomerPhonenumber ,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime     )
+		VALUES
+		(
+		#{shipmentDetailsId},
+		#{customerCode} ,
+		#{customerName} ,
+		#{customerFirstAddress} ,
+		#{customerCity} ,
+		#{customerState} ,
+		#{customerCountry} ,
+		#{customerPostalCode} ,
+		#{customerPhonenumber},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()   )
+	</insert>
+	
+		<insert id="insertBookingConsigneeDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingConsigneeDetails"
+		useGeneratedKeys="true" keyColumn="BookingConsigneeDetailsId" keyProperty="bookingConsigneeDetailsId">
+	INSERT INTO Exp_Icms_BookingConsigneeDetails
+		(
+		ShipmentDetailsId,
+		CustomerCode ,
+		CustomerName ,
+		CustomerFirstAddress ,
+		CustomerCity ,
+		CustomerState ,
+		CustomerCountry ,
+		CustomerPostalCode ,
+		CustomerPhonenumber ,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime     )
+		VALUES
+		(
+		#{shipmentDetailsId},
+		#{customerCode} ,
+		#{customerName} ,
+		#{customerFirstAddress} ,
+		#{customerCity} ,
+		#{customerState} ,
+		#{customerCountry} ,
+		#{customerPostalCode} ,
+		#{customerPhonenumber},
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()   )
+	</insert>
+	
+		<insert id="insertProductDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.ProductDetails"
+		useGeneratedKeys="true" keyColumn="ProductDetailsId" keyProperty="productDetailsId">
+	INSERT INTO Exp_Icms_ProductDetails
+		(
+		ShipmentDetailsId,
+		ProductName ,
+		ProductCode ,
+		ProductPriority ,
+		ProductTransportMode ,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime     )
+		VALUES
+		(
+		#{shipmentDetailsId},
+		#{productName} ,
+		#{productCode} ,
+		#{productPriority} ,
+		#{productTransportMode} ,
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()   )
+	</insert>
+	
+	
+		<insert id="insertRatingDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.RatingDetails"
+		useGeneratedKeys="true" keyColumn="RatingDetailsId" keyProperty="ratingDetailsId">
+	INSERT INTO Exp_Icms_RatingDetails
+		(
+		BookingCommodityDetailsId,
+		RateClass ,
+		IataRate ,
+		IataRateInSystemCurrency ,
+		IataCharge ,
+		IataChargeInSystemCurrency ,
+		TotalTaxes ,
+		TotalTaxesInSystemCurrency ,
+		MarketRate ,
+		MarketRateInSystemCurrency ,
+		MarketCharge ,
+		MarketChargeInSystemCurrency ,
+		CreatedUser_Code ,
+		Created_DateTime,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime     )
+		VALUES
+		(
+		#{bookingCommodityDetailsId},
+		#{rateClass} ,
+		#{iataRate} ,
+		#{iataRateInSystemCurrency} ,
+		#{iataCharge} ,
+		#{iataChargeInSystemCurrency} ,
+		#{totalTaxes },
+		#{totalTaxesInSystemCurrency} ,
+		#{marketRate} ,
+		#{marketRateInSystemCurrency} ,
+		#{marketCharge} ,
+		#{marketChargeInSystemCurrency} ,
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE()  )
+	</insert>
+	
+	<insert id="insertDimentionDetails"
+		parameterType="com.ngen.cosys.icms.schema.flightbooking.DimensionDetaills"
+		useGeneratedKeys="true" keyColumn="DimensionDetaillsId" keyProperty="dimensionDetaillsId">
+	INSERT INTO Exp_Icms_DimensionDetails
+		(
+		BookingCommodityDetailsId,
+		DimensionSerialNumber ,
+		LengthPerPiece ,
+		DisplayLengthPerPiece ,
+		HeightPerpiece ,
+		DisplayHeightPerpiece ,
+		WidthPerPiece ,
+		DisplayWidthPerPiece ,
+		NumberOfPieces ,
+		Volume ,
+		VolumeThreeDecimal ,
+		Weight ,
+		DisplayWeight ,
+		Tiltable ,
+		CreatedUser_Code ,
+		Created_DateTime ,
+		LastUpdatedUser_Code ,
+		LastUpdated_DateTime    )
+		VALUES
+		(
+		#{bookingCommodityDetailsId},
+		#{dimensionSerialNumber} ,
+		#{lengthPerPiece} ,
+		#{displayLengthPerPiece} ,
+		#{heightPerpiece} ,
+		#{displayHeightPerpiece} ,
+		#{widthPerPiece} ,
+		#{displayWidthPerPiece} ,
+		#{numberOfPieces} ,
+		#{volume} ,
+		#{volumeThreeDecimal} ,
+		#{weight} ,
+		#{displayWeight} ,
+		#{tiltable} ,
+		#{createdUserId},
+		GETDATE(),
+		#{createdUserId},
+		GETDATE())
+	</insert>
+
+	<select id="getShipmentRemarks"
+		parameterType="java.util.Map"
+		resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingRemark">
+		SELECT flight_Id as flightId,remarkType,shipmentRemarks
+		FROM Shipment_Remarks  
+		WHERE
+		ShipmentNumber = #{shipmentNumber} and
+		cast(ShipmentDate as date) = cast(#{shipmentDate} as date) and remarkType = 'GEN' and Flight_ID is null
+	</select>
+	
+	<select id="getShipmentFlightRemarks"
+		parameterType="java.util.Map"
+		resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingRemark">
+		SELECT flight_Id as flightId,remarkType,shipmentRemarks
+		FROM Shipment_Remarks  
+		WHERE
+		ShipmentNumber = #{shipmentNumber} and
+		cast(ShipmentDate as date) = cast(#{shipmentDate} as date) and Flight_ID is not null
+	</select>
+	
+	<select id="getExpBookingFlightRemarks"
+		parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select Remarks from Exp_shipmentBookingRemarks where FlightBookingId in 
+			(select FlightBookingId from Exp_ShipmentFlightBookingDetail where FlightId = #{flightId} and bookingId = 
+			(select bookingId from Exp_ShipmentBooking where ShipmentNumber = #{shipmentNumber} and
+		cast(ShipmentDate as date) = cast(#{shipmentDate} as date)))
+	</select>
+	
+	<select id="getFlightId"
+		parameterType="java.util.Map"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails">
+		select DISTINCT FOF.flight_ID as flightId,
+		FOF.flightKey as flightKey,
+		Cast(FOF.flightOriginDate as date) as flightDate,
+		FOF.flight_ID as flightId,
+		OFL.FlightBoardPoint AS segmentOrigin,
+		OFL.FlightOffPoint AS segmentDestination
+		from Flt_OperativeFlight FOF
+		LEFT JOIN Flt_OperativeFlight_Legs OFL on FOF.Flight_ID=OFL.Flight_ID
+		where FOF.flightKey =#{flightNumber} and FOF.flightOriginDate = #{flightDate}
+
+	</select>
+	
+	<select id="getSegmentDepartureAndArrivalDate"
+		parameterType="java.util.Map"
+		resultType="com.ngen.cosys.icms.model.operationFlight.OperationalFlightLegInfo">
+		select  FORMAT(CAST(OFL.DateSTD AS datetime) , 'dd-MMM-yyyy HH:mm:ss') as dateSTD,
+		FORMAT(CAST(OFL.DateSTA AS datetime) , 'dd-MMM-yyyy HH:mm:ss') as dateSTA 
+		from Flt_OperativeFlight FOF
+		LEFT JOIN Flt_OperativeFlight_Legs OFL on FOF.Flight_ID=OFL.Flight_ID
+		where FOF.Flight_ID = #{flightId} and FlightBoardPoint=#{origin} and FlightOffPoint=#{destination}
+	</select>
+
+	<select id="getShipmentId_Booking"
+		parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select DISTINCT sm.ShipmentId from
+		Shipment_Master sm left join
+		Shipment_MasterSHC shc
+		on sm.ShipmentId = shc.ShipmentId
+		where
+		sm.ShipmentNumber = #{shipmentNumber} and
+		cast(sm.ShipmentDate as date) = cast(#{shipmentDate} as date)
+
+
+	</select>
+
+	
+		<resultMap id="getBookingShipment"
+		type="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails">
+		<!-- <id property="bookingId" column="BookingId" javaType="java.lang.Long"/> -->
+		<!-- <id property="shipperCustomerId" column="ShipperCustomerId" /> -->
+		<id property="bookingId" column="BookingId" jdbcType="INTEGER" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="shipmentDate" column="ShipmentDate"/>
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="pieces" column="Pieces" />
+		<result property="grossWeight" column="GrossWeight" />
+		<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="serviceFlag" column="ServiceFlag" />
+		<result property="blockSpace" column="BlockSpace" />
+		<result property="shipperName" column="ShipperName" />
+		<result property="manual" column="Manual" />
+		<result property ="proposedRouting" column="proposedRouting" />
+		<collection property="partBookingList" resultMap="getShipmentFlightPartBooking" />
+
+	</resultMap>
+
+	<resultMap id="getShipmentFlightPartBooking"
+		type="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartBookingDetails">
+		<id property="partBookingId" column="PartBookingId" />
+		<id property="bookingId" column="BookingId" />
+		<result column="PartSuffix" property="partSuffix" />
+		<result column="PartPieces" property="partPieces" />
+		<result column="PartWeight" property="partWeight" />
+		<result column="DensityGroupCode" property="densityGroupCode" />
+		<result column="Volume" property="volume" />
+		<result column="CancelFlag" property="cancelFlag"/>
+		<result column="VolumeUnitCode" property="volumeUnitCode" />
+		<result column="VolumetricWeight" property="volumetricWeight" />
+		<result column="VolumeWeightUnitCode" property="volumeWeightUnitCode" />
+		<result column="MeasurementUnitCode" property="measurementUnitCode"/>
+		<result column="PartBookingStatusCode" property="partBookingStatusCode"/>
+		<result column="PartSource" property="partSource"/>
+		<result column="flightId"  property="flightId"/>
+		<collection property="ShipmentFlightBookingList"
+			resultMap="getShipmentFlightBooking" />
+		<collection property="shipmentPartBookingDimensionList"
+			resultMap="getshipmentPartBookingDimension" />
+
+	</resultMap>
+
+	<resultMap id="getShipmentFlightBooking"
+		type="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails">
+		<result property="flightBookingId" column="FlightBookingId"
+			jdbcType="INTEGER" />
+		<result property="bookingId" column="BookingId" jdbcType="INTEGER" />
+		<result property="flightId" column="FlightId" jdbcType="INTEGER" />
+		<result column="FlightBoardPoint" property="flightBoardPoint" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightKey" property="oldFlightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightOriginDate" property="oldFlightOriginDate" />
+		<result column="FlightOffPoint" property="flightOffPoint" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="BookingPieces" property="bookingPieces" />
+		<result column="BookingWeight" property="bookingWeight" />
+		<result column="BookingStatusCode" property="bookingStatusCode" />
+		<result column="BookingCancellationFlag" property="bookingCancellationFlag" />
+		<result column="ThroughTransitFlag" property="throughTransitFlag" />
+		<result column="DensityGroupCode" property="densityGroupCode" />
+		<result column="Volume" property="volume" />
+		<result column="VolumeUnitCode" property="volumeUnitCode" />
+		<result column="VolumetricWeight" property="volumetricWeight" />
+		<result column="VolumeWeightUnitCode" property="volumeWeightUnitCode" />
+		<result column="ThroughTransitFlag" property="throughTransitFlag" />
+		<result column="MeasurementUnitCode" property="measurementUnitCode"/>
+		<result column="BookingCancellationReasonId" property="bookingCancellationReasonId" />
+		<result column="Source" property="source"/>
+	</resultMap>
+	
+	<resultMap id="getshipmentPartBookingDimension"
+		type="com.ngen.cosys.icms.model.BookingInterface.ShipmentPartBookingDimensionDetails">
+		<id property="partBookingId" column="PartBookingId" />
+		<id property="flightBookingId" column="FlightBookingId" />
+		<id property="partBookingDimensionId" column="PartBookingDimensionId" />
+		<result property="transactionSequenceNo" column="TransactionSequenceNo" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="weightUnit" property="weightUnit" />
+		<result column="Length" property="length" />
+		<result column="Width" property="width" />
+		<result column="Height" property="height" />
+		<result column="UnitCode" property="unitCode" />
+	</resultMap>
+	
+
+	
+	<select id="getExistingShipmentBooking" parameterType="java.util.Map"
+		resultMap="getBookingShipment">
+	      	select 
+       * 
+	from (select
+			(	select substring(
+		(SELECT '/' + fromPoint FROM
+		Shipment_MasterRoutingInfo where
+		master.ShipmentId=ShipmentId 
+		order by Shipment_MasterRoutingInfo.ShipmentMasterRoutingId
+		FOR XML
+		PATH('') ), 2, 1000) as
+		proposedRouting
+		FROM shipment_master master
+		where master.ShipmentNumber=#{shipmentNumber} AND cast(master.ShipmentDate as date) =cast(#{shipmentDate} as date)) as proposedRouting,
+              T1.BookingId AS
+              bookingId, T1.ShipmentNumber AS
+              shipmentNumber,
+              T1.ShipmentDate AS shipmentDate,
+              t1.BlockSpace AS
+              blockSpace,t1.Origin AS
+              origin,t1.Destination AS
+              destination,t1.Pieces
+              AS pieces,t1.GrossWeight
+              AS
+              grossWeight,t1.WeightUnitCode
+              AS
+              weightUnitCode,
+                           t1.NatureOfGoodsDescription
+              AS
+              natureOfGoodsDescription,
+              t1.ShipperName AS shipperName,
+              t1.ServiceFlag AS
+              serviceFlag,
+              T3.PartBookingId AS partBookingId,
+              T3.PartSuffix AS
+              partSuffix,
+              T3.PartPieces AS partPieces,
+              T3.PartWeight AS partWeight,    
+              T3.CancelFlag AS cancelFlag,
+              (select Exp_ShipmentFlightPartDetail.PartBookingStatusCode from Exp_ShipmentFlightPartDetail where
+              Exp_ShipmentFlightPartDetail.FlightBookingId=T2.FlightBookingId
+              and Exp_ShipmentFlightPartDetail.PartBookingId=T3.PartBookingId  ) AS partBookingStatusCode,
+              T3.PartSource AS partSource,
+              T2.Source as source,
+              T2.FlightBookingId AS 
+              flightBookingId,
+              t2.FlightId AS flightId,
+              opr.FlightKey as flightKey,
+              segments.DateSTD as flightOriginDate,
+              segments.FlightBoardPoint AS
+              flightBoardPoint,
+             segments.FlightOffPoint AS flightOffPoint,
+               isnull(T3.ThroughTransitFlag,t2.ThroughTransitFlag) AS throughTransitFlag,
+             segments.DateSTD     
+              AS
+              dateSTD,
+             segments.DateSTA AS dateSTA,
+              t2.BookingPieces AS
+              bookingPieces,
+              t2.BookingWeight AS bookingWeight,
+              t2.BookingStatusCode
+              AS bookingStatusCode,
+              null AS bookingCancellationFlag,
+              null AS
+              bookingCancellationDate,
+              null AS bookingCancellationUserCode,
+              null AS
+              bookingCancellationReasonId,                      
+              T3.DensityGroupCode as densityGroupCode,
+                T3.Volume as volume,
+                T3.VolumeUnitCode as volumeUnitCode,
+                T3.VolumetricWeight as volumetricWeight,
+                T3.VolumeWeightUnitCode as volumeWeightUnitCode,
+                T3.MeasurementUnitCode as measurementUnitCode
+              from Exp_ShipmentBooking T1
+              join
+              Exp_ShipmentPartBookingDetail T3 ON T1.BookingId = T3.BookingId
+             left join
+              Exp_ShipmentFlightPartDetail T4 ON T3.PartBookingId =
+              T4.PartBookingId
+              left join Exp_ShipmentFlightBookingDetail T2 ON T4.FlightBookingId =
+              T2.FlightBookingId
+              left JOIN
+              Flt_OperativeFlight opr on
+              opr.Flight_ID=T2.FlightId  left join                     
+                        Flt_OperativeFlight_Segments segments
+                             on opr.Flight_ID = segments.Flight_ID and
+                                    T2.FlightSegmentId = segments.FlightSegmentId
+              where
+              t1.ShipmentNumber=#{shipmentNumber} and cast(ShipmentDate as date) =cast(#{shipmentDate} as date)
+       
+              union 
+              
+              select
+              (
+              	select substring(
+		(SELECT '/' + fromPoint FROM
+		Shipment_MasterRoutingInfo where
+		master.ShipmentId=ShipmentId 
+		order by Shipment_MasterRoutingInfo.ShipmentMasterRoutingId
+		FOR XML
+		PATH('') ), 2, 1000) as
+		proposedRouting
+		FROM shipment_master master
+		where master.ShipmentNumber=#{shipmentNumber} AND cast(master.ShipmentDate as date) =cast(#{shipmentDate} as date)
+              ) as proposedRouting,
+              T1.BookingId AS
+              bookingId, T1.ShipmentNumber AS
+              shipmentNumber,
+              T1.ShipmentDate AS shipmentDate,
+              t1.BlockSpace AS
+              blockSpace,t1.Origin AS
+              origin,
+              t1.Destination AS
+              destination,
+              t1.Pieces
+              AS pieces,t1.GrossWeight
+              AS
+              grossWeight,t1.WeightUnitCode
+              AS
+              weightUnitCode, t1.NatureOfGoodsDescription
+              AS
+              natureOfGoodsDescription,
+           	  t1.ShipperName AS shipperName,
+              t1.ServiceFlag AS
+              serviceFlag,
+              null AS partBookingId,
+              null AS partSuffix,
+              null AS
+              partPieces,
+              null AS
+              partWeight,
+              null as cancelFlag,
+              null AS partBookingStatusCode,
+              null AS partSource,
+              T2.Source as source,
+              T2.FlightBookingId AS
+              flightBookingId,
+              t2.FlightId AS flightId,
+              opr.FlightKey as
+              flightKey,
+              segments.DateSTD as flightOriginDate,
+             segments.FlightBoardPoint AS
+              flightBoardPoint,
+              segments.FlightOffPoint AS
+              flightOffPoint,
+             t2.ThroughTransitFlag AS throughTransitFlag,
+              segments.DateSTD     
+              AS
+              dateSTD,
+              segments.DateSTA AS dateSTA,
+              t2.BookingPieces AS
+              bookingPieces,
+              t2.BookingWeight AS
+              bookingWeight,
+              t2.BookingStatusCode
+              AS
+              bookingStatusCode,
+              t2.BookingCancellationFlag AS
+              bookingCancellationFlag,
+              t2.BookingCancellationDate AS
+              bookingCancellationDate,
+              t2.BookingCancellationUserCode AS
+              bookingCancellationUserCode,
+              t2.BookingCancellationReasonId AS
+              bookingCancellationReasonId,
+              t2.DensityGroupCode as densityGroupCode,
+                t2.Volume as volume,
+                t2.VolumeUnitCode as volumeUnitCode,
+                t2.VolumetricWeight as volumetricWeight,
+                t2.VolumeWeightUnitCode as volumeWeightUnitCode,
+                t2.MeasurementUnitCode as measurementUnitCode
+ 
+              from
+              Exp_ShipmentBooking T1
+              join
+              Exp_ShipmentFlightBookingDetail T2 ON
+              T1.BookingId = T2.BookingId
+              JOIN
+              Flt_OperativeFlight opr on
+              opr.Flight_ID=T2.FlightId left join                      
+                        Flt_OperativeFlight_Segments segments
+                             on opr.Flight_ID = segments.Flight_ID and
+                                    T2.FlightSegmentId = segments.FlightSegmentId
+              where
+              t1.ShipmentNumber=#{shipmentNumber} and cast(ShipmentDate as date) =cast(#{shipmentDate} as date)  and
+              not exists(select 1
+              from
+              Exp_ShipmentPartBookingDetail TM
+              where
+              TM.BookingId =
+              T1.BookingId)) A
+              Order By partBookingId, A.DateSTD
+	 </select>
+<!-- 
+	<select id="isPartExist" parameterType="java.lang.Long" resultType="java.lang.Boolean">
+		Select case when count(PartBookingId) = 0 then 0 else 1 end From Exp_ShipmentPartBookingDetail Where BookingId=#{param}
+	</select>
+
+     <select id="fetchPartShcRemarksDimensionBookingDetails" parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartBookingDetails" 
+	resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartBookingDetails">
+			select 
+			#{shipmentDate} as shipmentDate,
+			#{shipmentNumber} as shipmentNumber,
+		Exp_ShipmentPartBookingDetail.PartBookingId partBookingId,
+		Exp_ShipmentPartBookingDetail.PartSuffix partSuffix
+		from
+		Exp_ShipmentPartBookingDetail
+		where 
+		Exp_ShipmentPartBookingDetail.PartBookingId=#{partBookingId}
+		and  Exp_ShipmentPartBookingDetail.PartSuffix=#{partSuffix}
+	</select>
+	
+	<select id="isShipmentInShipmentMaster" parameterType="com.ngen.cosys.icms.model.BookingInterface.BookingShipment" 
+		resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails">
+	   	 Select ShipmentNumber as shipmentNumber,
+	   ShipmentDate as shipmentDate,
+	   Shipment_Master.ShipmentId as shipmentId,
+	   SVC as serviceFlag,
+	   Origin as origin,
+	   Destination as destination,
+	   Pieces as pieces,
+	   Weight as grossWeight,
+	   WeightUnitCode as weightUnitCode,
+	   NatureOfGoodsDescription as natureOfGoodsDescription,
+	   routing.proposedRouting,
+	  (  select STRING_AGG(Shipment_MasterSHC.SpecialHandlingCode,',') from Shipment_MasterSHC where  
+		Shipment_MasterSHC.ShipmentId=Shipment_Master.ShipmentId ) combinedShcs
+	   FROM Shipment_Master  left join
+	  ( select  outerroute.ShipmentId,
+					substring((
+						Select 
+									'/'+innerroute.FromPoint AS [text()]
+									from Shipment_MasterRoutingInfo as innerroute
+									Where 
+									innerroute.ShipmentId = outerroute.ShipmentId
+									ORDER BY 
+									innerroute.ShipmentMasterRoutingId For XML PATH ('')), 2, 1000) as proposedRouting
+					from  Shipment_MasterRoutingInfo as outerroute
+					group by
+					outerroute.ShipmentId
+					)routing
+					on 
+	   routing.ShipmentId=Shipment_Master.ShipmentId
+	   where ShipmentNumber=#{shipmentNumber} AND ShipmentDate=#{shipmentDate}
+
+	   Union 
+	   
+	   Select 
+	   AwbNumber as shipmentNumber,
+	   AwbDate as shipmentDate,
+	   null as shipmentId,
+	   (select ServiceFlag from
+	   Exp_NeutralAWB_Master 
+	   where AwbNumber=#{shipmentNumber}  and AwbDate=#{shipmentDate} ) 
+	    as serviceFlag,
+	   Origin as origin,
+	   Destination as destination,
+	   Pieces as pieces,
+	   Weight as grossWeight,
+	   WeightUnitCode as weightUnitCode,
+	   NatureOfGoodsDescription as natureOfGoodsDescription ,
+	   routing.proposedRouting,
+	  (  select STRING_AGG(Shipment_FreightWayBillSHC.SpecialHandlingCode,',') from Shipment_FreightWayBillSHC where  
+	Shipment_FreightWayBillSHC.ShipmentFreightWayBillId=Shipment_FreightWayBill.ShipmentFreightWayBillId ) combinedShcs
+	   FROM Shipment_FreightWayBill 
+	   left join
+	  ( select  outerroute.ShipmentFreightWayBillId,
+					substring((
+						Select 
+									'/'+innerroute.AirportCode AS [text()]
+									from Shipment_FreightWayBillRouting as innerroute
+									Where 
+									innerroute.ShipmentFreightWayBillId = outerroute.ShipmentFreightWayBillId
+									ORDER BY 
+									innerroute.ShipmentFreightWayBillRoutingId For XML PATH ('')), 2, 1000) as proposedRouting
+					from  Shipment_FreightWayBillRouting as outerroute
+					group by
+					outerroute.ShipmentFreightWayBillId
+					)routing
+					on 
+	   routing.ShipmentFreightWayBillId=Shipment_FreightWayBill.ShipmentFreightWayBillId
+	   where AwbNumber=#{shipmentNumber} AND AwbDate=#{shipmentDate} AND
+	   Not Exists (Select * FROM Shipment_Master where ShipmentNumber=#{shipmentNumber} AND ShipmentDate=#{shipmentDate})
+	</select>
+		<select id="getBookingData" parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails" resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails">
+		Select 
+		BookingId as bookingId,
+		ShipmentNumber as shipmentNumber,
+		ShipmentDate as shipmentDate,
+		Origin as origin,
+		Destination as destination,
+		Pieces as pieces,
+		GrossWeight as grossWeight,
+		WeightUnitCode as weightUnitCode,
+		NatureOfGoodsDescription as natureOfGoodsDescription,
+		(select substring(
+		(SELECT '/' + fromPoint FROM
+		Shipment_MasterRoutingInfo where
+		master.ShipmentId=ShipmentId 
+		order by Shipment_MasterRoutingInfo.ShipmentMasterRoutingId
+		FOR XML
+		PATH('') ), 2, 1000) as
+		proposedRouting
+		FROM shipment_master master
+		where master.ShipmentNumber=#{shipmentNumber} AND master.ShipmentDate=#{shipmentDate}
+		) as proposedRouting 
+	 	from Exp_ShipmentBooking where ShipmentNumber=#{shipmentNumber} AND ShipmentDate=#{shipmentDate}
+	</select>
+	
+		 <select id="fetchTotalBookingDetails" parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails" resultType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails">
+	select 
+				Exp_ShipmentFlightBookingDetail.FlightBookingId flightBookingId,
+				Case when exp_FlightEvents.FlightCompletedAt is null then 0 else 1 end  as isFLightDeparted
+				from 
+				Exp_ShipmentFlightBookingDetail
+				left join
+				exp_FlightEvents on 
+				Exp_ShipmentFlightBookingDetail.FlightId=exp_FlightEvents.FlightId
+				 where 
+				 Exp_ShipmentFlightBookingDetail.FlightBookingId=#{flightBookingId}
+	 </select> -->
+	 <select id="fetchTransferType" resultType="com.ngen.cosys.icms.schema.flightbooking.TTTransferType">
+		
+		SELECT 
+   			Code code,
+   			TransferType transferType,
+   			Equation equation,
+   			FromMinutes fromMinutes,
+   			toMinutes toMinutes
+   			FROM Transhipment_TransferTypes
+   			WHERE (EffectiveTo > getDate()
+			OR EffectiveTo is null)
+			AND EffectiveFrom &lt; getDate()
+			AND TTTransferType = 1
+			AND fromMinutes is not null
+			AND toMinutes is not null
+	</select>
+	
+	<select id="isShipmentLoaded" parameterType ="com.ngen.cosys.icms.model.BookingInterface.BookingShipment" resultType="java.lang.Boolean">
+	Select case when count(shipmentNumber) = 0 then 0 else 1 end
+					 from Shipment_Master Inner Join Exp_LoadedShipmentInfo ON Shipment_Master.ShipmentId = Exp_LoadedShipmentInfo.ShipmentId
+					 Inner Join Exp_AssignedUldTrolleyToFlight ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedUldTrolleyToFlight.AssUldTrolleyId
+					 Inner Join Flt_OperativeFlight_Segments ON Exp_AssignedUldTrolleyToFlight.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+					 Inner Join Flt_OperativeFlight ON Flt_OperativeFlight_Segments.Flight_id = Flt_OperativeFlight.Flight_Id
+					 Where Shipment_Master.ShipmentNumber = #{shipmentNumber} AND Shipment_Master.ShipmentDate = #{shipmentDate}
+	</select>
+	
+   	
+   	<select id="hasDocumentArrived" parameterType="java.lang.String" resultType="java.lang.Boolean">
+   	SELECT CASE
+	WHEN DocumentReceivedFlag = 1 THEN 1 
+	WHEN PhotoCopyAwbFlag = 1 THEN 1
+	ELSE 0
+	END
+	FROM 
+	Imp_ShipmentVerification AS verification
+	INNER JOIN
+	Shipment_Master AS master
+	ON verification.shipmentId = master.shipmentId
+	WHERE master.shipmentnumber = #{awbNumber}
+   	</select>
+   	
+   	<select id="hasAcceptanceWeight" parameterType="java.lang.String" resultType="java.lang.Boolean">
+  	SELECT CASE
+	WHEN Status is not null AND Status ='ACCEPTED' THEN 1
+	ELSE 0
+	END
+	FROM Exp_eAcceptanceDocumentInformation
+	WHERE ShipmentNumber =#{awbNumber}
+   	</select>
+   	
+   	<select id="hasManifested" parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails"
+		resultType="java.lang.Boolean">
+		select Case When count(*) = 0 then 0 else 1 end
+		from
+		 Exp_FlightEvents FltEvent,
+		Flt_OperativeFlight Flight,
+		Flt_OperativeFlight_Legs Flightleg
+		where
+		Flight.Flight_ID = FltEvent.FlightId
+		and
+		Flight.Flight_ID = Flightleg.Flight_ID
+		and 
+		Flight.FlightKey =#{flightKey}
+		and Flightleg.FlightBoardPoint=#{segmentOrigin}
+		and CAST(Flightleg.DateSTD as Date) =CAST(#{flightOriginDate} as Date)	
+		and ManifestCompletedAt is not null
+		and ManifestCompletedBy is not null		
+	</select>
+	
+	<insert id="createShipmentBooking"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails"
+		useGeneratedKeys="true" keyProperty="bookingId" keyColumn="BookingId">
+		INSERT INTO
+		Exp_ShipmentBooking(ShipmentNumber,Origin,Destination,Pieces,GrossWeight,WeightUnitCode,DensityGroupCode,VolumeWeight,VolumeUnitCode,NatureOfGoodsDescription,
+		BlockSpace, Manual, ShipperCustomerId, ServiceFlag, ShipmentDate,
+		CreatedUserCode,CreatedDateTime,UbrNumber)
+		VALUES(#{shipmentNumber},#{origin},#{destination},#{pieces},#{grossWeight},#{weightUnitCode},#{densityGroupCode},
+		#{volumeWeight},#{volumeUnitCode},#{natureOfGoodsDescription},#{blockSpace},
+		1, #{shipperCustomerId}, #{serviceFlag}, #{shipmentDate},
+		#{createdBy},SYSDATETIME(),#{ubrNumber})
+	</insert>
+	
+	<insert id="createFlightShipmentBooking"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails"
+		useGeneratedKeys="true" keyProperty="flightBookingId" keyColumn="FlightBookingId">
+		INSERT INTO
+		Exp_ShipmentFlightBookingDetail(BookingId,FlightId,FlightBoardPoint,FlightOffPoint,
+		BookingPieces,BookingWeight,BookingStatusCode,BookingCancellationFlag,
+		BookingCancellationDate,BookingCancellationUserCode,BookingCancellationReasonId,ThroughTransitFlag, 
+		DensityGroupCode, Volume, VolumeUnitCode, VolumetricWeight, VolumeWeightUnitCode,
+		CreatedUserCode,CreatedDateTime,LastUpdatedUserCode,LastUpdatedDateTime,
+		FlightSegmentId,
+		OutwardBookingFlag, MeasurementUnitCode, TransferType)
+		VALUES(#{bookingId}, 
+		#{flightId},
+		#{flightBoardPoint},#{flightOffPoint},
+		#{bookingPieces},#{bookingWeight},
+		#{bookingStatusCode},#{bookingCancellationFlag},SYSDATETIME(),
+		#{bookingCancellationUserCode},#{bookingCancellationReasonId},#{throughTransitFlag},
+		#{densityGroupCode}, #{volume}, #{volumeUnitCode}, #{totalDimentionVolumetricWeight}, #{volumeWeightUnitCode},
+		#{createdBy},SYSDATETIME(),#{createdBy},SYSDATETIME(),
+		(select FlightSegmentId from Flt_OperativeFlight_segments where Flight_ID = #{flightId} and 
+		flightBoardPoint = #{flightBoardPoint} and flightOffPoint = #{flightOffPoint}),
+		  #{outwardBookingFlag}, #{measurementUnitCode}, #{transferType})
+	</insert> 
+	
+	<insert id="createPartShipmentBooking"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartBookingDetails"
+		useGeneratedKeys="true" keyProperty="partBookingId" keyColumn="PartBookingId">
+		INSERT
+		INTO
+		Exp_ShipmentPartBookingDetail(BookingId,PartSuffix,PartPieces,PartWeight, DensityGroupCode, Volume, VolumeUnitCode, VolumetricWeight, VolumeWeightUnitCode, CancelFlag,
+		CreatedUserCode,CreatedDateTime,LastUpdatedUserCode,LastUpdatedDateTime, MeasurementUnitCode,ThroughTransitFlag, TransferType)
+		VALUES(#{bookingId},#{partSuffix},#{partPieces},#{partWeight}, #{densityGroupCode}, #{volume}, #{volumeUnitCode}, #{totalDimentionVolumetricWeight}, #{volumeWeightUnitCode}, #{cancelFlag},
+		#{createdBy},SYSDATETIME(),#{createdBy},SYSDATETIME(), #{measurementUnitCode},#{throughTransitFlag},#{transferType})
+	</insert>
+	
+	<insert id="createFlightPartDetails"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartDetails"
+		useGeneratedKeys="true" keyProperty="flightPartBookingId" keyColumn="FlightBooking_ID">
+		INSERT INTO Exp_ShipmentFlightPartDetail
+		(FlightBookingId,
+		PartBookingId,
+		PartBookingStatusCode,
+		CreatedUserCode,
+		CreatedDateTime,
+		LastUpdatedUserCode,
+		LastUpdatedDateTime)
+		VALUES(#{flightBookingId},#{partBookingId},#{bookingStatusCode},
+		#{createdBy},SYSDATETIME(),#{createdBy},SYSDATETIME())
+	</insert>
+	
+	 <update id="updateShipmentBooking" parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails">
+		UPDATE Exp_ShipmentBooking
+		SET Pieces = #{pieces},
+		Origin=#{origin},
+		Destination=#{destination},
+		WeightUnitCode=#{weightUnitCode},
+		DensityGroupCode=#{densityGroupCode},
+		VolumeWeight=#{volumeWeight},
+		VolumeUnitCode=#{volumeUnitCode},
+		NatureOfGoodsDescription=#{natureOfGoodsDescription}
+		,GrossWeight = #{grossWeight}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =SYSDATETIME(),
+		UbrNumber =#{ubrNumber}
+		WHERE
+		ShipmentNumber=#{shipmentNumber}
+		and ShipmentDate=#{shipmentDate}
+	</update>
+
+ 	<!-- <update id="updateflightBooking">
+	
+		UPDATE Exp_ShipmentFlightBookingDetail
+		SET
+		BookingPieces=#{bookingPieces},
+		BookingWeight =#{bookingWeight},
+		DepartureTime=#{departureTime},
+		ArrivalTime=#{arrivalTime},
+		DepartureTime=#{departureTime},
+		ArrivalTime=#{arrivalTime},
+		ThroughTransitFlag=#{throughTransitFlag},
+		DensityGroupCode=#{densityGroupCode},
+		Volume=#{volume},
+		VolumeUnitCode=#{volumeUnitCode},
+		VolumetricWeight=#{totalDimentionVolumetricWeight},
+		VolumeWeightUnitCode=#{volumeWeightUnitCode},
+		MeasurementUnitCode =#{measurementUnitCode},
+		LastUpdatedUserCode=#{modifiedBy},
+		LastUpdatedDateTime =SYSDATETIME(),
+		WHERE
+		BookingId=#{bookingId}
+	</update> 
+
+	<update id="updatePartBooking">
+		UPDATE Exp_ShipmentPartBookingDetail
+		SET
+		PartPieces
+		=#{partPieces}
+		,PartWeight =#{partWeight}
+		,CancelFlag=#{cancelFlag},
+		DensityGroupCode=#{densityGroupCode},
+		Volume=#{volume},
+		VolumeUnitCode=#{volumeUnitCode},
+		VolumetricWeight=#{totalDimentionVolumetricWeight},
+		VolumeWeightUnitCode=#{volumeWeightUnitCode},
+		MeasurementUnitCode =#{measurementUnitCode},
+		LastUpdatedUserCode=#{createdBy},
+		LastUpdatedDateTime =SYSDATETIME(),
+		ThroughTransitFlag=#{throughTransitFlag}
+		,PartBookingStatusCode=#{partBookingStatusCode}
+		WHERE BookingId=#{bookingId} AND PartSuffix=#{partSuffix}
+	</update> -->
+	
+	<!-- <select id="checkFlightBookingPrimaryKey"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails"
+		resultType="java.lang.Integer">
+		SELECT
+		count(*)
+		FROM Exp_ShipmentFlightBookingDetail where
+		BookingId=#{bookingId} AND
+		FlightId=#{flightId} AND
+		FlightBoardPoint=#{flightBoardPoint} AND
+		FlightOffPoint=#{flightOffPoint}
+	</select> -->
+	
+	<delete id="sqlDeleteRemarksBasedOnFlightAndPartBookingId" parameterType="java.util.Map">
+		Delete FROM Exp_ShipmentBookingRemarks 
+		WHERE FlightBookingId = #{flightBookingId}
+		<if test="partBookingId != null">
+		and PartBookingId=#{partBookingId}
+		</if>
+	</delete>
+	
+	<insert id="insertShipmentRemarks">
+		Insert Into Shipment_Remarks (ShipmentNumber, ShipmentDate, ShipmentId, ShipmentRemarks, RemarkType, 
+								 	 CreatedUser_Code, Created_DateTime, ShipmentType)
+		Values (#{shipmentNumber}, #{shipmentDate},  #{shipmentId}, #{shipmentRemarks}, #{remarkType},
+		 #{createdBy}, getDate(), #{shipmentType})
+  	</insert>
+  	<insert id="insertShipmentRemarksWithFlightId">
+		Insert Into Shipment_Remarks (ShipmentNumber, ShipmentDate, ShipmentId, Flight_ID, ShipmentRemarks, RemarkType, 
+								 	 CreatedUser_Code, Created_DateTime, ShipmentType)
+		Values (#{shipmentNumber}, #{shipmentDate},  #{shipmentId}, #{flightId}, #{shipmentRemarks}, #{remarkType},
+		 #{createdBy}, getDate(), #{shipmentType})
+  	</insert>
+  	<insert id="createBookingRemark"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingRemark">
+		INSERT INTO Exp_ShipmentBookingRemarks
+		( FlightBookingId
+		, PartBookingId
+		, RemarkType
+		, Remarks
+		, CreatedUserCode
+		, CreatedDateTime
+		, LastUpdatedUserCode
+		, LastUpdatedDateTime)
+		VALUES
+		(#{flightBookingId}
+		,#{partBookingId}
+		,#{remarkType}
+		,#{remarks}
+		,#{createdBy}
+		,SYSDATETIME()
+		,#{modifiedBy}
+		,#{modifiedOn})
+	</insert>
+	
+	 <delete id="sqlDeleteRemarks" parameterType="java.util.Map">
+		Delete FROM Shipment_Remarks WHERE ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentDate} 
+		and RemarkType in ('IBKD','IFLT','IHDL');
+	</delete>
+	
+	<select id="getFlightDimensionId_NEW" parameterType="java.lang.Long" resultType="java.math.BigInteger">
+		Select FlightBookingDimensionId from Exp_ShipmentFlightBookingDimension where FlightBookingId= #{param}
+	</select>
+	<delete id="deleteFlihgtDimensionsSSB">
+		Delete from Exp_ShipmentFLightBookingDimension where FlightBookingDimensionId in 
+		   <foreach item="item" index="index" collection="list"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<delete id="deleteFlightPartAssociationSSB">
+		Delete from Exp_ShipmentFLightPartDetail where FlightBookingId=#{param}
+	</delete>
+	
+	<delete id="deleteFlightPartWithPartFlightId" parameterType="java.util.Map">
+		Delete from Exp_ShipmentFLightPartDetail where FlightBookingId=#{flightBookingId}  and PartBookingId = #{partBookingId}
+	</delete>
+	
+	<delete id="deletePartDimensionByPartBookingId">
+		Delete from Exp_ShipmentPartBookingDimension where PartBookingId=#{param}
+	</delete>
+	
+
+	<delete id="deleteFlight"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails">
+		DELETE FROM Exp_ShipmentFlightBookingDetail
+		WHERE
+		BookingId=#{bookingId} AND FlightId=#{flightId} AND
+		FlightBoardPoint=#{flightBoardPoint} AND
+		FlightOffPoint=#{flightOffPoint}
+	</delete>
+	
+
+	<delete id="deletePart"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightPartBookingDetails">
+		Delete from Exp_shipmentBookingRemarks where  PartBookingId=#{partBookingId};
+		DELETE from Exp_ShipmentPartBookingDetailSHC where
+		PartBookingId=#{partBookingId}
+		DELETE from Exp_ShipmentPartBookingDetail where
+		PartBookingId=#{partBookingId}
+	</delete>
+	
+	<delete id="deleteSingleShipment" parameterType="java.lang.Integer">
+		DELETE FROM Exp_ShipmentBooking WHERE BookingId = #{bookingId}
+	</delete>
+	
+	<select id="getExistingFlightBookingId" parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails" resultType="java.lang.Integer">
+		select FlightBookingId from Exp_ShipmentFlightBookingDetail SFD
+		LEFT JOIN Exp_ShipmentBooking SB on SFD.BookingId=SB.BookingId
+		LEFT JOIN Flt_OperativeFlight OP on OP.Flight_ID=SFD.FlightId
+		where OP.flightkey =concat(#{carrierCode},#{flightNumber}) and  cast(FlightOriginDate as date) =cast(#{flightDate} as date)
+	</select>
+	
+	<delete id="deleteFlightBooking" parameterType="java.lang.Integer">
+		Delete from Exp_shipmentBookingRemarks where  FlightBookingId=#{flightBookingId};
+	 	delete from Exp_ShipmentFlightBookingDetailSHC where FlightBookingId=#{flightBookingId};
+	    delete from Exp_ShipmentFlightBookingDetail where FlightBookingId=#{flightBookingId};
+	</delete>
+
+	<select id="checkInventory" parameterType="java.util.Map" resultType="java.lang.Integer">
+	Select count(*) from Shipment_Master Inner Join Shipment_Inventory
+		ON Shipment_Master.ShipmentId = Shipment_Inventory.Shipment_Id
+		Left Join Shipment_InventoryShc ON Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryShc.ShipmentInventoryId
+		Where Shipment_Master.ShipmentNumber = #{awbNumber} AND cast(Shipment_Master.ShipmentDate as date) = cast(#{shipmentDate} as date)
+		AND Shipment_Inventory.AssignedUldTrolley IS NULL
+	</select>
+	
+	<select id="getShipmentId_Publish" parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentBookingDetails" resultType="java.lang.Long">
+  		SELECt ShipmentId as shipmentId from Shipment_Master where ShipmentNumber=#{shipmentNumber} AND cast(ShipmentDate as date) = cast(#{shipmentDate} as date)
+  </select>
+	
+	<select id="fetchPartSuffixes" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.export.commonbooking.model.PartSuffix">
+		select CarrierCode as carrierCode
+		,StartPrefix as
+		startPrefix
+		,EndPrefix as endPrefix
+		,PrimaryIdentifier as
+		primaryIdentifier
+		,ExcludePrefix as excludePrefix
+		from
+		Exp_Airline_Part_Booking_Config
+		where
+		CarrierCode = #{carrierCode}
+	</select>
+	<select id="getConstantValues" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.icms.model.bookingicms.ConstantValueDetails">
+		<![CDATA[
+			SELECT 	ParameterCode AS "parameterCode", 
+					ParameterValueChar AS "parameterValue"
+			FROM	App_SystemParameters
+			WHERE	ParameterCode LIKE #{code} + '%'
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>
+	</select>
+
+	 <select id="getFlightBookingStatus" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT FlightBookingStatus FROM Mst_Flight_BookingStatus where Icms_FlightBookingStatus = #{flightBookingStatus};
+	</select>
+	<select id="fetchIntermidiateFlightDetail" parameterType="map"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails">
+		select * from Exp_Icms_BookingFlightDetails where bookingFlightDetailsId in      
+			(select BCD.bookingFlightDetailsId from Exp_Icms_BookingFlightDetails BCD
+				LEFT JOIN Exp_Icms_ShipmentIdentifierDetails SD on SD.BookingDetailsId=BCD.BookingDetailsId 
+				where SD.shipmentPrefix = #{prefix} and SD.masterDocumentNumber = #{masterNo});
+	</select>
+	<select id="fetchIntermidiateCommodityDetail" parameterType="map"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.BookingCommodityDetails">
+		select * from Exp_Icms_BookingCommodityDetails where bookingCommodityDetailsId in      
+			(select BCD.BookingCommodityDetailsId from Exp_Icms_BookingCommodityDetails BCD
+				LEFT JOIN Exp_Icms_ShipmentIdentifierDetails SD on SD.BookingDetailsId=BCD.BookingDetailsId 
+				where SD.shipmentPrefix = #{prefix} and SD.masterDocumentNumber = #{masterNo});
+	</select>
+	<select id="fetchIntermidiateCommodityDimensionDetail" parameterType="map"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.DimensionDetaills">
+		select * from Exp_Icms_DimensionDetails where BookingCommodityDetailsId = #{bookingCommodityDetailsId};
+	</select>
+	<select id="fetchMasterRoutingInfo" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.icms.model.bookingicms.shipmentMasterRoutingInfo">
+		select * from Shipment_MasterRoutingInfo where shipmentId = (select shipmentId from shipment_master where shipmentNumber = #{shipmentNo});
+	</select>
+	<select id="getFlightIDFromOperativeFlight" parameterType="map" resultType="java.lang.Integer">
+		select flight_ID from Flt_OperativeFlight where flightKey = #{flightKey} and flightOriginDate = #{flightOriginDate}
+	</select>
+	<select id="fetchFlightBookingId"
+		parameterType="com.ngen.cosys.icms.model.BookingInterface.ShipmentFlightBookingDetails"
+		resultType="java.lang.Long">
+		select FlightBookingId as flightBookingId from
+		Exp_ShipmentFlightBookingDetail where BookingId=#{bookingId} AND
+		FlightId=#{flightId} AND FlightBoardPoint=#{flightBoardPoint} AND
+		FlightOffPoint=#{flightOffPoint}
+	</select>
+	
+	<select id="checkShipmentLoaded"
+		parameterType="java.util.Map"
+		resultType="java.lang.Boolean">
+		select count(*) from 
+		Shipment_Master inner join
+		Shipment_Inventory on
+		Shipment_Master.ShipmentId=Shipment_Inventory.Shipment_ID
+		where 
+		Shipment_Inventory.Flight_ID is not null
+		and exists (
+			Select null
+			from Exp_LoadedShipmentInfo inner join 
+			Exp_AssignedULDTrolleyToFlight on
+			Exp_LoadedShipmentInfo.AssUldTrolleyId=Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+			where Exp_AssignedULDTrolleyToFlight.FlightId=Shipment_Inventory.Flight_ID
+		)
+		and Shipment_Master.ShipmentNumber= #{shipmentNumber}
+		and cast(Shipment_Master.ShipmentDate as date) =cast(#{shipmentDate} as date)
+		and Shipment_Inventory.PartSuffix=#{partSuffix}
+	</select>
+	
+	<select id="checkShipmentManifested"
+		parameterType="java.util.Map"
+		resultType="java.lang.Boolean">
+		select count(*) from 
+		Shipment_Master inner join
+		Shipment_Inventory on
+		Shipment_Master.ShipmentId=Shipment_Inventory.Shipment_ID
+		and Shipment_Inventory.Flight_ID is not null inner join
+		Exp_FlightEvents on
+		Shipment_Inventory.Flight_ID=Exp_FlightEvents.FlightId
+		where 
+		Exp_FlightEvents.ManifestCompletedAt is not null
+		and Shipment_Master.ShipmentNumber= #{shipmentNumber}
+		and cast(Shipment_Master.ShipmentDate as date) =cast(#{shipmentDate} as date)
+		and Shipment_Inventory.PartSuffix=#{partSuffix}
+	</select>
+	
+	<select id="checkShipmentsDeparted"
+		parameterType="java.util.Map"
+		resultType="java.lang.Boolean">
+		select count(*) from 
+		Shipment_FreightOut inner join
+		Shipment_master on
+		Shipment_FreightOut.ShipmentId=Shipment_master.shipmentId
+		where 
+		Shipment_master.ShipmentNumber=#{shipmentNumber} and cast(ShipmentDate as date) =cast(#{shipmentDate} as date)
+		and Shipment_FreightOut.PartSuffix=#{partSuffix}
+		and  Shipment_master.destination not in (#{tenantAirport}, #{tenantCity})
+		and not exists (
+		select 
+		null from 
+		Shipment_Inventory
+		where Shipment_Inventory.shipment_Id=Shipment_master.ShipmentId and
+		Shipment_Inventory.PartSuffix=Shipment_FreightOut.PartSuffix)
+	</select>
+	
+	 <select id="getSegmentDepartureDate"
+		parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select dateSTD from Flt_OperativeFlight_Segments where flight_id = #{flightId} and flightBoardPoint = #{origin} and flightOffPoint = #{destination}
+	</select> 
+	
+	<insert id="sqlInsertOutgoingMessageRecipients"
+		parameterType="java.util.Map">
+		INSERT INTO Interface_OutgoingMessageLogRecipientInfo(
+			InterfaceOutgoingMessageLogId,
+			Address,
+			CreatedUserCode,
+			CreatedDateTime
+		)VALUES(
+			#{referenceId},
+			#{address},
+			#{createdUserId},
+			SYSDATETIME())
+	</insert>
+	
+	<select id="fetchSccCodeFromShc"
+		parameterType="java.lang.Long"
+		resultType="java.lang.String">
+		select SpecialhandlingCode from Shipment_InventorySHC sishc join Shipment_Inventory si 
+ 			on sishc.ShipmentInventoryId = si.ShipmentInventory_Id where si.Shipment_ID = #{shipmentId}
+	</select>
+	
+	<select id="fetchSccCodeFromBookingSHCTable" parameterType="java.util.Map"
+		resultType="java.lang.String">
+		select Distinct(SpecialHandlingCode) from Exp_ShipmentPartBookingDetailSHC where partBookingId in (
+			select PartBookingId from EXP_ShipmentPartBookingDetail where BookingId in 
+			(select BookingId from Exp_ShipmentBooking where ShipmentNumber = #{shipmentNumber} and
+		cast(ShipmentDate as date) = cast(#{shipmentDate} as date)));
+	</select>
+	
+	<select id="fetchSHCMaster"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.SHCCodes">
+		SELECT SpecialHandlingPriority, SpecialHandlingCode
+		FROM Mst_SpecialHandlingCode
+		WHERE EndDate >= getDate() OR EndDate is null;
+	</select>
+	
+	<insert id="createFlightBookingSHC"
+			parameterType="com.ngen.cosys.icms.model.BookingInterface.SHCDetails">
+			INSERT INTO Exp_ShipmentFlightBookingDetailSHC
+	           (FlightBookingId
+	           ,SpecialHandlingCode
+	           ,CreatedUserCode
+	           ,CreatedDateTime)
+	     VALUES
+	           (#{flightBookingId}
+	           ,#{specialHandlingCode}
+	           ,#{createdBy}
+			   ,SYSDATETIME())
+	</insert>
+	
+	<insert id="createPartBookingSHC"
+			parameterType="com.ngen.cosys.icms.model.BookingInterface.SHCDetails">
+			INSERT INTO Exp_ShipmentPartBookingDetailSHC
+	           (PartBookingId
+	           ,SpecialHandlingCode
+	           ,CreatedUserCode
+	           ,CreatedDateTime)
+	     VALUES
+	           (#{partBookingId}
+	           ,#{specialHandlingCode}
+	           ,#{createdBy}
+			   ,SYSDATETIME())
+	</insert>
+	<insert id="insertShipmentBookingDimension"
+		useGeneratedKeys="true" keyProperty="dimensionId" keyColumn="BookingDimensionId">
+		INSERT
+		INTO
+		Exp_ShipmentBookingDimension(BookingId,ShipmentNumber,ShipmentDate,TransactionSequenceNo,
+		Pieces,Weight,Length,Width,Height,UnitCode, Volume, VolumeUnitCode, CreatedUserCode,CreatedDateTime,UserType)
+		VALUES(#{bookingId},#{shipmentNumber},#{shipmentDate},#{transactionSequenceNo}, #{pieces},
+		#{weight},#{length},#{width},#{height},#{unitCode}, #{volume}, #{volumeUnitCode}, #{createdBy},SYSDATETIME(),#{userType})
+	</insert> 
+	<!-- <insert id="insertShipmentBookingDimension"
+		useGeneratedKeys="true" keyProperty="dimensionId" keyColumn="BookingDimensionId">
+		INSERT
+		INTO
+		Exp_ShipmentBookingDimension(BookingId,TransactionSequenceNo,
+		Pieces,Weight,Length,Width,Height,UnitCode, Volume, VolumeUnitCode, CreatedUserCode,CreatedDateTime)
+		VALUES(#{bookingId},#{transactionSequenceNo}, #{pieces},
+		#{weight},#{length},#{width},#{height},#{unitCode}, #{volume}, #{volumeUnitCode}, #{createdBy},SYSDATETIME())
+	</insert> -->
+	
+	 <select id="getDimensionId" parameterType="java.util.Map" resultType="java.math.BigInteger">
+		Select BookingDimensionId from Exp_ShipmentBookingDimension where ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentDate}
+	</select> 
+	<delete id="deleteDimensions">
+		Delete from Exp_ShipmentBookingDimension where BookingDimensionId in 
+		   <foreach item="item" index="index" collection="list"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	<select id="getInterfaceExternalSystemValues"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.icms.model.BookingInterface.InterfaceExternalSystemUrl">
+		select EndPointUrl as endPointUrl,UserName as userName,Password as password,Token as token from Interface_ExternalSystemWSChannelConfiguration where interfaceExternalSystemId = 
+(select InterfaceExternalSystemId from Interface_ExternalSystem where Name = #{icms})
+	</select>
+	
+	<select id="getShipmentDetails"
+		parameterType="com.ngen.cosys.icms.model.bookingicms.BookingShipmentDetails"
+		resultType="com.ngen.cosys.icms.model.bookingicms.BookingShipmentDetails">
+		SELECT ShipmentDetailsId,ShipmentOrigin,ShipmentDestination,ShippingDate,AgentCode,
+		AgentName,BookingStation,CustomerCode,CustomerName,BookingSource,Currency,TotalNumberOfPieces,
+		TotalWeight,TotalDisplayWeight,totalVolume,totalDisplayVolume,TotalVolumeThreeDecimal,
+		IsAWBDataCaptureDone,CreatedUser_Code,Created_DateTime,LastUpdatedUser_Code,LastUpdated_DateTime,
+		BookingDetailsId,LastUpdateIcmsUser_Code AS LastUpdateUser ,LastUpdateIcms_DateTime AS UpdateStamp 
+		 from Exp_Icms_ShipmentDetails where ShipmentDetailsId in      
+			(select SD.ShipmentDetailsId from Exp_Icms_ShipmentDetails SD
+				LEFT JOIN Exp_Icms_ShipmentIdentifierDetails SID on SID.BookingDetailsId=SD.BookingDetailsId 
+				where SID.shipmentPrefix = #{shipmentPrefix} and SID.masterDocumentNumber = #{masterDocumentNumber});
+	</select>
+	
+		<select id="getBookingStatus" parameterType="java.lang.String" resultType="java.lang.String">
+		select ICMS_FlightBookingStatus from Mst_Flight_BookingStatus where FlightBookingStatus =#{bookingStatus};
+	</select>
+	
+	<select id="fetchIntermidiateBookingDetail" parameterType="java.util.Map"
+		resultType="com.ngen.cosys.icms.schema.flightbooking.BookingDetails">
+		select * from Exp_Icms_BookingDetails where BookingDetailsId in      
+			(select BD.BookingDetailsId from Exp_Icms_BookingDetails BD
+				LEFT JOIN Exp_Icms_ShipmentIdentifierDetails SD on SD.BookingDetailsId=BD.BookingDetailsId 
+				where SD.shipmentPrefix = #{prefix} and SD.masterDocumentNumber = #{masterNo});
+		
+	</select>
+	
+	<select id="isBlacklistShipmentNumber" parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+		select count(*) from Mst_BlackListedShipments where ShipmentNumber= #{shipmentNumber};
+		
+	</select>
+	
+	<select id="isFreightNA" parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails" resultType="java.lang.Boolean">
+		SELECT case when(NoFreightLoading = 0 OR NoFreightLoading is null) then 0 else 1 end FROM Flt_OperativeFlight_segments
+		WHERE FlightBoardPoint = #{segmentOrigin} 
+		AND FlightOffPoint= #{segmentDestination}
+		AND cast(DateStd as date) = cast(#{flightDate} as date) 
+		AND flight_id = #{flightId}
+	</select>
+	<insert id="updateBookingDeltaForBookingCancelled" parameterType="com.ngen.cosys.icms.model.BookingInterface.BookingDeltaDetails" >
+	INSERT INTO Exp_BookingDelta (BookingVersion, flightId, flightBoardPoint, FlightOffPoint, ShipmentNumber, ShipmentBookingPieces, ShipmentBookingWeight, ThroughTransitFlag, BookingStatusCode, BookingChanges,CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime, ShipmentDate, FlightKey, FlightDate, PartSuffix)
+	VALUES (#{bookingVersion}, #{flightId}, #{flightBoardPoint}, #{flightOffPoint},  #{shipmentNumber}, #{shipmentBookingPieces}, #{shipmentBookingWeight}, #{throughTransitFlag}, #{bookingStatusCode}, #{bookingChanges}, 'ICMS', getDate(), 'ICMS', getDate(), #{shipmentDate}, #{flightKey}, #{flightDate}, #{partSuffix}) </insert> 
+
+	<select id="getShcGroupBasedOnShc" parameterType="java.lang.String" resultType="java.lang.String">
+		select 
+	Mst_SHCHandlingGroup.SHCHandlingGroupCode from
+	Mst_SHCHandlingGroup
+	inner join  Mst_AssociateSHCByHandlingGroup on
+	Mst_SHCHandlingGroup.MstSHCHandlingGroupID=Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+	where 
+	Mst_SHCHandlingGroup.Category='WH'
+	and  Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode=#{shc}
+	order by Mst_SHCHandlingGroup.SHCGrpPrioirity 
+	</select>
+
+	
+	<select id="checkFlightClosedForBooking" parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails" 
+	resultType="java.lang.String">
+		select closedForBooking from Flt_OperativeFlight where flightkey =concat(#{carrierCode},#{flightNumber}) and
+		cast(FlightOriginDate as date) =cast(#{flightDate} as date)
+	</select>
+	
+	<select id="checkFlightBookingExist" parameterType="com.ngen.cosys.icms.schema.flightbooking.BookingFlightDetails" 
+	resultType="java.lang.Boolean">
+		select count(SB.BookingId) from Exp_ShipmentBooking SB
+		Left Join Exp_ShipmentFlightBookingDetail SFB on SB.BookingId=SFB.BookingId
+		Left Join Flt_OperativeFlight FOF on SFB.FlightId=FOF.Flight_Id
+		where SB.ShipmentNumber=#{shipmentNumber} and  FOF.flightkey =concat(#{carrierCode},#{flightNumber}) and
+		cast(FOF.FlightOriginDate as date) =cast(#{flightDate} as date)
+	</select>
+	
+	<select id="fetchBookingVersion" parameterType="java.lang.String" resultType="java.lang.Integer" >
+	SELECT MAX(BookingVersion) FROM Exp_BookingDelta where ShipmentNumber = #{shipmentNumber}
+	</select>
+	
+	<select id="fetchFlightSegmentID" parameterType="java.util.Map" resultType="java.lang.Integer">
+	SELECT FlightSegmentId FROM Flt_OperativeFlight_Segments 
+ 	WHERE Flight_ID = #{flightId} AND FlightBoardPoint = #{flightBoardPoint} AND FlightOffPoint = #{flightOffPoint}
+	</select>
+
+	<select id ="getFactFlightInfoForShipmentBooking" parameterType="java.util.Map"
+	resultMap="getFactFlightInfoForShipmentBookingMap">
+		SELECT	
+					TOP(1)
+					#{origin} boardingPoint,
+					#{destination} offPoint,
+					#{flightId} flightId,
+					Flt_OperativeFlight.CarrierCode,
+					Flt_OperativeFlight.FlightKey, 
+					Flt_OperativeFlight.FlightNumber,
+					(select top 1 FlightType from  Mst_OperativeFlight_ServiceTypes where  Mst_OperativeFlight_ServiceTypes.FlightServiceType=Flt_OperativeFlight.FlightServiceType) flightType,
+					Flt_OperativeFlight_Legs.AircraftType AS AircraftType	
+			FROM	
+					Flt_OperativeFlight  INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+		
+			WHERE	
+					Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+			and 	Flt_OperativeFlight.Flight_ID=#{flightId}
+	</select>
+	<resultMap id="getFactFlightInfoForShipmentBookingMap" 
+			type="com.ngen.cosys.processing.engine.rule.fact.FactFlight" autoMapping="false">
+		<id property="flightId" column="Flight_ID" />
+		<id column="boardingPoint" property="boardingPoint" />
+		<id column="offPoint" property="offPoint" />
+		<result property="fromAirline" column="CarrierCode" />
+		<result property="flightKey" column="FlightKey" />
+		<result property="flightNumber" column="FlightNumber" />
+		<result property="flightOriginDate" column="FlightOriginDate" />
+		<result property="flightType" column="flightType" />
+		<result property="boardingPoint" column="FlightBoardPoint" />
+		<result property="offPoint" column="FlightOffPoint" />
+		<result property="aircraftType" column="AircraftType" />
+		<collection property="routes" javaType="List"
+			ofType="com.ngen.cosys.processing.engine.rule.fact.FactFlightRoute" 
+			select="sqlSelectFactFlightRoutesForShipmentBooking"
+			column="{flightId=flightId,boardingPoint=boardingPoint,offPoint=offPoint}" />
+	</resultMap>
+	
+	<select id="sqlSelectFactFlightRoutesForShipmentBooking" parameterType="com.ngen.cosys.processing.engine.rule.fact.FactFlight"  resultMap="sqlSelectFactFlightRoutesForShipmentBookingMap">
+	
+			SELECT  #{flightId} flightId,
+					FLIGHTINFO.FlightBoardPoint,
+					FLIGHTINFO.CountryOfOrigin,
+					FLIGHTINFO.FlightOffPoint,
+					FLIGHTINFO.CountryOfDestination
+			FROM (
+				SELECT 	ROUTING.FlightBoardPoint, 
+						(SELECT CountryCode FROM Mst_City WHERE CityCode = ROUTING.FlightBoardPoint) 
+							AS CountryOfOrigin,
+						ROUTING.FlightOffPoint, 
+						(SELECT CountryCode FROM Mst_City WHERE CityCode = ROUTING.FlightOffPoint) 
+							AS CountryOfDestination
+				FROM (
+					SELECT 	Flt_OperativeFlight_Legs.FlightBoardPoint, 
+							Flt_OperativeFlight_Legs.FlightOffPoint,
+							Flt_OperativeFlight_Legs.FlightSegmentOrder,
+							CASE WHEN Flt_OperativeFlight_Legs.FlightBoardPoint = #{boardingPoint} 
+								THEN Flt_OperativeFlight_Legs.FlightSegmentOrder ELSE 0 END Low,
+							CASE WHEN Flt_OperativeFlight_Legs.FlightOffPoint = #{offPoint}
+								THEN Flt_OperativeFlight_Legs.FlightSegmentOrder ELSE 0 END High
+					FROM 	Flt_OperativeFlight_Legs
+					WHERE 	Flt_OperativeFlight_Legs.Flight_ID =#{flightId}
+						
+				) ROUTING
+				WHERE	ROUTING.FlightSegmentOrder BETWEEN ROUTING.Low AND ROUTING.High
+			)
+			FLIGHTINFO
+	</select>
+	<resultMap id="sqlSelectFactFlightRoutesForShipmentBookingMap" 
+		type="com.ngen.cosys.processing.engine.rule.fact.FactFlightRoute">
+		<id property="flightId" column="flightId" />
+		<result property="boardingPoint" column="FlightBoardPoint" />
+		<result property="countryOfOrigin" column="CountryOfOrigin" />
+		<result property="offPoint" column="FlightOffPoint" />
+		<result property="countryOfDestination" column="CountryOfDestination" />
+	</resultMap>
+
+
+	<select id=""  resultType="com.ngen.cosys.transfertype.model.TransferTypeModel">
+ 		select 
+	 	  	code as code,
+	   	  	TransferType as transferType,
+	      	SHCHandlingGroup shcHandlingGroup, 
+	      	Priority as priority,
+	 	  	FromMinutes as fromMinutes,
+	      	ToMinutes as toMinutes,
+	      	EffectiveFrom as effectiveFrom,
+	      	EffectiveTo as effectiveTo, 
+		  	TimeToleranceETAMinutes as timeTolrenance,
+	      	Equation as equation
+     	from 
+      		Transhipment_TransferTypes
+      	where
+			getdate() between EffectiveFrom and isnull(EffectiveTo, getdate() +  10) 
+      	order by
+      		Priority
+ 	</select>
+ 	
+ 	
+ 	<insert id="insertInterfaceOutgoingMessageICMS" 
+			parameterType="com.ngen.cosys.events.esb.connector.logger.payload.OutgoingMessageLog" 
+			useGeneratedKeys="true" 
+			keyProperty="outMessageId" keyColumn="InterfaceOutgoingMessageLogId">
+		INSERT INTO Interface_OutgoingMessageLog
+		(
+			ChannelSent, InterfacingSystem, SenderOriginAddress,
+			MessageType, SubMessageType, CarrierCode, FlightNumber, 
+			FlightOriginDate, ShipmentNumber, ShipmentDate, 
+			RequestedOn, SentOn, AcknowledgementReceivedOn,
+			Message, VersionNo, SequenceNo, MessageContentEndIndicator, 
+			Status, MessageFormat, AirportCode, 
+			CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime,
+			EventLogId, EventName
+		)
+		VALUES
+		(
+			#{channelSent}, #{interfaceSystem}, #{senderOriginAddress},
+			#{messageType}, #{subMessageType}, #{carrierCode}, #{flightNumber}, 
+			#{flightOriginDate}, #{shipmentNumber}, #{shipmentDate},
+			#{requestedOn}, #{sentOn}, #{acknowledgementReceivedOn}, 
+			#{message}, #{versionNo}, #{sequenceNo}, #{messageContentEndIndicator},
+			#{status}, #{messageFormat}, #{airportCode},
+			#{createdBy}, GETDATE(), NULL, NULL, #{eventId}, #{eventName}
+		)
+	</insert>
+</mapper>
+
+	

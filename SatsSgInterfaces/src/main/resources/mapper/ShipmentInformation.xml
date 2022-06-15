@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentInformationInformationMapper">
+	
+	
+	
+ 
+	<resultMap id="shipmentTemperatureResultMap" type="com.ngen.cosys.ics.model.CoolPortShipmentResponseModel" autoMapping="false">
+		<id property="awbNumber" column="awbNumber" />
+		<result property="origin" column="origin" />
+		<result property="destination" column="destination" />
+		<result property="pieces" column="pieces" />
+		<result property="weight" column="weight" />
+		<result property="shc" column="shc" />
+		<result property="description" column="description" />
+		<result property="tempUnit" column="tempUnit" />
+
+<!-- 		<collection property="bookingInfo" javaType="com.ngen.cosys.ics.model.BookingInfo"
+			ofType="com.ngen.cosys.ics.model.BookingInfo"
+			select="sqlGetBookingInfo" column="{flightKey=flightKey}" />
+			
+		<collection property="temperatureInfo" javaType="List"
+			ofType="com.ngen.cosys.ics.model.TemperatureInfo"
+			select="sqlGetTemperatureInfo" column="{flightKey=flightKey}" /> -->
+
+	</resultMap>
+	
+	
+	
+<!-- 	<select id="sqlGetTemperatureInfo" parameterType="com.ngen.cosys.ics.model.CoolPortShipmentRequestModel"
+			resultType="com.ngen.cosys.ics.model.CoolPortShipmentResponseModel">
+			
+					
+		
+	</select>
+ -->	
+	
+	<select id="fetchShipmentInformation" parameterType="com.ngen.cosys.ics.model.CoolPortShipmentRequestModel"
+			resultMap="shipmentTemperatureResultMap">		
+		SELECT eshpBooking.shipmentnumber as awbNumber,
+			eshpBooking.origin, 
+			eshpBooking.destination, 
+			eshpBooking.pieces, 
+			eshpBooking.grossweight as weight, 
+			eshpBooking.NatureOfGoodsDescription as description
+		FROM Shipment_Master shp_master
+		INNER JOIN Exp_ShipmentBooking eshpBooking
+			ON shp_master.shipmentNumber = eshpBooking.shipmentNumber
+				and shp_master.shipmentdate = eshpBooking.shipmentdate
+		WHERE shp_master.shipmentNumber = #{awbNumber}
+	</select>
+	
+
+
+</mapper>

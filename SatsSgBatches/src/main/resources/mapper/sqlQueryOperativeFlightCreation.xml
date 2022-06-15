@@ -1,0 +1,1429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OperativeFlightMapper">
+
+	<select id="findScheduleList" parameterType="com.ngen.cosys.flight.model.FlightSchedulePeriod" resultType="com.ngen.cosys.flight.model.FlightSchedulePeriod">
+		<![CDATA[  
+			select 
+				FlightSchedulePeriod_ID flightSchedulePeriodID,
+  			  CarrierCode
+  			  flightCarrierCode,
+  			  FlightNumber,
+  			  FlightKey flight,
+  			  ScheduleStartDate dateFrom,
+  			  ScheduleEndDate dateTo
+			from 
+			Flt_OperativeFlight_SchedulePeriods 
+			where 
+		    (ScheduleStartDate = cast(GETDATE() as date) 
+			or ScheduleEndDate = (DATEADD(DD, CAST((select ParameterValueChar from App_SystemParameters where ParameterCode = 'FUTURE_DAYS') AS INTEGER), cast(GETDATE() as date)))
+			or
+			ScheduleEndDate = cast(GETDATE() as date)
+			or ScheduleStartDate = (DATEADD(DD, CAST((select ParameterValueChar from App_SystemParameters where ParameterCode = 'FUTURE_DAYS') AS INTEGER), cast(GETDATE() as date))))
+			or
+			(ScheduleStartDate between cast(GETDATE() as date) and 
+			(DATEADD(DD, CAST((select ParameterValueChar from App_SystemParameters where ParameterCode = 'FUTURE_DAYS') AS INTEGER), cast(GETDATE() as date)))
+			or ScheduleEndDate between cast(GETDATE() as date) and 
+			(DATEADD(DD, CAST((select ParameterValueChar from App_SystemParameters where ParameterCode = 'FUTURE_DAYS') AS INTEGER), cast(GETDATE() as date))))
+			or
+			(cast(GETDATE() as date) between ScheduleStartDate and ScheduleEndDate 
+			and (DATEADD(DD, CAST((select ParameterValueChar from App_SystemParameters where ParameterCode = 'FUTURE_DAYS') AS INTEGER), cast(GETDATE() as date))) between
+			ScheduleStartDate and ScheduleEndDate)
+			
+      ]]>
+	</select>
+
+	<select id="getFutureDaysFromConfig" resultType="java.lang.Integer">
+		select top 1
+		ParameterValueChar
+		FROM
+		App_SystemParameters
+		WHERE ParameterCode =
+		'FUTURE_DAYS'
+
+	</select>
+
+
+	<select id="fetchSchedulePeriodId" parameterType="com.ngen.cosys.flight.model.FlightSchedulePeriod"
+		resultType="java.lang.Long">
+		SELECT
+		[FlightSchedulePeriod_ID]
+		FROM
+		[dbo].[Flt_OperativeFlight_SchedulePeriods]
+		where
+		ScheduleStartDate=cast(#{dateFrom} as date) and [FlightKey]=#{flight}
+		and [ScheduleEndDate]=cast(#{dateTo} as date)
+
+	</select>
+	<select id="fetchSchedulewithFrequency" parameterType="com.ngen.cosys.flight.model.SchFlight"
+		resultType="java.lang.Integer">
+		SELECT count(*)
+		FROM Flt_OperativeFlight_Schedules
+		where
+		FlightSchedulePeriod_ID=#{flightSchedulePeriodID}
+		AND
+		ISNULL(#{monFlg},' ')=' ' OR FlightOnMon = #{monFlg}
+		AND
+		ISNULL(#{tueFlg},' ')=' ' OR FlightOnTue = #{tueFlg}
+		AND
+		ISNULL(#{wedFlg},' ')=' ' OR FlightOnWed = #{wedFlg}
+		AND
+		ISNULL(#{thurFlg},' ')=' ' OR FlightOnThu = #{thurFlg}
+		AND
+		ISNULL(#{friFlg},' ')=' ' OR FlightOnFri = #{friFlg}
+		AND
+		ISNULL(#{satFlg},' ')=' ' OR FlightOnSat = #{satFlg}
+		AND
+		ISNULL(#{sunFlg},' ')=' ' OR FlightOnSun = #{sunFlg}
+
+	</select>
+
+	<select id="checkOprFlightExists" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="java.lang.Integer">
+		select count(*) from [dbo].[Flt_OperativeFlight] where
+		FlightKey=#{flightKey}
+		and FlightOriginDate=cast(#{flightDate} as date)
+	</select>
+
+
+	<select id="fetchJobId" resultType="java.lang.Long">
+		select JobId from
+		[App_BatchJobs] where JobName='ScheduleFlightCreationJob'
+	</select>
+
+	<insert id="saveBatchInfo" parameterType="com.ngen.cosys.flight.model.BatchJobsLog"> 
+		<![CDATA[
+			INSERT INTO App_BatchJobsLog
+           (JobId
+           ,StartDateTime
+           ,EndDateTime
+           ,TotalRecords
+           ,SuccessRecords
+           ,FailureRecords
+         )
+     VALUES
+           (#{jobId},
+           #{startDateTime},
+           #{endDateTime},
+           #{totalRecords},
+           #{successRecords},
+           #{failureRecords}
+           )		
+		]]>
+	</insert>
+
+	<select id="fetchSchedulePeriod" parameterType="com.ngen.cosys.flight.model.FlightSchedulePeriod"
+		resultType="com.ngen.cosys.flight.model.FlightSchedulePeriod">
+		SELECT
+		SPD.FlightSchedulePeriod_ID flightSchedulePeriodID,
+		SPD.CarrierCode flightCarrierCode,
+		SPD.FlightNumber
+		flightNumber,
+		SPD.FlightKey flight,
+		SPD.ScheduleStartDate dateFrom,
+		SPD.ScheduleEndDate dateTo,
+		SPD.ApronFlag apron,
+		(SELECT
+		AssistedCarrierFlag FROM Mst_Carrier where CarrierCode =
+		SPD.CarrierCode) assisted,
+		(SELECT GroundHandlerCode FROM Mst_Carrier
+		where CarrierCode =
+		SPD.CarrierCode) defaultGroundHandler,
+		(SELECT
+		CarrierShortName FROM Mst_Carrier where CarrierCode = SPD.CarrierCode)
+		flightName,
+		SPD.GroundHandlerCode
+		groundHandler
+		,SPD.CreatedUser_Code
+		createdBy
+		,SPD.Created_DateTime createdOn
+		,SPD.LastUpdatedUser_Code
+		modifiedBy
+		,SPD.LastUpdated_DateTime modifiedOn
+		FROM
+		Flt_OperativeFlight_SchedulePeriods
+		SPD
+		WHERE
+		SPD.FlightSchedulePeriod_ID =
+		#{flightSchedulePeriodID}
+	</select>
+
+
+	<select id="fetchSchFlightDetailList" parameterType="com.ngen.cosys.flight.model.FlightSchedulePeriod"
+		resultType="com.ngen.cosys.flight.model.SchFlight">
+		SELECT
+		SCH.FlightSchedulePeriod_ID flightSchedulePeriodID,
+		SCH.FlightSchedule_ID flightScheduleID,
+		SCH.ScheduleSequenceNo
+		codFrqNum,
+		SCH.FlightOnMon monFlg,
+		SCH.FlightOnTue tueFlg,
+		SCH.FlightOnWed wedFlg,
+		SCH.FlightOnThu thurFlg,
+		SCH.FlightOnFri friFlg,
+		SCH.FlightOnSat satFlg,
+		SCH.FlightOnSun sunFlg,
+		SCH.CreatedBy_SSM
+		ssmFlag,
+		SCH.JointFlightOnMon monJntFlg,
+		SCH.JointFlightOnTue tueJntFlg,
+		SCH.JointFlightOnWed wedJntFlg,
+		SCH.JointFlightOnThu thuJntFlg,
+		SCH.JointFlightOnFri friJunFlg,
+		SCH.JointFlightOnSat satJntFlg,
+		SCH.JointFlightOnSun
+		sunJntFlg,
+		SCH.FlightServiceType flightServiceType,
+		(SELECT FlightServiceTypeDescription FROM
+		Mst_OperativeFlight_ServiceTypes WHERE FlightServiceType =
+		SCH.FlightServiceType) description,
+		SCH.FlightType
+		flightType
+		,SCH.CreatedUser_Code createdBy
+		,SCH.Created_DateTime createdOn
+		,SCH.LastUpdatedUser_Code modifiedBy
+		,SCH.LastUpdated_DateTime
+		modifiedOn
+		FROM
+		Flt_OperativeFlight_Schedules SCH
+		WHERE
+		SCH.FlightSchedulePeriod_ID =
+		#{flightSchedulePeriodID}
+		ORDER BY
+		SCH.ScheduleSequenceNo
+	</select>
+
+
+	<select id="fetchSchFlightLegs" parameterType="com.ngen.cosys.flight.model.SchFlight"
+		resultType="com.ngen.cosys.flight.model.SchFlightLeg">
+		SELECT
+		         Sch.FlightSchedule_ID    flightScheduleID
+		       , Sch.ScheduleLegOrder     codLegOrder
+		       , Sch.FlightBoardPoint     brdPt
+		       , Sch.FlightOffPoint       offPt
+		       , Sch.ArrivalTime          arrTime
+		       , Sch.DepartureTime        depTime
+		       , Sch.ArrivalDayChange     dayChangeArr
+		       , Sch.DepartureDayChange   dayChangeDep
+		       , Sch.DomesticFlightFlag   domesticLeg
+		       , Sch.AircraftType         aircraftType
+		       , Sch.HandledInSystem      handledInSystem
+		       , Sch.CreatedUser_Code     createdBy
+		       , Sch.Created_DateTime     createdOn
+		       , Sch.LastUpdatedUser_Code modifiedBy
+		       , Sch.LastUpdated_DateTime modifiedOn
+			   , Sch.BuBdOffice			  buBdOffice
+			   , Sch.WarehouseLevel       warehouseLevel
+			   , Sch.RHO                  rho
+		FROM
+		         Flt_OperativeFlight_Schedule_legs Sch
+		WHERE
+		         SCH.FlightSchedule_ID = #{flightScheduleID}
+		ORDER BY
+		         SCH.ScheduleLegOrder
+	</select>
+
+
+	<select id="fetchSchFlightsegs" parameterType="com.ngen.cosys.flight.model.SchFlight"
+		resultType="com.ngen.cosys.flight.model.SchFlightSeg">
+		SELECT
+		SCH.FlightSchedule_ID flightScheduleID,
+		SCH.ScheduleSegmentLegOrder codSegOrder,
+		SCH.FlightBoardPoint brdPt,
+		SCH.FlightOffPoint offPt,
+		SCH.SegmentLegFlag flgLeg,
+		SCH.NoMailFlag
+		noMail,
+		SCH.NoCargoFlag noCargo,
+		SCH.NoFreightLoading freightNA,
+		SCH.FlightTechnicalStopFlag techStop
+		,SCH.CreatedUser_Code createdBy
+		,SCH.Created_DateTime createdOn
+		,SCH.LastUpdatedUser_Code modifiedBy
+		,SCH.LastUpdated_DateTime modifiedOn
+		FROM
+		Flt_OperativeFlight_Schedule_Segments SCH
+		WHERE
+		FlightSchedule_ID =
+		#{flightScheduleID}
+		ORDER BY
+		SCH.ScheduleSegmentLegOrder
+	</select>
+
+
+	<select id="findScheduleFacts" parameterType="com.ngen.cosys.flight.model.SchFlight"
+		resultType="com.ngen.cosys.flight.model.ScheduleFlightFact">
+		SELECT
+		FactSequenceNo sequnceNumber,
+		FlightSchedule_ID
+		flightScheduleID,
+		FactDescription fact
+		,CreatedUser_Code createdBy
+		,Created_DateTime createdOn
+		,LastUpdatedUser_Code modifiedBy
+		,LastUpdated_DateTime
+		modifiedOn
+		FROM
+		Flt_OperativeFlight_Schedule_Facts
+		WHERE
+		FlightSchedule_ID = #{flightScheduleID}
+		ORDER BY
+		FactSequenceNo
+	</select>
+
+	<select id="fetchScheduleJointFlightList" parameterType="com.ngen.cosys.flight.model.SchFlight"
+		resultType="com.ngen.cosys.flight.model.SchFlightJoint">
+		SELECT FlightSchedule_ID flightScheduleID
+		,JointFlightKey
+		jointFlightKey
+		,(SELECT CarrierShortName FROM Mst_Carrier
+		WHERE
+		CarrierCode = SUBSTRING(JointFlightKey,1,2)) jointFlightName
+		,CreatedUser_Code createdBy
+		,Created_DateTime
+		createdOn
+		,LastUpdatedUser_Code modifiedBy
+		,LastUpdated_DateTime modifiedOn
+		FROM
+		Flt_Joint_OperativeFlight_Schedule
+		Where FlightSchedule_ID =
+		#{flightScheduleID}
+	</select>
+
+
+
+	<!-- Flight Creation Query -->
+	<select id="fetchFlightDetail" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="com.ngen.cosys.flight.model.OperativeFlight">
+		SELECT
+		OPR.Flight_ID flightId
+		,'Y' flagSaved,OPR.CarrierCode
+		carrierCode
+		,OPR.FlightNumber flightNo
+		,OPR.FlightKey flightKey
+		,OPR.FlightOriginDate flightDate
+		,OPR.ExtraFlightFlag extraFlight
+		,OPR.FlightCreation adHocFlightCode
+		,OPR.FlightCancelFlag cancellation
+		,OPR.FlightScheduleChange flgChaSch
+		,OPR.ChangedByASM flgSsmAsm
+		,OPR.FlightStatus
+		codFltSts
+		,OPR.ClosedForBooking flightbookingStatus
+		,OPR.AirlineLoadingInstruction qtyAliBts
+		,OPR.FlightOperationPalletsQty qtyAliPltOpn
+		,OPR.FlightOperationContainerQty qtyAliCrsOpn
+		,OPR.CargoPalletsQty
+		qtyAliPltCgo
+		,OPR.CargoContainerQty qtyAliCrsCgo
+		,OPR.TransitPalletsQty
+		qtyAliPltTrn
+		,OPR.TransitContainerQty qtyAliCrsTrn
+		,OPR.WeightUnit
+		codWgtUnt
+		,OPR.JointFlightFlag jointFlight
+		,OPR.ApronFlag flgApn
+		,(SELECT AssistedCarrierFlag FROM Mst_Carrier where
+		CarrierCode =
+		OPR.CarrierCode) assisted
+		,OPR.ApronDate datApn
+		,OPR.FlightRestoredFlag
+		flgRes
+		,OPR.CountSentToApron
+		cntSntApr
+		,OPR.FlightDepDate datFltDep
+		,OPR.ParkingBayArrivalAircraft codPrkBayArr
+		,OPR.ParkingBayDepAircraft
+		codPrkBayDep
+		,OPR.FlightServiceType serviceType
+		,OPR.InboundFlightDelayFlag flgDlyIn
+		,OPR.InboundFlightDelayReason
+		dlyInReason
+		,OPR.OutboundFlightDelayFlag flgDlyOut
+		,OPR.OutboundFlightDelayReason dlyOutReason
+		,OPR.MaxULDCount
+		maxUldCount
+		,OPR.InboundAircraftRegNo regisArrival
+		,OPR.OutboundAircraftRegNo regisDeparture
+		,DateSTD dateStd
+		,DateSTA
+		dateSta
+		,FlightType caoPax
+		,GroundHandlerCode groundHandlerCode
+		,FlightAutoCompleteFlag
+		flightAutoCompleteFlag
+		,CreatedUser_Code
+		createdBy
+		,Created_DateTime createdOn
+		FROM Flt_OperativeFlight
+		OPR WHERE
+		OPR.CarrierCode=#{carrierCode} and OPR.FlightNumber=#{flightNo} and
+		cast(OPR.FlightOriginDate as date) = cast(#{flightDate} as date)
+	</select>
+
+
+	<select id="fetchServiceDescription" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		SELECT
+		FlightServiceTypeDescription description FROM
+		Mst_OperativeFlight_ServiceTypes WHERE
+		FlightServiceType =
+		#{serviceType}
+	</select>
+
+
+	<resultMap id="fetchFlightSegmentLegListMap"
+		type="com.ngen.cosys.flight.model.OperativeFlightSegment" autoMapping="false">
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightBoardPoint" property="codAptBrd" />
+		<result column="FlightOffPoint" property="codAptOff" />
+		<result column="FlightSegmentOrder" property="codSegOdr" />
+		<result column="DateSTD" property="datStd" />
+		<result column="DateSTA" property="datSta" />
+		<result column="SegmentLegFlag" property="flgLeg" />
+		<result column="NoFreightLoading" property="flgNfl" />
+		<result column="FlightTechnicalStopFlag" property="flgTecStp" />
+		<result column="NoCargoFlag" property="flgCargo" />
+		<result column="NoMailFlag" property="noMail" />
+		<result column="FFM_ReceivedFlag" property="codFfm" />
+		<result column="ArrivalManifestUser_Code" property="codArmIni" />
+		<result column="ArrivalManifestDate" property="datArm" />
+		<result column="SegmentFinalized" property="codFin" />
+		<result column="DateFFM" property="datFfm" />
+		<result column="FFM_RejectCount" property="ffmRejCnt" />
+		<result column="FFM_AcceptCount" property="ffmAcpCnt" />
+		<result column="DomesticFlightFlag" property="flgDom" />
+		<result column="CreatedUser_Code" property="createdBy" />
+		<result column="Created_DateTime" property="createdOn" />
+	</resultMap>
+
+	<select id="fetchFlightSegmentLegList" resultMap="fetchFlightSegmentLegListMap"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlight">
+		SELECT Flight_ID
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightSegmentOrder
+		,DateSTD
+		,DateSTA
+		,SegmentLegFlag
+		,NoFreightLoading
+		,FlightTechnicalStopFlag
+		,NoCargoFlag
+		,NoMailFlag
+		,FFM_ReceivedFlag
+		,ArrivalManifestUser_Code
+		,ArrivalManifestDate
+		,SegmentFinalized
+		,DateFFM
+		,FFM_RejectCount
+		,FFM_AcceptCount
+		,DomesticFlightFlag
+		,CreatedUser_Code
+		,Created_DateTime
+		FROM
+		Flt_OperativeFlight_Segments
+		WHERE Flight_ID=#{flightId}
+		ORDER BY
+		FlightSegmentOrder
+	</select>
+
+	<select id="fetchFlightFctList" resultType="com.ngen.cosys.flight.model.OperativeFlightFct"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlight">
+		SELECT Flight_ID flightId,FactSequenceNo
+		seqNo,FactDescription
+		remarks,CreatedUser_Code
+		createdBy,Created_DateTime createdOn
+		FROM Flt_OperativeFlight_Facts
+		WHERE Flight_ID=#{flightId} ORDER
+		BY FactSequenceNo asc
+	</select>
+
+	<select id="fetchFlightExpList" resultType="com.ngen.cosys.flight.model.OperativeFlightExp"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlightExp">
+		SELECT Flight_ID flightId
+		,ExceptionSequenceNo seqNo
+		,ExceptionType
+		exceptionType
+		,BypassULDType uldExpType
+		,ULD_Number uldNo
+		,ExceptionReason uldWtReason
+		,CreatedUser_Code createdBy
+		,Created_DateTime createdOn
+		,TareWeight
+		FROM
+		Flt_OperativeFlight_Exceptions WHERE Flight_ID=#{flightId} and
+		ExceptionType=#{exceptionType}
+		<!-- ORDER BY ExceptionSequenceNo -->
+	</select>
+
+
+	<select id="fetchJointFlightList" resultType="com.ngen.cosys.flight.model.OperativeFlightJoint"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlight">
+		SELECT Flight_ID flightId,FlightBoardPoint
+		boardingPoint,DateSTD
+		departureDateTime,
+		JointFlightKey
+		jointFlightCarCode,(SELECT CarrierShortName FROM Mst_Carrier WHERE
+		CarrierCode =
+		SUBSTRING(JointFlightKey,1,2))
+		carDesc, CreatedUser_Code
+		createdBy
+		,Created_DateTime createdOn FROM Flt_Joint_OperativeFlight
+		WHERE
+		Flight_ID=#{flightId}
+	</select>
+
+	<select id="sqlGetFlightHandlingArea" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="java.lang.String">
+		select
+		TerminalCode
+		from
+		Flt_OperativeFlight_HandlingArea
+		WHERE
+		FlightId = #{flightId}
+	</select>
+
+
+
+	<!-- Handling Area Queries -->
+	<select id="sqlGetAircraftBodyType" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="java.lang.String">
+		select
+		AircraftBodyType
+		from
+		Mst_AircraftType
+		where
+		AircraftType = #{aircraftType}
+	</select>
+
+	<select id="sqlDeriveHandlingAreaForFlight" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightHandlingArea">
+		With HandlingDefinition As(
+			select
+				Whs_HandlingConstraints.Name,
+				case 
+					when (Whs_HandlingConstraints.ProcessHandled = 'BOTH') then
+						#{flightType}
+					else
+						Whs_HandlingConstraints.ProcessHandled
+					end HandlingAreaLevleProcessHandled,
+				isnull(Whs_HandlingConstraintsCarrier.CarrierCode,#{carrierCode}) Carrier,
+				case 
+					when (Whs_HandlingConstraintsCarrier.ProcessHandled = 'BOTH') then
+						#{flightType}
+					else
+						Whs_HandlingConstraintsCarrier.ProcessHandled
+					end CarrerLevelProcessHandlied,
+				case
+					when Whs_HandlingConstraintsCarrier.AircraftBodyType = 'BOTH' then
+						#{aircraftBodyType}
+					else
+						Whs_HandlingConstraintsCarrier.AircraftBodyType
+					end as AircraftBodyType,
+				isnull(Whs_HandlingConstraintsCarrierAircraftType.AircraftType,#{aircraftType}) AircraftType,
+				Whs_Terminal.TerminalCode
+			from
+				Whs_HandlingConstraints inner join
+				Whs_HandlingConstraintsCarrier
+					on Whs_HandlingConstraints.WhsHandlingConstraintsId = Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsId left join
+				Whs_HandlingConstraintsCarrierAircraftType
+					on Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsCarrierId = Whs_HandlingConstraintsCarrierAircraftType.WhsHandlingConstraintsCarrierId left join
+				Whs_AssociateHandlingConstraintWithArea
+					on Whs_HandlingConstraints.WhsHandlingConstraintsId = Whs_AssociateHandlingConstraintWithArea.WhsHandlingConstraintsId and
+						Whs_AssociateHandlingConstraintWithArea.ReferenceType = 'TERMINAL' inner join
+				Whs_Terminal
+					on Whs_AssociateHandlingConstraintWithArea.ReferenceId = Whs_Terminal.WhsTerminalId
+		)select
+				HandlingDefinition.TerminalCode as terminalCode
+			from
+				HandlingDefinition
+			where
+				(HandlingDefinition.CarrerLevelProcessHandlied = #{flightType} or HandlingDefinition.HandlingAreaLevleProcessHandled =  #{flightType}) and
+				HandlingDefinition.Carrier = #{carrierCode} and
+				HandlingDefinition.AircraftBodyType = #{aircraftBodyType} and
+				HandlingDefinition.AircraftType = #{aircraftType}
+	</select>
+	<select id="sqlDeriveAllTerminalForFlight" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightHandlingArea">
+		<!-- select TerminalCode from Whs_Terminal where
+		SatelliteStationFlag = 0 -->
+		select Whs_Terminal.TerminalCode as terminalCode
+			from 
+				Whs_Terminal,Whs_HandlingConstraintsCarrier,
+				Whs_AssociateHandlingConstraintWithArea
+				where Whs_Terminal.WhsTerminalId=Whs_AssociateHandlingConstraintWithArea.ReferenceId
+				and Whs_AssociateHandlingConstraintWithArea.ReferenceType='TERMINAL'
+				and Whs_HandlingConstraintsCarrier.WhsHandlingConstraintsId=Whs_AssociateHandlingConstraintWithArea.WhsHandlingConstraintsId
+				and Whs_HandlingConstraintsCarrier.CarrierCode= #{carrierCode}
+				and Whs_HandlingConstraintsCarrier.ProcessHandled IN('EXPORT','IMPORT','BOTH')
+				and SatelliteStationFlag = 0 
+
+	</select>
+
+	<insert id="insertFlightHandlingArea"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlightHandlingArea">
+		INSERT INTO Flt_OperativeFlight_HandlingArea(
+		FlightId
+		,TerminalCode
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		)
+		VALUES(
+		#{flightId}
+		,#{terminalCode}
+		,#{createdBy}
+		,#{createdOn}
+		,#{modifiedBy}
+		,#{modifiedOn}
+		)
+	</insert>
+
+    <insert id="saveFlight" parameterType="com.ngen.cosys.flight.model.OperativeFlight"> 
+		<![CDATA[
+			INSERT INTO Flt_OperativeFlight
+           (CarrierCode
+           ,FlightNumber
+           ,FlightKey
+           ,FlightOriginDate
+           ,ExtraFlightFlag
+           ,FlightCreation
+           ,FlightCancelFlag
+           ,FlightScheduleChange
+           ,ChangedByASM
+           ,FlightStatus
+           ,AirlineLoadingInstruction
+           ,FlightOperationPalletsQty
+           ,FlightOperationContainerQty
+           ,CargoPalletsQty
+           ,CargoContainerQty
+           ,TransitPalletsQty
+           ,TransitContainerQty
+           ,WeightUnit
+           ,JointFlightFlag
+           ,ApronFlag
+           ,ApronDate
+           ,FlightRestoredFlag
+           ,CountSentToApron
+           ,FlightDepDate
+           ,ParkingBayArrivalAircraft
+           ,ParkingBayDepAircraft
+           ,FlightServiceType
+           ,InboundFlightDelayFlag
+           ,InboundFlightDelayReason
+           ,OutboundFlightDelayFlag
+           ,OutboundFlightDelayReason
+           ,MaxULDCount
+           ,InboundAircraftRegNo
+           ,OutboundAircraftRegNo
+           ,DateSTD
+           ,DateSTA
+           ,FlightType
+           ,GroundHandlerCode
+           ,FlightAutoCompleteFlag,
+           	CreatedUser_Code
+           ,Created_DateTime,
+           LastUpdatedUser_Code,
+           LastUpdated_DateTime)
+     VALUES
+           (#{carrierCode},
+           #{flightNo},
+           #{flightKey},
+           #{flightDate},
+           #{extraFlight},
+           #{adHocFlightCode},
+           #{cancellation},
+           #{flgChaSch},
+           #{flgChaAsm},
+           #{codFltSts},
+           #{qtyAliBts},
+           #{qtyAliPltOpn},
+           #{qtyAliCrsOpn},
+           #{qtyAliPltCgo},
+           #{qtyAliCrsCgo},
+           #{qtyAliPltTrn},
+           #{qtyAliCrsTrn},
+           #{codWgtUnt},
+           #{jointFlight},
+           #{flgApn},
+           #{datApn},
+           #{flgRes},
+           #{cntSntApr},
+           #{datFltDep},
+           #{codPrkBayArr},
+           #{codPrkBayDep},
+           #{serviceType},
+           #{flgDlyIn},
+           #{dlyInReason},
+           #{flgDlyOut},
+           #{dlyOutReason},
+           #{maxUldCount},
+           #{regisArrival},
+           #{regisDeparture},
+           #{dateStd},
+           #{dateSta},
+           #{caoPax},
+           #{groundHandlerCode},
+           #{flightAutoCompleteFlag}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,#{lastUpdateUser}
+           ,#{lastUpdateDateTime}
+           )		
+		]]>
+		<selectKey resultType="java.lang.Long" order="AFTER"
+
+			keyProperty="flightId" keyColumn="Flight_ID">
+
+			SELECT @@IDENTITY
+
+		</selectKey>
+	</insert>
+
+	<insert id="saveFlightLegs" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg">
+		<selectKey order="BEFORE" keyProperty="legOrderCode"
+			resultType="java.lang.Integer">
+			select ISNULL(max(FlightSegmentOrder)+1,1) from
+			Flt_OperativeFlight_Legs
+			where Flight_ID=#{flightId}
+		</selectKey>
+		INSERT INTO Flt_OperativeFlight_Legs
+		(Flight_ID
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightSegmentOrder
+		,DateSTD
+		,DateSTA
+		,DateETD
+		,DateETA
+		,DateATD
+		,DateATA
+		,DomesticFlightFlag
+		,AircraftRegCode
+		,AircraftType
+		,HandledInSystem
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(#{flightId}
+		,#{boardPointCode}
+		,#{offPointCode}
+		,#{legOrderCode}
+		,#{departureDate}
+		,#{arrivalDate}
+		,#{datEtd}
+		,#{datEta}
+		,#{datAtd}
+		,#{datAta}
+		,#{domesticStatus}
+		,#{registration}
+		,#{aircraftModel}
+		,#{handledInSystem}
+		,#{createdBy}
+		,#{createdOn})
+	</insert>
+	<insert id="saveFlightSegments" parameterType="com.ngen.cosys.flight.model.OperativeFlightSegment">
+		<![CDATA[
+			INSERT INTO Flt_OperativeFlight_Segments
+           (Flight_ID
+           ,FlightBoardPoint
+           ,FlightOffPoint
+           ,FlightSegmentOrder
+           ,DateSTD
+           ,DateSTA
+           ,SegmentLegFlag
+           ,NoFreightLoading
+           ,FlightTechnicalStopFlag
+           ,NoCargoFlag
+           ,NoMailFlag
+           ,FFM_ReceivedFlag
+           ,ArrivalManifestUser_Code
+           ,ArrivalManifestDate
+           ,SegmentFinalized
+           ,DateFFM
+           ,FFM_RejectCount
+           ,FFM_AcceptCount
+           ,DomesticFlightFlag
+           ,CreatedUser_Code
+           ,Created_DateTime)
+     VALUES
+           (#{flightId}
+           ,#{codAptBrd}
+           ,#{codAptOff}
+           ,#{codSegOdr}
+           ,#{datStd}
+           ,#{datSta}
+           ,#{flgLeg}
+           ,#{flgNfl}
+           ,#{flgTecStp}
+           ,#{flgCargo}
+           ,#{noMail}
+           ,#{codFfm}
+           ,#{codArmIni}
+           ,#{datArm}
+           ,#{codFin}
+           ,#{datFfm}
+           ,#{ffmRejCnt}
+           ,#{ffmAcpCnt}
+           ,#{flgDom}
+           ,#{createdBy}
+           ,#{createdOn})
+		]]>
+	</insert>
+
+
+	<insert id="saveFlightExps" parameterType="com.ngen.cosys.flight.model.OperativeFlightExp">
+		<selectKey order="BEFORE" keyProperty="seqNo" resultType="java.math.BigInteger">
+			select ISNULL(max(ExceptionSequenceNo)+1,1) from
+			Flt_OperativeFlight_Exceptions where Flight_ID=#{flightId}
+		</selectKey>
+		INSERT INTO Flt_OperativeFlight_Exceptions
+		(Flight_ID
+		,ExceptionSequenceNo
+		,ExceptionType
+		,BypassULDType
+		,ULD_Number
+		,ExceptionReason
+		,CreatedUser_Code
+		,Created_DateTime
+		,TareWeight)
+		VALUES
+		(#{flightId}
+		,#{seqNo}
+		,#{exceptionType}
+		,#{uldExpType}
+		,#{uldNo}
+		,#{uldWtReason}
+		,#{createdBy}
+		,#{createdOn}
+		,#{tareWeight}
+		)
+	</insert>
+	<insert id="saveJointFlight" parameterType="com.ngen.cosys.flight.model.OperativeFlightJoint">
+		<![CDATA[
+			  INSERT INTO Flt_Joint_OperativeFlight
+           (Flight_ID
+           ,FlightBoardPoint
+           ,DateSTD
+           ,JointFlightKey
+           ,CreatedUser_Code
+           ,Created_DateTime)
+     VALUES
+           (#{flightId}
+           ,#{boardingPoint}
+           ,#{departureDateTime}
+           ,#{jointFlightCarCode}
+           ,#{createdBy}
+           ,#{createdOn})	
+		]]>
+	</insert>
+	<insert id="saveFlightFcts" parameterType="com.ngen.cosys.flight.model.OperativeFlightFct">
+		<selectKey order="BEFORE" keyProperty="seqNo" resultType="java.math.BigDecimal">
+			select ISNULL(max(FactSequenceNo)+1,1) from Flt_OperativeFlight_Facts
+			where Flight_ID=#{flightId}
+		</selectKey>
+		INSERT INTO Flt_OperativeFlight_Facts
+		(Flight_ID
+		,FactSequenceNo
+		,FactDescription
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(#{flightId}
+		,#{seqNo}
+		,#{remarks}
+		,#{createdBy}
+		,#{createdOn})
+
+	</insert>
+	<select id="maintainfetchNormalEnroutement" parameterType="com.ngen.cosys.flight.model.FlightEnroutement"
+		resultType="com.ngen.cosys.flight.model.FlightEnroutement">
+		SELECT
+		FlightEnroutementId enroutementId, CarrierCode
+		carrierCode, FlightBoardPoint
+		boardPointCode,FlightOffPoint
+		finalDestination,FlightType serviceType,
+		StartDate periodFrom ,EndDate
+		periodTo
+		FROM Flt_FlightEnroutement
+		WHERE
+		CarrierCode=#{carrierCode} and
+		FlightBoardPoint=#{boardPointCode} and
+		FlightOffPoint=#{finalDestination} and
+		FlightType=#{serviceType}
+	</select>
+	<update id="updateNormalEnroutementFrom" parameterType="com.ngen.cosys.flight.model.FlightEnroutement">
+
+		Update
+		Flt_FlightEnroutement SET
+		StartDate = cast(#{periodFrom} as date)
+		WHERE
+		CarrierCode=#{carrierCode}
+		AND
+		FlightBoardPoint=#{boardPointCode}
+		AND
+		FlightOffPoint=#{finalDestination}
+		AND
+		FlightType=#{serviceType}
+	</update>
+
+	<update id="updateNormalEnroutement" parameterType="com.ngen.cosys.flight.model.FlightEnroutement">
+
+		Update
+		Flt_FlightEnroutement SET
+		EndDate = cast(#{periodTo} as date)
+		WHERE
+		CarrierCode=#{carrierCode}
+		AND
+		FlightBoardPoint=#{boardPointCode}
+		AND
+		FlightOffPoint=#{finalDestination}
+		AND
+		FlightType=#{serviceType}
+	</update>
+
+	<insert id="saveNormalEnroutement" parameterType="com.ngen.cosys.flight.model.FlightEnroutement">
+
+		INSERT INTO
+		Flt_FlightEnroutement
+		(CarrierCode
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightType
+		,StartDate
+		,EndDate
+		,CreatedUser_Code
+		,Created_DateTime
+		,LastUpdatedUser_Code
+		,LastUpdated_DateTime)
+		VALUES
+		(#{carrierCode}
+		,#{boardPointCode}
+		,#{finalDestination}
+		,#{serviceType}
+		,#{periodFrom}
+		,#{periodTo}
+		,#{createdBy}
+		,GETDATE()
+		,#{modifiedBy}
+		,GETDATE())
+
+	</insert>
+
+	<select id="checkExportFlightEvent" parameterType="java.lang.Long"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_FlightEvents where FlightId =
+		#{flightId}
+	</select>
+
+	<insert id="insertExportFlight" parameterType="com.ngen.cosys.flight.model.ExportFlightevents">
+		insert into
+		Exp_FlightEvents (FlightId, BookingClosingTime,
+		FirstTimeBuildCompletedBy, FirstTimeBuildCompletedAt,
+		BuildupCompletedBy, BuildupCompletedAt,
+		FirstTimeManifestCompletedBy,
+		FirstTimeManifestCompletedAt,
+		ManifestCompletedBy, ManifestCompletedAt,
+		FirstTimeDLSCompletedBy, FirstTimeDLSCompletedAt,
+		DLSCompletedBy,
+		DLSCompletedAt, OffloadCompletedBy,
+		OffloadCompletedAt,
+		OutwardServiceReportFinalizedBy,
+		OutwardServiceReportFinalizedAt,
+		FirstTimeFlightCompletedBy,
+		FirstTimeFlightCompletedAt,
+		FlightCompletedBy,
+		FlightCompletedAt, FlightDepartedBy,
+		FlightDepartedOn, CreatedUserCode, CreatedDateTime)
+		values
+		(#{flightId,jdbcType=NUMERIC}, #{bookingClosingTime,jdbcType=TIME},
+		#{firstTimeBuildCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeBuildCompletedAt,jdbcType=TIMESTAMP},
+		#{buildupCompletedBy,jdbcType=VARCHAR},
+		#{buildupCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeManifestCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeManifestCompletedAt,jdbcType=TIMESTAMP},
+		#{manifestCompletedBy,jdbcType=VARCHAR},
+		#{manifestCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeDLSCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeDLSCompletedAt,jdbcType=TIMESTAMP},
+		#{DLSCompletedBy,jdbcType=VARCHAR},
+		#{DLSCompletedAt,jdbcType=TIMESTAMP},
+		#{offloadCompletedBy,jdbcType=VARCHAR},
+		#{offloadCompletedAt,jdbcType=TIMESTAMP},
+		#{outwardServiceReportFinalizedBy,jdbcType=VARCHAR},
+		#{outwardServiceReportFinalizedAt,jdbcType=TIMESTAMP},
+		#{firstTimeFlightCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeFlightCompletedAt,jdbcType=TIMESTAMP},
+		#{flightCompletedBy,jdbcType=VARCHAR},
+		#{flightCompletedAt,jdbcType=TIMESTAMP},
+		#{flightDepartedBy,jdbcType=VARCHAR},
+		#{flightDepartedOn,jdbcType=TIMESTAMP},#{createdBy},GETDATE())
+	</insert>
+
+	<select id="customsImportExists" parameterType="com.ngen.cosys.flight.model.CustomsFlight"
+		resultType="java.lang.Integer">
+		select count(*) from Customs_Flight where
+		FlightDate=CAST(#{flightDate} as
+		datetime) and
+		FlightKey=#{flightKey,jdbcType=VARCHAR}
+	</select>
+
+
+	<select id="validateAircraftModel" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Mst_AircraftType where
+		AircraftType=#{aircraftModel}
+		]]>
+	</select>
+	<select id="validateFlightKeyExistance" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Flt_OperativeFlight where
+		FlightKey=#{flightKey}
+		]]>
+	</select>
+
+	<select id="validateDomesticOptFlightLeg" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="java.lang.Integer">
+		select count(*) from (
+		(SELECT CountryCode
+		FROM Mst_City
+		where CityCode = (SELECT AirportCityCode
+		FROM Mst_Airport
+		where
+		AirportCode =#{boardPointCode})) union
+
+		(SELECT CountryCode
+		FROM Mst_City
+		where CityCode = (SELECT AirportCityCode
+		FROM Mst_Airport
+		where
+		AirportCode =#{offPointCode}))) as countryCode
+	</select>
+
+	<select id="validateBoardingPoint" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Mst_Airport where AirportCode=#{boardPointCode}
+		]]>
+	</select>
+
+	<select id="checkExportFlightSTD" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="java.lang.Integer">
+
+		select count(*) from Flt_OperativeFlight f1 left join
+		Flt_OperativeFlight_Legs f2
+		on f1.Flight_ID = f2.Flight_ID
+		where
+		f1.FlightKey=#{flightKey} and cast (f2.DateSTD as
+		date)=cast(#{departureDate} as date) and
+		f2.FlightBoardPoint = #{tenantAirport}
+	</select>
+
+	<select id="checkImportFlightSTA" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="java.lang.Integer">
+
+		select count(*) from Flt_OperativeFlight f1 left join
+		Flt_OperativeFlight_Legs f2
+		on f1.Flight_ID = f2.Flight_ID
+		where
+		f1.FlightKey=#{flightKey} and cast (f2.DateSTA as
+		date)=cast(#{arrivalDate} as date) and
+		f2.FlightOffPoint = #{tenantAirport}
+	</select>
+
+	<select id="validateOffPoint" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Mst_Airport where AirportCode=#{offPointCode}
+		]]>
+	</select>
+
+	<select id="validateUldKeyExistance" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Uld_UldMaster where
+		UldKey=#{uldKey}
+		]]>
+	</select>
+	<insert id="insertExportCustomsFlight" parameterType="com.ngen.cosys.flight.model.CustomsFlight">
+		insert into
+		Customs_Flight (FlightBoardPoint,
+		FlightOffPoint,
+		ImportExportIndicator, FlightType,
+		FlightCancelFlag,
+		WithCargoFlag,
+		MRSCompletedDate, MRSSentDate,
+		AcknowledgeCode, FMAAcknowledgeDate,
+		FNAAcknowledgeDate,
+		FlightKey,
+		FlightDate,
+		FlightOriginDate,
+		CreatedUserCode,
+		CreatedDateTime)
+		values
+		(#{flightBoardPoint},
+		#{flightOffPoint},
+		#{importExportIndicator},
+		#{flightType},
+		#{flightCancelFlag},
+		#{withCargoFlag},
+		#{mrscompletedDate,jdbcType=TIMESTAMP},
+		#{mrssentDate,jdbcType=TIMESTAMP},
+		#{acknowledgeCode,jdbcType=VARCHAR},
+		#{fmaAcknowledgeDate,jdbcType=TIMESTAMP},
+		#{fnaAcknowledgeDate,jdbcType=TIMESTAMP},
+		#{flightKey,jdbcType=VARCHAR},
+		CAST(#{flightDate} as
+		datetime),CAST(#{oprFlightDate} as
+		date),#{createdBy},GETDATE())
+	</insert>
+
+	<select id="validateSvType" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(1) from Mst_OperativeFlight_ServiceTypes where
+		FlightServiceType=#{serviceType}
+		]]>
+	</select>
+
+	<select id="checkForAutoFlight" parameterType="com.ngen.cosys.flight.model.OperativeFlight"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM [dbo].[Mst_SetupAutoFlightComplete]
+		where carriercode=#{carrierCode}
+	</select>
+	
+	
+	<select id="checkForAutoCarrier" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightAuto">
+		SELECT CarrierCode carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where carrierCode = #{carrierCode}
+		and FlightNumber is null
+		and AirportCode is null
+	</select>
+	
+	
+	<select id="checkForAutoFlightWithCarrier" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where carrierCode = #{carrierCode}
+		and FlightNumber = #{flightKey}
+		and AirportCode is null
+	</select>
+	
+	<select id="checkForAutoFlightWithDest" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where carrierCode = #{carrierCode}
+		and FlightNumber = #{flightKey}
+		and AirportCode = #{offPointCode}
+	</select>
+	
+	<select id="checkForAutoCarrierWithDest" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg"
+		resultType="com.ngen.cosys.flight.model.OperativeFlightAuto">
+		SELECT [CarrierCode] carrierCode
+		,[FlightNumber] flightKey
+		,[AirportCode] OffpointCode
+		FROM Mst_SetupAutoFlightComplete
+		where carrierCode = #{carrierCode}
+		and FlightNumber is null
+		and AirportCode = #{offPointCode}
+	</select>
+	
+	
+	
+	
+	<!-- For ics interface flight import -->
+	<insert id="insertIcsInterfaceImport" parameterType="com.ngen.cosys.flight.model.IcsFlightDetails"
+		useGeneratedKeys="true" keyColumn="IcsFlightDetailsId" keyProperty="icsFlightDetailsId">
+		insert into
+		Interface_IcsFlightDetails (FlightId,
+		FlightType,
+		FlightCarrier,
+		FlightNumber,
+		FlightDate,
+		StaStd,
+		Origin, Destination,
+		OperationalDirection, Consumed
+		)
+		values
+		(
+		#{flightId},
+		#{flightType},
+		#{flightCarrier},
+		#{flightNumber},
+		#{flightDate,jdbcType=TIMESTAMP},
+		#{staStd,jdbcType=TIMESTAMP},
+		#{origin},
+		#{destination},
+		#{operationalDirection},
+		#{consumed})
+	</insert>
+
+	<select id="checkImportFlightEvent" parameterType="java.lang.Long"
+		resultType="java.lang.Integer">
+		select count(*) from Imp_FlightEvents where FlightId =
+		#{flightId}
+	</select>
+
+	<insert id="insertImportFlight" parameterType="com.ngen.cosys.flight.model.ImportFlightevents">
+		insert into
+		Imp_FlightEvents (FlightId, FirstULDTowedBy,
+		FirstULDTowedAt,
+		LastULDTowedBy, LastULDTowedAt,
+		InboundULDListFinalizedBy,
+		InboundULDListFinalizedAt,
+		FirstULDCheckedInAt, FirstULDCheckedInBy,
+		FirstTimeRampCheckInCompletedAt, FirstTimeRampCheckInCompletedBy,
+		RampCheckInCompletedAt, RampCheckInCompletedBy,
+		FirstTimeDocumentVerificationCompletedAt,
+		FirstTimeDocumentVerificationCompletedBy,
+		DocumentVerificationCompletedAt, DocumentVerificationCompletedBy,
+		FirstTimeBreakDownCompletedAt, FirstTimeBreakDownCompletedBy,
+		BreakDownCompletedAt, BreakDownCompletedBy,
+		InwardServiceReportFinalizedAt, InwardServiceReportFinalizedBy,
+		FirstTimeFlightCompletedAt, FirstTimeFlightCompletedBy,
+		FlightCompletedAt, FlightCompletedBy,
+		FirstTimeFlightClosedBy,
+		FirstTimeFightClosedAt,
+		FlightClosedBy, FightClosedAt,
+		ThroughTransitWorkingListFinalizedAt,
+		ThroughTransitWorkingListFinalizedBy, FlightDiscrepncyListSentBy,
+		FlightDiscrepncyListSentAt, CreatedUserCode, CreatedDateTime)
+		values
+		(#{flightId,jdbcType=NUMERIC}, #{firstULDTowedBy,jdbcType=VARCHAR},
+		#{firstULDTowedAt,jdbcType=TIMESTAMP},
+		#{lastULDTowedBy,jdbcType=VARCHAR},
+		#{lastULDTowedAt,jdbcType=TIMESTAMP},
+		#{inboundULDListFinalizedBy,jdbcType=VARCHAR},
+		#{inboundULDListFinalizedAt,jdbcType=TIMESTAMP},
+		#{firstULDCheckedInAt,jdbcType=TIMESTAMP},
+		#{firstULDCheckedInBy,jdbcType=VARCHAR},
+		#{firstTimeRampCheckInCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeRampCheckInCompletedBy,jdbcType=VARCHAR},
+		#{rampCheckInCompletedAt,jdbcType=TIMESTAMP},
+		#{rampCheckInCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeDocumentVerificationCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeDocumentVerificationCompletedBy,jdbcType=VARCHAR},
+		#{documentVerificationCompletedAt,jdbcType=TIMESTAMP},
+		#{documentVerificationCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeBreakDownCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeBreakDownCompletedBy,jdbcType=VARCHAR},
+		#{breakDownCompletedAt,jdbcType=TIMESTAMP},
+		#{breakDownCompletedBy,jdbcType=VARCHAR},
+		#{inwardServiceReportFinalizedAt,jdbcType=TIMESTAMP},
+		#{inwardServiceReportFinalizedBy,jdbcType=VARCHAR},
+		#{firstTimeFlightCompletedAt,jdbcType=TIMESTAMP},
+		#{firstTimeFlightCompletedBy,jdbcType=VARCHAR},
+		#{flightCompletedAt,jdbcType=TIMESTAMP},
+		#{flightCompletedBy,jdbcType=VARCHAR},
+		#{firstTimeFlightClosedBy,jdbcType=VARCHAR},
+		#{firstTimeFightClosedAt,jdbcType=TIMESTAMP},
+		#{flightClosedBy,jdbcType=VARCHAR},
+		#{fightClosedAt,jdbcType=TIMESTAMP},
+		#{throughTransitWorkingListFinalizedAt,jdbcType=TIMESTAMP},
+		#{throughTransitWorkingListFinalizedBy,jdbcType=VARCHAR},
+		#{flightDiscrepncyListSentBy,jdbcType=VARCHAR},
+		#{flightDiscrepncyListSentAt,jdbcType=TIMESTAMP},#{createdBy},GETDATE())
+	</insert>
+
+	<insert id="insertImportCustomsFlight" parameterType="com.ngen.cosys.flight.model.CustomsFlight">
+		insert into
+		Customs_Flight (FlightBoardPoint,
+		FlightOffPoint,
+		ImportExportIndicator, FlightType,
+		FlightCancelFlag,
+		WithCargoFlag,
+		MRSCompletedDate, MRSSentDate,
+		AcknowledgeCode, FMAAcknowledgeDate,
+		FNAAcknowledgeDate,
+		FlightKey,
+		FlightDate,
+		FlightOriginDate,
+		CreatedUserCode,
+		CreatedDateTime)
+		values
+		(#{flightBoardPoint},
+		#{flightOffPoint},
+		#{importExportIndicator},
+		#{flightType},
+		#{flightCancelFlag},
+		#{withCargoFlag},
+		#{mrscompletedDate,jdbcType=TIMESTAMP},
+		#{mrssentDate,jdbcType=TIMESTAMP},
+		#{acknowledgeCode,jdbcType=VARCHAR},
+		#{fmaAcknowledgeDate,jdbcType=TIMESTAMP},
+		#{fnaAcknowledgeDate,jdbcType=TIMESTAMP},
+		#{flightKey,jdbcType=VARCHAR},
+		CAST(#{flightDate} as
+		datetime),CAST(#{oprFlightDate} as
+		date),#{createdBy},GETDATE())
+	</insert>
+	
+	
+	<select id="checkFlightExistanceWithSta" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg" resultType="java.lang.Integer">	  
+	select count(*) 
+	from Flt_OperativeFlight 
+	inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	where Flt_OperativeFlight.FlightKey= #{flightKey} 
+	AND cast(Flt_OperativeFlight_Legs.DateSTA as date) =cast(#{arrivalDate} as date)
+	AND FlightBoardPoint = #{boardPointCode}
+	AND FlightOffPoint = #{offPointCode}	
+	<if test="flightId != null">
+		<![CDATA[
+		and Flt_OperativeFlight.Flight_ID <> #{flightId}
+		]]>
+	</if>
+	</select>
+	<select id="checkFlightExistanceWithStd" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg" resultType="java.lang.Integer">	  
+	select count(*) 
+	from Flt_OperativeFlight 
+	inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	where Flt_OperativeFlight.FlightKey= #{flightKey} 
+	AND cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{departureDate} as date)
+	AND FlightBoardPoint = #{boardPointCode}
+	AND FlightOffPoint = #{offPointCode}	
+	<if test="flightId != null">
+		<![CDATA[
+		and Flt_OperativeFlight.Flight_ID <> #{flightId}
+		]]>
+	</if>
+	</select>
+
+	<select id ="fetchStationHandler" resultType="java.lang.String">
+     	select ParameterValueChar from App_SystemParameters where ParameterCode = 'BASE_STATION_HANDLER'
+	</select>
+
+
+	<select id="checkFlightExistanceWithStdorstawithsin" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg" resultType="java.lang.Integer">	  
+	select count(*) 
+	from Flt_OperativeFlight 
+	inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	where Flt_OperativeFlight.FlightKey= #{flightKey} 
+	AND (
+	(cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{departureDate} as date))
+	OR
+	(cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{arrivalDate} as date))
+	    )
+	AND(
+	(FlightBoardPoint = #{tenantAirport} AND FlightOffPoint = #{offPointCode})
+	OR (FlightBoardPoint = #{boardPointCode} and FlightOffPoint = #{tenantAirport})
+	   )	
+	<if test="flightId != null">
+		<![CDATA[
+		and Flt_OperativeFlight.Flight_ID <> #{flightId}
+		]]>
+	</if>
+	</select>
+	
+	<select id="checkFlightExistanceWithStawithoutOffPoint" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg" resultType="java.lang.Integer">	  
+	select count(*) 
+	from Flt_OperativeFlight 
+	inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	where Flt_OperativeFlight.FlightKey= #{flightKey} 
+	AND cast(Flt_OperativeFlight_Legs.DateSTA as date) =cast(#{arrivalDate} as date)
+	 AND FlightBoardPoint = #{boardPointCode} 
+	<!-- AND FlightOffPoint = #{offPointCode} -->	
+	<if test="flightId != null">
+		<![CDATA[
+		and Flt_OperativeFlight.Flight_ID <> #{flightId}
+		]]>
+	</if>
+	</select>
+	
+	<select id="checkFlightExistanceWithStawithoutBoardPoint" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg" resultType="java.lang.Integer">	  
+	select count(*) 
+	from Flt_OperativeFlight 
+	inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	where Flt_OperativeFlight.FlightKey= #{flightKey} 
+	AND cast(Flt_OperativeFlight_Legs.DateSTA as date) =cast(#{arrivalDate} as date)
+	<!-- AND FlightBoardPoint = #{boardPointCode} -->
+	AND FlightOffPoint = #{offPointCode}	
+	<if test="flightId != null">
+		<![CDATA[
+		and Flt_OperativeFlight.Flight_ID <> #{flightId}
+		]]>
+	</if>
+	</select>
+
+	<insert id="saveFlightAttributes" parameterType="com.ngen.cosys.flight.model.OperativeFlightLeg">
+		INSERT INTO Flt_OperativeFlight_Attributes
+		           (Flight_ID
+		           ,FlightType
+		           ,WarehouseLevel
+		           ,RHO
+		           ,BuBdOffice
+		           ,CreatedUser_Code
+		           ,Created_DateTime)
+		     VALUES
+		           (#{flightId}
+		           ,(CASE WHEN #{boardPointCode} = #{tenantAirport} THEN 'O'
+						  WHEN #{offPointCode}   = #{tenantAirport} THEN 'I'
+					 END)
+		           ,#{warehouseLevel}
+		           ,#{rho}
+		           ,#{bubdOffice}
+		           ,#{createdBy}
+		           ,#{createdOn})
+	</insert>
+	
+	<select id="fetchFlightLegList" 
+			resultMap="flightLegsResultMap"
+		parameterType="com.ngen.cosys.flight.model.OperativeFlight">
+		SELECT Flight_ID
+		,FlightBoardPoint
+		,FlightOffPoint
+		,FlightSegmentOrder
+		,DateSTD
+		,DateSTA
+		,DateETD
+		,DateETA
+		,DateATD
+		,DateATA
+		,DomesticFlightFlag
+		,AircraftRegCode
+		,AircraftType
+		,CreatedUser_Code
+		,Created_DateTime
+		FROM
+		Flt_OperativeFlight_Legs WHERE
+		Flight_ID=#{flightId}
+		ORDER BY
+		FlightSegmentOrder
+	</select>
+	<resultMap id="flightLegsResultMap"
+		type="com.ngen.cosys.flight.model.OperativeFlightLeg" 
+		autoMapping="false">
+		<id column="Flight_ID" property="flightId" />
+		<result column="FlightBoardPoint" property="boardPointCode" />
+		<result column="FlightOffPoint" property="offPointCode" />
+		<result column="FlightSegmentOrder" property="legOrderCode" />
+		<result column="DateSTD" property="departureDate" />
+		<result column="DateSTA" property="arrivalDate" />
+		<result column="DateETD" property="datEtd" />
+		<result column="DateETA" property="datEta" />
+		<result column="DateATD" property="datAtd" />
+		<result column="DateATA" property="datAta" />
+		<result column="DomesticFlightFlag" property="domesticStatus" />
+		<result column="AircraftRegCode" property="registration" />
+		<result column="AircraftType" property="aircraftModel" />
+		<result column="CreatedUser_Code" property="createdBy" />
+		<result column="Created_DateTime" property="createdOn" />
+	</resultMap>
+	
+</mapper>

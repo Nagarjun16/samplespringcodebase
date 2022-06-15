@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="tracingUndeliveredShipment">
+
+	<select id="getUndeliveredShipments"
+		parameterType="Map"
+		resultMap="UndeliveredShipments">
+	<![CDATA[
+		With UndeliveredShipments As(
+			select 
+			(select Shipment_HouseInformation.Number from Shipment_HouseInformation where 
+				  Shipment_HouseInformation.ShipmentHouseId=Shipment_Inventory.ShipmentHouseId
+				  and Shipment_HouseInformation.ShipmentType='HAWB' ) Number,
+				Shipment_Master.ShipmentNumber as shipmentNumber,
+				Flt_OperativeFlight_legs.DateSTA as sta, 
+				sum(Shipment_Inventory.pieces) as invPieces, 
+				sum(Shipment_Inventory.weight) as invWeight, 
+				Flt_OperativeFlight.CarrierCode as carrierCode,
+		        Flt_OperativeFlight.flightKey as flightKey, 
+				Flt_OperativeFlight_legs.FlightBoardPoint as boardPoint, 
+				Shipment_Master.Pieces as shpPieces , 
+		        Shipment_MasterSHC.SpecialHandlingCode as shcCodes, 
+				Shipment_MasterSHC.ShipmentMasterSHCId AS masterSHCId ,
+		        Shipment_Master.weight as shpWeight, 
+				Shipment_Master.Origin as origin, 
+				Shipment_Master.Destination as destination, 
+				Shipment_Master.ShipmentDate as shipmentDate ,
+		        Flt_OperativeFlight_legs.flightOffPoint as offPoint,
+				Shipment_Master.NatureOfGoodsDescription as natureOfGoods, 
+				Shipment_Master.shipmentType as shipmentType, 
+				Shipment_Master.CancelledOn,
+		        isnull(Shipment_Master.DocumentReceivedOn , Shipment_Master.PhotoCopy) as shipmentDocumentDate,
+		        (select Customer_Master.CustomerCode from Customer_Master where Customer_Master.Customer_ID = Shipment_MasterCustomerInfo.AppointedAgent) as agentCode,
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode as groupCode,
+				DENSE_RANK ( ) OVER (PARTITION BY Shipment_Master.ShipmentNumber ORDER BY Mst_SHCHandlingGroup.SHCHandlingGroupCode DESC) AS ShcOrderBy,
+				Mst_GracePeriodForUnclaimedShipments.MoveToAbandoned,
+				Mst_GracePeriodForUnclaimedShipments.CycleFour as cycleFour, 
+				Mst_GracePeriodForUnclaimedShipments.CycleThree as cycleThree,
+				Mst_GracePeriodForUnclaimedShipments.CycleTwo as cycleTwo, 
+				Mst_GracePeriodForUnclaimedShipments.CycleOne as cycleOne,
+				case 
+					when (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate()) as date))) = Mst_GracePeriodForUnclaimedShipments.MoveToAbandoned then 'MOVETOABANDON'
+		            when (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate()) as date))) = Mst_GracePeriodForUnclaimedShipments.CycleFour then 'SLAB4'
+		            when (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate()) as date))) = Mst_GracePeriodForUnclaimedShipments.CycleThree then 'SLAB3'
+		            when (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate()) as date))) = Mst_GracePeriodForUnclaimedShipments.CycleTwo then 'SLAB2'
+		            when (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate()) as date))) = Mst_GracePeriodForUnclaimedShipments.CycleOne then 'SLAB1'
+		            else 'NOSLAB' end as currentSlab,
+				  (DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate())as date))) DateDiffInd
+			from
+				Shipment_Inventory inner join 
+				Flt_OperativeFlight  
+					on Shipment_Inventory.Flight_ID = Flt_OperativeFlight.Flight_ID inner join 
+				Flt_OperativeFlight_legs  
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_legs.Flight_ID and 
+						Flt_OperativeFlight_legs.FlightOffPoint = #{tenantAirport} inner join 
+				Shipment_Master  
+					on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId left join 
+				Shipment_MasterSHC  
+					on Shipment_Master.ShipmentId = Shipment_MasterSHC.ShipmentId left join 
+				Mst_AssociateSHCbyHandlinggroup  
+					on IsNull(Shipment_MasterSHC.SpecialHandlingCode,'GEN') = Mst_AssociateSHCbyHandlinggroup.SpecialHandlingCode left join 
+				Mst_SHCHandlingGroup  
+					on Mst_AssociateSHCbyHandlinggroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID 
+						and Mst_SHCHandlingGroup.Category in ('DOC','WH') 
+						left join				
+			   Mst_GracePeriodForUnclaimedShipments
+					on Mst_SHCHandlingGroup.MstSHCHandlingGroupID = Mst_GracePeriodForUnclaimedShipments.MstSHCHandlingGroupId and
+						Mst_GracePeriodForUnclaimedShipments.MoveToAbandoned is not null left join
+			   Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId
+			where
+				cast(Shipment_Master.ShipmentDate as date) between cast('10DEC2018' as date) and cast(getdate() + 10 as date) and 
+				Shipment_Master.Destination in ( #{tenantAirport} , #{tenantCity} ) and		
+				Shipment_Master.ShipmentType != 'MAIL' and
+				Shipment_Master.DepartedOn is null and
+				Shipment_Master.DeliveredOn is null and
+				(Shipment_Master.DocumentReceivedOn is not null OR Shipment_Master.PhotoCopy is not null) and
+				Shipment_Master.CancelledOn is null and
+				(DATEDIFF(Day, Flt_OperativeFlight_legs.DateSTA, cast(Dateadd(hour,8,getdate())as date))) <= Mst_GracePeriodForUnclaimedShipments.MoveToAbandoned 
+			group by
+			    Shipment_Inventory.ShipmentHouseId,
+				Shipment_Master.ShipmentNumber,
+				Flt_OperativeFlight_legs.DateSTA,
+				Flt_OperativeFlight.CarrierCode,
+		        Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight_legs.FlightBoardPoint, 
+				Shipment_Master.Pieces,
+		        Shipment_MasterSHC.SpecialHandlingCode, 
+				Shipment_MasterSHC.ShipmentMasterSHCId,
+		        Shipment_Master.Weight,
+				Shipment_Master.Origin, 
+				Shipment_Master.Destination,
+				Shipment_Master.ShipmentDate,
+		        Flt_OperativeFlight_legs.flightOffPoint,
+				Shipment_Master.NatureOfGoodsDescription, 
+				Shipment_Master.shipmentType,
+				Shipment_Master.CancelledOn,
+				Shipment_Master.DocumentReceivedOn, 
+				Shipment_Master.PhotoCopy,
+				Shipment_MasterCustomerInfo.AppointedAgent,
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode,
+				Mst_GracePeriodForUnclaimedShipments.CycleFour,
+				Mst_GracePeriodForUnclaimedShipments.CycleThree,
+				Mst_GracePeriodForUnclaimedShipments.CycleTwo,
+				Mst_GracePeriodForUnclaimedShipments.CycleOne,
+				Mst_GracePeriodForUnclaimedShipments.MoveToAbandoned
+		)
+		select
+			UndeliveredShipments.*,
+		    case 
+				when Com_TracingShipmentInfo.ComTracingShipmentInfoId is null and (DATEDIFF(Day, UndeliveredShipments.sta, cast(Dateadd(hour,8,getdate()) as date))) >= UndeliveredShipments.CycleOne then 'Y'
+				when Com_TracingShipmentInfo.ComTracingShipmentInfoId is null and (DATEDIFF(Day, UndeliveredShipments.sta, cast(Dateadd(hour,8,getdate()) as date))) >= UndeliveredShipments.cycleTwo then 'Y'
+				when Com_TracingShipmentInfo.ComTracingShipmentInfoId is null and (DATEDIFF(Day, UndeliveredShipments.sta, cast(Dateadd(hour,8,getdate()) as date))) >= UndeliveredShipments.cycleThree then 'Y'
+				when Com_TracingShipmentInfo.ComTracingShipmentInfoId is null and (DATEDIFF(Day, UndeliveredShipments.sta, cast(Dateadd(hour,8,getdate()) as date))) >= UndeliveredShipments.cycleFour then 'Y'
+				when Com_TracingShipmentInfo.ComTracingShipmentInfoId is null and (DATEDIFF(Day, UndeliveredShipments.sta, cast(Dateadd(hour,8,getdate()) as date))) >= UndeliveredShipments.moveToAbandoned then 'Y'
+				else 'N' end  AS TracingShipmentInfoInsertIndicator,
+		    case 
+				when Com_TracingShipmentInfo.CaseStatus <> 'PENDING' and  UndeliveredShipments.currentSlab = 'SLAB4' then 'Y' 
+				when Com_TracingShipmentInfo.CaseStatus <> 'MOVEDTOABANDON' and  UndeliveredShipments.currentSlab = 'MOVETOABANDON' then 'Y' 
+				when Com_TracingShipmentInfo.FollowupDate <> cast(Dateadd(hour,8,getdate()) as date) and UndeliveredShipments.currentSlab in ('SLAB1', 'SLAB2', 'SLAB3') then 'Y'
+				else 'N' end TracingShipmentInfoUpdateIndicator,
+			case 
+				when Com_TracingShipmentInfo.CaseStatus <> 'PENDING' and  UndeliveredShipments.currentSlab = 'SLAB4' then 'PENDING' 
+				when Com_TracingShipmentInfo.CaseStatus <> 'MOVETOABANDON' and  UndeliveredShipments.currentSlab = 'MOVETOABANDON' then 'MOVETOABANDON' 
+				when Com_TracingShipmentInfo.FollowupDate <> cast(Dateadd(hour,8,getdate()) as date) and UndeliveredShipments.currentSlab in ('SLAB1', 'SLAB2', 'SLAB3') then 'DRAFT' 
+				else Com_TracingShipmentInfo.CaseStatus end NewCaseStatus,
+		    case 
+				when UndeliveredShipments.currentSlab != 'NOSLAB'  and UndeliveredShipments.currentSlab = 'SLAB1' then 'Cycle One Completed' 
+				when UndeliveredShipments.currentSlab != 'NOSLAB'  and UndeliveredShipments.currentSlab = 'SLAB2' then 'Cycle Two Completed' 
+				when UndeliveredShipments.currentSlab != 'NOSLAB'  and UndeliveredShipments.currentSlab = 'SLAB3' then 'Cycle Three Completed' 
+				when UndeliveredShipments.currentSlab != 'NOSLAB'  and UndeliveredShipments.currentSlab = 'SLAB4' then 'Cycle Four Completed' 
+				when UndeliveredShipments.currentSlab != 'NOSLAB'  and UndeliveredShipments.currentSlab = 'MOVETOABANDON' then 'Moved to Abandoned' 
+				else null end AS FollowupActionInsertIndicator,				
+			Com_TracingShipmentInfo.ComTracingShipmentInfoId
+		from
+			UndeliveredShipments left join 
+			Com_TracingShipmentInfo 
+				on UndeliveredShipments.ShipmentNumber = Com_TracingShipmentInfo.ShipmentNumber and 
+					UndeliveredShipments.ShipmentDate = Com_TracingShipmentInfo.ShipmentDate and 
+					UndeliveredShipments.FlightKey = Com_TracingShipmentInfo.FlightKey and
+					cast(UndeliveredShipments.sta as date) = cast(Com_TracingShipmentInfo.FlightDate as date) and
+					Com_TracingShipmentInfo.IrregularityTypeCode ='UNDELIVEREDSHIPMENT'	
+			]]>
+	</select>
+	<resultMap type="com.ngen.cosys.application.model.TracingShipmentModel"
+		id="UndeliveredShipments">
+		<result column="shipmentNumber" property="shipmentNumber" />
+		<result column="sta" property="sta" />
+		<result column="invPieces" property="invPieces" />
+		<result column="invWeight" property="invWeight" />
+		<result column="moveToAbandoned" property="moveToAbandoned" />
+		<result column="cycleFour" property="cycleFour" />
+		<result column="cycleThree" property="cycleThree" />
+		<result column="cycleTwo" property="cycleTwo" />
+		<result column="cycleOne" property="cycleOne" />
+		<result column="currentSlab" property="currentSlab" />
+		<result column="groupCode" property="groupCode" />
+		<result column="flightKey" property="flightKey" />
+		<result column="boardPoint" property="boardPoint" />
+		<result column="offPoint" property="offPoint" />
+		<result column="shpPieces" property="shpPieces" />
+		<result column="shpWeight" property="shpWeight" />
+		<result column="natureOfGoods" property="natureOfGoods" />
+		<result column="shipmentDate" property="shipmentDate" />
+		<result column="shipmentType" property="shipmentType" />
+		<result column="origin" property="origin" />
+		<result column="destination" property="destination" />
+		<result column="FollowupActionInsertIndicator" property="followupActionInsertIndicator" />
+		<result column="TracingShipmentInfoInsertIndicator" property="tracingShipmentInfoInsertIndicator" />
+		<result column="CaseStatus" property="caseStatus" />
+		<result column="NewCaseStatus" property="newStatus" />
+		<result column="TracingShipmentInfoUpdateIndicator" property="tracingShipmentInfoUpdateIndicator" />		
+		<result column="ComTracingShipmentInfoId" property="comTracingShipmentInfoId" />
+		<result column="carrierCode" property="carrierCode" />
+		<result column="agentCode" property="agentCode" />
+		<collection property="shcArray" javaType="List"
+			ofType="com.ngen.cosys.application.model.TracingShipmentModelSHC">			
+			<id column="masterSHCId" property="masterSHCId" />
+			<result column="shcCodes" property="shcCodes" />
+		</collection>
+		<collection property="hawbNumber" javaType="List"
+			ofType="com.ngen.cosys.application.model.TracingShipmentModel">			
+			<result column="Number" property="houseNumber" />
+		</collection>
+	</resultMap>
+	
+	<insert id="insertActivity"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModel">
+	<![CDATA[
+		INSERT INTO Com_TracingShipmentFollowupAction(
+			ComTracingShipmentInfoId,
+			Activity,
+			ActivityPerformedOn,
+			ActivityPerformedBy,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{comTracingShipmentInfoId},
+			#{activity},
+			getDate(),
+			'BATCHJOB',
+			'BATCHJOB',
+			getDate()
+		)
+	]]>
+	</insert>
+	
+	<insert id="insertTracingDetails"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModel"
+		useGeneratedKeys="true" keyProperty="comTracingShipmentInfoId">
+	<![CDATA[
+		INSERT INTO Com_TracingShipmentInfo(
+			CaseNumber,
+			CaseStatus,
+			IrregularityTypeCode,
+			ImportExportIndicator,
+			TracingCreatedFor,
+			Origin,
+			Destination,
+			TotalPieces,
+			TotalWeight,
+			IrregularityPieces,
+			IrregularityWeight,
+			NatureOfGoodsDescription,
+			FollowupDate,
+			CreatedUserCode,
+			CreatedDateTime,
+			ShipmentNumber,
+			ShipmentDate,
+			FlightKey,
+			FlightDate,
+			BoardingPoint,
+			OffPoint,
+			HouseNumber,
+			AgentCode,
+			CarrierCode
+		)values(
+			#{caseNumber},
+			#{caseStatus},
+			#{irregularityTypeCode},
+			'I',
+			#{shipmentType},
+			#{origin},
+			#{destination},
+			#{shpPieces},
+			#{shpWeight},
+			#{invPieces},
+			#{invWeight},
+			#{natureOfGoods},
+			getDate(),
+			#{createdBy},
+			#{createdOn},
+			#{shipmentNumber},
+			cast(#{shipmentDate} as date),
+			#{flightKey},
+			#{sta},
+			#{boardPoint},
+			#{offPoint},
+            #{houseNumber},
+			#{agentCode},
+			#{carrierCode}
+		)
+	]]>
+	</insert>
+	
+	<insert id="insertTracingDetailsSHC"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModelSHC">
+	<![CDATA[
+		INSERT INTO Com_TracingShipmentSHC(
+			ComTracingShipmentInfoId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{comTracingShipmentInfoId},
+			#{shcCodes},
+			'BATCHJOB',
+			getDate()
+		)
+	]]>
+	</insert>
+	
+	<select id="getComTracingShipmentInfoId"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModel"
+		resultType="java.math.BigInteger">
+	<![CDATA[
+		select 
+			ComTracingShipmentInfoId 
+		from 
+			Com_TracingShipmentInfo 
+		where
+			ShipmentNumber = #{shipmentNumber} and	 
+			ShipmentDate = #{shipmentDate} and	 
+			FlightKey = #{flightKey} and 
+			FlightDate = #{sta}
+	]]>
+	</select>
+	
+	<update id="updateTracingDetails"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModel">
+	<![CDATA[
+		update Com_TracingShipmentInfo
+		set
+			CaseStatus = #{caseStatus},
+			FollowupDate = getDate(),
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn},
+			HouseNumber=#{houseNumber}
+		where 
+			ComTracingShipmentInfoId = #{comTracingShipmentInfoId}
+	]]>
+	</update>
+	
+	<update id="updateShipmentMasterDate"
+		parameterType="com.ngen.cosys.application.model.TracingShipmentModel">
+	<![CDATA[
+		update Shipment_Master
+		set Abandoned = 1
+		,Dispose = 0
+		where ShipmentNumber= #{shipmentNumber}
+		and cast(ShipmentDate as date) = cast(#{shipmentDate} as date) 
+		
+	]]>
+	</update>
+	
+	<select id="getMaxTracingCaseNumber" resultType="java.math.BigInteger">
+	<!-- <![CDATA[
+		SELECT
+	   		isnull( MAX(CAST(SUBSTRING(CaseNumber,3,LEN(CaseNumber)) AS INT)),1)
+			FROM Com_TracingShipmentInfo
+	]]> -->
+	SELECT NEXT VALUE FOR Com_TracingShipmentInfo_CaseNumber_Seq
+	</select>
+	
+	
+	
+		<select id="getTracingDataFromComTracingShipmentInfo" parameterType="com.ngen.cosys.application.model.TracingShipmentModel"
+		resultType="com.ngen.cosys.application.model.TracingShipmentModel">
+	      
+	      Select 
+
+            ComTracingShipmentInfoId comTracingShipmentInfoId,
+			IrregularityTypeCode irregularityTypeCode,
+			HouseNumber houseNumber,
+			TracingCreatedFor shipmentType,
+			Origin origin,
+			Destination destination,
+			TotalPieces shpPieces,
+			TotalWeight shpWeight,
+			IrregularityPieces invPieces,
+			IrregularityWeight invWeight,
+			NatureOfGoodsDescription natureOfGoods,
+			ShipmentNumber shipmentNumber,
+			ShipmentDate shipmentDate,
+			FlightKey flightKey,
+			FlightDate sta,
+			BoardingPoint boardPoint,
+			OffPoint offPoint,
+			AgentCode agentCode,
+			CarrierCode carrierCode
+            from Com_TracingShipmentInfo where ShipmentNumber=#{shipmentNumber}
+	    
+	</select>
+	
+	<select id="checkActivityExist"
+	parameterType="com.ngen.cosys.application.model.TracingShipmentModel"
+	resultType="java.lang.Boolean">
+		select case
+			when 
+				count(ComTracingShipmentInfoId) > 0 
+			then 1
+			else 0
+			end
+		from
+		Com_TracingShipmentFollowupAction
+		where ComTracingShipmentInfoId = #{comTracingShipmentInfoId}
+		and Activity = #{activity}
+	</select>
+	
+</mapper>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentCommonMapper">
+
+	<select id="sqlSelectShipmentDateCommon" 
+			parameterType="java.lang.String" resultType="java.lang.Object">
+		SELECT	MIN(ShipmentDate) FROM
+		(
+			SELECT	AwbDate "ShipmentDate"
+			FROM	Shipment_FreightWayBill
+			WHERE	AwbNumber = #{shipmentNumber}
+			UNION
+			SELECT	AwbDate "ShipmentDate"
+			FROM	Shipment_FreightHouseListByAWB
+			WHERE	AwbNumber = #{shipmentNumber}
+			UNION
+			SELECT 	ShipmentDate
+			FROM	Agt_PrelodgeExportDocuments
+			WHERE 	ShipmentNumber = #{shipmentNumber} 
+			AND 	ShipmentStatus = 'OPEN'
+			UNION
+			SELECT ShipmentDate 
+			FROM 	Exp_eAcceptanceDocumentInformation 
+			WHERE 	ShipmentNumber = #{shipmentNumber}
+			AND 	RejectedDateTime IS NULL
+			UNION
+			SELECT 	ShipmentDate
+			FROM	Exp_ShipmentBooking
+			WHERE	ShipmentNumber = #{shipmentNumber}
+			UNION
+			SELECT	ShipmentDate
+			FROM	Imp_ArrivalManifestShipmentInfo
+			WHERE	ShipmentNumber = #{shipmentNumber}
+			UNION
+			SELECT 	ShipmentDate
+			FROM	Shipment_Master
+			WHERE	ShipmentNumber = #{shipmentNumber}
+			UNION
+			SELECT 	AwbDate "ShipmentDate"
+			FROM 	Exp_NeutralAWB_Master
+			WHERE 	AwbNumber = #{shipmentNumber}
+			UNION
+			SELECT	ShipmentDate
+			FROM	Imp_InwardServiceReportShipmentDiscrepancy
+			WHERE	ShipmentNumber = #{shipmentNumber}
+			UNION
+			SELECT	ShipmentDate
+			FROM	Shipment_Remarks
+			WHERE	ShipmentNumber = #{shipmentNumber}
+		) A WHERE NOT EXISTS
+			(
+				SELECT 	NULL
+				FROM 	Shipment_Master
+				WHERE 	ShipmentNumber = #{shipmentNumber}
+				AND		(DepartedOn IS NOT NULL OR DeliveredOn IS NOT NULL OR 
+						CancelledOn IS NOT NULL OR ClosedOn IS NOT NULL)
+			)
+		
+	</select>
+	
+</mapper>

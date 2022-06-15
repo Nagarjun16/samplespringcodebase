@@ -1,0 +1,2285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ImpBDMapper">
+  
+     <resultMap id="documentVerificationFlightResultMap"
+		type="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+		<id column="Flight_ID" property="flightId" />
+		<result column="flightSegmentId" property="flightSegmentId"/>
+		<result column="CarrierCode" property="carrierCode"/>
+		<result column="FlightKey" property="flightNumber" />
+		<result column="flightDate" property="flightDate" />
+		<result column="DateSTA" property="sta" />
+		<result column="DateETA" property="eta" />
+		<result column="DateATA" property="ata" />
+		<result column="FlightBoardPoint" property="boardPoint"/>
+		<result column="FactDescription" property="flightRemarks" />  
+		<result column="status" property="status"/>   
+		<result column="tenantAirport" property="tenantAirport"></result>
+		<result column="documentCompleteStatus" property="documentCompleteStatus"></result>
+		<result column="documentReOpenStatus" property="documentReOpenStatus"></result>
+		<result column="InboundFlightDelayReason" property="inboundFlightDelayReason"></result>
+		<result column="CustomsFlightNumber" property="customsFlightNumber"></result>
+		<collection 
+			property="documentVerificationShipmentModelList" 
+			javaType="list"
+			ofType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+			select="sqlGetDocumentVerificationDetailsInfo" 
+			column="{flightId=Flight_ID, flightSegmentId = flightSegmentId, tenantAirport=tenantAirport}"/>
+	  </resultMap>
+	 
+	 <resultMap type="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel" id="documentVerificationShipmentDetailsMap">
+	 	<id column="flightId" property="flightId"/>
+	 	<result column="arrivalManifestbyId" property="arrivalManifestbyId"/>
+	 	<result column="boardPoint" property="segOrign"/>
+	 	<result column="offPoint" property="segDestination"/>
+	 	<result column="shipmentId" property="shipmentId"/>
+	    <result column="shipmentNumber" property="shipmentNumber" />
+	    <result column="shipmentDate" property="shipmentdate" />
+	    <result column="manifestPieces" property="manifestPieces" />
+	    <result column="manifestWeight" property="manifestWeight" />
+	    <result column="weightUnitCode" property="weightUnitCode" />
+	    <result column="origin" property="origin"/>
+	    <result column="destination" property="destination"/>
+	    <result column="natureOfGoods" property="natureOfGoods"/>
+	    <result column="shipmentType" property="shipmentType"/>
+	    <result column="TransferType" property="transferType"/>
+	    <result column="OffloadReasonCode" property="offloadRemarksCode"/> 
+	    <result column="AWBPieces" property="awbPieces"/>
+	    <result column="AWBWeight" property="awbWeight"/>
+	    <result column="BreakDownPieces" property="breakdownPieces"/>
+	    <result column="BreakDownWeight" property="breakdownWeight"/>
+	    <result column="CustomerName" property="consignee"/>
+	    <result column="AppointedAgent" property="appointedAgent"/>
+	    <result column="AppointedAgentName" property="appointedAgentName"/>
+	    <result column="checkListRequired" property="oldCheckListRequired"/>
+	    <result column="checkListRequired" property="checkListRequired"/>
+	    <result column="ChargeCode" property="chargesMode"/>
+	    <result column="DocumentReceivedFlag"  property="oldDocRecieved"/>
+	    <result column="DocumentReceivedFlag"  property="docRecieved"/>
+	    <result column="PhotoCopyAwbflag"  property="oldCopyAwb"/>
+	    <result column="PhotoCopyAwbflag"  property="copyAwb"/>
+	    <result column="DocumentPouchReceivedFlag"  property="oldDocPouch"/>
+	    <result column="DocumentPouchReceivedFlag"  property="docPouch"/>
+	    <result column="BarcodePrintedFlag" property="barcode"/>
+	    <result column="fhl" property="fhl"/>
+	    <result column="fwb" property="fwb"/>
+	    <result column="eaw" property="eaw"/>
+	    <result column="eap" property="eap"/>
+	    <result column="eAwb" property="eawb"/>
+	    <result column="dgn" property="dgn"/>
+	    <result column="dgInfo" property="dgInfo"/>
+	    <result column="eliInfo" property="eliInfo"/>
+	    <result column="elmInfo" property="elmInfo"/>
+	    <result column="Locked" property="locked"/>
+	    <result column="PartShipment" property="partShipment"/>
+	   	<result column="tenantAirport" property="tenantAirport"></result>	 
+	   	<result column="shc" property="shc"></result>	 
+	   	<result column="Irregularity" property="irregularity"></result>	 
+	   	<result column="BookingFlight" property="outboundFlight"></result>
+	   	<result column="ReadyForDelivery" property="readyfordelivery"></result>
+	   	<result column="foreignAwbWithOnwordInfo" property="foreignAwbWithOnwordInfo"></result>
+	   	<result column="NOA" property="noaSent"></result>
+	   	<result column="Reason" property="reason"></result>
+	   	<result column="CPEFwbAction" property="cpeFwbAction"></result>
+	   	<result column="ThroughService" property="throughService"></result>
+	   	<result column="handledByMasterHouse" property="handledByMasterHouse"></result>
+	   	<result column="handledByDOMINT" property="handledByDOMINT"></result>
+	   	<result column="flightSegmentId" property="flightSegmentId"></result>
+	</resultMap>
+	
+	<!-- LHS will be parent class id atrribute RHS Parent table ID column name -->
+	<select id="getDocumentVerificationFlight" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+		resultMap="documentVerificationFlightResultMap">
+    	WITH FlightFacts AS(
+			select
+				FlightFactsInfo.Flight_ID,
+				string_agg(FlightFactsInfo.FactDescription,'-') 
+					WITHIN GROUP (ORDER BY FlightFactsInfo.Flight_ID ASC) FactDescription
+			from(select
+						Flt_OperativeFlight_Facts.FactDescription,
+						Flt_OperativeFlight_Facts.Flight_ID          
+					from 
+						Flt_OperativeFlight inner join
+						Flt_OperativeFlight_Legs 
+							on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID left join
+						Flt_OperativeFlight_Facts
+							on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Facts.Flight_ID
+					where 
+						Flt_OperativeFlight.FlightKey = #{flightNumber} and
+						cast(Flt_OperativeFlight_Legs.DateSTA as date)=cast(#{flightDate} as date) and 
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				)FlightFactsInfo
+			group by
+				FlightFactsInfo.Flight_ID
+		)select	    
+			Flt_OperativeFlight.Flight_ID,
+		    Flt_OperativeFlight.FlightKey,
+			Flt_OperativeFlight.CarrierCode,
+			Flt_OperativeFlight.InboundFlightDelayReason,
+		    CAST(Flt_OperativeFlight_Legs.DateSTA as date) as flightDate,
+			Flt_OperativeFlight_Legs.DateSTA, 
+			Flt_OperativeFlight_Legs.DateATA, 
+			Flt_OperativeFlight_Legs.FlightBoardPoint as 'FlightBoardPoint',
+			Flt_OperativeFlight_Legs.AircraftType, 
+			FlightFacts.FactDescription,
+			Flt_OperativeFlight_Attributes.CustomsFlightNumber,
+			case
+				when Imp_FlightEvents.DocumentVerificationCompletedAt is not null then 
+					1
+				else
+					0
+			end documentReOpenStatus,
+			case
+				when Imp_FlightEvents.DocumentVerificationCompletedAt is not null then 
+					1
+				else
+					0
+			end documentCompleteStatus,
+			case 
+				when Imp_FlightEvents.FlightCompletedAt is not null then 
+					'Flight Completed'
+		        when Imp_FlightEvents.BreakDownCompletedAt is not null and  
+					Imp_FlightEvents.DocumentVerificationCompletedAt is  null then 
+					'BreakDown Completed'
+				when Imp_FlightEvents.DocumentVerificationCompletedAt is not null then 
+					'Document Verification Completed'
+		        when Imp_FlightEvents.BreakDownCompletedAt is not null and  
+					Imp_FlightEvents.DocumentVerificationCompletedAt is not null and 
+					Imp_FlightEvents.BreakDownCompletedAt > Imp_FlightEvents.DocumentVerificationCompletedAt then 
+					'BreakDown Completed'
+		        when Imp_FlightEvents.RampCheckInCompletedAt is not null then
+					'Ramp CheckIn Completed'
+				when Imp_FlightEvents.InboundULDListFinalizedAt is not null then
+					'Inbound ULD List Finalized'
+		    	else 
+		    		'' 
+		    end as status,
+			#{tenantAirport} as tenantAirport,
+			#{flightSegmentId} as flightSegmentId		        
+		from 
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs 
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+			Imp_FlightEvents
+				on Flt_OperativeFlight.Flight_ID = Imp_FlightEvents.FlightId left join 
+			Flt_OperativeFlight_Attributes 
+			 	on Flt_OperativeFlight_Attributes.Flight_ID= Flt_OperativeFlight.Flight_ID
+			 				and Flt_OperativeFlight_Attributes.FlightType = 'I'
+			 	
+			 		left join
+			FlightFacts
+				on Imp_FlightEvents.FlightId = FlightFacts.Flight_ID
+		where 	
+			Flt_OperativeFlight.FlightKey = #{flightNumber} and 
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date) and 
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+   </select>
+	
+	<select id="sqlGetDocumentVerificationDetailsInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+		resultMap="documentVerificationShipmentDetailsMap">
+    <![CDATA[
+    	With CPEFWBRequirementInfo AS(
+			select
+				Com_CargoProcessingEngineProcessAreaTriggerPoints.ActionType,
+				Com_CargoProcessingEnginePrecedents.FromCarrierCode,
+				Com_CargoProcessingEnginePrecedents.CountryOfOrigin,
+				Com_CargoProcessingEnginePrecedents.FlightBoardingPoint,
+				Com_CargoProcessingEnginePrecedents.FlightOffPoint,
+				Com_CargoProcessingEnginePrecedents.ShipmentOrigin,
+				Com_CargoProcessingEnginePrecedents.ShipmentDestination,
+				Com_CargoProcessingEnginePrecedents.CountryOfDestination,
+				Com_CargoProcessingEnginePrecedents.Remarks
+			from
+				Com_CargoProcessingEngineProcessAreaType inner join
+				Com_CargoProcessingEngineProcessAreaTriggerPoints
+					on Com_CargoProcessingEngineProcessAreaType.ComCargoProcessingEngineProcessAreaTypeId = 
+							Com_CargoProcessingEngineProcessAreaTriggerPoints.ComCargoProcessingEngineProcessAreaId inner join
+				Com_CargoProcessingEngineTriggerPoints
+					on Com_CargoProcessingEngineProcessAreaTriggerPoints.ComCargoProcessingEngineTriggerPointsId = 
+							Com_CargoProcessingEngineTriggerPoints.ComCargoProcessingEngineTriggerPointsId inner join
+				Com_CargoProcessingEnginePrecedents
+					on Com_CargoProcessingEngineProcessAreaType.ComCargoProcessingEngineProcessAreaTypeId = 
+							Com_CargoProcessingEnginePrecedents.ComCargoProcessingEngineProcessAreaId
+			where
+				Com_CargoProcessingEngineProcessAreaType.ProcessAreaTypeCode =  'FWB_REQUIRED' and
+				Com_CargoProcessingEngineTriggerPoints.FunctionName = 'Document Verification' and
+				Com_CargoProcessingEngineTriggerPoints.ModuleCode = 'IM' and
+				getdate() between Com_CargoProcessingEnginePrecedents.EffectiveFromDate and 
+						isnull(Com_CargoProcessingEnginePrecedents.EffectiveToDate, getdate() + 10)
+		
+		), OutwardBookingInfo AS(
+			select
+				distinct
+					Flt_OperativeFlight.CarrierCode as FromCarrier,
+					Flt_OperativeFlight_Segments.FlightBoardPoint,
+					Flt_OperativeFlight_Segments.FlightOffPoint,
+					Exp_ShipmentBooking.Origin,
+					Exp_ShipmentBooking.Destination,
+					Exp_ShipmentBooking.ShipmentNumber,
+					Exp_ShipmentBooking.ShipmentDate,
+					(select
+						TOP 1 Mst_Country.CountryCode
+						from
+							Mst_Country inner join
+							Mst_City	
+								on Mst_Country.CountryCode = Mst_City.CountryCode inner join
+							Mst_Airport
+								on Mst_City.CityCode = Mst_Airport.AirportCityCode
+						where
+							(Mst_City.CityCode = Exp_ShipmentBooking.Origin OR Mst_Airport.AirportCode = Exp_ShipmentBooking.Origin)
+					) as ShipmentCountryOfOrigin,
+					(select
+						TOP 1 Mst_Country.CountryCode
+						from
+							Mst_Country inner join
+							Mst_City	
+								on Mst_Country.CountryCode = Mst_City.CountryCode inner join
+							Mst_Airport
+								on Mst_City.CityCode = Mst_Airport.AirportCityCode
+						where
+							(Mst_City.CityCode = Exp_ShipmentBooking.Destination OR Mst_Airport.AirportCode = Exp_ShipmentBooking.Destination)
+					) as ShipmentCountryOfDestination				
+			from
+				Exp_ShipmentBooking inner join
+				Exp_ShipmentPartBookingDetail
+					on Exp_ShipmentBooking.BookingId = Exp_ShipmentPartBookingDetail.BookingId inner join
+				Exp_ShipmentFlightPartDetail
+					on Exp_ShipmentPartBookingDetail.PartBookingId = Exp_ShipmentFlightPartDetail.PartBookingId inner join
+				Exp_ShipmentFlightBookingDetail
+					on Exp_ShipmentFlightPartDetail.FlightBookingId = Exp_ShipmentFlightBookingDetail.FlightBookingId inner join
+				Exp_ShipmentFlightPartDetail inwardExp_ShipmentFlightPartDetail
+					on Exp_ShipmentFlightPartDetail.PartBookingId = inwardExp_ShipmentFlightPartDetail.PartBookingId inner join
+				Exp_ShipmentFlightBookingDetail innerExp_ShipmentFlightBookingDetail
+					on innerExp_ShipmentFlightBookingDetail.FlightBookingId = inwardExp_ShipmentFlightPartDetail.FlightBookingId inner join
+				Flt_OperativeFlight
+					on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID inner join
+				Flt_OperativeFlight_Segments
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and
+						Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId and
+						Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport}
+			where
+				innerExp_ShipmentFlightBookingDetail.FlightId = #{flightId} and
+				len(Exp_ShipmentBooking.ShipmentNumber) < 20 and
+				Exp_ShipmentFlightPartDetail.PartBookingStatusCode <> 'XX'
+		),ArrivalManifestInfo AS(
+			select
+				case when
+					isnull(Imp_ShipmentVerification.PhotoCopyAwbFlag, 0) = 0 then 
+						0 
+					else 
+						1 
+					end as PhotoCopyAwbflag,
+				case when
+					shipment_master.DocumentPouchReceivedOn is null then 
+						0 
+					else 
+						1 
+					end as documentPouchReceivedFlag,
+				case when 
+					isnull(Imp_ShipmentVerification.CheckList, 0) = 0 then 
+						0 
+					else 
+						1 
+					end as checkListRequired,
+				case when 
+					isnull(Imp_ShipmentVerification.DocumentPouchReceivedFlag, 0) = 0 then 
+						0 
+					else 
+						1 
+					end as docPouch,
+				Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId as arrivalManifestbyId ,
+				Imp_ArrivalManifestByFlight.FlightId as flightId,
+				Imp_ArrivalManifestBySegment.FlightSegmentId flightSegmentId,
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber as shipmentNumber, 
+				Imp_ArrivalManifestShipmentInfo.ShipmentDate as shipmentDate,
+				sum(Imp_ArrivalManifestShipmentInfo.Piece) as manifestPieces,
+				sum(Imp_ArrivalManifestShipmentInfo.Weight) as manifestWeight ,
+				Imp_ArrivalManifestShipmentInfo.Origin as origin,
+				Imp_ArrivalManifestShipmentInfo.Destination as destination,
+				(select 
+						STRING_AGG(innerArrivalManifestShipmentTransferType.TransferType,'/') 
+					from
+					(
+						select
+							distinct 
+								case
+									when innerArrivalManifestShipmentInfo.TransferType =  'TRANSIT' then
+										'TR'
+									when innerArrivalManifestShipmentInfo.TransferType = 'TRANSHIPMENT' then
+										'STT' 
+									else
+										innerArrivalManifestShipmentInfo.TransferType
+									end TransferType
+						from
+							Imp_ArrivalManifestByFlight innerArrivalManifestByFlight inner join 
+							Imp_ArrivalManifestBySegment innerArrivalManifestBySegment 
+								on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD innerArrivalManifestULD
+								on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+							Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+								on innerArrivalManifestULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId 
+						where
+							innerArrivalManifestShipmentInfo.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							innerArrivalManifestShipmentInfo.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+							innerArrivalManifestByFlight.FlightId = Imp_ArrivalManifestByFlight.FlightId
+					)innerArrivalManifestShipmentTransferType
+				) as TransferType,
+				Imp_ArrivalManifestShipmentInfo.OffloadReasonCode,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.pieces as AwbPieces,
+				Shipment_Master.weight as AwbWeight,
+				Shipment_Master.ShipmentType,
+				Shipment_Master.Locked ,
+				Shipment_Master.PartShipment,
+				Shipment_MasterCustomerInfo.CustomerName,
+				Shipment_MasterCustomerInfo.AppointedAgent,
+				Shipment_Master.HandledByMasterHouse handledByMasterHouse,
+				Shipment_Master.HandledByDOMINT handledByDOMINT,
+				Shipment_OtherChargeInfo.ChargeCode,
+				Customer_Master.CustomerShortName as AppointedAgentName,
+				case (select TOP(1) innerShipmentVerification.NOA from Imp_ShipmentVerification innerShipmentVerification WHERE 
+						innerShipmentVerification.FlightId = Imp_ArrivalManifestByFlight.FlightId AND 
+						innerShipmentVerification.ShipmentId = Shipment_Master.ShipmentId)
+					when  1
+					then 'Y'
+					else 'N'
+					end					
+				AS NOA,
+				(select 
+						STRING_AGG(innerArrivalManifestShipmentSHC.SpecialHandlingCode,' ') 
+										WITHIN GROUP (ORDER BY innerArrivalManifestShipmentSHC.SpecialHandlingPriority ASC)	
+					from
+					(
+						select
+							distinct innerArrivalManifestShipmentSHC.SpecialHandlingCode,
+							Mst_SpecialHandlingCode.SpecialHandlingPriority
+						from
+							Imp_ArrivalManifestByFlight innerArrivalManifestByFlight inner join 
+							Imp_ArrivalManifestBySegment innerArrivalManifestBySegment 
+								on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD innerArrivalManifestULD
+								on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+							Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+								on innerArrivalManifestULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+							Imp_ArrivalManifestByShipmentSHC innerArrivalManifestShipmentSHC
+								on innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = innerArrivalManifestShipmentSHC.ImpArrivalManifestShipmentInfoId left join
+							Mst_SpecialHandlingCode
+								on innerArrivalManifestShipmentSHC.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode
+						where
+							innerArrivalManifestShipmentInfo.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							innerArrivalManifestShipmentInfo.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+							innerArrivalManifestByFlight.FlightId = Imp_ArrivalManifestByFlight.FlightId
+					)innerArrivalManifestShipmentSHC
+				) as shc,
+			
+				  (select  
+						 case when  
+						  count(*) = 2 
+							then 
+							  'Y'
+							else
+							  'N'
+							END 
+				   from  Shipment_MasterRoutingInfo
+				   where
+					  Shipment_MasterRoutingInfo.ShipmentID = Shipment_Master.ShipmentID 
+					and not exists(
+								  select 
+								   Mst_Carrier.CarrierCode from 
+								   Mst_Carrier inner join Mst_CarrierPrefix 
+											   on Mst_Carrier.CarrierCode=Mst_CarrierPrefix.CarrierCode       
+								   WHERE  
+										 Mst_Carrier.CarrierCode=ImpArrivalManifestByFlightId.CarrierCode and
+										 Mst_CarrierPrefix.AwbPrefix = substring(Imp_ArrivalManifestShipmentInfo.ShipmentNumber,1,3) ) 
+						and (
+							select 
+								 count(shipmentid) 
+							from Shipment_MasterRoutingInfo 
+							where Shipment_MasterRoutingInfo.ShipmentID=Shipment_Master.ShipmentID and
+								  Shipment_MasterRoutingInfo.FromPoint <> #{tenantAirport} and Shipment_MasterRoutingInfo.Carrier is null) > 0 
+						and Imp_ArrivalManifestShipmentInfo.origin NOT IN ( #{tenantAirport}, #{tenantCity})
+						and Imp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+						and (select 
+								 TOP 1 Mst_CarrierGroup.CarrierGroupCode
+							  from 
+								   Mst_AssociateCarrierWithGroup inner join
+									 Mst_CarrierGroup
+									   on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+							  where
+								   Mst_AssociateCarrierWithGroup.CarrierCode = ImpArrivalManifestByFlightId.CarrierCode) != 'SQ'
+						
+						
+				) as foreignAwbWithOnwordInfo
+			from
+				(
+					SELECT  Imp_ArrivalManifestByFlight.FlightId,Flt_OperativeFlight.CarrierCode 
+					FROM 	Imp_ArrivalManifestByFlight
+						INNER JOIN
+							Flt_OperativeFlight
+						ON 	Flt_OperativeFlight.Flight_ID = Imp_ArrivalManifestByFlight.FlightId
+					WHERE 	Imp_ArrivalManifestByFlight.FlightId = #{flightId}
+				) ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestByFlight 
+					on Imp_ArrivalManifestByFlight.FlightId = ImpArrivalManifestByFlightId.FlightId inner join
+				Imp_ArrivalManifestBySegment 
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Flt_OperativeFlight_Segments 
+					on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+				Imp_ArrivalManifestULD 
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				Imp_ArrivalManifestShipmentInfo 
+					on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId left join
+				Shipment_Master 
+					on Imp_ArrivalManifestShipmentInfo.ShipmentNumber=Shipment_Master.ShipmentNumber and 	 
+						cast(Imp_ArrivalManifestShipmentInfo.shipmentDate as date)=cast(Shipment_Master.shipmentDate as date) left join 
+				Shipment_MasterCustomerInfo 
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and 
+					   Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join 
+				Shipment_OtherChargeInfo 
+					on Shipment_Master.ShipmentId = Shipment_OtherChargeInfo.ShipmentId left join
+				Customer_Master 
+					on Customer_Master.Customer_ID = Shipment_MasterCustomerInfo.AppointedAgent	left join
+				Imp_ShipmentVerification
+					on 	Imp_ArrivalManifestByFlight.FlightId = Imp_ShipmentVerification.FlightId and
+						Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+			group by	
+				Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId,
+				Imp_ArrivalManifestByFlight.FlightId,
+				Imp_ArrivalManifestBySegment.FlightSegmentId,
+				ImpArrivalManifestByFlightId.CarrierCode,
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber, 
+				Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+				Imp_ArrivalManifestShipmentInfo.Origin,
+				Imp_ArrivalManifestShipmentInfo.Destination,
+				Imp_ArrivalManifestShipmentInfo.OffloadReasonCode,
+				Shipment_Master.ShipmentId,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_Master.ShipmentType,
+				Shipment_Master.Locked,
+				Shipment_Master.PartShipment,
+				Shipment_MasterCustomerInfo.CustomerName,
+				Shipment_MasterCustomerInfo.AppointedAgent,
+				Shipment_Master.HandledByMasterHouse,
+				Shipment_Master.HandledByDOMINT,
+				Customer_Master.CustomerShortName,
+				Shipment_OtherChargeInfo.ChargeCode,
+				shipment_master.photocopy,
+				Shipment_Master.DocumentPouchReceivedOn,
+				Imp_ShipmentVerification.PhotoCopyAwbFlag,
+				Imp_ShipmentVerification.CheckList,
+				Imp_ShipmentVerification.DocumentPouchReceivedFlag
+		),ShipmentVerificationInfo AS(
+			select
+				case (select TOP(1) NOA from Imp_ShipmentVerification innerShipmentVerification WHERE 
+						innerShipmentVerification.FlightId = Imp_ShipmentVerification.FlightId 
+						AND innerShipmentVerification.ShipmentId = Shipment_Master.ShipmentId)
+					when  1
+					then 'Y'
+					else 'N'
+					end					
+				AS NOA,
+				0 as arrivalManifestbyId,
+				Imp_ShipmentVerification.FlightId as flightId,
+				0 as flightSegmentId,
+				Shipment_Master.ShipmentNumber as shipmentNumber,
+				Shipment_Master.ShipmentDate as shipmentDate,
+				Shipment_Master.Origin as origin,
+				Shipment_Master.Destination as destination ,
+				Shipment_Master.NatureOfGoodsDescription as natureOfGoods,
+				Shipment_Master.Shipmentid,
+				Shipment_Master.ShipmentType,
+				Shipment_Master.Pieces as AWBPieces,
+				Shipment_Master.Weight as AWBWeight,
+				Imp_ShipmentVerification.BreakDownPieces,
+				Imp_ShipmentVerification.BreakDownWeight,
+				Shipment_MasterCustomerInfo.CustomerName,
+				Shipment_MasterCustomerInfo.AppointedAgent,
+				Shipment_Master.HandledByMasterHouse handledByMasterHouse,
+				Shipment_Master.HandledByDOMINT handledByDOMINT,
+				Customer_Master.CustomerShortName AppointedAgentName,
+				Shipment_OtherChargeInfo.ChargeCode,
+				Imp_ShipmentVerification.DocumentReceivedFlag,
+				Imp_ShipmentVerification.DocumentPouchReceivedFlag,
+				Imp_ShipmentVerification.PhotoCopyAwbflag,
+				Imp_ShipmentVerification.BarcodePrintedFlag,
+				Imp_ShipmentVerification.checklist  checkListRequired,
+				Shipment_Master.Locked , 
+				Shipment_Master.PartShipment,
+				(select 
+						STRING_AGG(Shipment_MasterSHC.SpecialHandlingCode,' ')
+									WITHIN GROUP (ORDER BY Mst_SpecialHandlingCode.SpecialHandlingPriority ASC)	
+					from
+						Shipment_MasterSHC left join
+						Mst_SpecialHandlingCode
+							on Shipment_MasterSHC.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode
+					where
+						 Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId
+				) as shc,
+			
+				null foreignAwbWithOnwordInfo		
+			from          
+				Imp_ShipmentVerification inner join 
+				Flt_OperativeFlight
+					on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_ID inner join
+				Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}  inner join
+				Shipment_Master 
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId  left join 
+				Shipment_MasterCustomerInfo 
+					on (Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and 
+									Shipment_MasterCustomerInfo.CustomerType = 'CNE') left join 
+				Shipment_OtherChargeInfo 
+					on Shipment_Master.ShipmentId = Shipment_OtherChargeInfo.ShipmentId left join
+				Customer_Master 
+					on Customer_Master.Customer_ID = Shipment_MasterCustomerInfo.AppointedAgent		
+			where
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				Shipment_Master.ShipmentType <> 'MAIL'
+		)
+		select
+			DocumentVerificationInfo.NOA,
+			DocumentVerificationInfo.ShipmentType,
+			DocumentVerificationInfo.arrivalManifestbyId,
+			DocumentVerificationInfo.flightId,
+			DocumentVerificationInfo.flightSegmentId,
+			DocumentVerificationInfo.shipmentNumber, 
+			DocumentVerificationInfo.shipmentDate,
+			DocumentVerificationInfo.manifestPieces,
+			DocumentVerificationInfo.manifestWeight,
+			DocumentVerificationInfo.origin,
+			DocumentVerificationInfo.destination,
+			DocumentVerificationInfo.Locked,
+			DocumentVerificationInfo.PartShipment,
+			DocumentVerificationInfo.natureOfGoods,
+			DocumentVerificationInfo.TransferType,
+			DocumentVerificationInfo.OffloadReasonCode,
+			DocumentVerificationInfo.Shipmentid,
+			DocumentVerificationInfo.AWBPieces,
+			DocumentVerificationInfo.AWBWeight,
+			DocumentVerificationInfo.BreakDownPieces,
+			DocumentVerificationInfo.BreakDownWeight,
+			DocumentVerificationInfo.CustomerName,
+			DocumentVerificationInfo.AppointedAgent,
+			DocumentVerificationInfo.handledByMasterHouse,
+			DocumentVerificationInfo.handledByDOMINT,
+			DocumentVerificationInfo.AppointedAgentName,
+			DocumentVerificationInfo.ChargeCode,
+			DocumentVerificationInfo.DocumentReceivedFlag,
+			DocumentVerificationInfo.DocumentPouchReceivedFlag,
+			DocumentVerificationInfo.PhotoCopyAwbFlag,
+			DocumentVerificationInfo.BarcodePrintedFlag,
+			DocumentVerificationInfo.ReadyForDelivery,
+			DocumentVerificationInfo.foreignAwbWithOnwordInfo,
+			DocumentVerificationInfo.checkListRequired,
+			DocumentVerificationInfo.tenantAirport,
+			DocumentVerificationInfo.shc,
+			case when Shipment_FreightWayBill.ShipmentFreightWayBillId is not null then
+					'Y'
+			end	as fwb,
+			case when(select
+					count(1) 
+				from
+					Shipment_FreightHouseListByAWB inner join
+					Shipment_FreightHouseListByHAWB 
+						on Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId
+				where
+					Shipment_FreightHouseListByAWB.AwbNumber = DocumentVerificationInfo.shipmentNumber and
+					Shipment_FreightHouseListByAWB.AwbDate = DocumentVerificationInfo.shipmentDate
+				) > 0 then
+					'Y'
+			end	as fhl,
+			case when(select
+					count(1)
+				from
+					Mst_AssociateSHCByHandlingGroup inner join
+					Mst_SHCHandlingGroup
+						on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'EAW' and
+					DocumentVerificationInfo.shc like '%' + Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode + '%') > 0 and
+					Shipment_FreightWayBill.ShipmentFreightWayBillId is not null then
+					'Y'
+			end as eAwb,
+			case when(select
+					count(1)
+				from
+					Mst_AssociateSHCByHandlingGroup inner join
+					Mst_SHCHandlingGroup
+						on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'DGN' and
+					DocumentVerificationInfo.shc like '%' + Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode + '%') > 0 then
+					'Y'
+			end as dgn,
+			case when(select
+					count(1)
+				from
+					Exp_DG_ShipperDeclaration
+				where
+					Exp_DG_ShipperDeclaration.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber) > 0  then
+					'Y'
+			end as dgInfo,
+			case when(select
+							count(1)								
+						from
+							Exp_DG_ELI_ELM_Details 
+						where
+						    Exp_DG_ELI_ELM_Details.SHCCode='ELI' and
+							Exp_DG_ELI_ELM_Details.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber) > 0 then
+					'Y'
+			end as eliInfo,
+			case when(select
+							count(1)								
+						from
+							Exp_DG_ELI_ELM_Details 
+						where
+						    Exp_DG_ELI_ELM_Details.SHCCode='ELM' and
+							Exp_DG_ELI_ELM_Details.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber) > 0 then
+					'Y'
+			end as elmInfo,
+			case when(select
+					count(1)
+				from
+					Mst_AssociateSHCByHandlingGroup inner join
+					Mst_SHCHandlingGroup
+						on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'EAP' and
+					DocumentVerificationInfo.shc like '%' + Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode + '%') > 0 then
+					'Y'
+			end as eap,
+			case when(select
+					count(1)
+				from
+					Mst_AssociateSHCByHandlingGroup inner join
+					Mst_SHCHandlingGroup
+						on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'EAW' and
+					DocumentVerificationInfo.shc like '%' + Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode + '%') > 0 then
+					'Y'
+			end as eaw,
+			(select
+					string_agg(Shipment_Irregularity.CargoIrregularityCode +
+						case
+							when Shipment_Irregularity.IrregularityType <> 'D' then
+								'('+ cast(isnull(Shipment_Irregularity.Pieces, 0) as varchar) +')'								
+							else
+								''
+							end, ' ')
+				from(
+					select
+						Shipment_Irregularity.CargoIrregularityCode,
+						isnull(Shipment_Irregularity.Pieces, 0) as Pieces,
+						Mst_CargoIrregularityTypes.IrregularityType					
+					from
+						Shipment_Irregularity inner join
+						Mst_CargoIrregularityTypes
+							on Shipment_Irregularity.CargoIrregularityCode = Mst_CargoIrregularityTypes.IrregularityTypeCode
+					where
+						Shipment_Irregularity.Flight_ID = DocumentVerificationInfo.FlightId and 
+						Shipment_Irregularity.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber and
+						cast(Shipment_Irregularity.ShipmentDate as date) = cast(DocumentVerificationInfo.ShipmentDate as date)
+				    union
+				    select
+				    	*
+				    from(
+						select
+							'DAMG' as CargoIrregularityCode,
+							sum(isnull(Com_DamageLineItems.DamagedPieces, 0)) as Pieces,
+							'C' as IrregularityType
+						from
+							Com_DamageInfo inner join
+							Com_DamageLineItems
+								on Com_DamageInfo.DamageInfoId = Com_DamageLineItems.DamageInfoId
+						where
+							Com_DamageInfo.EntityKey = DocumentVerificationInfo.ShipmentNumber and
+							cast(Com_DamageInfo.EntityDate as date) = cast(DocumentVerificationInfo.ShipmentDate as date) and
+							Com_DamageInfo.FlightId = DocumentVerificationInfo.FlightId and
+							isnull(Com_DamageLineItems.DamagedPieces, 0) > 0
+					)DamageInfo
+					where
+						DamageInfo.Pieces > 0
+				)Shipment_Irregularity
+			) as Irregularity,
+			isnull(
+				(select
+						string_agg(BookingFlight.FlightKey + '/' + cast(upper(format(BookingFlight.DateSTD, 'ddMMMyyyy HH:mm')) as varchar) + '/' + BookingFlight.TransferType, char(10))
+					from(
+						select	
+							distinct
+								BookingFlight.FlightKey,
+								BookingFlightSegment.DateSTD,
+								case
+									when (select count(1) from Transhipment_TransferTypes where Code = innerArrivalManifestShipmentInfo.TransferType) > 0  then
+										innerArrivalManifestShipmentInfo.TransferType
+									else
+										''
+									end as TransferType
+						from 
+							Imp_ArrivalManifestByFlight innerArrivalManifestByFlight inner join 
+							Imp_ArrivalManifestBySegment innerArrivalManifestBySegment 
+								on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD innerArrivalManifestULD
+								on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+							Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+								on innerArrivalManifestULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+							Flt_OperativeFlight BookingFlight 
+								on innerArrivalManifestShipmentInfo.BookingFlightId = BookingFlight.Flight_ID inner join
+							Flt_OperativeFlight_Segments BookingFlightSegment
+								on BookingFlight.Flight_ID = BookingFlightSegment.Flight_ID and
+									innerArrivalManifestShipmentInfo.FlightSegmentId = BookingFlightSegment.FlightSegmentId
+						where
+							innerArrivalManifestShipmentInfo.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber and
+							innerArrivalManifestShipmentInfo.ShipmentDate = DocumentVerificationInfo.ShipmentDate and
+							innerArrivalManifestByFlight.FlightId = DocumentVerificationInfo.FlightId
+					)BookingFlight)
+				,(select
+						string_agg(BookingFlight.FlightKey + '/' 
+						+ cast(upper(format(BookingFlight.DateSTD, 'ddMMMyyyy HH:mm')) as varchar) 
+						+ '/' + BookingFlight.TransferType, char(10))
+					from(
+						select
+							distinct
+								BookingFlight.FlightKey,
+								BookingFlightSegment.DateSTD,
+								case
+									when (select count(1) from Transhipment_TransferTypes where Code = Exp_ShipmentFlightBookingDetail.TransferType) > 0  then
+										Exp_ShipmentFlightBookingDetail.TransferType
+									else
+										''
+									end as TransferType
+						from
+							Exp_ShipmentBooking inner join
+							Exp_ShipmentFlightBookingDetail
+								on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join		
+							Flt_OperativeFlight BookingFlight
+								on Exp_ShipmentFlightBookingDetail.FlightId = BookingFlight.Flight_ID inner join
+							Flt_OperativeFlight_Segments BookingFlightSegment
+								on BookingFlight.Flight_ID = BookingFlightSegment.Flight_ID and
+									Exp_ShipmentFlightBookingDetail.FlightSegmentId = BookingFlightSegment.FlightSegmentId
+						where
+							Exp_ShipmentFlightBookingDetail.FlightId <> DocumentVerificationInfo.FlightId and
+							Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1 and
+							Exp_ShipmentFlightBookingDetail.BookingStatusCode <> 'XX' and
+							Exp_ShipmentBooking.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber and
+							cast(Exp_ShipmentBooking.ShipmentDate as date) = cast(DocumentVerificationInfo.ShipmentDate as date)
+					)BookingFlight)
+			)as BookingFlight,
+			(select
+				TOP 1 (select
+						case
+							when count(1) > 0 and DocumentVerificationInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) and
+								Shipment_FreightWayBill.ShipmentFreightWayBillId is null then CPEFWBRequirementInfo.ActionType else null end
+					from
+						CPEFWBRequirementInfo
+					where
+						isnull(CPEFWBRequirementInfo.CountryOfDestination, OutwardBookingInfo.ShipmentCountryOfDestination) = OutwardBookingInfo.ShipmentCountryOfDestination and
+						isnull(CPEFWBRequirementInfo.CountryOfOrigin, OutwardBookingInfo.ShipmentCountryOfOrigin) = OutwardBookingInfo.ShipmentCountryOfOrigin and
+						isnull(CPEFWBRequirementInfo.FromCarrierCode, OutwardBookingInfo.FromCarrier) = OutwardBookingInfo.FromCarrier and
+						isnull(CPEFWBRequirementInfo.FlightBoardingPoint, OutwardBookingInfo.FlightBoardPoint) = OutwardBookingInfo.FlightBoardPoint and
+						isnull(CPEFWBRequirementInfo.FlightOffPoint, OutwardBookingInfo.FlightOffPoint) = OutwardBookingInfo.FlightOffPoint and
+						isnull(CPEFWBRequirementInfo.ShipmentOrigin, OutwardBookingInfo.Origin) = OutwardBookingInfo.Origin and
+						isnull(CPEFWBRequirementInfo.ShipmentDestination, OutwardBookingInfo.Destination) = OutwardBookingInfo.Destination
+					group by
+						CPEFWBRequirementInfo.ActionType)
+				from
+					OutwardBookingInfo
+				where
+					OutwardBookingInfo.ShipmentNumber = DocumentVerificationInfo.shipmentNumber and
+					OutwardBookingInfo.ShipmentDate = DocumentVerificationInfo.shipmentDate
+			) as CPEFwbAction,
+			(select
+				TOP 1 (select	
+						TOP 1 
+						case
+							when count(1) > 0 and DocumentVerificationInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) 
+								and Shipment_FreightWayBill.ShipmentFreightWayBillId is null then 
+								CPEFWBRequirementInfo.Remarks
+							else 
+								null 
+							end
+					from
+						CPEFWBRequirementInfo
+					where
+						isnull(CPEFWBRequirementInfo.CountryOfDestination, OutwardBookingInfo.ShipmentCountryOfDestination) = OutwardBookingInfo.ShipmentCountryOfDestination and
+						isnull(CPEFWBRequirementInfo.CountryOfOrigin, OutwardBookingInfo.ShipmentCountryOfOrigin) = OutwardBookingInfo.ShipmentCountryOfOrigin and
+						isnull(CPEFWBRequirementInfo.FromCarrierCode, OutwardBookingInfo.FromCarrier) = OutwardBookingInfo.FromCarrier and
+						isnull(CPEFWBRequirementInfo.FlightBoardingPoint, OutwardBookingInfo.FlightBoardPoint) = OutwardBookingInfo.FlightBoardPoint and
+						isnull(CPEFWBRequirementInfo.FlightOffPoint, OutwardBookingInfo.FlightOffPoint) = OutwardBookingInfo.FlightOffPoint and
+						isnull(CPEFWBRequirementInfo.ShipmentOrigin, OutwardBookingInfo.Origin) = OutwardBookingInfo.Origin and
+						isnull(CPEFWBRequirementInfo.ShipmentDestination, OutwardBookingInfo.Destination) = OutwardBookingInfo.Destination
+					group by
+						CPEFWBRequirementInfo.Remarks)			
+				from
+					OutwardBookingInfo
+				where
+					OutwardBookingInfo.ShipmentNumber = DocumentVerificationInfo.shipmentNumber and
+					OutwardBookingInfo.ShipmentDate = DocumentVerificationInfo.shipmentDate
+			) as Reason,
+			case
+				when (select
+							count(1)
+						from
+							Exp_ShipmentBooking inner join
+							Exp_ShipmentPartBookingDetail
+								on Exp_ShipmentBooking.BookingId = Exp_ShipmentPartBookingDetail.BookingId inner join
+							Exp_ShipmentFlightPartDetail
+								on Exp_ShipmentPartBookingDetail.PartBookingId = Exp_ShipmentFlightPartDetail.PartBookingId inner join
+							Exp_ShipmentFlightBookingDetail
+								on Exp_ShipmentFlightPartDetail.FlightBookingId = Exp_ShipmentFlightBookingDetail.FlightBookingId
+						where
+							Exp_ShipmentFlightBookingDetail.FlightId = DocumentVerificationInfo.FlightId and
+							Exp_ShipmentBooking.ShipmentNumber = DocumentVerificationInfo.ShipmentNumber and
+							cast(Exp_ShipmentBooking.ShipmentDate as date) = cast(DocumentVerificationInfo.ShipmentDate as date) and
+							isnull(Exp_ShipmentPartBookingDetail.ThroughTransitFlag, 0) = 1
+					) > 0 then
+					'Y'
+				else
+					'N'
+				end as ThroughService
+		from(
+			select
+				substring(ArrivalManifestInfo.shipmentNumber, 
+							len(ArrivalManifestInfo.shipmentNumber) - 4, 
+							len(ArrivalManifestInfo.shipmentNumber)) as SortingNumber,
+				ArrivalManifestInfo.NOA,
+				ArrivalManifestInfo.ShipmentType,
+				ArrivalManifestInfo.arrivalManifestbyId,
+				ArrivalManifestInfo.flightId,
+				ArrivalManifestInfo.flightSegmentId,
+				ArrivalManifestInfo.shipmentNumber, 
+				ArrivalManifestInfo.shipmentDate,
+				ArrivalManifestInfo.manifestPieces,
+				ArrivalManifestInfo.manifestWeight,
+				ArrivalManifestInfo.origin,
+				ArrivalManifestInfo.destination ,
+				case	
+					when isnull(ArrivalManifestInfo.Locked,0) = 1 then
+						'Y'
+					else
+						'N'
+					end Locked,
+				case
+					when ArrivalManifestInfo.PartShipment = 1 then
+						'Y'
+					else
+						'N'
+					end PartShipment,
+				(select
+					STRING_AGG(ShipmentNatureOfGoods.NatureOfGoodsDescription, ' ')
+				from(
+					select
+						Top 1 Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription
+					from	
+						Imp_ArrivalManifestByFlight inner join 
+						Imp_ArrivalManifestBySegment 
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Imp_ArrivalManifestULD 
+							on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo 
+							on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+					where
+						Imp_ArrivalManifestShipmentInfo.ShipmentNumber = ArrivalManifestInfo.shipmentNumber and
+						Imp_ArrivalManifestShipmentInfo.ShipmentDate = ArrivalManifestInfo.shipmentDate and
+						Imp_ArrivalManifestByFlight.FlightId = ArrivalManifestInfo.flightId)ShipmentNatureOfGoods
+				) as natureOfGoods,
+				ArrivalManifestInfo.TransferType,
+				ArrivalManifestInfo.OffloadReasonCode,
+				ArrivalManifestInfo.shipmentid as Shipmentid,
+				ArrivalManifestInfo.Awbpieces as AWBPieces,
+				ArrivalManifestInfo.Awbweight as AWBWeight,
+				0 BreakDownPieces,
+				0 BreakDownWeight,
+				ArrivalManifestInfo.CustomerName,
+				ArrivalManifestInfo.AppointedAgent,
+				ArrivalManifestInfo.AppointedAgentName,
+				ArrivalManifestInfo.ChargeCode,
+				0 DocumentReceivedFlag,
+				ArrivalManifestInfo.docPouch DocumentPouchReceivedFlag,
+				ArrivalManifestInfo.PhotoCopyAwbflag as PhotoCopyAwbFlag,
+				ArrivalManifestInfo.handledByMasterHouse,
+				ArrivalManifestInfo.handledByDOMINT,
+				null BarcodePrintedFlag,
+				null ReadyForDelivery,
+				ArrivalManifestInfo.foreignAwbWithOnwordInfo,
+				ArrivalManifestInfo.checkListRequired,
+				#{tenantAirport}  as tenantAirport,
+				ArrivalManifestInfo.shc 	 
+			from
+				ArrivalManifestInfo 
+			where
+				not exists(
+					select 
+						null
+					from
+						ShipmentVerificationInfo
+					where
+						ShipmentVerificationInfo.flightId = ArrivalManifestInfo.flightId and	
+						ShipmentVerificationInfo.shipmentNumber = ArrivalManifestInfo.shipmentNumber and
+						ShipmentVerificationInfo.shipmentDate = ArrivalManifestInfo.shipmentDate
+				)
+			union
+			select
+				substring(ShipmentVerificationInfo.shipmentNumber, 
+							len(ShipmentVerificationInfo.shipmentNumber) - 4, 
+							len(ShipmentVerificationInfo.shipmentNumber)) as SortingNumber,
+				ShipmentVerificationInfo.NOA,
+				ShipmentVerificationInfo.ShipmentType,
+				ShipmentVerificationInfo.arrivalManifestbyId ,
+				ShipmentVerificationInfo.flightId,
+				ArrivalManifestInfo.flightSegmentId,
+				ShipmentVerificationInfo.shipmentNumber, 
+				ShipmentVerificationInfo.shipmentDate,
+				ArrivalManifestInfo.manifestPieces,
+				ArrivalManifestInfo.manifestWeight ,
+				ShipmentVerificationInfo.origin,
+				ShipmentVerificationInfo.destination ,
+				case	
+					when isnull(ShipmentVerificationInfo.Locked,0) = 1 then
+						'Y'
+					else
+						'N'
+					end Locked,
+				case
+					when ShipmentVerificationInfo.PartShipment = 1 then
+						'Y'
+					else
+						'N'
+					end PartShipment,
+				ShipmentVerificationInfo.natureOfGoods,
+				ArrivalManifestInfo.TransferType,
+				ArrivalManifestInfo.OffloadReasonCode,
+				ShipmentVerificationInfo.Shipmentid,
+				ShipmentVerificationInfo.AWBPieces,
+				ShipmentVerificationInfo.AWBWeight,
+				ShipmentVerificationInfo.BreakDownPieces,
+				ShipmentVerificationInfo.BreakDownWeight,
+				ShipmentVerificationInfo.CustomerName,
+				ShipmentVerificationInfo.AppointedAgent,
+				ShipmentVerificationInfo.AppointedAgentName,
+				ShipmentVerificationInfo.ChargeCode,
+				ShipmentVerificationInfo.DocumentReceivedFlag,
+				ShipmentVerificationInfo.DocumentPouchReceivedFlag,
+				ShipmentVerificationInfo.PhotoCopyAwbFlag,
+				ShipmentVerificationInfo.handledByMasterHouse,
+				ShipmentVerificationInfo.handledByDOMINT,
+				case
+					when ShipmentVerificationInfo.BarcodePrintedFlag = 1 then
+						'Y'					
+					end BarcodePrintedFlag,
+				case	
+					when (ShipmentVerificationInfo.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+							(ShipmentVerificationInfo.DocumentReceivedFlag = 1 OR
+							ShipmentVerificationInfo.PhotoCopyAwbflag = 1) AND
+							isnull(ShipmentVerificationInfo.AppointedAgentName,  ShipmentVerificationInfo.CustomerName) is not null) then
+							ShipmentVerificationInfo.BreakDownPieces
+					end as ReadyForDelivery,
+			
+				ArrivalManifestInfo.foreignAwbWithOnwordInfo,
+				ShipmentVerificationInfo.checkListRequired,
+				#{tenantAirport} as tenantAirport,
+				ShipmentVerificationInfo.shc 
+			from
+				ShipmentVerificationInfo left join
+				ArrivalManifestInfo
+					on ShipmentVerificationInfo.FlightId = ArrivalManifestInfo.FlightId and
+					ShipmentVerificationInfo.shipmentNumber = ArrivalManifestInfo.shipmentNumber and
+					ShipmentVerificationInfo.shipmentDate = ArrivalManifestInfo.shipmentDate 
+		)DocumentVerificationInfo left join
+		Shipment_FreightWayBill
+			on DocumentVerificationInfo.shipmentNumber = Shipment_FreightWayBill.AwbNumber and
+				DocumentVerificationInfo.shipmentDate = Shipment_FreightWayBill.AwbDate
+		order by
+			DocumentVerificationInfo.SortingNumber		
+	]]>
+	</select> 
+	    
+     <update id="updateOffloadStatusToArrivalManifest"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	 	update 
+	 		Imp_ArrivalManifestShipmentInfo
+	   	set
+	       OffloadedFlag = #{offloadedFlag},
+	       OffloadReasonCode = #{offloadReasonCode},
+	       LastUpdatedUserCode = #{modifiedBy},
+	       LastUpdatedDateTime = #{modifiedOn}
+	 	where 
+	 		Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{shipmentNumber} and 
+	 		cast(Imp_ArrivalManifestShipmentInfo.ShipmentDate as date)= cast(#{shipmentdate} as date)
+    </update> 
+
+	<select id="isChecksforFirstTime" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel" 
+		resultType="java.lang.Integer">
+    	select 
+    		count(1)
+    	from 
+    		Imp_FlightEvents 
+    	where 
+    		FlightId=#{flightId} and
+    		FirstTimeDocumentVerificationCompletedAt is not null 
+    </select> 
+        
+	<update id="updateDocumentCompleteFirstTimeStatus"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+			update 
+				Imp_FlightEvents
+			set 
+			   	FirstTimeDocumentVerificationCompletedAt = isnull(FirstTimeDocumentVerificationCompletedAt, #{modifiedOn}),
+			   	FirstTimeDocumentVerificationCompletedBy = isnull(FirstTimeDocumentVerificationCompletedBy, #{modifiedBy}),
+			   	DocumentVerificationCompletedAt = getdate(),
+			   	DocumentVerificationCompletedBy = #{modifiedBy},
+			   	LastUpdatedUserCode = #{modifiedBy},
+	       	   	LastUpdatedDateTime = #{modifiedOn}		      
+			where 
+			 	FlightId=#{flightId}
+		</update>
+		
+	<update  id="updateDocumentCompleteNextTimeStatus"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+		 	update
+		 		Imp_FlightEvents
+			set 
+		    	DocumentVerificationCompletedAt = #{lastmodifiedOn},
+		      	DocumentVerificationCompletedBy = #{lastupdatedBy},
+		      	LastUpdatedUserCode = #{modifiedBy},
+	       	   	LastUpdatedDateTime = #{modifiedOn}		 
+		 	where 
+		 		FlightId = #{flightId}          
+	  </update>
+	  
+	  
+	  <select id ="fetchFirstTimeDocumentCompleteDetails"
+	  	parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+	  	resultType="java.time.LocalDateTime">
+	  		SELECT 
+	  			FirstTimeDocumentVerificationCompletedAt 
+	  		FROM IMP_FLIGHTEVENTS 
+	  		WHERE flightid = #{flightId}
+	  </select>
+	  
+	  <update  id="updateDocumentCompleReopen"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+		 update
+		 	Imp_FlightEvents
+		 set 
+		    DocumentVerificationCompletedAt = NULL,
+		    DocumentVerificationCompletedBy = NULL,
+		    LastUpdatedUserCode = #{lastupdatedBy},
+	       	LastUpdatedDateTime = #{lastmodifiedOn}	
+		 where 
+		 	FlightId=#{flightId}          
+	  </update>
+	  
+	  <select id="getIrregularity" 
+	  	parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel" 
+	  	resultType="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel">
+		<![CDATA[
+			WITH ShipmentIrregularityInfo AS(
+				select
+					Shipment_Master.PartShipment as partShipment,
+					ShipmentVerification.ShipmentId,
+					Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestBySegment.FlightSegmentId,
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+					sum(Imp_ArrivalManifestShipmentInfo.Piece) Piece,
+					sum(Imp_ArrivalManifestShipmentInfo.Weight) Weight,
+					Imp_ArrivalManifestShipmentInfo.Origin,
+					Imp_ArrivalManifestShipmentInfo.Destination,
+					Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+					Imp_ArrivalManifestShipmentInfo.WeightUnitCode,
+					isnull(ShipmentVerification.BarcodePrintedFlag, 0) BarcodePrintedFlag,
+					isnull(ShipmentVerification.PhotoCopyAwbFlag, 0) PhotoCopyAwbFlag,
+					isnull(ShipmentVerification.DocumentReceivedFlag, 0) DocumentReceivedFlag,
+					isnull(ShipmentVerification.DocumentPouchReceivedFlag, 0) DocumentPouchReceivedFlag,								
+					(
+						select
+							count(1)
+						from
+								Shipment_FreightWayBill
+						where
+							Shipment_FreightWayBill.AwbNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							Shipment_FreightWayBill.AwbDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+					) FWBCount,
+					(
+						select
+							count(1)
+						from
+							Imp_ArrivalManifestByFlight innerArrivalManifestByFlight inner join   
+							Imp_ArrivalManifestBySegment innerArrivalManifestBySegment
+								on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD innerArrivalManifestByULD
+								on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestByULD.ImpArrivalManifestBySegmentId inner join 
+							Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+								on innerArrivalManifestByULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+							Imp_ArrivalManifestByShipmentSHC innerArrivalManifestShipmentSHC
+								on innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = innerArrivalManifestShipmentSHC.ImpArrivalManifestShipmentInfoId inner join
+							Mst_AssociateSHCByHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode = innerArrivalManifestShipmentSHC.SpecialHandlingCode inner join
+							Mst_SHCHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+						where
+							innerArrivalManifestByFlight.FlightId = Imp_ArrivalManifestByFlight.FlightId and
+							innerArrivalManifestShipmentInfo.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							innerArrivalManifestShipmentInfo.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+							Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'EAW'
+					)  EAWShipment,  
+					(
+						select
+							count(1)
+						from
+							Imp_ArrivalManifestByFlight innerArrivalManifestByFlight inner join   
+							Imp_ArrivalManifestBySegment innerArrivalManifestBySegment
+								on innerArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD innerArrivalManifestByULD
+								on innerArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerArrivalManifestByULD.ImpArrivalManifestBySegmentId inner join 
+							Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+								on innerArrivalManifestByULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+							Imp_ArrivalManifestByShipmentSHC innerArrivalManifestShipmentSHC
+								on innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = innerArrivalManifestShipmentSHC.ImpArrivalManifestShipmentInfoId
+						where
+							innerArrivalManifestByFlight.FlightId = Imp_ArrivalManifestByFlight.FlightId and
+							innerArrivalManifestShipmentInfo.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							innerArrivalManifestShipmentInfo.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+							innerArrivalManifestShipmentSHC.SpecialHandlingCode = 'EAP'
+					)  EAPShipment
+				from
+					Imp_ArrivalManifestByFlight inner join   
+					Imp_ArrivalManifestBySegment 
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD 
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join 
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+					Shipment_Master
+						on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Imp_ArrivalManifestShipmentInfo.ShipmentDate = Shipment_Master.ShipmentDate left join
+					(select 
+							Imp_ShipmentVerification.FlightId,
+							Imp_ShipmentVerification.DocumentReceivedFlag,
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag,
+							Imp_ShipmentVerification.BarcodePrintedFlag,
+							Imp_ShipmentVerification.PhotoCopyAwbFlag,
+							Imp_ShipmentVerification.ShipmentId        
+						from 
+							Imp_ShipmentVerification
+					)ShipmentVerification 
+						on ShipmentVerification.FlightId = Imp_ArrivalManifestByFlight.FlightId and
+							Shipment_Master.ShipmentId = ShipmentVerification.ShipmentId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = #{flightId}   and
+					(Imp_ArrivalManifestShipmentInfo.OffloadedFlag = 0 OR Imp_ArrivalManifestShipmentInfo.OffloadedFlag is null) and
+					not exists(
+						select
+							null
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = ShipmentVerification.ShipmentId and
+							Shipment_FreightOut.FlightId = ShipmentVerification.FlightId
+					) and
+					Shipment_Master.ShipmentType = 'AWB'
+				group by
+					Shipment_Master.PartShipment,
+					Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestBySegment.FlightSegmentId,
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,		
+					Imp_ArrivalManifestShipmentInfo.Origin,
+					Imp_ArrivalManifestShipmentInfo.Destination,
+					Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+					Imp_ArrivalManifestShipmentInfo.WeightUnitCode,
+					ShipmentVerification.BarcodePrintedFlag,
+					ShipmentVerification.PhotoCopyAwbFlag,
+					ShipmentVerification.DocumentReceivedFlag,
+					ShipmentVerification.DocumentPouchReceivedFlag,
+					ShipmentVerification.ShipmentId
+			)select * 
+			from
+			(select
+				ShipmentIrregularityInfo.FlightId as flightId,
+				ShipmentIrregularityInfo.FlightSegmentId as flightSegmentId,
+				ShipmentIrregularityInfo.shipmentId,
+				ShipmentIrregularityInfo.ShipmentNumber as shipmentNumber,
+				ShipmentIrregularityInfo.ShipmentDate as shipmentdate,
+				ShipmentIrregularityInfo.Piece as piece,
+				ShipmentIrregularityInfo.piece "documentedPieces",
+				ShipmentIrregularityInfo.weight,
+				ShipmentIrregularityInfo.weightUnitCode,
+				ShipmentIrregularityInfo.natureOfGoodsDescription,
+				'AWB' shipmentType,
+				'DOCUMENT' discrepancyType,			
+				case 
+					when (ShipmentIrregularityInfo.BarcodePrintedFlag >= 0 and 
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag > 0 and 
+							ShipmentIrregularityInfo.DocumentPouchReceivedFlag = 0 and
+							(select
+								count(1)
+							from
+								Imp_ShipmentVerification innerShipmentVerification
+							where
+								innerShipmentVerification.FlightId <> ShipmentIrregularityInfo.FlightId and
+								innerShipmentVerification.ShipmentId = ShipmentIrregularityInfo.ShipmentId) = 0) then
+								'CPAW'
+					when (ShipmentIrregularityInfo.EAWShipment > 0 and 
+							FWBCount = 0 and 
+							ShipmentIrregularityInfo.DocumentReceivedFlag = 0 and
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag = 0) then 
+								'MSAW'
+					when (ShipmentIrregularityInfo.DocumentReceivedFlag = 0 and 
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag = 0) then 
+					        'MSAW'
+					end cargoIrregularityCode ,
+				case 
+					   when (ShipmentIrregularityInfo.BarcodePrintedFlag >= 0 and 
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag > 0 and 
+							ShipmentIrregularityInfo.DocumentPouchReceivedFlag = 0 and
+							(select
+								count(1)
+							from
+								Imp_ShipmentVerification innerShipmentVerification
+							where
+								innerShipmentVerification.FlightId <> ShipmentIrregularityInfo.FlightId and
+								innerShipmentVerification.ShipmentId = ShipmentIrregularityInfo.ShipmentId) = 0) then
+					        
+							'Copy AWB received '
+								+ Flt_OperativeFlight.FlightKey + '-' 
+								+ upper(format(Flt_OperativeFlight_Legs.DateSTA, 'ddMMMyyyy'))
+								+ Flt_OperativeFlight_Legs.FlightBoardPoint       
+
+					when (ShipmentIrregularityInfo.EAWShipment > 0 and 
+							FWBCount = 0 and 
+							ShipmentIrregularityInfo.DocumentReceivedFlag = 0 and
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag = 0) then       
+					        
+							(select IrregularityTypeDescription from Mst_CargoIrregularityTypes where IrregularityTypeCode = 'MSAW')
+
+					when (ShipmentIrregularityInfo.DocumentReceivedFlag = 0 and 
+							ShipmentIrregularityInfo.PhotoCopyAwbFlag = 0) then  
+
+					        (select IrregularityTypeDescription from Mst_CargoIrregularityTypes where IrregularityTypeCode = 'MSAW')
+
+					end irregularityRemarks
+				from
+					ShipmentIrregularityInfo inner join
+					Flt_OperativeFlight	
+						on ShipmentIrregularityInfo.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				where
+					ShipmentIrregularityInfo.DocumentReceivedFlag = 0 and
+					ShipmentIrregularityInfo.FlightId = #{flightId} 
+				) as irregularityData
+				inner join Mst_CargoIrregularityTypes on 
+				Mst_CargoIrregularityTypes.IrregularityTypeCode = irregularityData.cargoIrregularityCode	
+	    ]]>
+	</select>
+	
+	<select id="sqlGetIrregularityDescription" parameterType="java.lang.String" resultType="java.lang.String">
+		select IrregularityTypeDescription from Mst_CargoIrregularityTypes where IrregularityTypeCode = #{irregularityType}		
+	</select>
+	
+	  	 
+	<resultMap id="outBoundResultMap" type="com.ngen.cosys.model.FlightModel">
+		<id column="Flight_ID" property="flightId" />
+		<result column="FlightKey" property="flightNumber" />
+		<result column="DateSTD" property="flightDate" />
+		<result column="DateSTD" property="std" />
+		<result column="FlightOffPoint" property="offPoint" />
+	</resultMap>
+	
+	<update id="updateShipmentsOnHold"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+	     UPDATE Shipment_Master
+         SET Locked =  1 ,LockReason=#{remarks},LockedBy=#{createdBy}
+         where ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentdate}
+    </update>
+   
+	<insert id="insertCdhDocumentMaster" parameterType="com.ngen.cosys.impbd.model.CdhDocumentmaster">
+                MERGE Cdh_DocumentMaster AS Cdh_DocumentMaster1 USING
+                  (SELECT #{shipmentid} shipmentid) AS Cdh_DocumentMaster2 
+                     ON Cdh_DocumentMaster1.shipmentid=Cdh_DocumentMaster2.shipmentid
+              WHEN MATCHED THEN
+                     UPDATE 
+                            
+                            SET CopyNo = #{copyno}
+                            ,DocumentStatus = 'Received'
+                            ,CdhPigeonHoleLocationId = (select top 1 CdhPigeonHoleLocationId from Cdh_PigeonHoleLocation where LocationName='Transit')
+                            ,CdhFlightPouchId = #{cdhflightpouchid}
+                            ,StoredDate =  #{storeddate}
+                            ,ReceivedDate = getdate()
+                            ,ReturnedDate = #{returneddate}
+                            ,NotifiedDate = #{notifieddate}
+                            ,DiscrepancyFlag = #{discrepancyflag}
+                            ,Remarks = #{remarks}
+                            ,Destination = #{destination}
+                            ,DeleteReasonCode = #{deletereasoncode}
+                            ,DeleteFlag = #{deleteflag}
+                            ,DeleteRemarks = #{deleteremarks}
+                            ,CarrierCode = #{carriercode}
+                            ,FlightOffPoint = #{flightoffpoint}
+                            ,LabelPartDate = GETDATE()
+                            ,LastUpdatedUserCode = #{modifiedBy}
+                            ,LastUpdatedDateTime = getdate()                                                                                                          
+                            ,ShipmentId = #{shipmentid}
+                                                                                              
+        WHEN NOT MATCHED THEN
+                     INSERT (CopyNo, DocumentStatus, CdhPigeonHoleLocationId, CdhFlightPouchId, 
+                             StoredDate, ReceivedDate, ReturnedDate, NotifiedDate, discrepancyflag
+                             ,Remarks, Destination, DeleteReasonCode, DeleteFlag, DeleteRemarks, 
+                             CarrierCode, FlightOffPoint, LabelpartDate, CreatedUserCode , CreatedDateTime , ShipmentId)
+                      Values(#{copyno}, 'Received', (select top 1 CdhPigeonHoleLocationId from Cdh_PigeonHoleLocation where LocationName='Transit'), 
+                      		 #{cdhflightpouchid}, 
+                             #{storeddate}, getdate(), #{returneddate}, #{notifieddate}, #{discrepancyflag}, #{remarks}, #{destination}, 
+                             #{deletereasoncode}, #{deleteflag}, #{deleteremarks}, #{carriercode}, #{flightoffpoint},
+                             GETDATE(), #{createdBy} , getdate(), #{shipmentid});
+     </insert>
+     
+     <update id="updateBarcodeFlag" parameterType="com.ngen.cosys.impbd.model.CdhDocumentmaster">
+	     update imp_shipmentverification set barcodeprintedflag = 1
+		 where shipmentid = #{shipmentid}
+    </update>
+	
+	<insert id="saveDGdeclarationDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration"
+		useGeneratedKeys="true" keyProperty="expDgShipperDeclarationId">
+		INSERT INTO
+		Exp_DG_ShipperDeclaration
+		(DGDReferenceNo
+		,DepartureAirport
+		,DestinationAirport
+		,AircraftType
+		,ShipmentRadioActiveFlag
+		,ShipmentNumber
+		,AdditionalHandlingInformation
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES(
+		#{dgdReferenceNo},
+		#{departureAirport},
+		#{destinationAirport},
+		#{aircraftType},
+		#{shipmentRadioactiveFlag},
+		#{shipmentNumber},
+		#{additionalHandlingInformation},
+		#{createdBy},
+		getDate()
+		)
+	</insert>
+
+	<insert id="insertshipperOverPackDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.UNIDOverpackDetails">
+		INSERT
+		INTO Exp_DG_UNID_OverpackDetails
+		(ExpDGShipperDeclarationId
+		,DGDReferenceNo
+		,DGRegulationId
+		,OverpackNumber
+		,AutoManualFlag
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(#{expDgShipperDeclarationId},
+		#{dgdReferenceNo},
+		#{dgRegulationId},
+		#{overpackNumber},
+		#{autoManualFlag},
+		#{createdBy}, getDate())
+	</insert>
+	
+	<select id="generateDGD" resultType="java.lang.Short">
+		SELECT
+		coalesce(max(DGDReferenceNo),0)+1 as dgdReferenceNo
+		FROM
+		Exp_DG_ShipperDeclaration where ShipmentNumber = '${value}'
+	</select>
+	
+	<update id="updateshipperDeclarationDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration">
+		update Exp_DG_ShipperDeclaration
+		set DepartureAirport = #{departureAirport}
+		,DestinationAirport = #{destinationAirport}
+		,AircraftType = #{aircraftType}
+		,ShipmentRadioActiveFlag = #{shipmentRadioactiveFlag}
+		,AdditionalHandlingInformation = #{additionalHandlingInformation}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = getDate()
+		where ExpDGShipperDeclarationID = #{expDgShipperDeclarationId} 
+		and ShipmentNumber = #{shipmentNumber}
+	</update>
+	<update id="updateDGDDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail">
+		update Exp_DG_ShipperDeclarationDetails
+		set
+		DGRegulationId = #{dgRegulationId}
+		,DGSubRiskCode1 = #{dgSubriskCode1}
+		,DGSubRiskCode2 = #{dgSubriskCode2}
+		,PackingGroupCode = #{packingGroupCode}
+		,PackagePieces = #{packagePieces}
+		,PackageQuantity = #{packageQuantity}
+		,PackingType = #{packingType}
+		,PackingInstructions = #{packingInstructions}
+		,PackingInstructionCategory = #{packingInstructionCategory}
+		,TransportIndex = #{transportIndex}
+		,PackingDimension1 = #{packingDimension1}
+		,PackingDimension2 = #{packingDimension2}
+		,PackingDimension3 = #{packingDimension3}
+		,APIONumber = #{apioNumber}
+		,OverpackNumber = #{overPackNumber}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = getDate()
+		,AuthorizationDetail = #{authorizationDetail}
+		,Remarks=#{packingRemarks}
+		where ExpDGShipperDeclarationId = #{expDgShipperDeclarationId}
+		and DGDReferenceNo = #{dgdReferenceNo}
+		and DGRegulationId = #{copyDgRegulationId}
+	</update>
+
+	<update id="updateDGDetailsHeader"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail">
+			UPDATE Exp_DangerousGoodsRegulationHeader set DGClassCode = #{DGClassCode} where DGRegulationId = #{copyDgRegulationId}
+	</update>
+
+	<insert id="insertshipperDeclarationDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail"
+		useGeneratedKeys="true" keyProperty="dgRegulationId">
+		INSERT INTO
+		Exp_DG_ShipperDeclarationDetails
+		(ExpDGShipperDeclarationId
+		,DGRegulationId
+		,DGDReferenceNo
+		,DGSubRiskCode1
+		,DGSubRiskCode2
+		,PackingGroupCode
+		,PackagePieces
+		,PackageQuantity
+		,PackingType
+		,PackingInstructions
+		,PackingInstructionCategory
+		,TransportIndex
+		,PackingDimension1
+		,PackingDimension2
+		,PackingDimension3
+		,APIONumber
+		,OverpackNumber
+		,AuthorizationDetail
+		,CreatedUserCode
+		,CreatedDateTime
+		,Remarks)
+		VALUES
+		(#{expDgShipperDeclarationId},
+		#{dgRegulationId},
+		#{dgdReferenceNo},
+		#{dgSubriskCode1},
+		#{dgSubriskCode2},
+		#{packingGroupCode},
+		#{packagePieces},
+		#{packageQuantity},
+		#{packingType},
+		#{packingInstructions},
+		#{packingInstructionCategory},
+		#{transportIndex},
+		#{packingDimension1},
+		#{packingDimension2},
+		#{packingDimension3},
+		#{apioNumber},
+		#{overPackNumber},
+		#{authorizationDetail},
+		#{createdBy}, getDate(),
+		#{packingRemarks}
+		)
+	</insert>
+		<update id="updateDGDOverPackDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.UNIDOverpackDetails">
+		UPDATE
+		Exp_DG_UNID_OverpackDetails 
+		SET
+		OverpackNumber = #{overpackNumber},
+		LastUpdatedUserCode = #{modifiedBy}
+		where ExpDGShipperDeclarationId = #{expDgShipperDeclarationId}
+		and DGDReferenceNo = #{dgdReferenceNo}
+		and DGRegulationId = #{copyDgRegulationId}
+	</update>
+	
+	
+	<select id="getDGDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.SearchDGDeclations"
+		resultMap="DGDetailsResultMap">
+		SELECT dgd.DGDReferenceNo
+		,dgd.ShipmentNumber
+		,dgd.ExpDGShipperDeclarationId
+		,dgd.DepartureAirport
+		,dgd.DestinationAirport
+		,dgd.AircraftType
+		,dgd.ShipmentRadioActiveFlag
+		,dgd.ShipmentNumber
+		,dgd.AdditionalHandlingInformation
+		FROM
+		Exp_DG_ShipperDeclaration dgd
+		WHERE dgd.ShipmentNumber = #{shipmentNumber}
+		<if test="dgdReferenceNo != 0">
+			and dgd.DGDReferenceNo = #{dgdReferenceNo}
+		</if>
+	</select>
+	
+	<select id="getShipmentDetailsForDGD" parameterType="com.ngen.cosys.impbd.shipment.verification.model.SearchDGDeclations"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration">
+		select
+		Shipment_Master.Origin,Shipment_Master.Destination,Shipment_Master.ShipmentId
+		from Shipment_Master
+		where Shipment_Master.ShipmentNumber = #{shipmentNumber}
+	</select>
+	<select id="getTranshipShpDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration">
+		SELECT smtAdInfo.CountryCode as shipperCountryCode
+		,smtAdInfo.Place as shipperPlace
+		,smtAdInfo.Postal as shipperPostalCode
+		,smtAdInfo.StateCode as shipperStateCode
+		,smtAdInfo.StreetAddress as shipperAddress1
+		,smtCusInfo.CustomerName as shipperName
+		,cmt.CorrespondenceCityCode as shipperCityCode
+		,cmt.Customer_ID as shipperCustomerId
+		From Shipment_MasterCustomerAddressInfo smtAdInfo 
+		left outer join Shipment_MasterCustomerInfo smtCusInfo
+		ON smtAdInfo.ShipmentCustomerInfoId = smtCusInfo.ShipmentCustomerInfoId
+		left join Customer_Master cmt 
+		ON smtCusInfo.CustomerCode = cmt.CustomerCode
+		where smtCusInfo.CustomerType = 'SHP' 
+		and smtCusInfo.ShipmentId = #{shipmentID}
+	</select>
+	
+	<select id="getTranshipConDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration">
+		SELECT smtAdInfo.CountryCode as consigneeCountryCode
+		,smtAdInfo.Place as consigneePlace
+		,smtAdInfo.Postal as consigneePostalCode
+		,smtAdInfo.StateCode as consigneeStateCode
+		,smtAdInfo.StreetAddress as consigneeAddress1
+		,smtCusInfo.CustomerName as consigneeName
+		,cmt.CorrespondenceCityCode as consigneeCityCode
+		,cmt.Customer_ID as consigneeCustomerId
+		From Shipment_MasterCustomerAddressInfo smtAdInfo 
+		left outer join Shipment_MasterCustomerInfo smtCusInfo
+		ON smtAdInfo.ShipmentCustomerInfoId = smtCusInfo.ShipmentCustomerInfoId
+		left join Customer_Master cmt 
+		ON smtCusInfo.CustomerCode = cmt.CustomerCode
+		where smtCusInfo.CustomerType = 'CNE' 
+		and smtCusInfo.ShipmentId = #{shipmentID}
+	</select>
+	  	<delete id="deleteUnidOverpackDetail" parameterType="com.ngen.cosys.impbd.shipment.verification.model.UNIDOverpackDetails">
+      <![CDATA[
+         delete from Exp_DG_UNID_OverpackDetails 
+         where ExpDGShipperDeclarationId = #{expDgShipperDeclarationId} 
+         and DGDReferenceNo = #{dgdReferenceNo}
+         and DGRegulationId = #{dgRegulationId}
+      ]]>
+	</delete>
+		<delete id="deleteShipperDeclarationDetail"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail">
+      <![CDATA[
+         delete from Exp_DG_ShipperDeclarationDetails 
+         where ExpDGShipperDeclarationId = #{expDgShipperDeclarationId} 
+         and DGDReferenceNo = #{dgdReferenceNo}
+         and DGRegulationId = #{dgRegulationId}
+      ]]>
+	</delete>
+	<select id="getDgRegulationData" resultMap="dgMap">
+		select distinct hdr.DGRegulationId, hdr.UNIDnumber,
+		hdr.ProperShippingName, hdr.TechnicalNameFlag, hdr.DGClassCode,
+		hdr.IMPCode,
+		hdr.EmergencyRespondGroup, hdr.DGSubRiskCode1,
+		hdr.DGSubRiskIMPCode1,
+		hdr.DGSubRiskCode2, hdr.DGSubRiskIMPCode2
+		from
+		Exp_DangerousGoodsRegulationDetails dtl,
+		Exp_DangerousGoodsRegulationHeader hdr
+		where 			
+		hdr.DGRegulationId = #{dgRegulationId}
+	</select>
+	<resultMap id="DGDetailsResultMap"
+		type="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclaration">
+		<id column="DGDReferenceNo" jdbcType="NUMERIC" property="dgdReferenceNo" />
+		<id column="ShipmentNumber" jdbcType="VARCHAR" property="shipmentNumber" />
+		<id column="ExpDGShipperDeclarationId" jdbcType="NUMERIC" property="expDgShipperDeclarationId" />
+		<result column="DepartureAirport" jdbcType="VARCHAR" property="departureAirport" />
+		<result column="DestinationAirport" jdbcType="VARCHAR" property="destinationAirport" />
+		<result column="AircraftType" jdbcType="VARCHAR" property="aircraftType" />
+		<result column="AdditionalHandlingInformation" jdbcType="VARCHAR" property="additionalHandlingInformation" />
+		<result column="ShipmentRadioActiveFlag" jdbcType="VARCHAR" property="shipmentRadioactiveFlag" />
+		<collection property="declarationDetails" javaType="List"
+			ofType="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail"
+			select="DGDDetails" column="expdgshipperdeclarationid=expDgShipperDeclarationId" />
+	</resultMap>
+	<resultMap id="dgMap" type="com.ngen.cosys.impbd.shipment.verification.model.DgRegulations"
+		autoMapping="false">
+		<id property="regId" column="DGRegulationId" />
+		<result property="unid" column="UNIDnumber" />
+		<result property="packingGroupCode" column="packingGroupCode" />
+		<result property="psn" column="ProperShippingName" />
+		<result property="tech" column="TechnicalNameFlag" />
+		<result property="classCode" column="DGClassCode" />
+		<result property="shc" column="IMPCode" />
+		<result property="erg" column="EmergencyRespondGroup" />
+		<result property="sbr1" column="DGSubRiskCode1" />
+		<result property="imp1" column="DGSubRiskIMPCode1" />
+		<result property="sbr2" column="DGSubRiskCode2" />
+		<result property="imp2" column="DGSubRiskIMPCode2" />
+		<collection property="dgDetails" javaType="List"
+			ofType="com.ngen.cosys.impbd.shipment.verification.model.DgRegulationDetails" select="getDgDetails"
+			column="regId=DGRegulationId" />
+		<collection property="packingGroupCodeList" javaType="List"
+			select="getPackingGroupCodeList"
+			column="dgRegulationId=DGRegulationId" />
+		<collection property="packingGroupInstructionList" javaType="List"
+			select="getPackingGroupInstructionList"
+			column="{dgRegulationId=DGRegulationId}" />
+	</resultMap>
+	<select id="getDgDetails" resultMap="dgDetailMap">
+		select dtl.PackingGroupCode,
+		dtl.ForbiddenFlag,
+		dtl.MLQPackingInstructions, dtl.MLQQuantity,
+		dtl.MLQUnitCode, dtl.MPCPackingInstructions,
+		dtl.MPCQuantity,
+		dtl.MPCUnitCode, dtl.MCOPackingInstructions, dtl.MCOQuantity,
+		dtl.MCOUnitCode,
+		dtl.DGRemarks
+		from Exp_DangerousGoodsRegulationDetails
+		dtl,
+		Exp_DangerousGoodsRegulationHeader hdr
+		where dtl.DGRegulationId =
+		hdr.DGRegulationId and
+		hdr.DGRegulationId = #{regId}
+	</select>
+
+	<select id="getPackingGroupCodeList" resultType="java.lang.String">
+		select dtl.PackingGroupCode
+		from Exp_DangerousGoodsRegulationDetails
+		dtl,
+		Exp_DangerousGoodsRegulationHeader hdr
+		where dtl.DGRegulationId =
+		hdr.DGRegulationId and
+		hdr.dgRegulationId = #{dgRegulationId}
+	</select>
+
+	<select id="getPackingGroupInstructionList" resultType="java.lang.String">
+		SELECT value AS instructions
+		FROM STRING_SPLIT((
+		
+			SELECT dtl.MLQPackingInstructions + ',' + dtl.MPCPackingInstructions + ',' + dtl.MCOPackingInstructions +','
+			FROM Exp_DangerousGoodsRegulationDetails dtl,
+				Exp_DangerousGoodsRegulationHeader hdr
+			WHERE dtl.DGRegulationId = hdr.DGRegulationId
+				AND hdr.dgRegulationId = #{dgRegulationId}
+				FOR XML PATH (''))
+			, ',')
+		</select>
+	
+	<resultMap id="dgDetailMap"
+		type="com.ngen.cosys.impbd.shipment.verification.model.DgRegulationDetails"
+		autoMapping="false">
+		<result property="pg" column="PackingGroupCode" />
+		<result property="fbd" column="ForbiddenFlag" />
+		<result property="mlqPInfo" column="MLQPackingInstructions" />
+		<result property="mlqQuantity" column="MLQQuantity" />
+		<result property="mlqUnit" column="MLQUnitCode" />
+		<result property="mpcPInfo" column="MPCPackingInstructions" />
+		<result property="mpcQuantity" column="MPCQuantity" />
+		<result property="mpcUnit" column="MPCUnitCode" />
+		<result property="mcoPInfo" column="MCOPackingInstructions" />
+		<result property="mcoQuantity" column="MCOQuantity" />
+		<result property="mcoUnit" column="MCOUnitCode" />
+		<result property="remarks" column="DGRemarks" />
+	</resultMap>
+	
+	<select id="DGDDetails" resultMap="DGDeclarationDetails">
+		SELECT dgr.DGRegulationId
+		,dgr.DGRegulationId as copyDgRegulationId
+		,dgr.ProperShippingName
+		,dgdd.ExpDGShipperDeclarationId
+		,dgr.DGClassCode
+		,dgr.UNIDnumber
+		,dgdd.APIONumber
+		,dgdd.DGDReferenceNo
+		,dgdd.DGSubRiskCode1
+		,dgdd.DGSubRiskCode2
+		,dgdd.OverpackNumber
+		,dgdd.PackagePieces
+		,dgdd.PackageQuantity
+		,dgdd.PackingDimension1
+		,dgdd.PackingDimension2
+		,dgdd.PackingDimension3
+		,dgdd.PackingGroupCode
+		,dgdd.PackingInstructionCategory
+		,dgdd.PackingInstructions
+		,dgdd.PackingType
+		,dgdd.TransportIndex
+		,dgdd.AuthorizationDetail
+		,dgr.UNIDnumber,dgr.ProperShippingName
+		,dgr.DGClassCode
+		,dgr.DGRegulationId
+		,dgdd.Remarks
+		FROM Exp_DG_ShipperDeclarationDetails dgdd 
+		JOIN Exp_DangerousGoodsRegulationHeader dgr 
+		ON dgdd.DGRegulationId = dgr.DGRegulationId
+		WHERE
+		dgdd.ExpDGShipperDeclarationId = #{expdgshipperdeclarationid} 
+		ORDER By dgdd.APIONumber
+	</select>
+	
+		<resultMap id="DGDeclarationDetails"
+		type="com.ngen.cosys.impbd.shipment.verification.model.ShipperDeclarationDetail">
+		<id column="ExpDGShipperDeclarationId" jdbcType="NUMERIC" property="expDgShipperDeclarationId" />
+		<id column="DGDReferenceNo" jdbcType="NUMERIC" property="dgdReferenceNo" />
+		<id column="DGRegulationId" jdbcType="NUMERIC" property="dgRegulationId" />
+		<id column="copyDgRegulationId" jdbcType="NUMERIC" property="copyDgRegulationId" />
+		<result column="DGSubRiskCode1" jdbcType="VARCHAR" property="dgSubriskCode1" />
+		<result column="DGSubRiskCode2" jdbcType="VARCHAR" property="dgSubriskCode2" />
+		<result column="PackingGroupCode" jdbcType="VARCHAR" property="packingGroupCode" />
+		<result column="PackagePieces" jdbcType="NUMERIC" property="packagePieces" />
+		<result column="PackageQuantity" jdbcType="DECIMAL" property="packageQuantity" />
+		<result column="PackingType" jdbcType="VARCHAR" property="packingType" />
+		<result column="PackingInstructions" jdbcType="VARCHAR" property="packingInstructions" />
+		<result column="PackingInstructionCategory" jdbcType="VARCHAR" property="packingInstructionCategory" />
+		<result column="TransportIndex" jdbcType="NUMERIC" property="transportIndex" />
+		<result column="PackingDimension1" jdbcType="NUMERIC" property="packingDimension1" />
+		<result column="PackingDimension2" jdbcType="NUMERIC" property="packingDimension2" />
+		<result column="PackingDimension3" jdbcType="NUMERIC" property="packingDimension3" />
+		<result column="APIONumber" jdbcType="NUMERIC" property="apioNumber" />
+		<result column="OverpackNumber" jdbcType="NUMERIC" property="overPackNumber" />
+		<result column="AuthorizationDetail" jdbcType="VARCHAR" property="authorizationDetail" />
+		<result column="Remarks" jdbcType="VARCHAR" property="packingRemarks" />
+		<collection property="overPackDetails" javaType="List"
+			ofType="com.ngen.cosys.impbd.shipment.verification.model.UNIDOverpackDetails" select="getOverpackDetils"
+			column="{expDgShipperDeclarationId=ExpDGShipperDeclarationId, dgdReferenceNo=DGDReferenceNo, dgRegulationId=DGRegulationId}" />
+		
+		<collection property="packingGroupCodeList" javaType="List"
+			select="getPackingGroupCodeList"
+			column="{dgRegulationId=DGRegulationId}" />
+			
+		<collection property="packingGroupInstructionList" javaType="List"
+			select="getPackingGroupInstructionList"
+			column="{dgRegulationId=DGRegulationId}" />
+			
+	</resultMap>
+	<select id="getOverpackDetils" resultType="com.ngen.cosys.impbd.shipment.verification.model.UNIDOverpackDetails">
+		SELECT
+		ExpDGShipperDeclarationId,DGDReferenceNo,DGRegulationId,OverpackNumber,AutoManualFlag 
+		FROM Exp_DG_UNID_OverpackDetails
+		where ExpDGShipperDeclarationId = #{expDgShipperDeclarationId}
+		and DGDReferenceNo = #{dgdReferenceNo}
+		and DGRegulationId = #{dgRegulationId}
+	</select>
+		<select id="getOverpackSeqNo" parameterType="com.ngen.cosys.impbd.shipment.verification.model.SearchDGDeclations"
+		resultType="java.lang.Integer">
+		Select MAX(unid.OverpackNumber) as overPackSeqNO 
+		FROM Exp_DG_ShipperDeclaration dgd
+		JOIN Exp_DG_UNID_OverpackDetails unid 
+		ON dgd.ExpDGShipperDeclarationId = unid.ExpDGShipperDeclarationId
+		where dgd.ShipmentNumber = #{shipmentNumber} 
+		AND unid.AutoManualFlag = 'S'
+	</select>
+	
+	
+	<select id="sqlIsBreakDownCompleteFromDocument"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+		resultType="java.lang.Boolean">
+		select
+			case 
+				when count(1) > 0 then
+					1
+				else
+					0
+				end as result
+		from
+			Imp_FlightEvents
+		where
+			FlightId = #{flightId} and
+			BreakDownCompletedAt is not null
+	</select>
+	
+	
+	<update id="sqlUpdateFlightCompleteFromDocument"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+		update
+        	Imp_FlightEvents
+		set
+			FlightCompletedAt = #{createdOn},
+			FlightCompletedBy = #{createdBy},
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = #{createdOn}			
+		where
+			FlightId = #{flightId}
+	</update>
+	
+	<select id="sqlGetEmailList" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT NotificationTypeDetail
+		FROM Customer_NotificationDtl notfDtl
+			INNER JOIN Customer_Notification notf ON notf.CustomerNotificationId = notfDtl.CustomerNotificationId
+			INNER JOIN customer_master cust ON notf.customerid = cust.customer_id
+			INNER JOIN shipment_mastercustomerinfo shpMst ON shpMst.customerCode = cust.customerCode
+		WHERE notfDtl.NotificationTypeDetail IS NOT NULL
+			AND shpMst.shipmentid = #{shipmentId}
+		
+	</select>
+	
+	
+	
+	<insert id="sqlSaveDgdEliElmDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList">
+		INSERT INTO Exp_DG_ELI_ELM_Details
+		           (ShipmentNumber
+		           ,SHCCode
+		           ,PackingInstructions
+		           ,CarrierCode
+		           ,FlightType
+		           ,ForbiddenFlag
+		           ,Remarks
+		           ,CreatedUserCode
+		           ,CreatedDateTime)
+		     VALUES
+		           (
+		          	 #{shipmentNumber},
+		          	 #{eliElm},
+		          	 #{piData},
+		          	 #{carrierCode},
+		          	 #{flightType},
+		          	 #{forbiddenFlag},
+		          	 #{remark},
+		          	 #{createdBy},
+		          	 #{createdOn}
+		           )
+	</insert>
+	
+	<delete id="sqldelDgdEliElmDetails"  parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList">
+		delete 
+		from 
+				Exp_DG_ELI_ELM_Details
+		where
+			 TransactionSequenceNo = #{transactionSequenceNo}
+	</delete>
+	
+	<select id="sqlGetDgdEliList" parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModel"
+		resultMap="DgdEliElmResultMap">
+		SELECT ShipmentNumber
+		      ,TransactionSequenceNo
+		      ,SHCCode
+		      ,PackingInstructions
+		      ,CarrierCode
+		      ,FlightType
+		      ,ForbiddenFlag
+		      ,Remarks
+		      ,CreatedUserCode
+		      ,CreatedDateTime
+		      ,LastUpdatedUserCode
+		      ,LastUpdatedDateTime
+  		FROM 
+  			Exp_DG_ELI_ELM_Details
+  		WHERE
+  			ShipmentNumber = #{shipmentNumber}
+	</select>
+	
+	<resultMap type="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList" id="DgdEliElmResultMap">
+		<id column="TransactionSequenceNo" property="transactionSequenceNo"/>
+		<result column="ShipmentNumber" property="shipmentNumber"/>
+		<result column="SHCCode" property="eliElm"/>
+		<result column="PackingInstructions" property="piData"/>
+		<result column="FlightType" property="flightType"/>
+		<result column="Remarks" property="remark"/>
+	</resultMap>
+	
+	<select id="sqlGetDgdEliElmRemark" parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList"
+		resultMap="DgdEliElmRemarkResultMap">
+		select
+		     Top(1)
+			 DGRemarks,ForbiddenFlag,CarrierCode
+		from 
+			Exp_DangerousGoodsHandlingInstructions
+		where 
+		  	PackingInstructions = #{piData} and IMPCode = #{eliElm} and carriercode= #{carrierCode}
+	</select>
+	
+	<resultMap type="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList" id="DgdEliElmRemarkResultMap">
+		<result column="DGRemarks" property="remark"/>
+		<result column="ForbiddenFlag" property="forbiddenFlag"/>
+		<result column="CarrierCode" property="carrierCode"/>
+	</resultMap>
+	
+	<update id="sqlUpdateDgdEliElmDetails" parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList">
+		UPDATE Exp_DG_ELI_ELM_Details
+		   SET 
+		       SHCCode = #{eliElm}
+		      ,PackingInstructions =  #{piData}
+		      ,CarrierCode = #{carrierCode}
+		      ,FlightType =  #{flightType}
+		      ,ForbiddenFlag =  #{forbiddenFlag}
+		      ,Remarks =  #{remark}
+		      ,LastUpdatedUserCode = #{modifiedBy}
+		      ,LastUpdatedDateTime = #{modifiedOn}
+		 WHERE	
+		 	TransactionSequenceNo = #{transactionSequenceNo}
+	</update>
+	<select id="sqlGetCarrierCode" parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModel"
+		resultMap="DgdEliElmCarrierCodeResultMap">	
+	  select 
+	  	TOP 1 Flt_OperativeFlight.CarrierCode
+	  from 
+	  	Exp_ShipmentBooking inner join  Exp_ShipmentFlightBookingDetail on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+	  	inner join 
+	  	Flt_OperativeFlight on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.flight_id
+	  where 
+	 	Exp_ShipmentBooking.ShipmentNumber = #{shipmentNumber}
+	 	and FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<resultMap type="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList" id="DgdEliElmCarrierCodeResultMap">
+		<result column="CarrierCode" property="carrierCode"/>
+	</resultMap>
+	
+	<select id="sqlGetInventoryPieces"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel"
+		resultType="java.lang.Boolean">
+
+			SELECT 
+				case when SUM(inventoryPieces) > 0 then
+					1
+				else
+					0
+				end AS inventoryPieces
+			FROM (
+				(
+					SELECT CASE 
+							WHEN sum(pieces) > 0
+								THEN 1
+							ELSE 0
+							END AS inventoryPieces
+					FROM Shipment_FreightOut
+					WHERE ShipmentId = #{shipmentId}
+						AND FlightId = #{flightId}
+					)
+				
+				UNION
+				
+				(
+					SELECT CASE 
+							WHEN sum(pieces) > 0
+								THEN 1
+							ELSE 0
+							END AS inventoryPieces
+					FROM Shipment_Inventory
+					WHERE shipment_id = #{shipmentId}
+						AND Flight_ID = #{flightId}
+					)
+				) AS ShipmentInventory
+	</select>
+	
+	<update id="sqlClearShipmentVerificationForFlight"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+		update imp_shipmentverification
+		set
+			DocumentReceivedFlag = 0,
+			PhotoCopyAwbFlag = 0,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime	= #{modifiedOn}
+		where
+			FlightId = #{flightId} and
+			ShipmentId = #{shipmentId} 
+	</update>
+	
+	<delete id="sqlDeleteShipmentVerification"  
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+			DELETE
+			FROM imp_shipmentverification
+			WHERE FlightId = #{flightId}
+				AND ShipmentId = #{shipmentId} 
+				AND not exists(
+					select
+						null
+					from
+						Imp_BreakDownULDTrolleyInfo
+					where
+						Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = imp_shipmentverification.ImpShipmentVerificationId				
+				)
+	</delete>
+	
+	<update id="sqlUpdateShipmentMasterDocumentReceivedOn" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+		<![CDATA[
+			UPDATE Shipment_Master
+				SET DocumentReceivedOn = NULL,
+					PhotoCopy = NULL
+				WHERE ShipmentId = #{shipmentId} and
+				not exists(
+					select
+						null
+					from
+						Imp_ShipmentVerification
+					where
+						Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId and
+						Imp_ShipmentVerification.FlightId <> #{flightId} 
+				)
+		]]>
+	</update>
+	
+	<select id="sqlIsShipmentVerificationExist"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel"
+		resultType="java.lang.Boolean">
+			SELECT case when count(1) >0 then 1 else 0 end as isShipmentVerificationExist 
+			FROM imp_shipmentverification
+			WHERE flightid = #{flightId}
+				AND shipmentId = #{shipmentId}
+	</select>
+	
+	<insert id="saveShipmentVerificationDetails" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+		INSERT INTO [dbo].[Imp_ShipmentVerification]
+	           ([FlightId]
+	           ,[ShipmentId]
+	           ,[BreakDownPieces]
+	           ,[BreakDownWeight]
+	           ,[DocumentReceivedFlag]
+	           ,[PhotoCopyAwbFlag]
+	           ,[DocumentPouchReceivedFlag]
+	           ,[BarcodePrintedFlag]
+	           ,[CreatedUserCode]
+	           ,[CreatedDateTime]
+	           ,[LastUpdatedUserCode]
+	           ,[LastUpdatedDateTime]
+	           ,[DocumentAttachedFlag]
+	           ,[DocumentType]
+	           ,[Remarks]
+	           ,[DocumentCollectedBy]
+	           ,[ReleasedOn]
+	           ,[ReleasedBy]
+	           ,[DocumentCollectedPersonId]
+	           ,[CheckList]
+	           ,[DocumentReceivedDateTime])
+	     VALUES
+	           (#{flightId}
+	           ,#{shipmentId}
+	           ,#{breakdownPieces}
+	           ,#{breakdownWeight}
+	           ,#{docRecieved}
+	           ,#{copyAwb}
+	           ,#{docPouch}
+	           ,null
+	           ,#{createdBy}
+			   ,#{createdOn}
+	           ,null
+	           ,getdate()
+	           ,null
+	           ,null
+	           ,#{remarks}
+	           ,null
+	           ,getdate()
+	           ,null
+	           ,null
+	           ,#{checkListRequired}
+	           ,getdate())
+
+	</insert>
+		
+
+	
+	<select id="fetchBoardPoint"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel"
+		resultType="java.lang.String">
+		
+			SELECT Flt_OperativeFlight_Segments.FlightBoardPoint
+			FROM flt_operativeflight flt
+			INNER JOIN Flt_OperativeFlight_Segments  ON flt.flight_id = Flt_OperativeFlight_Segments.Flight_ID
+		WHERE flt.flight_id = #{flightId} 
+and FlightOffPoint =#{tenantAirport}
+ order by Flt_OperativeFlight_Segments.FlightSegmentOrder
+	</select>
+	
+	<update id="updateShipmentVerificationDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel">
+		UPDATE Imp_ShipmentVerification
+		   SET DocumentReceivedFlag = #{docRecieved}
+		      ,PhotoCopyAwbFlag = #{copyAwb}
+		      ,DocumentPouchReceivedFlag = #{docPouch}
+		      ,CheckList = #{checkListRequired}
+		 WHERE flightId  = #{flightId} and shipmentId = #{shipmentId}	
+	</update>
+	
+	<select id ="sqlRecordExistInCDH" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel"
+		resultType="int">
+		SELECT count(1) FROM Cdh_DocumentMaster where ShipmentId = #{shipmentId} and DocumentStatus = 'Received'
+	</select>
+
+
+	<select id ="sqlIsBookingDone" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModel"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList">
+		<![CDATA[
+			SELECT top(1)
+			  Flt_OperativeFlight.FlightType as flightType,
+			  Flt_OperativeFlight.CarrierCode as carrierCode
+			FROM Exp_ShipmentBooking
+			INNER JOIN Exp_ShipmentFlightBookingDetail ON Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+			INNER JOIN Flt_OperativeFlight ON Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Flt_OperativeFlight_Segments ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+				AND Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+			WHERE Exp_ShipmentBooking.ShipmentNumber = #{shipmentNumber} and
+				Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1 and
+				Exp_ShipmentFlightBookingDetail.BookingStatusCode <> 'XX'
+		]]>
+	</select>
+	
+	<select id ="sqlgetDangerousGoodsHandlingInstructions" 
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModel"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.EliElmDGDModelList">
+		 select 
+		    case when 
+		    PassengerFlag = 1 then 'P' else null end as passengerFlag,
+			case when 
+			FreighterFlag = 1 then 'C' else null end as freighterFlag
+		 from 
+		    Exp_DangerousGoodsHandlingInstructions 
+		 where 
+		    IMPCode=#{eliElm} and CarrierCode= #{carrierCode} and PackingInstructions= #{piData}
+	</select>
+	<select id="sqlgetSegmentId"
+		parameterType="com.ngen.cosys.inward.model.InwardServiceReportModel"
+		resultType="java.math.BigInteger">
+			select top(1)FlightSegmentId  from flt_operativeflight_Segments where flight_id=#{flightId} and FlightBoardPoint=#{boardingPoint} and FlightOffPoint=#{offPoint}
+	</select>
+	<select id="sqlgetBookingInfoForVerification"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.BookingInfo">
+		select 
+		    Exp_ShipmentBooking.BookingId as bookigId,
+		    Exp_ShipmentBooking.Pieces as bookingPieces,
+			Exp_ShipmentBooking.GrossWeight as bookingWeight,
+			Exp_ShipmentPartBookingDetail.PartBookingId as partBookingId,
+			Exp_ShipmentPartBookingDetail.PartPieces as partBookingPieces,
+			Exp_ShipmentPartBookingDetail.PartWeight as partbookingWeight,
+			Exp_ShipmentFlightBookingDetail.FlightBoardPoint as flightBoardPoint,
+			Exp_ShipmentFlightBookingDetail.FlightOffPoint as flightOffPoint
+		from 
+		   Exp_ShipmentBooking inner join 
+		   Exp_ShipmentPartBookingDetail 
+		     on Exp_ShipmentBooking.BookingId=Exp_ShipmentPartBookingDetail.BookingId  inner join
+		   Exp_ShipmentFlightBookingDetail 
+		     on Exp_ShipmentFlightBookingDetail.BookingId=Exp_ShipmentBooking.BookingId
+		where 
+		   Exp_ShipmentBooking.ShipmentNumber=#{shipmentNumber} and 
+		   Exp_ShipmentBooking.ShipmentDate=#{shipmentdate} and 
+		   Exp_ShipmentFlightBookingDetail.FlightBoardPoint=#{tenantAirport}
+	</select>
+	<select id="sqlgetBookingInfoForVerificationPartCase"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationShipmentModel"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.BookingInfo">
+		select 
+		    Exp_ShipmentBooking.BookingId,
+		    COALESCE(sum(Exp_ShipmentFlightBookingDetail.BookingPieces),null,0,sum(Exp_ShipmentFlightBookingDetail.BookingPieces))  totalBookingPieces,
+		    COALESCE(sum(Exp_ShipmentFlightBookingDetail.BookingWeight),null,0.00,sum(Exp_ShipmentFlightBookingDetail.BookingWeight)) totalBookingWeight
+		from 
+		   Exp_ShipmentBooking inner join 
+		   Exp_ShipmentFlightBookingDetail 
+		     on Exp_ShipmentFlightBookingDetail.BookingId=Exp_ShipmentBooking.BookingId
+		where 
+		   Exp_ShipmentBooking.ShipmentNumber=#{shipmentNumber} and 
+		   Exp_ShipmentBooking.ShipmentDate=#{shipmentdate} and 
+		   Exp_ShipmentFlightBookingDetail.FlightOffPoint=#{tenantAirport} and
+		   Exp_ShipmentFlightBookingDetail.FlightId=#{flightId} 
+		group by
+		   Exp_ShipmentBooking.BookingId,
+		   Exp_ShipmentFlightBookingDetail.BookingPieces,
+		   Exp_ShipmentFlightBookingDetail.BookingWeight,
+		   Exp_ShipmentFlightBookingDetail.FlightId
+	</select>
+	<update id="updateBookingInfoShipmentVerificationDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.BookingInfo">
+		 update 
+		     Exp_ShipmentBooking 
+	     set 
+	         Pieces=#{awbPieces},
+	         GrossWeight=#{awbWeight}
+		 where BookingId=#{bookigId}	
+	</update>
+	<update id="updatePartBookingInfoShipmentVerificationDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.BookingInfo">
+		 update 
+		     Exp_ShipmentPartBookingDetail 
+	     set 
+	         PartPieces=#{awbPieces},
+	         PartWeight=#{awbWeight}
+		 where BookingId=#{bookigId}	
+	</update>
+	<update id="updateFlightBookingInfoShipmentVerificationDetails"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.BookingInfo">
+		 update 
+		     Exp_ShipmentFlightBookingDetail 
+	     set 
+	         BookingPieces=#{awbPieces},
+	         BookingWeight=#{awbWeight}
+		 where BookingId=#{bookigId}	
+	</update>
+	<select id="sqlQueryCarrierCodesForSQGroupVerification"  
+		resultType="java.lang.String">
+	<![CDATA[
+	   select
+			CarrierCode 
+	   from 
+	       Mst_AssociateCarrierWithGroup 
+	        inner join
+		  Mst_CarrierGroup on Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID
+	   and Mst_CarrierGroup.CarrierGroupCode='SQ'
+	]]>	 	
+   </select>
+   <select id="sqlQueryGetAdministrationGropupStatusForFinalise"  
+		resultType="java.lang.String">	
+	 select 
+         AdministrationSubGroupDetailDescription 
+	from Mst_CodeAdministration_Group inner join 
+	     Mst_CodeAdministration_SubGroup 
+		  on Mst_CodeAdministration_Group.AdministrationGroupCode=Mst_CodeAdministration_SubGroup.AdministrationGroupCode inner join
+		 Mst_CodeAdministration_SubGroupDetails
+		  on Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode=Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode
+	where 
+	     Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode='BookingCheckAtFinalise' and
+	     Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode='CheckType'		
+   </select>
+   
+   	<update id="sqlQueryReOpenFlightCompleteForDocumentVerification"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">
+	<![CDATA[
+		update
+        	Imp_FlightEvents
+		set
+			FlightCompletedAt = null,
+			FlightCompletedBy = null,
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = #{createdOn}			
+		where
+			FlightId = #{flightId}
+	]]>
+	</update>
+	 
+	 
+	 <select id="sqlQueryforInternationalValidation"  
+		resultType="java.lang.String" parameterType="com.ngen.cosys.impbd.shipment.verification.model.DocumentVerificationFlightModel">	
+		select
+			 case when Min(CONVERT(int,DomesticFlightFlag)) = 0
+			then 'INT'
+			else 'DOM'
+			END as flightType
+			from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+			on Flt_OperativeFlight.Flight_ID=Flt_OperativeFlight_Legs.Flight_ID
+			where
+			Flt_OperativeFlight.Flight_ID = #{flightId}
+			group by
+			Flt_OperativeFlight.Flight_ID
+	</select>
+	 
+	 
+	
+</mapper>

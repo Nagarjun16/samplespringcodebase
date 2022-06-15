@@ -1,0 +1,1364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="updateDLS">
+
+	<insert id="insertDLSULDTrolley" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD"
+		useGeneratedKeys="true" keyColumn="DLSUldTrolleyId" keyProperty="dlsUldTrolleyId">
+		insert into Exp_DLSULDTrolley (
+			FlightSegmentId, 
+			ULDTrolleyNumber, 
+       		EstimatedWeight, 
+       		TareWeight, 
+      		DryIceWeight, 
+      		PriorityOfLoading, 
+      		HeightCode, 
+      		TransferType, 
+      		UsedForPerishableContainer, 
+      		UsedForExpressCourierContainer, 
+      		UsedForTransitUse, 
+      		UsedAsTrolley, 
+      		UsedAsStandBy, 
+      		LoadingControlAdviceId, 
+      		PlannedFlightId, 
+      		Remarks, 
+      		ActualWeight, 
+      		TrolleyInd, 
+      		DLSId, 
+      		CreatedUserCode, 
+      		CreatedDateTime,
+      		Manual,
+      		ManifestWeight,
+      		ICSGrossWeight,
+      		IcsULD,
+      		HandlingArea)
+    	values (
+    		#{flightSegmentId}, 
+    		#{uldTrolleyNumber}, 
+      		#{estimatedWeight}, 
+      		#{tareWeight}, 
+      		#{dryIceWeight}, 
+      		#{priorityOfLoading}, 
+      		#{heightCode}, 
+      		#{transferType}, 
+      		#{usedForPerishableContainer}, 
+      		#{usedForExpressCourierContainer}, 
+      		#{usedForTransitUse}, 
+      		#{usedAsTrolley}, 
+      		#{usedAsStandBy}, 
+      		#{loadingControlAdviceId}, 
+      		#{flightId}, 
+      		#{remarks}, 
+      		#{actualWeight}, 
+      		#{trolleyInd}, 
+      		#{dlsId},
+      		#{createdBy},
+      		#{createdOn},
+      		#{manual},
+      		#{manifestWeight},
+      		#{icsGrossWeight},
+      		#{icsULD},
+      		#{handlingArea}
+    	)		
+	</insert>
+
+	<insert id="insertPiggyBackedInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSPiggyBackInfo"
+		useGeneratedKeys="true" keyColumn="DLSUldTrolleyPiggyBackId"
+		keyProperty="dlsUldTrolleyPiggyBackId">
+		insert into Exp_DLSULDPiggyBackedInfo (
+			DLSUldTrolleyId,
+			ULDNumber,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{dlsUldTrolleyId},
+			#{uldNumber},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+	<insert id="insertSHCInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSUldtrolleySHCinfo"
+		useGeneratedKeys="true" keyColumn="DLSSHCId" keyProperty="dlsSHCId">
+		insert into Exp_DLSULDTrolleySHCInfo (
+			DLSUldTrolleyId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{dlsUldTrolleyId},
+			#{specialHandlingCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+	<!-- <insert id="insertAccessoryInfo" parameterType="com.ngen.cosys.export.dls.model.DLSAccessory"
+		useGeneratedKeys="true" keyColumn="DLSULDTrolleyAccessoryInfoId"
+		keyProperty="dlsULDTrolleyAccessoryInfoId">
+		insert into Exp_DLSULDTrolleyAccessoryInfo (
+			DLSUldTrolleyId,
+			TransactionSequenceNo,
+			AccessoryTypeId, 
+			AccessoryPartId,
+			Quantity,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{dlsUldTrolleyId,jdbcType=NUMERIC},
+			#{transactionSequenceNo},
+			#{accessoryTypeId}, 
+			#{accessoryPartId},
+			#{quantity},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert> -->
+
+	<update id="updatePiggyBackInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSPiggyBackInfo">
+		update Exp_DLSULDPiggyBackedInfo
+		set 
+			ULDNumber = #{uldNumber},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			DLSUldTrolleyPiggyBackId = #{dlsUldTrolleyPiggyBackId}
+	</update>
+
+	<!-- <update id="updateAccessoryInfo"
+		parameterType="com.ngen.cosys.export.dls.model.DLSAccessory">
+		update Exp_DLSULDTrolleyAccessoryInfo
+		set 
+			DLSUldTrolleyId = #{dlsUldTrolleyId},
+			AccessoryTypeId = #{accessoryTypeId},
+			AccessoryPartId = #{accessoryPartId},
+			Quantity = #{quantity},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			DLSULDTrolleyAccessoryInfoId = #{dlsULDTrolleyAccessoryInfoId} and 
+			TransactionSequenceNo = #{transactionSequenceNo}
+	</update> -->
+
+	<!-- <update id="updateSHCInfo" parameterType="com.ngen.cosys.export.dls.model.DLSUldtrolleySHCinfo">
+		update Exp_DLSULDTrolleySHCInfo
+		set 
+			DLSUldTrolleyId = #{dlsUldTrolleyId},
+			SpecialHandlingCode = #{specialHandlingCode},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			DLSSHCId = #{dlsSHCId}
+	</update> -->
+	
+	<update id="updateDLSULDTrolley" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD">	
+		update Exp_DLSULDTrolley
+	    set 
+	       	TareWeight = #{tareWeight},
+	     	DryIceWeight = #{dryIceWeight},
+	      	PriorityOfLoading = #{priorityOfLoading},
+	      	HeightCode = #{heightCode},
+	      	TransferType = #{transferType},
+	      	UsedForPerishableContainer = #{usedForPerishableContainer},
+	      	UsedForExpressCourierContainer = #{usedForExpressCourierContainer},
+	     	UsedForTransitUse = #{usedForTransitUse},
+	      	UsedAsTrolley = #{usedAsTrolley},
+	      	UsedAsStandBy = #{usedAsStandBy},
+	      	LoadingControlAdviceId = #{loadingControlAdviceId},
+	      	Remarks = #{remarks},
+	      	ActualWeight = #{actualWeight},
+	      	TrolleyInd = #{trolleyInd},
+	      	FlightSegmentId = #{flightSegmentId},
+	      	ManifestWeight=#{manifestWeight},
+	      	ICSGrossWeight=#{icsGrossWeight},
+	      	IcsULD=#{icsULD},
+	      	<choose>
+	    		<when test="handlingArea != null">
+	    			 HandlingArea = #{handlingArea},
+	    		</when>
+	    		<otherwise>
+	    		 HandlingArea = #{terminal} ,
+	    		</otherwise>
+	    	</choose>
+	      
+	      	Manual = #{manual},
+	     	LastUpdatedUserCode = #{modifiedBy},
+	     	LastUpdatedDateTime = #{modifiedOn}
+	    where
+	    	FlightSegmentId = #{flightSegmentId} 
+	    	<choose>
+	    		<when test="dlsUldTrolleyId != null">
+	    			and DLSUldTrolleyId = #{dlsUldTrolleyId}
+	    		</when>
+	    		<otherwise>
+	    			and ULDTrolleyNumber = #{uldTrolleyNumber} 
+	    		</otherwise>
+	    	</choose>	    
+  </update>
+	
+	<delete id="deletePiggyBackInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSPiggyBackInfo">
+    	delete from Exp_DLSULDPiggyBackedInfo where DLSUldTrolleyPiggyBackId = #{dlsUldTrolleyPiggyBackId}
+   </delete>
+   
+   <!-- <delete id="deleteAccessoryInfo" parameterType="com.ngen.cosys.export.dls.model.DLSAccessory">
+    delete from Exp_DLSULDTrolleyAccessoryInfo where DLSULDTrolleyAccessoryInfoId = #{dlsULDTrolleyAccessoryInfoId} and TransactionSequenceNo = #{transactionSequenceNo}
+   </delete> -->
+   
+  <!-- <delete id="deleteSHCInfo" parameterType="com.ngen.cosys.export.dls.model.DLSUldtrolleySHCinfo">
+    delete from Exp_DLSULDTrolleySHCInfo where DLSSHCId = #{dlsSHCId}
+  </delete> -->
+  
+  <!-- <delete id="deleteDLSULDTrolley" parameterType="com.ngen.cosys.export.dls.model.DLSULD">
+    delete from Exp_DLSULDTrolley where DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </delete> -->
+  
+  <delete id="deletePiggyBackInfoList" parameterType="list">
+    	delete from Exp_DLSULDPiggyBackedInfo
+    	where DLSUldTrolleyId IN
+    	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+   </delete>
+   
+   <delete id="deleteAccessoryInfoList" parameterType="list">
+    delete from Exp_DLSULDTrolleyAccessoryInfo
+    where DLSUldTrolleyId IN
+    	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+   </delete>
+   
+  <delete id="deleteSHCInfoList" parameterType="list">
+    delete from Exp_DLSULDTrolleySHCInfo
+    where DLSUldTrolleyId IN
+    	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+  </delete>
+  
+  <delete id="deleteDLSULDTrolleyList" parameterType="list">
+    delete from Exp_DLSULDTrolley
+    where DLSUldTrolleyId IN
+    	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+  </delete>
+  
+  <!-- <resultMap id="DLSULDTrollyResultMap" type="com.ngen.cosys.export.dls.model.DLSULD">
+    <id column="FlightSegmentId" property="flightSegmentId" />
+    <id column="ULDTrolleyNumber" property="uldTrolleyNumber" />
+    <result column="DLSUldTrolleyId" property="dlsUldTrolleyId" />
+    <result column="TrolleyInd" property="trolleyInd" />
+    <result column="TareWeight" property="tareWeight" />
+    <result column="DryIceWeight" property="dryIceWeight" />
+    <result column="flightKey" property="flightKey" />
+    <result column="flightOriginDate" property="flightOriginDate" />
+    <result column="HeightCode" property="heightCode" />
+    <result column="TransferType"  property="transferType" />
+    <result column="UsedForPerishableContainer" property="usedForPerishableContainer" />
+    <result column="UsedForExpressCourierContainer" property="usedForExpressCourierContainer" />
+    <result column="UsedForTransitUse" property="usedForTransitUse" />
+    <result column="UsedAsTrolley" property="usedAsTrolley" />
+    <result column="UsedAsStandBy" property="usedAsStandBy" />
+    <result column="LoadingControlAdviceId" property="loadingControlAdviceId" />
+    <result column="Remarks" property="remarks" />
+    <result column="ActualWeight" property="actualWeight" />
+    <result column="DLSId" property="dlsId" />
+    <result column="loadingControlAdvice" property="loadingControlAdvice" />
+    <result column="BUPUnitType" property="bupUnitType" />
+    <result column="TagUnitType" property="tagUnitType" />
+    <result column="HandlingCode" property="handlingCode" />
+    <result column="OverhangingInd" property="overhangingInd" />
+    <result column="ContainerCount" property="containerCount" />
+    <result column="PalletTypeFlag" property="palletTypeFlag" />
+    <result column="ValidUld" property="validUld" />
+    <result column="Manual" property="manual" />
+    <result column="flagCRUD" property="flagCRUD" />
+    <result column="FlightBoardPoint" property="boardPoint" />
+    <result column="FlightOffPoint" property="offPoint" />
+    <result column="FlightOffPoint" property="destination" />
+    <result column="RampHandover" property="rampHandover" />
+    <result column="ManifestWeight" property="manifestWeight" />
+    <result column="ICSGrossWeight" property="icsGrossWeight" />
+    <result column="IcsULD" property="icsULD" />
+    <result column="HandlingArea" property="handlingArea" />
+    <result column="NetWeight" property="netWeight" />
+    <result column="WeightDifference" property="weightDifference" />
+    <result column="ManifestWeight" property="manifestWeight" />
+    <collection select="fetchSHCInfoList" property="shcs" 
+    		ofType="com.ngen.cosys.export.dls.model.DLSUldtrolleySHCinfo" 
+    		javaType="list" column="dlsUldTrolleyId=DLSUldTrolleyId"></collection>
+    <collection select="fetchRoute" property="routeList" 
+    		ofType="com.ngen.cosys.export.dls.model.DLSNFMRoute" 
+    		javaType="list" column="dlsUldTrolleyId=DLSUldTrolleyId"></collection>
+    <collection select="fetchAccessoryInfoList" property="accessoryList"  
+    		ofType="com.ngen.cosys.export.dls.model.DLSAccessory" 
+    		javaType="list" column="dlsUldTrolleyId=DLSUldTrolleyId"></collection>
+     <collection select="fetchPiggyBackInfoList" property="piggyBackUldList" 
+   			ofType="com.ngen.cosys.satssginterfaces.mss.model.DLSPiggyBackInfo" 
+   			javaType="list" column="dlsUldTrolleyId=DLSUldTrolleyId"></collection>
+    <collection select="fetchContentCode" property="contentCodeList" 
+    		ofType="com.ngen.cosys.satssginterfaces.mss.model.DlsContentCode" 
+    		javaType="list" column="dlsUldTrolleyId=DLSUldTrolleyId"></collection>
+  </resultMap> -->
+  
+   <!-- <resultMap id="SHCInfoResultMap" type="com.ngen.cosys.export.dls.model.DLSUldtrolleySHCinfo">
+   	<id column="DLSId" property="dlsId" />
+    <id column="SpecialHandlingCode" property="specialHandlingCode" />
+    <result column="DLSSHCId" property="dlsSHCId" />
+    <result column="flagCRUD" property="flagCRUD" />
+  </resultMap> -->
+  
+   <!-- <resultMap id="PiggyBackedResultMap" type="com.ngen.cosys.export.dls.model.DLSPiggyBackInfo">
+    <id column="DLSId" property="dlsId" />
+    <id column="ULDNumber" property="uldNumber" />
+    <result column="DLSUldTrolleyPiggyBackId" property="dlsUldTrolleyPiggyBackId" />
+    <result column="flagCRUD" property="flagCRUD" />
+  </resultMap> -->
+  
+   <!-- <resultMap id="AccesoryInforesultMap" type="com.ngen.cosys.export.dls.model.DLSAccessory">
+    <id column="DLSId" property="dlsId" />
+    <id column="TransactionSequenceNo" property="transactionSequenceNo" />
+    <result column="DLSULDTrolleyAccessoryInfoId" property="dlsULDTrolleyAccessoryInfoId" />
+    <result column="AccessoryTypeId" property="accessoryTypeId" />
+    <result column="AccessoryPartId" property="accessoryPartId" />
+    <result column="Quantity" property="quantity" />
+    <result column="flagCRUD" property="flagCRUD" />
+  </resultMap> -->
+  
+  <!-- <resultMap id="FlightResrultMap" type="com.ngen.cosys.export.dls.model.DLSFlight">
+    <id column="FlightOriginDate" property="flightOriginDate" />
+    <result column="Flight_ID" property="flightId" />
+    <result column="Flight_ID" property="dls.flightId" />
+    <result column="FlightKey"  property="flightKey" />
+    <result column="FlightStatus" property="status" />
+    <result column="TenantId" property="tenantId" />
+    <result column="DateSTD" property="std" />
+    <result column="DateETD"  property="etd" />
+    <result column="status" property="status" />
+     <result column="DateSTD" property="flightOriginDate" />
+    <result column="FactDescription" property="remark" />
+    <result column="Finalize" property="finalize"/>
+    <result column="DLSCompletedAt" property="finalizeDate"/>
+    <result column="DLSStatus" property="dLSStatus"/>
+    <result column="DLSVersion" property="dLSVersion"/> 
+    <result column="OutboundAircraftRegNo" property="aircraftRegistration"/> 
+    <association 
+    	property="dls" 
+    	select="selectDLS" 
+    	column="{flightId=Flight_ID}" 
+    	javaType="com.ngen.cosys.export.dls.model.DLS"/>
+    <association 
+    	property="routingInfo" 
+    	select="fetchSegment" 
+    	column="{flightId=Flight_ID}" 
+    	javaType="String"/>
+     <collection 
+     	property="segment" 
+    	ofType="com.ngen.cosys.export.dls.model.DLSSegment" 
+    	javaType="list">
+    		<result column="FlightOffPoint" property="offPoint"/>
+    		<result column="FlightBoardPoint" property="boardPoint"/>
+    </collection>
+  </resultMap> -->
+  
+    <!-- <select id="fetchDLSFlight" parameterType="com.ngen.cosys.export.dls.model.DLSFlight" resultMap="FlightResrultMap">
+    select 
+		Flt_OperativeFlight.FlightKey,
+	    Flt_OperativeFlight_Legs.FlightOffPoint,
+		Flt_OperativeFlight_Legs.FlightBoardPoint,
+	    Flt_OperativeFlight.Flight_ID,
+	    Flt_OperativeFlight.DateSTD as FlightOriginDate,
+	    Flt_OperativeFlight.FlightStatus,
+	    Flt_OperativeFlight.OutboundAircraftRegNo,
+	    Flt_OperativeFlight_Legs.DateSTD,
+	    Flt_OperativeFlight_Legs.DateETD,
+	    case when Exp_FlightEvents.DLSCompletedBy is null then 0 else 1 end Finalize ,
+	    Exp_FlightEvents.DLSCompletedAt,
+	    Exp_FlightEvents.DLSStatus,
+	    Exp_FlightEvents.dLSVersion,
+		(select
+			STRING_AGG(FlightFacts.FactDescription, ' ')
+		from(
+			select
+				distinct Flt_OperativeFlight_Facts.FactDescription
+			from	
+				Flt_OperativeFlight_Facts
+			where
+				Flt_OperativeFlight_Facts.Flight_ID = Flt_OperativeFlight.Flight_ID) FlightFacts
+		) as FlightFacts,
+	    case when
+				Exp_FlightEvents.FlightCompletedAt is not null then
+					'FlightCompleted'
+			when
+				Exp_FlightEvents.ManifestCompletedAt is not null then
+					'ManifestCompleted'
+			when
+				Exp_FlightEvents.DLSCompletedAt is not null then 
+					'DLSCompleted'
+			when 
+				Exp_FlightEvents.BuildupCompletedAt is not null then
+					'BuildupCompleted'
+			else
+					'Worklist Created' 
+			end as status		
+	from 
+		Flt_OperativeFlight inner join
+		Flt_OperativeFlight_Legs
+			on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and	
+				Flt_OperativeFlight_Legs.FlightBoardPoint = 'SIN' left join 
+		Exp_FlightEvents 
+			on Flt_OperativeFlight_Legs.Flight_ID = Exp_FlightEvents.FlightId		
+	<where>
+		<choose>			
+			<when test="flightId != null">
+				Flt_OperativeFlight.Flight_ID = #{flightId}
+			</when>
+			<otherwise>
+				Flt_OperativeFlight.Flightkey = #{flightKey} and
+				cast(Flt_OperativeFlight_Legs.DateSTD  as date )  = cast(#{flightOriginDate} as date)
+			</otherwise>
+		</choose>
+	</where> 
+  </select>     --> 
+
+  <!-- <select id="fetchSHCInfoList" resultMap="SHCInfoResultMap" >
+    select 
+    	DLSUldTrolleyId, 
+    	SpecialHandlingCode, 
+    	DLSSHCId, 
+    	'R' as flagCRUD
+    from 
+    	Exp_DLSULDTrolleySHCInfo
+    where 
+    	DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </select> -->
+    
+  <!-- <select id="fetchAccessoryInfoList" resultMap="AccesoryInforesultMap">
+  	select 
+  		DLSUldTrolleyId, 
+  		TransactionSequenceNo, 
+  		DLSULDTrolleyAccessoryInfoId,
+  		AccessoryTypeId, 
+  		AccessoryPartId, 
+    	Quantity,    	
+  		'R' as flagCRUD
+    from 
+    	Exp_DLSULDTrolleyAccessoryInfo
+    where 
+    	DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </select> -->
+  
+  <!-- <select id="fetchPiggyBackInfoList"  resultMap="PiggyBackedResultMap">
+  	select 
+    	DLSUldTrolleyId, 
+    	ULDNumber, 
+    	DLSUldTrolleyPiggyBackId, 
+    	'R' as flagCRUD
+    from 
+    	Exp_DLSULDPiggyBackedInfo
+  	where 
+  		DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </select> -->
+  
+  <insert id="insertDLS" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLS" useGeneratedKeys="true" keyColumn="DLSId" keyProperty="dlsId">
+    insert into Exp_DLS (
+    	FlightId,
+    	CreatedUserCode,
+    	CreatedDateTime
+    ) values (
+    	#{flightId},
+    	#{createdBy},
+    	#{createdOn}
+    )
+  </insert>
+   
+   <!-- <resultMap id="ResultMapDLS" type="com.ngen.cosys.export.dls.model.DLS">
+    	<result column="DLSId" property="dlsId" />
+    	<result column="FlightId" property="flightId" />
+	    <collection 
+	    	property="osiList" 
+	    	javaType="list" 
+	    	select="fetchOsiList" 
+	    	ofType="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi" 
+	    	column="{dlsId = DLSId}" 
+	    	autoMapping="false"/>
+	     <collection 
+	     	property="systemOsiList" 
+	     	javaType="list" 
+	     	select="fetchSystemOsiList" 
+	   		ofType="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi" 
+	   		column="{dlsId = DLSId}" 
+	   		autoMapping="false"/>
+	    <collection 
+	    	property="airLineInstruction" 
+	    	javaType="list" 
+	    	select="fetchAirlineInstruction" 
+	    	ofType="com.ngen.cosys.export.airlineloadinstr.model.AirlineLoadingInstructions" 
+	    	column="{dlsId = DLSId,flightId=FlightId}" 
+	    	autoMapping="false"/>
+	    <collection 
+    		property="uldTrolleyList" 
+    		javaType="list" 
+    		select="fetchDLSULDTrolleyList" 
+    		ofType="com.ngen.cosys.export.dls.model.DLSULD" 
+    		column="{dlsId = DLSId}" 
+    		autoMapping="false"/>
+  </resultMap> -->
+   
+  <!-- <select id="selectDLS" resultMap="ResultMapDLS" >
+	select 
+		DLSId,
+      	FlightId
+  	from
+  		Exp_DLS
+  	where 
+  		FlightId = #{flightId}
+  </select> -->
+  
+<!--   <select id="fetchSegment"
+  	parameterType="com.ngen.cosys.export.dls.model.DLSFlight" 
+  	resultType="String">
+	with segInfo as(
+		select 
+			segs.FlightOffPoint, 
+			FlightSegmentOrder
+		from 
+			Flt_OperativeFlight_Segments segs
+		where 
+			segs.FlightBoardPoint = #{tenantId}
+		and 
+			segs.Flight_ID=#{flightId}
+	)select 
+		#{tenantId} + '-' + STRING_AGG(FlightOffPoint,'-') WITHIN GROUP (ORDER BY FlightSegmentOrder ASC)
+	from 
+		segInfo
+  </select> -->
+  
+   <!-- <resultMap id="AirlineInstructionResultMap" type="com.ngen.cosys.export.airlineloadinstr.model.AirlineLoadingInstructions">
+    <result column="PalletForFlightUse" property="palletForFlightUse" />
+    <result column="PalletForFlightContainer" property="palletForFlightContainer" />
+    <result column="PalletForTransitUse" property="palletForTransitUse" />
+    <result column="ContainerForTransitUse" property="containerForTransitUse" />
+    <result column="PalletForCargoUse" property="palletForCargoUse" />
+    <result column="ContainerForCargoUse" property="containerForCargoUse" />
+    <result column="LoadingInstruction" property="loadingInstruction" />
+  </resultMap> -->
+  
+ 	<!-- <select id="fetchAirlineInstruction" resultMap="AirlineInstructionResultMap">
+	With AirlineLoadingInstruction AS(
+			select  
+				PalletForFlightUse as PalletForFlightUse,
+				ContainerForFlightUse as PalletForFlightContainer,
+				PalletForCargoUse as PalletForCargoUse,
+				ContainerForCargoUse as ContainerForCargoUse,
+				PalletForTransitUse as PalletForTransitUse,
+				ContainerForTransitUse as ContainerForTransitUse,
+				'flight' as LoadingInstruction
+			from  
+				Exp_AirlineLoadingInstructions
+			where 
+				FlightId = #{flightId}
+		), UsedAirlineLoadingByDLS AS(
+			select
+				case when
+					Uld_UldType.PalletTypeFlag = 'P' then
+						1
+					else 
+						0
+					end Pallet,
+				case when
+					Uld_UldType.PalletTypeFlag = 'C' then
+						1
+					else 
+						0
+					end Container,
+				case when
+					(Exp_DLSULDTrolley.TransferType is not null) then
+						1
+					else
+						0
+					end Transit,
+				Exp_DLSULDTrolley.UsedAsTrolley,
+				Exp_DLSULDTrolley.UsedAsStandBy,
+				isnull(Exp_DLSULDTrolley.UsedForTransitUse, 0) UsedForTransitUse,
+				case when(select count(1) 
+					from Exp_DLSULDTrolleyContentCodes 
+					where Exp_DLSULDTrolleyContentCodes.Code = 'C') > 0 then
+						1
+					else
+						0
+					end ContentCargo
+			from	
+				Exp_DLS inner join
+				Exp_DLSULDTrolley
+					on Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId inner join
+				Uld_UldMaster
+					on Exp_DLSULDTrolley.ULDTrolleyNumber = Uld_UldMaster.UldKey inner join
+				Uld_UldType
+					on Uld_UldMaster.UldType = Uld_UldType.UldType
+			where
+				Exp_DLS.DLSId = #{dlsId}
+		)
+		select
+			AirlineLoadingInstruction.PalletForFlightUse,
+			AirlineLoadingInstruction.PalletForFlightContainer,
+			AirlineLoadingInstruction.ContainerForCargoUse,
+			AirlineLoadingInstruction.PalletForCargoUse,
+			AirlineLoadingInstruction.PalletForTransitUse,
+			AirlineLoadingInstruction.ContainerForTransitUse,
+			AirlineLoadingInstruction.LoadingInstruction
+		from
+			AirlineLoadingInstruction
+		union
+			select
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 0 and
+						UsedAirlineLoadingByDLS.ContentCargo = 0 and
+						UsedAirlineLoadingByDLS.UsedAsStandBy = 1
+					) PalletForFlightUse,
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 1 and
+						UsedAirlineLoadingByDLS.ContentCargo = 1 and
+						UsedAirlineLoadingByDLS.UsedAsStandBy = 1
+					) PalletForFlightContainer,
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 0 and
+						UsedAirlineLoadingByDLS.ContentCargo = 1
+					) PalletForCargoUse,
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 1 and
+						UsedAirlineLoadingByDLS.ContentCargo = 1
+					) ContainerForCargoUse,
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 0 and
+						(UsedAirlineLoadingByDLS.UsedForTransitUse = 1 OR 
+							UsedAirlineLoadingByDLS.Transit = 1)
+					) PalletForTranitUse,
+				(select count(1)
+					from 
+						UsedAirlineLoadingByDLS
+					where
+						UsedAirlineLoadingByDLS.Container = 1 and
+						(UsedAirlineLoadingByDLS.UsedForTransitUse = 1 OR 
+							UsedAirlineLoadingByDLS.Transit = 1)
+					) ContainerForTranitUse,
+				'dls' LoadingInstruction
+			from
+				UsedAirlineLoadingByDLS
+  </select> -->
+  
+  <!-- <select id="fetchDLSULDTrolleyList"
+  	parameterType="com.ngen.cosys.export.dls.model.DLS"
+  	resultMap="DLSULDTrollyResultMap">
+  	With DLSULDTrolleyDetails AS(select 
+              ROW_NUMBER() OVER(Order By 
+                                   isnull((select 
+                           PalletTypeFlag 
+                     from 
+                           Uld_UldType 
+                     where 
+                           UldType = SUBSTRING(Exp_DLSULDTrolley.ULDTrolleyNumber,1,3)), 'Z'),
+                     Exp_DLSULDTrolley.ULDTrolleyNumber ,
+                                  Exp_DLSULDTrolley.HeightCode
+                    ) SortOrder,
+            (select 
+                           PalletTypeFlag 
+                     from 
+                            Uld_UldType 
+                     where 
+                           UldType = SUBSTRING(Exp_DLSULDTrolley.ULDTrolleyNumber,1,3)) PalletTypeFlag,
+           (select 
+                           ContainerCount 
+                     from 
+                           Uld_UldType 
+                     where 
+                           UldType = SUBSTRING(Exp_DLSULDTrolley.ULDTrolleyNumber,1,3)) ContainerCount,
+              case when
+                     (select
+                           count(1)
+                     from
+                           Exp_HandOverContainerTrolleyInfo
+                     where
+                           Exp_HandOverContainerTrolleyInfo.ContainerTrolleyNumber = Exp_DLSULDTrolley.ULDTrolleyNumber) > 0 then
+                           1
+                     else
+                           0
+              end as RampHandover,
+           Flt_OperativeFlight_Segments.FlightBoardPoint FlightBoardPoint,
+              Flt_OperativeFlight_Segments.FlightOffPoint FlightOffPoint,
+           case when
+                     (select 
+                           count(1) 
+                     from 
+                           Uld_UldMaster 
+                     where 
+                           Uld_UldMaster.UldKey = Exp_DLSULDTrolley.ULDTrolleyNumber and
+                           Uld_UldMaster.UldType is not null and
+                           Uld_UldMaster.UldNumber is not null and
+                           Uld_UldMaster.UldCarrierCode is not null) > 0 then
+                           1
+                     else
+                           0
+                     end as ValidUld,
+              Exp_DLSULDTrolley.FlightSegmentId, 
+              Exp_DLSULDTrolley.ULDTrolleyNumber, 
+              Exp_DLSULDTrolley.TrolleyInd, 
+              Exp_DLSULDTrolley.TareWeight, 
+              Exp_DLSULDTrolley.DryIceWeight, 
+           Exp_DLSULDTrolley.PriorityOfLoading, 
+              Exp_DLSULDTrolley.HeightCode, 
+              Exp_DLSULDTrolley.TransferType, 
+              Exp_DLSULDTrolley.UsedForPerishableContainer, 
+                       Exp_DLSULDTrolley.UsedForExpressCourierContainer, 
+              Exp_DLSULDTrolley.UsedForTransitUse, 
+              Exp_DLSULDTrolley.UsedAsTrolley, 
+              Exp_DLSULDTrolley.UsedAsStandBy, 
+                       Exp_DLSULDTrolley.LoadingControlAdviceId, 
+              Exp_DLSULDTrolley.Remarks,
+              Exp_DLSULDTrolley.ActualWeight,
+              Exp_DLSULDTrolley.DLSUldTrolleyId,
+              Exp_DLSULDTrolley.BUPUnitType,
+              Exp_DLSULDTrolley.TagUnitType,
+              Exp_DLSULDTrolley.HandlingCode,
+              Exp_DLSULDTrolley.OverhangingInd,
+              Exp_DLSULDTrolley.Manual,
+                       Exp_DLSULDTrolley.ManifestWeight,
+              Exp_DLSULDTrolley.ICSGrossWeight,
+              Exp_DLSULDTrolley.IcsULD,
+              Exp_DLSULDTrolley.HandlingArea,   
+              'R' as flagCRUD
+       from 
+              Exp_DLSULDTrolley inner join 
+              Flt_OperativeFlight_Segments
+                     on Exp_DLSULDTrolley.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId left join
+              Uld_UldType
+                     on (substring(Exp_DLSULDTrolley.ULDTrolleyNumber, 0, 3) = Uld_UldType.UldType) and
+                           Exp_DLSULDTrolley.UsedAsTrolley = 0
+       where 
+              Exp_DLSULDTrolley.DLSId = #{dlsId}
+       )select
+              DLSULDTrolleyDetails.SortOrder,
+              DLSULDTrolleyDetails.DLSUldTrolleyId,
+              DLSULDTrolleyDetails.PalletTypeFlag,
+              DLSULDTrolleyDetails.ContainerCount,
+              DLSULDTrolleyDetails.RampHandover,
+              DLSULDTrolleyDetails.FlightBoardPoint,
+              DLSULDTrolleyDetails.FlightOffPoint,
+              DLSULDTrolleyDetails.ValidUld,
+              DLSULDTrolleyDetails.FlightSegmentId,
+              DLSULDTrolleyDetails.ULDTrolleyNumber,
+              DLSULDTrolleyDetails.TrolleyInd,
+              DLSULDTrolleyDetails.ActualWeight,
+              DLSULDTrolleyDetails.TareWeight,
+              DLSULDTrolleyDetails.DryIceWeight,
+              DLSULDTrolleyDetails.PriorityOfLoading,
+              DLSULDTrolleyDetails.HeightCode,
+              DLSULDTrolleyDetails.TransferType,
+              DLSULDTrolleyDetails.UsedForPerishableContainer,
+              DLSULDTrolleyDetails.UsedForExpressCourierContainer,
+              DLSULDTrolleyDetails.UsedForTransitUse,
+              DLSULDTrolleyDetails.UsedAsTrolley,
+              DLSULDTrolleyDetails.UsedAsStandBy,
+              DLSULDTrolleyDetails.LoadingControlAdviceId,
+              DLSULDTrolleyDetails.Remarks,
+              DLSULDTrolleyDetails.BUPUnitType,
+              DLSULDTrolleyDetails.TagUnitType,
+              DLSULDTrolleyDetails.HandlingCode,
+              DLSULDTrolleyDetails.OverhangingInd,
+              DLSULDTrolleyDetails.Manual,
+              DLSULDTrolleyDetails.HandlingArea,
+              case 
+                when (DLSULDTrolleyDetails.ActualWeight > 0 and      
+                                         DLSULDTrolleyDetails.TrolleyInd = 0) then        
+                           (DLSULDTrolleyDetails.ActualWeight - DLSULDTrolleyDetails.TareWeight) 
+                           when DLSULDTrolleyDetails.TrolleyInd = 1 then
+                                  DLSULDTrolleyDetails.ActualWeight
+                           else
+                     null
+              end as NetWeight,
+              DLSULDTrolleyDetails.ManifestWeight,
+              case 
+                     when DLSULDTrolleyDetails.ActualWeight > 0 then        
+                           ((DLSULDTrolleyDetails.ActualWeight - 
+                                         DLSULDTrolleyDetails.TareWeight) - DLSULDTrolleyDetails.ManifestWeight) 
+              else
+                     null
+              end as WeightDifference
+       from
+              DLSULDTrolleyDetails
+       order by
+              DLSULDTrolleyDetails.SortOrder
+  </select> -->
+  
+   <resultMap id="ResultMapContentCode" type="com.ngen.cosys.satssginterfaces.mss.model.DlsContentCode">
+    <id column="DLSUldTrolleyId" property="dlsUldTrolleyId" />
+    <id column="Code" property="code" />
+    <result column="DLSContentId" property="dlsContentId" />
+  </resultMap>
+  
+  <select id="fetchContentCode" resultMap="ResultMapContentCode">
+    select 
+    	DLSUldTrolleyId, 
+    	Code, 
+    	DLSContentId
+    from 
+    	Exp_DLSULDTrolleyContentCodes
+    where 
+    	DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </select>
+  
+  <insert id="insertContentCode" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DlsContentCode" useGeneratedKeys="true" keyColumn="DLSContentId" keyProperty="dlsContentId">
+    insert into Exp_DLSULDTrolleyContentCodes (
+    	DLSUldTrolleyId, 
+    	Code,
+    	CreatedUserCode,
+    	CreatedDateTime
+	)values(
+		#{dlsUldTrolleyId}, 
+		#{code}, 
+		#{createdBy},
+		#{createdOn}
+	)
+  </insert>
+  
+  <delete id="deleteContentCode" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD">
+    delete from Exp_DLSULDTrolleyContentCodes where DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </delete>
+  
+  <delete id="deleteContentCodeList" parameterType="list">
+    delete from Exp_DLSULDTrolleyContentCodes
+    where DLSUldTrolleyId IN
+    	<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+  </delete>
+  
+  <!-- <resultMap id="OsiResultMap" type="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi">
+    <id column="DLSId" property="dlsId" />
+    <id column="TransactionSequenceNo" property="transactionSequenceNo" />
+    <result column="DLSULDTrolleyOSI" property="dlsULDTrolleyOsiId" />
+    <result column="Detail" property="detail" />
+    <result column="Manual" property="manual" />
+    <result column="CreatedUserCode" property="createdBy" />
+    <result column="CreatedDateTime" property="createdOn" /> 
+    <result column="FlagCRUD" property="flagCRUD" /> 
+  </resultMap> -->
+    
+  <!-- <select id="fetchOsiList" resultMap="OsiResultMap">
+  	select 
+  		CreatedUserCode,
+  		CreatedDateTime,
+   		DLSId, 
+   		TransactionSequenceNo, 
+   		DLSULDTrolleyOSI, 
+   		Detail,
+   		Manual,
+   		'R' as FlagCRUD
+    from 
+    	Exp_DLSULDTrolleyOSI
+    where 
+    	DLSId = #{dlsId} and 
+    	Manual = 1
+  </select> -->
+  
+  <!-- <select id="fetchSystemOsiList" resultMap="OsiResultMap">
+    select 
+    	DLSId, 
+    	TransactionSequenceNo, 
+    	DLSULDTrolleyOSI, 
+    	Detail, 
+    	Manual,
+    	'R' as FlagCRUD
+    from 
+    	Exp_DLSULDTrolleyOSI
+    where 
+    	DLSId = #{dlsId} and 
+    	Manual = 0
+  </select> -->
+  
+  <!-- <update id="updateDLSOSI" parameterType="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi">
+  	update Exp_DLSULDTrolleyOSI
+    set 
+    	Detail = #{detail}
+    where 
+    	DLSId = #{dlsId} and 
+    	TransactionSequenceNo = #{transactionSequenceNo}
+  </update> -->
+  
+  <!-- <insert id="insertDLSOSI" parameterType="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi" useGeneratedKeys="true" keyColumn="DLSULDTrolleyOSI" keyProperty="dlsULDTrolleyOsiId">
+    insert into Exp_DLSULDTrolleyOSI (
+    	DLSId, 
+    	TransactionSequenceNo, 
+    	Detail, 
+    	Manual,
+    	CreatedUserCode,
+    	CreatedDateTime
+   	)values (
+   		#{dlsId},  
+   		#{transactionSequenceNo}, 
+   		#{detail}, 
+   		#{manual}, 
+   		#{createdBy},
+   		#{createdOn}
+   	)
+  </insert> -->
+  
+   <!-- <delete id="deleteDLSOSIID" parameterType="com.ngen.cosys.export.dls.model.DLSuldtrolleyosi">
+   		delete from Exp_DLSULDTrolleyOSI where DLSULDTrolleyOSI = #{dlsULDTrolleyOsiId}
+  </delete> -->
+  
+   <select id="selectDLSBasedId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLS" resultType="com.ngen.cosys.satssginterfaces.mss.model.DLS" >
+	select 
+		DLSId dlsId,
+      	FlightId flightId
+  	from 
+  		Exp_DLS
+  	where 
+  		FlightId = #{flightId}
+  </select>
+  
+  <!-- <resultMap id="RouteResultMap" type="com.ngen.cosys.export.dls.model.DLSNFMRoute">
+    <id column="DLSUldTrolleyId" property="dlsUldTrolleyId" />
+    <id column="AirportCode" property="airportCode" />
+    <result column="DLSNFMRouteId" property="dlsNFMRouteId" />
+  </resultMap> -->
+  
+  <!-- <select id="fetchRoute" resultMap="RouteResultMap">
+    select 
+   		DLSUldTrolleyId, 
+   		AirportCode, 
+   		DLSNFMRouteId
+    from 
+    	Exp_DLSNFMRoute
+    where 
+    	DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </select> -->
+  
+   <!-- <delete id="deleteRoute" parameterType="com.ngen.cosys.export.dls.model.DLSULD">
+		delete from Exp_DLSNFMRoute where DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </delete> -->
+  
+  <delete id="deleteRouteList" parameterType="list">
+    delete from Exp_DLSNFMRoute where DLSUldTrolleyId  IN
+    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        	#{item.dlsUldTrolleyId}
+  		</foreach>
+  </delete>
+  
+   <!-- <insert id="insertRouteInfo" parameterType="com.ngen.cosys.export.dls.model.DLSNFMRoute">
+    insert into Exp_DLSNFMRoute(
+    	DLSUldTrolleyId, 
+    	AirportCode,
+    	CreatedUserCode,
+    	CreatedDateTime
+	)values(
+		#{dlsUldTrolleyId}, 
+		#{airportCode},
+		#{createdBy},
+		#{createdOn}
+	)
+  </insert> -->
+  
+  <!-- <update id="updateDLSNFM" parameterType="com.ngen.cosys.export.dls.model.DLSULD">
+  	update Exp_DLSULDTrolley
+    set 
+    	BUPUnitType = #{bupUnitType},
+      	TagUnitType = #{tagUnitType},
+     	HandlingCode = #{handlingCode},
+      	OverhangingInd = #{overhangingInd}
+    where 
+    	DLSUldTrolleyId = #{dlsUldTrolleyId}
+  </update> -->
+  
+  <!-- <select id="selectStandByDLSOsi" parameterType="com.ngen.cosys.export.dls.model.DLS" resultType="com.ngen.cosys.export.dls.model.OSI">
+  	select 
+	   	FlightBoardPoint flightBoardPoint,
+	  	FlightOffPoint flightOffPoint,
+      	ULDTrolleyNumber uldTrolleyNumber,
+     	ActualWeight actualWeight,
+	  	SpecialHandlingCode specialHandlingCode,
+	  	dls.FlightSegmentId flightSegmentId,
+	  	dls.HeightCode contourIndecator
+  	from
+  		Exp_DLSULDTrolley dls inner join 
+  		Flt_OperativeFlight_Segments seg 
+  			on dls.FlightSegmentId = seg.FlightSegmentId left join 
+  		Exp_DLSULDTrolleySHCInfo shc on dls.DLSUldTrolleyId = shc.DLSUldTrolleyId	
+  	where 
+  		DLSId = #{dlsId} and 
+  		TrolleyInd = 0 and 
+  		UsedAsStandBy = 1 and 
+  		dls.ULDTrolleyNumber is not null
+  </select> -->
+  
+  <!-- <select id="selectPDOSI" parameterType="com.ngen.cosys.export.dls.model.DLS" resultType="com.ngen.cosys.export.dls.model.OSI">
+  	select 
+	   	FlightBoardPoint flightBoardPoint,
+	  	FlightOffPoint flightOffPoint,
+      	ULDTrolleyNumber uldTrolleyNumber,
+	  	dls.FlightSegmentId flightSegmentId
+	from 
+		Exp_DLSULDTrolley dls inner join 
+		Flt_OperativeFlight_Segments seg 
+			on dls.FlightSegmentId = seg.FlightSegmentId	
+  	where 
+  		dls.DLSId = #{dlsId} and 
+  		dls.TrolleyInd = 1 and 
+  		dls.ULDTrolleyNumber is not null
+  </select> -->
+  
+  <!-- <select id="selectBTOSI" parameterType="com.ngen.cosys.export.dls.model.DLS" resultType="com.ngen.cosys.export.dls.model.OSI">
+  	select  
+	   	FlightBoardPoint flightBoardPoint,
+	  	FlightOffPoint flightOffPoint,
+      	ULDTrolleyNumber uldTrolleyNumber,
+	  	dls.FlightSegmentId flightSegmentId
+	from 
+		Exp_DLSULDTrolley dls inner join 
+		Flt_OperativeFlight_Segments seg 
+			on dls.FlightSegmentId = seg.FlightSegmentId	
+  	where 
+  		dls.DLSId = #{dlsId} and 
+  		dls.UsedAsTrolley = 1 and 
+  		dls.TrolleyInd = 0 and 
+  		dls.ULDTrolleyNumber is not null
+  </select> -->
+  
+  <!-- <select id="selectPiggyBackOSI" parameterType="com.ngen.cosys.export.dls.model.DLS" resultType="com.ngen.cosys.export.dls.model.OSI">
+  	select 
+		FlightBoardPoint flightBoardPoint,
+	  	FlightOffPoint flightOffPoint,
+      	piggy.ULDNumber piggyUldTrolleyNumber,
+	  	dls.FlightSegmentId flightSegmentId,
+	  	dls.ULDTrolleyNumber uldTrolleyNumber
+  	from 
+  		Exp_DLSULDTrolley dls inner join 
+  		Flt_OperativeFlight_Segments seg 
+  			on dls.FlightSegmentId = seg.FlightSegmentId inner join 
+  		Exp_DLSULDPiggyBackedInfo piggy 
+  			on dls.DLSUldTrolleyId = piggy.DLSUldTrolleyId
+  	where 
+  		dls.DLSId = #{dlsId} and 
+  		dls.ULDTrolleyNumber is not null
+  </select> -->
+  
+  <!-- <select id="selectPHCOSI"  parameterType="com.ngen.cosys.export.dls.model.DLS" resultType="com.ngen.cosys.export.dls.model.OSI">
+  	select  
+	   	FlightBoardPoint flightBoardPoint,
+	  	FlightOffPoint flightOffPoint,
+      	ULDTrolleyNumber uldTrolleyNumber,
+	  	dls.FlightSegmentId flightSegmentId
+	from 
+		Exp_DLSULDTrolley dls inner join 
+		Flt_OperativeFlight_Segments seg 
+			on dls.FlightSegmentId = seg.FlightSegmentId
+  	where 
+  		dls.DLSId = #{dlsId} AND dls.UsedForPerishableContainer = 1
+  </select> -->
+  
+  <!-- <delete id="deleteDLSOSI" parameterType="com.ngen.cosys.export.dls.model.DLSULD">
+  	delete from Exp_DLSULDTrolleyOSI where DLSId = #{dlsId} and Manual = 0;
+  </delete> -->
+  
+  <select id="getTareWeight" parameterType="map" resultType="java.math.BigDecimal">	
+		select top 1  UldTareWeightQty  from 	Uld_UldCharacteristics
+	where UldCarrierCode IN
+		(RIGHT(#{uldTrolleyNo},
+		2)
+		,RIGHT(#{uldTrolleyNo},3))
+		AND
+		UldType =
+		LEFT(#{uldTrolleyNo},
+		3) 
+		<if test="heightCode != null">
+	     and	ContourCode=#{heightCode}
+		</if>
+				<if test="heightCode == null or heightCode == ''">
+	     and	ContourCode in (Select top 1
+		contourcode from
+		Uld_UldCharacteristics where
+		UldCarrierCode IN
+		(RIGHT(#{uldTrolleyNo},
+		2),RIGHT(#{uldTrolleyNo},3))
+		AND
+		UldType =
+		LEFT(#{uldTrolleyNo},
+		3))
+		</if>
+	</select>
+	
+	<!-- <select id="checkDuplicateDLSULD" parameterType="com.ngen.cosys.export.dls.model.DLSULD" resultType="java.lang.Integer">	
+		select 
+			count(*) 
+		from 
+			Exp_DLSULDTrolley 
+		where 
+			Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId} and
+			Exp_DLSULDTrolley.ULDTrolleyNumber = #{uldTrolleyNumber}
+	</select> -->
+	
+	<!-- <select id="checkDuplicateDLSULDPiggyBack" parameterType="com.ngen.cosys.export.dls.model.DLSULD" resultType="java.lang.Integer">	
+  		select 
+  			count(*) 
+  		from 
+  			Exp_DLSULDTrolley inner join
+  			Exp_DLSULDPiggyBackedInfo 
+  				on Exp_DLSULDTrolley.DLSUldTrolleyId = Exp_DLSULDPiggyBackedInfo.DLSUldTrolleyId
+  		where 
+  			Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId} and
+  			Exp_DLSULDPiggyBackedInfo.ULDNumber = #{uldTrolleyNumber}
+	</select> -->
+	
+	<!-- <select id="checkDuplicateDLSPiggyBack" parameterType="com.ngen.cosys.export.dls.model.DLSPiggyBackInfo" resultType="java.lang.Integer">	
+		   select 
+		   		count(*) 
+		   	from 
+		   		Exp_DLSULDTrolley 
+		   	where 
+		   		Exp_DLSULDTrolley.ULDTrolleyNumber = #{uldNumber} and
+		   		Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+	</select> -->
+	
+	<!-- <select id="checkDuplicateDLSPiggyBackPiggy" parameterType="com.ngen.cosys.export.dls.model.DLSPiggyBackInfo" resultType="java.lang.Integer">	
+  		select 
+  			count(*) 
+  		from 
+  			Exp_DLSULDPiggyBackedInfo 
+  		where
+  			Exp_DLSULDPiggyBackedInfo.ULDNumber = #{uldNumber} and
+  			Exp_DLSULDPiggyBackedInfo.DLSUldTrolleyId = #{dlsUldTrolleyId}
+	</select> -->
+	
+	<select id="getFlightCarrierCode" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLS" resultType="java.lang.String">
+		select 
+			CarrierCode 
+		from 
+			Flt_OperativeFlight 
+		where 
+			Flight_ID = #{flightId}
+	</select>
+	
+	<!-- <select id="checkFlightID" parameterType="com.ngen.cosys.export.dls.model.DLSFlight" resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Flt_OperativeFlight flt inner join
+			Flt_OperativeFlight_Legs leg on 
+				flt.Flight_ID = leg.Flight_ID left join 
+			Exp_FlightEvents event 
+				on leg.Flight_ID = event.FlightId 
+		where 
+			FlightKey = #{flightKey} and  
+			cast(leg.DateSTD as date ) = cast(#{flightOriginDate} as date) and 
+			leg.FlightBoardPoint=#{tenantId}       
+	</select> -->
+	
+	<!-- <update id="updateFlightEventDLS" parameterType="com.ngen.cosys.export.dls.model.DLSFlight">
+		update Exp_FlightEvents
+		 set
+			FirstTimeDLSCompletedBy = isnull(FirstTimeDLSCompletedBy, #{modifiedBy}),
+			FirstTimeDLSCompletedAt = isnull(FirstTimeDLSCompletedAt,
+			#{modifiedOn}),
+			DLSCompletedBy = #{modifiedBy},
+			DLSCompletedAt = #{modifiedOn},
+			DLSStatus = 'INITIATED'
+		where
+			FlightId = #{flightId}
+	</update> -->
+   
+ 	<select id="getDLSUldTrolleyId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD" resultType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD">
+ 		select
+    		DLSUldTrolleyId
+    	from 
+    		Exp_DLSULDTrolley du
+    	where 
+    		du.ULDTrolleyNumber=#{uldTrolleyNumber} and 
+    		FlightSegmentId = #{flightSegmentId}
+ 	</select>
+ 
+	<select id="ValidateSHCList" parameterType="java.util.List"
+		resultType="java.lang.Integer">
+		select
+			count(*) 
+		from 
+			Mst_SpecialHandlingCode 
+		where 
+			SpecialHandlingCode in
+			<foreach item="item" index="index" collection="list" open="("
+				separator="," close=")">
+				NULLIF(#{item},'')
+			</foreach> and
+			getdate() between StartDate and isnull(EndDate, getDate() + 100)
+	</select>
+	
+	<!-- <select id="checkValidFlightID" parameterType="com.ngen.cosys.export.dls.model.DLSULD" resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID
+		where 
+			FlightKey = #{flightKey} and 
+			cast(Flt_OperativeFlight_Legs.DateSTD as date ) = cast(#{flightOriginDate} as date) and
+			Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}  
+	</select> -->
+	
+	<!-- <select id="getUCMFlightId" 
+			parameterType="map" 
+			resultType="com.ngen.cosys.export.dls.model.DLSFlight">
+		select 
+			UCMFlightDetails_ID uldUcmFlight 
+		from 
+			Uld_UCMFlightDetails 
+		where 
+			FlightKey = #{flightKey} and 
+			cast(FlightDate as date)=cast(#{std} as date)
+	</select> -->
+	
+	<!-- <insert id="insertUCMFlightDetail" 
+			parameterType="com.ngen.cosys.export.dls.model.DLSFlight"
+			useGeneratedKeys="true"
+			keyColumn="UCMFlightDetails_ID"
+			keyProperty="uldUcmFlight">
+		insert into Uld_UCMFlightDetails(
+			FlightKey,
+           	FlightDate,
+           	CreatedUser_Code,
+           	Created_DateTime,
+           	Osi
+     	)values(
+           	#{flightKey},
+           	#{std},
+           	#{createdBy},
+           	#{createdOn},
+           	#{remark}
+    	)		
+	</insert> -->
+	
+	<!-- <select id="getUCMULDId" parameterType="com.ngen.cosys.export.dls.model.DLSULD"
+			resultType="java.math.BigInteger">
+		select  
+			UCMUldDetails_ID 
+		from 
+			Uld_UCMUldDetails 
+		where 
+			UldNumber = #{uldTrolleyNumber} and 
+			UCMFlightDetails_Id= #{ucmFlightId}
+	</select> -->
+	
+	<!-- <update  id="updateUcmUld" parameterType="com.ngen.cosys.export.dls.model.DLSULD">
+		update Uld_UCMUldDetails 
+		set 
+			destination = #{destination}, 
+			contentcode = #{content}, 
+			LastUpdatedUser_Code = #{modifiedBy}, 
+			LastUpdated_DateTime = #{modifiedOn}
+	 	where
+	 		UCMUldDetails_ID = #{ucmId}
+	</update> -->
+	
+	<!-- <insert id="insertUldUCMInfo"
+			parameterType="com.ngen.cosys.export.dls.model.DLSULD">	
+		insert into Uld_UCMUldDetails(
+			UldNumber,
+	        Destination,
+	        ContentCode,
+	        CreatedUser_Code,
+	        Created_DateTime,
+	        UCMFlightDetails_Id,
+	        Osi,
+	        Finalize
+		)values(
+			#{uldTrolleyNumber},
+	        #{destination},
+	        #{content},
+	        #{createdBy},
+	        #{createdOn},
+	        #{ucmFlightId},
+	        #{remarks},
+	        0
+		)
+	</insert> -->
+	
+	<!-- <insert id="insertUldPiggyUCMInfo"
+			parameterType="com.ngen.cosys.export.dls.model.DLSPiggyBackInfo">
+		insert into Uld_UCMUldDetails(
+			UldNumber,
+	        CreatedUser_Code,
+	        Created_DateTime,
+	        UCMFlightDetails_Id)
+	    values(
+	     	#{uldNumber},
+	        #{createdBy},
+	        #{createdOn},
+	        #{dlsUldTrolleyPiggyBackId}
+		)
+	</insert> -->
+
+	<!-- <select id="fetchUldPalletFlag"  parameterType="com.ngen.cosys.export.dls.model.DLSULD"
+		resultType="com.ngen.cosys.export.dls.model.DLSPiggyBackInfo">
+		select top 1 uldChar.UldTareWeightQty as calculatedTareWeight
+		,uldType.PalletTypeFlag as piggyBackFlag
+		from Uld_UldCharacteristics uldChar,Uld_UldType uldType
+		where UldCarrierCode
+		IN
+		(RIGHT(#{uldTrolleyNumber},
+		2)
+		,RIGHT(#{uldTrolleyNumber},3))
+		AND
+		uldChar.UldType =
+		LEFT(#{uldTrolleyNumber},
+		3)
+		AND
+		 uldType.UldType = SUBSTRING(#{uldTrolleyNumber},1,3)
+		<if test="heightCode != null">
+			and ContourCode=#{heightCode}
+		</if>
+		<if test="heightCode == null or heightCode == ''">
+			and ContourCode in (Select top 1
+			contourcode from
+			Uld_UldCharacteristics where
+			UldCarrierCode IN
+			(RIGHT(#{uldTrolleyNumber},
+			2),RIGHT(#{uldTrolleyNumber},3))
+			AND
+			UldType =
+			LEFT(#{uldTrolleyNumber},
+			3))
+		</if>
+	</select> -->
+  
+	<!-- <select id="fetchAssUldTrolleyId" parameterType="com.ngen.cosys.export.dls.model.DLSULD"
+		resultType="com.ngen.cosys.export.assignuld.model.AssignULD">
+		select 
+			AssUldTrolleyId 
+		from 
+			Exp_AssignedULDTrolleyToFlight 
+		where 
+			ULDTrolleyNumber=#{uldTrolleyNumber}  and 
+			FlightSegmentId=#{flightSegmentId}   
+	</select> -->
+	
+	<select id="getDLSId_DLS" parameterType="java.math.BigInteger" resultType="java.math.BigInteger">
+		Select DlsId from Exp_DLS where FlightId=#{param}
+	</select>
+
+</mapper>

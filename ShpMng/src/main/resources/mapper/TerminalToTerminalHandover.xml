@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="TerminalToTerminalHandover">
+	<!-- <resultMap id="TerminalToTerminalHandoverMapper"></resultMap> -->
+
+	<select id="getShpDetailsAtTerminal"
+		parameterType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.SearchKey"
+		resultType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.HandoverTerminalShp">
+		if Exists (select Exp_ShipmentBooking.ShipmentNumber from
+		Exp_ShipmentBooking where Exp_ShipmentBooking.ShipmentNumber=
+		#{awbnumber})
+		Begin Select
+		Shipment_Master.ShipmentNumber as shpNumber,
+		Shipment_Master.ShipmentId as shipmentId,
+		Uld_UldMaster.Uld_Id as
+		uldId,
+		Shipment_Inventory.ShipmentLocation as loadingDetails,
+		Shipment_Inventory.Pieces as pieces,
+		Shipment_Inventory.Weight as
+		weight,
+		handoverTerminal.FlightKey as "flight.number",
+		handoverTerminal.FlightOffPoint as destination,
+		handoverTerminal.FlightBoardPoint as origin,
+		Cast(handoverTerminal.DateSTD as Date) as"flight.dateSTD",
+		FORMAT(Cast(handoverTerminal.DateSTD as datetime),'HH:MM')as
+		"flight.time"
+		from
+		Shipment_Master inner Join
+		Shipment_Inventory on
+		Shipment_Inventory.Shipment_Id
+		=Shipment_Master.ShipmentId
+		left Join
+		Uld_UldMaster on Uld_UldMaster.UldKey =
+		Shipment_Inventory.ShipmentLocation
+		left Join
+		(select
+		Exp_ShipmentBooking.Destination,
+		Exp_ShipmentBooking.ShipmentNumber,
+		Flt_OperativeFlight.FlightKey,
+		Flt_OperativeFlight_Legs.DateSTD,
+		Exp_ShipmentFlightBookingDetail.FlightOffPoint,
+		Exp_ShipmentFlightBookingDetail.FlightBoardPoint,
+		Exp_ShipmentFlightBookingDetail.BookingId
+
+		From Exp_ShipmentBooking
+		Inner Join
+		Exp_ShipmentFlightBookingDetail on
+		Exp_ShipmentFlightBookingDetail.BookingId
+		=Exp_ShipmentBooking.BookingId
+		AND
+		Exp_ShipmentFlightBookingDetail.OutwardBookingFlag=1
+		Inner Join
+		Flt_OperativeFlight on
+		Flt_OperativeFlight.Flight_ID
+		=
+		Exp_ShipmentFlightBookingDetail.FlightId
+		inner join
+		Flt_OperativeFlight_Legs on
+		Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID
+		and
+		Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		)handoverTerminal on
+
+		Shipment_Master.ShipmentNumber=handoverTerminal.ShipmentNumber
+		Where
+		<if test="awbnumber==null">
+			Shipment_Inventory.ShipmentLocation =#{uldnumber}
+		</if>
+
+		<if test="uldnumber==null">
+			Shipment_Master.ShipmentNumber =
+			#{awbnumber}
+		</if>
+		END
+		else
+		Begin
+		Select
+		Shipment_Master.ShipmentNumber as shpNumber,
+		Shipment_Master.ShipmentId as shipmentId,
+		Shipment_Master.origin as
+		origin,
+		Shipment_Master.destination as destination,
+		Uld_UldMaster.Uld_Id as uldId,
+		Shipment_Inventory.ShipmentLocation as
+		loadingDetails,
+		Shipment_Inventory.Pieces as pieces,
+		Shipment_Inventory.Weight as weight,
+		Flt_OperativeFlight.FlightKey as
+		"flight.number",
+		Flt_OperativeFlight_Legs.FlightOffPoint as
+		destination,
+		Flt_OperativeFlight_Legs.FlightBoardPoint as origin,
+		Cast
+		(Flt_OperativeFlight_Legs.DateSTD as Date) as "flight.dateSTD",
+		FORMAT(Cast(Flt_OperativeFlight_Legs.DateSTD as datetime),'HH:MM') as
+		"flight.time"
+		from
+		Shipment_Master left Join
+		Shipment_Inventory on
+		Shipment_Inventory.Shipment_Id =Shipment_Master.ShipmentId
+		left Join
+		Flt_OperativeFlight on
+		Flt_OperativeFlight.Flight_ID=Shipment_Inventory.Flight_ID
+		left join
+		Flt_OperativeFlight_Legs on
+		Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID
+		left
+		Join
+		Uld_UldMaster on Uld_UldMaster.UldKey =
+		Shipment_Inventory.ShipmentLocation
+		Where
+		<if test="awbnumber==null">
+			Shipment_Inventory.ShipmentLocation =#{uldnumber}
+		</if>
+
+		<if test="uldnumber==null">
+			Shipment_Master.ShipmentNumber =
+			#{awbnumber}
+		</if>
+		end
+
+	</select>
+
+	<select id="getDetailsOfShipmentToTerminal"
+		parameterType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.SearchGroup"
+		resultType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.TerminalPoint">
+
+		WITH EXPORT_DATA AS (
+			SELECT  shipment_master.shipmentnumber AS EXP_shpNumber, 
+			   shipment_master.shipmentid AS EXP_shipmentId,
+			   handoverTerminal.shipmentnumber AS EXP_Shipment, 
+			   shipment_master.origin AS EXP_origin, 
+			   uld_uldmaster.uld_id AS  EXP_uldId, 
+			   shipment_inventory.shipmentlocation AS EXP_loadingDetails, 
+			   shipment_inventory.pieces AS EXP_pieces, 
+			   shipment_inventory.weight AS EXP_weight,
+			   shipment_inventory.WarehouseLocation AS EXP_WarehouseLocation, 
+			   handoverTerminal.flightkey AS "EXP_flight.number", 
+			   handoverTerminal.flightoffpoint AS EXP_destination , 
+			   CAST(handoverTerminal.datestd AS DATE) AS "EXP_flight.dateSTD", 
+			   Format(Cast(handoverTerminal.datestd AS DATETIME), 'HH:MM') AS "EXP_flight.time"	 ,
+			   'EXP' as EXP_DataType 
+			FROM   shipment_master 
+			   INNER JOIN shipment_inventory ON shipment_inventory.shipment_id = shipment_master.shipmentid 
+			   LEFT JOIN uld_uldmaster ON uld_uldmaster.uldkey = shipment_inventory.shipmentlocation 
+			   LEFT JOIN (SELECT   
+							exp_shipmentbooking.destination, 
+							exp_shipmentbooking.shipmentnumber, 
+							flt_operativeflight.flightkey, 
+							flt_operativeflight_legs.datestd, 
+							exp_shipmentflightbookingdetail.flightoffpoint, 
+							exp_shipmentflightbookingdetail.flightboardpoint, 
+							exp_shipmentflightbookingdetail.bookingid 
+						FROM   exp_shipmentbooking 
+								INNER JOIN exp_shipmentflightbookingdetail ON exp_shipmentflightbookingdetail.bookingid = exp_shipmentbooking.bookingid 
+											AND exp_shipmentflightbookingdetail.outwardbookingflag = 1 
+								INNER JOIN flt_operativeflight ON flt_operativeflight.flight_id = exp_shipmentflightbookingdetail.flightid 
+								INNER JOIN flt_operativeflight_legs ON flt_operativeflight_legs.flight_id = flt_operativeflight.flight_id 
+											AND flt_operativeflight_legs.flightboardpoint = #{tenantAirport})
+					handoverTerminal ON shipment_master.shipmentnumber = handoverTerminal.shipmentnumber 
+			
+			),
+			IMPORT_DATA AS (
+				SELECT shipment_master.shipmentnumber AS Imp_shpNumber , 
+						shipment_master.shipmentid AS Imp_shipmentId, 
+						shipment_master.origin AS Imp_origin,
+						uld_uldmaster.uld_id AS Imp_uldId, 
+						shipment_inventory.shipmentlocation AS Imp_loadingDetails,
+						shipment_inventory.WarehouseLocation AS Imp_WarehouseLocation, 
+						shipment_inventory.pieces AS Imp_pieces, 
+						shipment_inventory.weight AS Imp_weight, 
+						flt_operativeflight.flightkey AS "Imp_flight.number", 
+						flt_operativeflight_legs.flightoffpoint AS Imp_destination, 
+						Cast (flt_operativeflight_legs.datestd AS DATE) AS "Imp_flight.dateSTD", 
+						Format(Cast(flt_operativeflight_legs.datestd AS DATETIME), 'HH:MM') AS "Imp_flight.time" ,
+						'IMP' as Imp_DataType
+				FROM  shipment_master 
+			   LEFT JOIN shipment_inventory ON shipment_inventory.shipment_id = shipment_master.shipmentid 
+			   LEFT JOIN flt_operativeflight ON flt_operativeflight.flight_id = shipment_inventory.flight_id 
+			   LEFT JOIN flt_operativeflight_legs ON flt_operativeflight_legs.flight_id = flt_operativeflight.flight_id 
+			   LEFT JOIN uld_uldmaster ON uld_uldmaster.uldkey = shipment_inventory.shipmentlocation 
+			
+			)	,
+			All_JOIN AS(
+			SELECT  TRF.*,EXP.*,IMP.*  FROM Com_TerminalToTerminalShipmentTransfer TRF
+						LEFT OUTER JOIN EXPORT_DATA EXP ON TRF.ShipmentId = EXP.EXP_ShipmentId and TRF.ToHandlingArea= EXP.EXP_WarehouseLocation
+						LEFT OUTER JOIN IMPORT_DATA IMP ON TRF.ShipmentId = IMP.IMP_ShipmentId and TRF.ToHandlingArea= IMP.IMP_WarehouseLocation
+						where  TRF.ToHandlingArea= EXP.EXP_WarehouseLocation
+							  or TRF.ToHandlingArea= IMP.IMP_WarehouseLocation)
+			SELECT  
+					AJ.FromHandlingArea			as fromTrml,
+					AJ.ToHandlingArea			as toTrml,
+					AJ.TransferPurpose			as 'terminalPointDetails.purpose',
+					AJ.HandedOverBy				as 'terminalPointDetails.subscriberDetails.handedOverBy',
+					AJ.HandedOverOn				as 'terminalPointDetails.subscriberDetails.handedOverOn',
+					AJ.ReceivedBy				as 'terminalPointDetails.receipentDetails.receivedBy',
+					AJ.HandedOverOn				as 'terminalPointDetails.receipentDetails.receivedDate',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_shpNumber		,AJ.EXP_shpNumber		) as 'terminalPointDetails.shpNumber',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_shpNumber		,AJ.EXP_shpNumber		) as 'terminalPointDetails.handoverTerminalShp.shpNumber',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_shipmentId		,AJ.EXP_shipmentId		) as 'terminalPointDetails.handoverTerminalShp.shipmentId',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_shipmentId		,AJ.EXP_shipmentId		) as 'terminalPointDetails.shipmentId',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_origin			,AJ.EXP_origin			) as 'terminalPointDetails.handoverTerminalShp.origin',		
+					iif(AJ.EXP_Shipment is null, AJ.Imp_loadingDetails	,AJ.EXP_loadingDetails	) as 'terminalPointDetails.loadingDetails',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_loadingDetails	,AJ.EXP_loadingDetails	) as 'terminalPointDetails.handoverTerminalShp.loadingDetails',
+					iif(AJ.EXP_Shipment is null, sum(AJ.Imp_pieces)		,sum(AJ.EXP_pieces)		) as 'terminalPointDetails.handoverTerminalShp.pieces',
+					iif(AJ.EXP_Shipment is null, sum(AJ.Imp_weight)		,sum(AJ.EXP_weight)		) as 'terminalPointDetails.handoverTerminalShp.weight',
+					iif(AJ.EXP_Shipment is null, AJ."Imp_flight.number"	,AJ."EXP_flight.number"	) as 'terminalPointDetails.handoverTerminalShp.flight.number',
+					iif(AJ.EXP_Shipment is null, AJ.Imp_destination		,AJ.EXP_destination		) as 'terminalPointDetails.handoverTerminalShp.destination',
+					iif(AJ.EXP_Shipment is null, AJ."Imp_flight.dateSTD",AJ."EXP_flight.dateSTD"	) as 'terminalPointDetails.handoverTerminalShp.flight.dateSTD' ,
+					iif(AJ.EXP_Shipment is null,FORMAT(Cast(AJ."Imp_flight.time" as datetime),'HH:MM'),FORMAT(Cast(AJ."EXP_flight.time" as datetime),'HH:MM')) as "terminalPointDetails.handoverTerminalShp.flight.time",
+					iif(AJ.EXP_Shipment is null,AJ.Imp_DataType, AJ.EXP_DataType	) as dataType 
+			
+			FROM  All_JOIN AJ		  
+			
+			where
+			
+		AJ.FromHandlingArea=#{terminalPoint.fromTrml}
+		or
+		AJ.ToHandlingArea=#{terminalPoint.toTrml}
+
+		<if test="terminalPoint.terminalPointDetails.shpNumber !=''">
+			or
+			AJ.Imp_shpNumber
+			=#{terminalPoint.terminalPointDetails.shpNumber}
+		</if>
+		<if test="terminalPoint.terminalPointDetails.loadingDetails !=''">
+			or
+			AJ.Imp_loadingDetails
+			=#{terminalPoint.terminalPointDetails.loadingDetails}
+		</if>
+		<if test="terminalPoint.terminalPointDetails.purpose !=''">
+			or
+			AJ.TransferPurpose
+			=#{terminalPoint.terminalPointDetails.purpose}
+		</if>
+		<if
+			test="terminalPoint.terminalPointDetails.subscriberDetails.handedOverBy !=''">
+			or
+			AJ.HandedOverBy
+			=#{terminalPoint.terminalPointDetails.subscriberDetails.handedOverBy}
+		</if>
+		<if
+			test="terminalPoint.terminalPointDetails.receipentDetails.receivedBy !=''">
+			or
+			AJ.ReceivedBy=#{terminalPoint.terminalPointDetails.receipentDetails.receivedBy}
+		</if>
+		<if
+			test="terminalPoint.terminalPointDetails.subscriberDetails.handedOverOn != null">
+			or
+			AJ.HandedOverOn BETWEEN
+			#{terminalPoint.terminalPointDetails.subscriberDetails.handedOverOn}
+			AND
+			#{terminalPoint.terminalPointDetails.receipentDetails.receivedDate}
+		</if>
+			group by  AJ.FromHandlingArea,AJ.ToHandlingArea,AJ.TransferPurpose,AJ.HandedOverBy,AJ.HandedOverOn,AJ.ReceivedBy,AJ.HandedOverOn
+					  ,AJ.Imp_loadingDetails ,AJ."Imp_flight.number",AJ.Imp_destination	,AJ."Imp_flight.dateSTD",AJ.Imp_shpNumber,AJ.Imp_shipmentId,AJ.Imp_DataType,AJ."Imp_flight.time"	,AJ.Imp_origin			
+					  ,AJ.EXP_Shipment	 ,AJ.EXP_shpNumber,AJ.EXP_shpNumber,AJ.EXP_shipmentId,AJ.EXP_shipmentId,AJ.EXP_loadingDetails,AJ.EXP_loadingDetails,AJ."EXP_flight.number",AJ.EXP_destination,AJ."EXP_flight.dateSTD",AJ.EXP_DataType,AJ."EXP_flight.time",AJ.EXP_origin
+					  	
+
+	</select>
+
+	<insert id="transferShipmentToTerminal" useGeneratedKeys="true"
+		keyColumn="ComTerminalToTerminalShipmentTransferId" keyProperty="comTerminalToTerminalShipmentTransferId"
+		parameterType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.TerminalPoint">
+		INSERT INTO
+		Com_TerminalToTerminalShipmentTransfer
+		(
+		FromHandlingArea
+		,ToHandlingArea
+		,TransferPurpose
+		,ShipmentId
+		,ULDId
+		,HandedOverBy
+		,HandedOverOn
+		,ReceivedBy
+		,ReceiverSignature
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		)
+		VALUES
+		(
+		#{fromTrml}
+		,#{toTrml}
+		,#{terminalPointDetails.purpose}
+		,#{terminalPointDetails.shipmentId}
+		,#{terminalPointDetails.uldId}
+		,#{terminalPointDetails.subscriberDetails.handedOverBy}
+		,#{terminalPointDetails.subscriberDetails.handedOverOn}
+		,#{terminalPointDetails.receipentDetails.receivedBy}
+		,#{terminalPointDetails.receipentDetails.receiverSignature}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,getdate()
+		)
+	</insert>
+
+	<update id="updateShipmentLocation"
+		parameterType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.TerminalPoint">
+		UPDATE Shipment_Inventory Set WarehouseLocation=#{toTrml}
+
+		where Shipment_Inventory.Shipment_ID=#{terminalPointDetails.shipmentId}
+		And
+		Shipment_Inventory.ShipmentLocation=#{terminalPointDetails.loadingDetails}
+	</update>
+
+	<update id="updateULDLocation"
+		parameterType="com.ngen.cosys.shipment.terminaltoterminalhandover.model.TerminalPoint">
+		UPDATE Uld_UldMaster Set UldLocationCode =#{toTrml}
+		where
+		Uld_UldMaster.Uld_ID = #{terminalPointDetails.uldId}
+	</update>
+</mapper>

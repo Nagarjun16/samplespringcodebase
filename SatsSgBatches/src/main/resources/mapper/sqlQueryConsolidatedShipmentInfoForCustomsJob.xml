@@ -1,0 +1,1630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ConsolidatedShipmentInfoForCustomsJobMapper">
+
+	<select id="getFlightInfoForDummyController" parameterType="com.ngen.cosys.model.FlightModel"
+			resultType="com.ngen.cosys.model.FlightModel">
+	<![CDATA[
+		select 
+			Flt.FlightKey, 
+			Legs.DateSTD FlightDate, 
+			Evt.FirstTimeFlightCompletedAt,
+			Legs.FlightBoardPoint, 
+			Legs.FlightOffPoint, 
+			Flt.FlightType, 
+			'E' as ImportExportIndicator	
+		from 
+			Exp_FlightEvents Evt inner join
+			Flt_OperativeFlight Flt 
+				on Evt.FlightId = Flt.Flight_ID inner join
+			Flt_OperativeFlight_Legs Legs
+				on Flt.Flight_ID = Legs.Flight_ID and
+					Legs.FlightBoardPoint =#{tenantAirport}
+		where 
+			Flt.DateSTD  BETWEEN  getdate()-10 and getdate()+10 and
+			not exists(
+				select
+					null
+				from
+					Customs_Flight
+				where
+					Customs_Flight.FlightKey = Flt.FlightKey and
+					cast(Customs_Flight.FlightDate as Date) = cast(Legs.DateSTD as date)
+			)	
+		union
+		select 
+			Flt.FlightKey, 
+			Legs.DateSTA FlightDate,
+			Evt.FirstTimeBreakDownCompletedAt, 
+			Legs.FlightBoardPoint, 
+			Legs.FlightOffPoint, 
+			Flt.FlightType, 
+			'I' as ImportExportIndicator			
+		from 
+			Imp_FlightEvents Evt inner join    
+			Flt_OperativeFlight Flt 
+				on Evt.FlightId = Flt.Flight_ID inner join
+			Flt_OperativeFlight_Legs Legs
+				on Flt.Flight_ID = Legs.Flight_ID and
+					Legs.FlightOffPoint =#{tenantAirport}
+		where 
+			Flt.DateSTA  BETWEEN  getdate()-10 and getdate()+10 and
+			not exists(
+				select
+					null
+				from
+					Customs_Flight
+				where
+					Customs_Flight.FlightKey = Flt.FlightKey and
+					cast(Customs_Flight.FlightDate as Date) = cast(Legs.DateSTA as date)
+			)
+		union
+		select 
+			Flt.FlightKey, 
+			Legs.DateSTA FlightDate,
+			Evt.FirstTimeBreakDownCompletedAt,
+			Legs.FlightBoardPoint, 
+			Legs.FlightOffPoint, 
+			Flt.FlightType, 
+			'I' as ImportExportIndicator			
+		from 
+			Imp_FlightEvents Evt inner join    
+			Flt_OperativeFlight Flt 
+				on Evt.FlightId = Flt.Flight_ID inner join
+			Flt_OperativeFlight_Legs 
+				Legs on Flt.Flight_ID = Legs.Flight_ID and
+							Legs.FlightOffPoint !=#{tenantAirport} and 	Legs.FlightBoardPoint !=#{tenantAirport}
+		where 
+			Flt.DateSTA  BETWEEN  getdate()-10 and getdate()+10 and
+			not exists(
+				select
+					null
+				from
+					Customs_Flight
+				where
+					Customs_Flight.FlightKey = Flt.FlightKey and
+					cast(Customs_Flight.FlightDate as Date) = cast(Legs.DateSTA as date)
+			)
+		union
+		select 
+			Flt.FlightKey, 
+			Legs.DateSTD FlightDate, 
+			Evt.FirstTimeFlightCompletedAt,
+			Legs.FlightBoardPoint, 
+			Legs.FlightOffPoint, 
+			Flt.FlightType, 
+			'E' as ImportExportIndicator	
+		from 
+			Exp_FlightEvents Evt inner join
+			Flt_OperativeFlight Flt 
+				on Evt.FlightId = Flt.Flight_ID inner join
+			Flt_OperativeFlight_Legs Legs
+			on Flt.Flight_ID = Legs.Flight_ID and
+				Legs.FlightOffPoint !=#{tenantAirport} and 	
+				Legs.FlightBoardPoint !=#{tenantAirport}
+		where 
+			Flt.DateSTD  BETWEEN  getdate()-10 and getdate()+10 and
+			not exists(
+				select
+					null
+				from
+					Customs_Flight
+				where
+					Customs_Flight.FlightKey = Flt.FlightKey and
+					cast(Customs_Flight.FlightDate as Date) = cast(Legs.DateSTD as date)
+			)
+			order by 2,6
+	
+	]]>
+	</select>
+	
+	<select id="getFlightInfo" parameterType="com.ngen.cosys.model.FlightModel"
+		resultType="com.ngen.cosys.model.FlightModel">
+		select 
+			FlightKey,  
+			FlightDate,
+			FlightBoardPoint, 
+			FlightOffPoint, 
+			FlightType,  
+			ImportExportIndicator,CustomsFlightId
+		from 
+			Customs_Flight 
+		where 
+			MRSSentDate is null and 
+			cast(FlightDate as date) 
+				between cast(getDate()-
+					 (select cast(ParameterValueChar aS int) ParameterValueNum from App_SystemParameters 
+							where ParameterCode = 'MRS_CONSIDERATION_DAY_FOR_FLIGHT_FROM')  as date) 
+					and cast(getDate()+
+					 (select cast(ParameterValueChar aS int) from App_SystemParameters 
+							where ParameterCode = 'MRS_CONSIDERATION_DAY_FOR_FLIGHT_TO') as date) and
+			(exists(
+				select
+					null
+				from
+					Imp_ShipmentVerification inner join
+					Flt_OperativeFlight
+						on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_Id inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id and
+							Flt_OperativeFlight_Legs.FlightoFFPoint = #{tenantAirport}
+				where
+					Flt_OperativeFlight.FlightKey = Customs_Flight.FlightKey and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(Customs_Flight.FlightDate as date)
+			) OR
+			exists(
+				select
+					null
+				from
+					Exp_Manifest inner join
+					Flt_OperativeFlight
+						on Exp_Manifest.FlightId = Flt_OperativeFlight.Flight_Id inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id and
+							Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+				where
+					Flt_OperativeFlight.FlightKey = Customs_Flight.FlightKey and
+					cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(Customs_Flight.FlightDate as date)))
+
+
+</select>
+	<resultMap id="FlightInfo" type="com.ngen.cosys.model.FlightDataModel">
+		<collection property="flightModel" javaType="List"
+			ofType="com.ngen.cosys.model.FlightModel">
+			<id column="Flight_ID" property="flightId" />
+			<result column="FlightDate" property="flightDate" />
+			<result column="FlightKey" property="flightKey" />
+			<result column="FlightBoardPoint" property="flightBoardPoint" />
+			<result column="FlightOffPoint" property="flightOffPoint" />
+			<result column="FlightType" property="flightType" />
+			<result column="ImportExportIndicator" property="importExportIndicator" />
+		</collection>
+	</resultMap>
+
+	<select id="getShipmentInfo" resultMap="CustomsShipmentInfo"
+		parameterType="com.ngen.cosys.model.FlightModel" resultType="com.ngen.cosys.model.ShipmentDataModel">
+		<![CDATA[
+With ImportFoundShipmentsForMRS AS(
+				select
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA as FlightDate,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					isnull(Shipment_Master.Weight, 0) as Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					isnull(Shipment_Master.PartShipment, 0) PartShipment,
+					'I' as ImportExportIndicator,
+					sum(Shipment_Inventory.Pieces) ShipmentPiece,
+					sum(Shipment_Inventory.Weight) ShipmentWeight
+				from
+					Imp_ShipmentVerification inner join
+					Shipment_Master
+						on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+					Shipment_Inventory
+						on Shipment_Master.ShipmentId = Shipment_Inventory.Shipment_ID and
+							Imp_ShipmentVerification.FlightId = Shipment_Inventory.Flight_ID inner join
+					Flt_OperativeFlight
+						on Imp_ShipmentVerification.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+					Imp_FlightEvents
+						on Flt_OperativeFlight_Legs.Flight_ID = Imp_FlightEvents.FlightId
+				where
+					Shipment_Master.ShipmentType = 'AWB' and
+					Imp_FlightEvents.DocumentVerificationCompletedAt is not null and
+					Flt_OperativeFlight.FlightKey =#{flightKey}  and 
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+				group by
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.PartShipment
+			), ImportArrivalManifestShipmentsForMRS AS(
+				select
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA as FlightDate,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					isnull(Shipment_Master.Weight, 0) as Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					isnull(Shipment_Master.PartShipment, 0) PartShipment,
+					'I' as ImportExportIndicator,
+					sum(Imp_ArrivalManifestShipmentInfo.Piece) ShipmentPiece,
+					sum(Imp_ArrivalManifestShipmentInfo.Weight) ShipmentWeight
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo 
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+					Shipment_Master
+						on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Imp_ArrivalManifestShipmentInfo.ShipmentDate =  Shipment_Master.ShipmentDate inner join
+					Flt_OperativeFlight
+						on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+					Imp_FlightEvents
+						on Flt_OperativeFlight_Legs.Flight_ID = Imp_FlightEvents.FlightId
+				where
+					Shipment_Master.ShipmentType = 'AWB' and
+					Imp_FlightEvents.DocumentVerificationCompletedAt is not null and
+					Flt_OperativeFlight.FlightKey =#{flightKey}  and 
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+				group by
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.PartShipment
+			), ImportDeliveryShipmentsForMRS AS(
+				select
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA as FlightDate,
+					Imp_Delivery.DeliveryOrderNo,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					isnull(Shipment_Master.Weight, 0) as Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					isnull(Shipment_Master.PartShipment, 0) PartShipment,
+					'I' as ImportExportIndicator,
+					Imp_Delivery.CancellationReasonCode,
+					sum(Shipment_Inventory.DeliveryPieces) ShipmentPiece,
+					sum(Shipment_Inventory.DeliveryWeight) ShipmentWeight
+				from
+					Imp_Delivery inner join
+					Shipment_Master
+						on Imp_Delivery.ShipmentId = Shipment_Master.ShipmentId left join
+					(select
+						Shipment_Inventory.Shipment_Id as ShipmentId,
+						Shipment_Inventory.Flight_Id as FlightId,
+						Shipment_Inventory.DeliveryOrderNo,
+						sum(Shipment_Inventory.Pieces) DeliveryPieces,
+						sum(Shipment_Inventory.Weight) DeliveryWeight
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.DeliveryOrderNo is not null
+					group by
+						Shipment_Inventory.Shipment_Id,
+						Shipment_Inventory.Flight_Id,
+						Shipment_Inventory.DeliveryOrderNo
+					union
+					select
+						Shipment_FreightOut.ShipmentId,
+						Shipment_FreightOut.FlightId,
+						Shipment_FreightOut.DeliveryOrderNo,
+						sum(Shipment_FreightOut.Pieces) DeliveryPieces,
+						sum(Shipment_FreightOut.Weight) DeliveryWeight
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.DeliveryOrderNo is not null	
+					group by
+						Shipment_FreightOut.ShipmentId,
+						Shipment_FreightOut.FlightId,
+						Shipment_FreightOut.DeliveryOrderNo
+					)Shipment_Inventory
+						on Shipment_Master.ShipmentId = Shipment_Inventory.ShipmentID and
+							Imp_Delivery.ImpDeliveryId = Shipment_Inventory.DeliveryOrderNo inner join
+					Flt_OperativeFlight
+						on Shipment_Inventory.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				where
+					Shipment_Master.ShipmentType = 'AWB' and
+					Flt_OperativeFlight.FlightKey = #{flightKey} and 
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{flightDate} as date)
+				group by
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTA,
+					Imp_Delivery.DeliveryOrderNo,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.PartShipment,
+					Imp_Delivery.CancellationReasonCode
+			),ExportManifestShipmentsForMRS AS(
+				select
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTD as FlightDate,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					isnull(Shipment_Master.Weight, 0) as Weight,
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					isnull(Shipment_Master.PartShipment, 0) PartShipment,
+					'E' as ImportExportIndicator,
+					sum(Exp_ManifestShipmentInfo.Piece) ShipmentPiece,
+					sum(Exp_ManifestShipmentInfo.Weight) ShipmentWeight
+				from
+					Exp_Manifest inner join
+					Exp_ManifestULDInfo
+						on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join
+					Exp_ManifestShipmentInfo
+						on Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join
+					Shipment_Master
+						on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+					Flt_OperativeFlight
+						on Exp_Manifest.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+					Exp_FlightEvents
+						on Flt_OperativeFlight_Legs.Flight_ID = Exp_FlightEvents.FlightId
+				where
+					Shipment_Master.ShipmentType = 'AWB' and
+					Exp_FlightEvents.FlightCompletedBy is not null and
+					Flt_OperativeFlight.FlightKey =#{flightKey}  and 
+					cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{flightDate} as date)
+				group by
+					Shipment_Master.ShipmentId,
+					Flt_OperativeFlight.FlightKey,
+					Flt_OperativeFlight_Legs.DateSTD,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Pieces,
+					isnull(Shipment_Master.Weight, 0),
+					Shipment_Master.NatureOfGoodsDescription,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.PartShipment
+			)
+			select
+					CustomShipmentInfo.ShipmentId,
+					CustomShipmentInfo.FlightKey,
+					CustomShipmentInfo.FlightDate,
+					CustomShipmentInfo.ShipmentNumber,
+					CustomShipmentInfo.ShipmentDate,
+					CustomShipmentInfo.Pieces,
+					CustomShipmentInfo.Weight,
+					CustomShipmentInfo.NatureOfGoodsDescription,
+					CustomShipmentInfo.Origin,
+					CustomShipmentInfo.Destination,
+					CustomShipmentInfo.PartShipment,
+					CustomShipmentInfo.ImportExportIndicator,
+					CustomShipmentInfo.ShipmentPiece,
+					CustomShipmentInfo.ShipmentWeight,
+					CustomShipmentInfo.DeliveryOrderNo,
+					CustomShipmentInfo.CancellationReasonCode
+				from(
+					select
+						ImportFoundShipmentsForMRS.ShipmentId,
+						ImportFoundShipmentsForMRS.FlightKey,
+						ImportFoundShipmentsForMRS.FlightDate,
+						ImportFoundShipmentsForMRS.ShipmentNumber,
+						ImportFoundShipmentsForMRS.ShipmentDate,
+						ImportFoundShipmentsForMRS.Pieces,
+						ImportFoundShipmentsForMRS.Weight,
+						ImportFoundShipmentsForMRS.NatureOfGoodsDescription,
+						ImportFoundShipmentsForMRS.Origin,
+						ImportFoundShipmentsForMRS.Destination,
+						ImportFoundShipmentsForMRS.PartShipment,
+						ImportFoundShipmentsForMRS.ImportExportIndicator,
+						(ImportFoundShipmentsForMRS.ShipmentPiece
+							- isnull((select 
+										sum(ImportDeliveryShipmentsForMRS.ShipmentPiece) 
+									from 
+										ImportDeliveryShipmentsForMRS 
+									where 
+										ImportDeliveryShipmentsForMRS.ShipmentNumber = ImportFoundShipmentsForMRS.ShipmentNumber  and
+										ImportDeliveryShipmentsForMRS.ShipmentDate = ImportFoundShipmentsForMRS.ShipmentDate and
+										ImportDeliveryShipmentsForMRS.CancellationReasonCode is null
+									),0)
+						) as ShipmentPiece,
+						(ImportFoundShipmentsForMRS.ShipmentWeight
+							- isnull((select 
+										sum(ImportDeliveryShipmentsForMRS.ShipmentWeight) 
+									from 
+										ImportDeliveryShipmentsForMRS 
+									where 
+										ImportDeliveryShipmentsForMRS.ShipmentNumber = ImportFoundShipmentsForMRS.ShipmentNumber  and
+										ImportDeliveryShipmentsForMRS.ShipmentDate = ImportFoundShipmentsForMRS.ShipmentDate and
+										ImportDeliveryShipmentsForMRS.CancellationReasonCode is null
+									),0)
+						) as ShipmentWeight,
+						NULL DeliveryOrderNo,
+						NULL CancellationReasonCode
+					from
+						ImportFoundShipmentsForMRS
+					where
+						not exists(
+							select
+								null
+							from
+								ImportArrivalManifestShipmentsForMRS
+							where
+								ImportArrivalManifestShipmentsForMRS.ShipmentNumber = ImportFoundShipmentsForMRS.ShipmentNumber and
+								ImportArrivalManifestShipmentsForMRS.ShipmentDate = ImportFoundShipmentsForMRS.ShipmentDate
+						)
+					union
+					select
+						ImportArrivalManifestShipmentsForMRS.ShipmentId,
+						ImportArrivalManifestShipmentsForMRS.FlightKey,
+						ImportArrivalManifestShipmentsForMRS.FlightDate,
+						ImportArrivalManifestShipmentsForMRS.ShipmentNumber,
+						ImportArrivalManifestShipmentsForMRS.ShipmentDate,
+						ImportArrivalManifestShipmentsForMRS.Pieces,
+						ImportArrivalManifestShipmentsForMRS.Weight,
+						ImportArrivalManifestShipmentsForMRS.NatureOfGoodsDescription,
+						ImportArrivalManifestShipmentsForMRS.Origin,
+						ImportArrivalManifestShipmentsForMRS.Destination,
+						ImportArrivalManifestShipmentsForMRS.PartShipment,
+						ImportArrivalManifestShipmentsForMRS.ImportExportIndicator,
+						(ImportArrivalManifestShipmentsForMRS.ShipmentPiece
+							- isnull((select 
+										sum(ImportDeliveryShipmentsForMRS.ShipmentPiece) 
+									from 
+										ImportDeliveryShipmentsForMRS 
+									where 
+										ImportDeliveryShipmentsForMRS.ShipmentNumber = ImportArrivalManifestShipmentsForMRS.ShipmentNumber  and
+										ImportDeliveryShipmentsForMRS.ShipmentDate = ImportArrivalManifestShipmentsForMRS.ShipmentDate and
+										ImportDeliveryShipmentsForMRS.CancellationReasonCode is null
+									),0)
+						) as ShipmentPiece,
+						(ImportArrivalManifestShipmentsForMRS.ShipmentWeight
+							- isnull((select 
+										sum(ImportDeliveryShipmentsForMRS.ShipmentWeight) 
+									from 
+										ImportDeliveryShipmentsForMRS 
+									where 
+										ImportDeliveryShipmentsForMRS.ShipmentNumber = ImportArrivalManifestShipmentsForMRS.ShipmentNumber  and
+										ImportDeliveryShipmentsForMRS.ShipmentDate = ImportArrivalManifestShipmentsForMRS.ShipmentDate and
+										ImportDeliveryShipmentsForMRS.CancellationReasonCode is null
+									),0)
+						) as ShipmentWeight,
+						NULL DeliveryOrderNo,
+						NULL CancellationReasonCode
+					from
+						ImportArrivalManifestShipmentsForMRS
+					where
+						not exists(
+							select
+								null
+							from
+								ExportManifestShipmentsForMRS
+							where
+								ExportManifestShipmentsForMRS.ShipmentNumber = ImportArrivalManifestShipmentsForMRS.ShipmentNumber and
+								ExportManifestShipmentsForMRS.ShipmentDate = ImportArrivalManifestShipmentsForMRS.ShipmentDate
+						) and (ImportArrivalManifestShipmentsForMRS.ShipmentPiece
+							- isnull((select 
+										sum(ImportDeliveryShipmentsForMRS.ShipmentPiece) 
+									from 
+										ImportDeliveryShipmentsForMRS 
+									where 
+										ImportDeliveryShipmentsForMRS.ShipmentNumber = ImportArrivalManifestShipmentsForMRS.ShipmentNumber  and
+										ImportDeliveryShipmentsForMRS.ShipmentDate = ImportArrivalManifestShipmentsForMRS.ShipmentDate and
+										ImportDeliveryShipmentsForMRS.CancellationReasonCode is null
+									),0)
+						) > 0
+					union
+					select
+						ImportDeliveryShipmentsForMRS.ShipmentId,
+						ImportDeliveryShipmentsForMRS.FlightKey,
+						ImportDeliveryShipmentsForMRS.FlightDate,
+						ImportDeliveryShipmentsForMRS.ShipmentNumber,
+						ImportDeliveryShipmentsForMRS.ShipmentDate,
+						ImportDeliveryShipmentsForMRS.Pieces,
+						ImportDeliveryShipmentsForMRS.Weight,
+						ImportDeliveryShipmentsForMRS.NatureOfGoodsDescription,
+						ImportDeliveryShipmentsForMRS.Origin,
+						ImportDeliveryShipmentsForMRS.Destination,
+						ImportDeliveryShipmentsForMRS.PartShipment,
+						ImportDeliveryShipmentsForMRS.ImportExportIndicator,
+						ImportDeliveryShipmentsForMRS.ShipmentPiece,
+						ImportDeliveryShipmentsForMRS.ShipmentWeight,
+						ImportDeliveryShipmentsForMRS.DeliveryOrderNo,
+						ImportDeliveryShipmentsForMRS.CancellationReasonCode
+					from
+						ImportDeliveryShipmentsForMRS
+					union
+					select
+						ExportManifestShipmentsForMRS.ShipmentId,
+						ExportManifestShipmentsForMRS.FlightKey,
+						ExportManifestShipmentsForMRS.FlightDate,
+						ExportManifestShipmentsForMRS.ShipmentNumber,
+						ExportManifestShipmentsForMRS.ShipmentDate,
+						ExportManifestShipmentsForMRS.Pieces,
+						ExportManifestShipmentsForMRS.Weight,
+						ExportManifestShipmentsForMRS.NatureOfGoodsDescription,
+						ExportManifestShipmentsForMRS.Origin,
+						ExportManifestShipmentsForMRS.Destination,
+						ExportManifestShipmentsForMRS.PartShipment,
+						ExportManifestShipmentsForMRS.ImportExportIndicator,
+						ExportManifestShipmentsForMRS.ShipmentPiece,
+						ExportManifestShipmentsForMRS.ShipmentWeight,
+						NULL DeliveryOrderNo,
+						NULL CancellationReasonCode
+					from
+						ExportManifestShipmentsForMRS
+				)CustomShipmentInfo left join
+				Customs_Flight
+					on CustomShipmentInfo.FlightKey = Customs_Flight.FlightKey and
+						CustomShipmentInfo.FlightDate = Customs_Flight.FlightDate left join
+				Custom_ShipmentInfo
+				on Customs_Flight.CustomsFlightId = Custom_ShipmentInfo.CustomFlightId and
+					isnull(Custom_ShipmentInfo.ManuallyUpdated,0) = 0   
+				group by   
+					CustomShipmentInfo.ShipmentId,
+					CustomShipmentInfo.FlightKey,
+					CustomShipmentInfo.FlightDate,
+					CustomShipmentInfo.ShipmentNumber,
+					CustomShipmentInfo.ShipmentDate,
+					CustomShipmentInfo.Pieces,
+					CustomShipmentInfo.Weight,
+					CustomShipmentInfo.NatureOfGoodsDescription,
+					CustomShipmentInfo.Origin,
+					CustomShipmentInfo.Destination,
+					CustomShipmentInfo.PartShipment,
+					CustomShipmentInfo.ImportExportIndicator,
+					CustomShipmentInfo.ShipmentPiece,
+					CustomShipmentInfo.ShipmentWeight,
+					CustomShipmentInfo.DeliveryOrderNo,
+					CustomShipmentInfo.CancellationReasonCode                 
+                                              
+	]]>		
+	</select>
+	
+	<resultMap id="CustomsShipmentInfo" type="com.ngen.cosys.model.ShipmentDataModel">
+		<id column="ShipmentId" property="shipmentId" />
+			<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="ShipmentPiece" property="shipmentPiece" />
+		<result column="ShipmentWeight" property="shipmentWeight" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="PartShipment" property="partShipment" />	
+		<result column="ImportExportIndicator" property="exportOrImport" />
+		<result column="ShipmentCustomerInfoId" property="shipmentCustomerInfoId" />
+		<result column="CustomsFlightId" property="customsFlightId" />		
+		<result column="DeliveryOrderNo" property="deliveryOrderNo" />		
+		<result column="CancellationReasonCode" property="cancellationReasonCode" />			
+		<collection property="localAuthorityinfo" javaType="List"
+			ofType="com.ngen.cosys.model.LocalAuthorityModel" select="sqlGetLocalAuthorityInfo"
+			column="{shipmentId=shipmentId,deliveryOrderNo=deliveryOrderNo}">
+		</collection>
+		<collection property="customerList" javaType="List"
+			ofType="com.ngen.cosys.model.CustomerModel" select="sqlGetShipperInfo"
+			column="shipmentId=shipmentId">
+		</collection>
+	</resultMap>
+	
+	<select id="getShipmentLocalAuthorityInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultMap="ShipmentLocalAuthorityInfo">
+<!-- 		select ShipmentMasterLocalAuthInfoDtlsId,ReferenceNumber,
+		CustomerAppAgentId,
+		License,
+		Remarks from
+		Shipment_MasterLocalAuthorityDetails Inner Join
+		Shipment_MasterLocalAuthorityInfo
+		on
+		Shipment_MasterLocalAuthorityDetails.ShipmentMasterLocalAuthInfoId=Shipment_MasterLocalAuthorityInfo.ShipmentMasterLocalAuthInfoId
+		where Shipment_MasterLocalAuthorityInfo.ShipmentId=#{shipmentId}
+		Group
+		By ShipmentMasterLocalAuthInfoDtlsId ,ReferenceNumber,
+		CustomerAppAgentId,
+		License,
+		Remarks -->
+		with Acceptanceinfo as (select Exp_eAcceptanceLocalAuthDetails.TSRedocFlightKey,Exp_eAcceptanceLocalAuthDetails.TSRedocFlightDate,Shipment_Master.ShipmentId from Shipment_Master left join  Exp_eAcceptanceDocumentInformation 
+on Shipment_Master.ShipmentNumber=Exp_eAcceptanceDocumentInformation.ShipmentNumber
+left join Exp_eAcceptanceLocalAuthInformation on Exp_eAcceptanceDocumentInformation.DocumentInformationId=
+Exp_eAcceptanceLocalAuthInformation.DocumentInformationId
+left join Exp_eAcceptanceLocalAuthDetails on Exp_eAcceptanceLocalAuthDetails.LocalAuthorityInfoId
+=Exp_eAcceptanceLocalAuthInformation.DocumentInformationId
+where Shipment_Master.ShipmentId=#{shipmentId}
+ ) ,larInfo as ( 
+			select
+			Shipment_MasterLocalAuthorityInfo.ShipmentId,
+			Shipment_MasterLocalAuthorityInfo. ShipmentMasterLocalAuthInfoId,
+			Shipment_MasterLocalAuthorityDetails.License,
+			Shipment_MasterLocalAuthorityDetails.ReferenceNumber,
+			Shipment_MasterLocalAuthorityDetails.Remarks,
+			isnull(Shipment_MasterLocalAuthorityDetails.CustomerAppAgentId
+				, (select
+						Customer_Master.Customer_ID
+					from
+						Shipment_MasterCustomerInfo inner join
+						Customer_Master
+							on Shipment_MasterCustomerInfo.CustomerCode = Customer_Master.CustomerCode
+					where
+						Shipment_MasterCustomerInfo.ShipmentId = Shipment_MasterLocalAuthorityInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'AGT')) as CustomerAppAgentId
+			
+		
+
+		from
+			Shipment_MasterLocalAuthorityInfo inner join
+			Shipment_MasterLocalAuthorityDetails
+			on Shipment_MasterLocalAuthorityInfo.ShipmentMasterLocalAuthInfoId = Shipment_MasterLocalAuthorityDetails.ShipmentMasterLocalAuthInfoId
+		where
+			Shipment_MasterLocalAuthorityInfo.ShipmentId =#{shipmentId} and Shipment_MasterLocalAuthorityInfo.ShipmentMasterLocalAuthInfoId= #{shipmentMasterLocalAuthInfoId}
+
+			union
+       select     Imp_Delivery.ShipmentId,
+			Imp_DeliveryLocalAuthorityInformation.ImpDeliveryLocalAuthorityInformationId as ShipmentMasterLocalAuthInfoId,
+			Imp_DeliveryLocalAuthorityDetails.License,
+			Imp_DeliveryLocalAuthorityDetails.ReferenceNumber,
+			Imp_DeliveryLocalAuthorityDetails.Remarks,
+			Imp_DeliveryLocalAuthorityDetails.AppointedAgentCode as CustomerAppAgentId
+		from
+		Imp_Delivery inner join 
+		Imp_DeliveryLocalAuthorityInformation 
+		on
+		Imp_Delivery.ImpDeliveryId=Imp_DeliveryLocalAuthorityInformation.ImpDeliveryId
+		inner join 
+		Imp_DeliveryLocalAuthorityDetails on
+		Imp_DeliveryLocalAuthorityDetails.ImpDeliveryLocalAuthorityInformationId=
+		Imp_DeliveryLocalAuthorityInformation.ImpDeliveryLocalAuthorityInformationId
+		where Imp_Delivery.ShipmentId =#{shipmentId} and Imp_DeliveryLocalAuthorityInformation.ImpDeliveryLocalAuthorityInformationId=#{shipmentMasterLocalAuthInfoId}
+		)
+		select 
+		larInfo.ShipmentId,
+		larInfo.ShipmentMasterLocalAuthInfoId,
+		larInfo.License,
+		larInfo.ReferenceNumber,
+		larInfo.Remarks,
+		  		larInfo.CustomerAppAgentId,
+				Acceptanceinfo.TSRedocFlightKey, 
+				Acceptanceinfo.TSRedocFlightDate 
+				from 	larInfo left join
+Acceptanceinfo on larInfo.ShipmentId=Acceptanceinfo.ShipmentId 
+		
+	</select>
+	
+	<resultMap id="ShipmentLocalAuthorityInfo"
+		type="com.ngen.cosys.model.LocalAuthorityDetailModel">
+		<id column="shipmentId" property="shipmentId" />
+		<result column="ReferenceNumber" property="referenceNumber" />
+		<result column="License" property="license" />
+		<result column="Remarks" property="remarks" />
+		<result column="CustomerAppAgentId" property="appointedAgent" />
+		<result column="DeliveryOrderNo" property="deliveryOrderNo" />
+					<result column="TSRedocFlightKey" property="tsRedocFlightKey" /> 
+					<result column="TSRedocFlightDate" property="tsRedocFlightDate" />
+					<result column="CancellationReasonCode" property="cancellationReasonCode" />
+					
+		
+	</resultMap>
+
+	<select id="sqlGetLocalAuthorityInfo" resultMap="LocalAuthorityInfodata"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel" resultType="com.ngen.cosys.model.LocalAuthorityModel">
+	<!-- 	select LAR.ShipmentMasterLocalAuthInfoId,LAR.Type,LAR.ShipmentId
+		from Shipment_MasterLocalAuthorityInfo LAR
+		Inner Join
+		Shipment_MasterLocalAuthorityDetails LARINFO
+		on
+		LAR.ShipmentMasterLocalAuthInfoId=LARINFO.ShipmentMasterLocalAuthInfoId
+		where ShipmentId=#{shipmentId} -->
+		select LAR.ShipmentMasterLocalAuthInfoId,LAR.Type,LAR.ShipmentId,'' as CancellationReasonCode
+		from Shipment_MasterLocalAuthorityInfo LAR
+		Inner Join
+		Shipment_MasterLocalAuthorityDetails LARINFO
+		on
+		LAR.ShipmentMasterLocalAuthInfoId=LARINFO.ShipmentMasterLocalAuthInfoId
+		where ShipmentId=#{shipmentId} 
+		union
+			
+	select  Imp_DeliveryLocalAuthorityInformation.ImpDeliveryLocalAuthorityInformationId as ShipmentMasterLocalAuthInfoId, Imp_DeliveryLocalAuthorityInformation.LocalAuthorityType as Type,	Imp_Delivery.ShipmentId,Imp_Delivery.CancellationReasonCode
+ from Imp_Delivery inner join Shipment_Master on  Imp_Delivery.ShipmentId=Shipment_Master.ShipmentId
+	 left join Imp_DeliveryLocalAuthorityInformation on Imp_DeliveryLocalAuthorityInformation.ImpDeliveryId=Imp_Delivery.ImpDeliveryId
+	 where Shipment_MAster.ShipmentId=#{shipmentId} and Imp_Delivery.DeliveryOrderNo=#{deliveryOrderNo}
+		
+		
+		
+	</select>
+	
+	<resultMap id="LocalAuthorityInfodata" type="com.ngen.cosys.model.LocalAuthorityModel">
+		<id column="shipmentId" property="shipmentId" />
+		<result column="ShipmentMasterLocalAuthInfoId" property="shipmentMasterLocalAuthInfoId" />
+		<result column="Type" property="localAuthorityType" />
+			<result column="CancellationReasonCode" property="cancellationReasonCode" />
+		
+		<collection property="localAuthorityDetail" javaType="List"
+			ofType="com.ngen.cosys.model.LocalAuthorityDetailModel" select="getShipmentLocalAuthorityInfo"
+			column="{shipmentId=shipmentId,shipmentMasterLocalAuthInfoId=shipmentMasterLocalAuthInfoId}" >
+		</collection>
+	</resultMap>
+		<select id="sqlGetShipperInfo" resultMap="shipperInfo"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel" resultType="com.ngen.cosys.model.CustomerModel">
+						select Shp.CustomerName,
+		Shp.CustomerType,
+		ShpAddr.StreetAddress,
+		ShpAddr.Place,
+		ShpAddr.Postal,
+		ShpAddr.StateCode,
+		shp.AppointedAgent	 
+		from Shipment_MasterCustomerInfo Shp
+		left join Shipment_MasterCustomerAddressInfo ShpAddr on
+		Shp.ShipmentCustomerInfoId = ShpAddr.ShipmentCustomerInfoId
+		 left join 
+		customer_Master CM on  CM.Customer_ID=Shp.AppointedAgent 
+		  where
+		Shp.ShipmentId=#{shipmentId}
+	</select>
+
+
+	<resultMap id="shipperInfo" type="com.ngen.cosys.model.CustomerModel">
+		<id column="shipmentCustomerInfoId" property="shipmentCustomerInfoId" />
+		<result column="AppointedAgent" property="appointedAgent" />
+		<result column="CustomerType" property="customerType" />
+		<result column="CustomerName" property="customerName" />
+		<result column="StreetAddress" property="streetAddress" />
+		<result column="Place" property="place" />
+		<result column="Postal" property="postal" />
+		<result column="StateCode" property="stateCode" />
+		<result column="CountryCode" property="countryCode" />
+	</resultMap>
+	<insert id="addCustomsFlight" parameterType="com.ngen.cosys.model.FlightModel"
+		useGeneratedKeys="true" keyProperty="customsFlightId">
+		insert into Customs_Flight
+		(FlightBoardPoint ,
+		FlightOffPoint ,
+		ImportExportIndicator ,
+		FlightType ,
+		CreatedUserCode ,
+		CreatedDateTime ,
+		FlightKey ,
+		FlightDate )
+		values(#{flightBoardPoint},
+		#{flightOffPoint},#{importExportIndicator},
+		#{flightType},
+		#{createdBy},
+		CURRENT_TIMESTAMP,
+		#{flightKey},
+		#{flightDate})
+	</insert>
+
+	<insert id="addMrSInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		useGeneratedKeys="true" keyProperty="customShipmentInfoId">
+		insert into
+		Custom_ShipmentInfo(TotalPieces,TotalWeight,ShipmentPieces,
+		ShipmentWeight,ShipmentNumber,NatureOfGoods,
+		Origin,
+		FinalDestination,
+		CreatedUserCode,
+		CreatedDateTime,
+		ImportExportIndicator,CustomFlightId,PartShipmentFlag,WeightUnitCode,DoNumber,PoNumber,CancellationReasonCode)
+		values(#{pieces},#{weight},#{shipmentPiece},#{shipmentWeight},#{shipmentNumber},
+		#{natureOfGoodsDescription},#{origin},#{destination},#{createdBy},CURRENT_TIMESTAMP,
+		#{exportOrImport},#{customsFlightId},#{partShipment},'K',#{deliveryOrderNo},#{poNumber},#{cancellationReasonCode})
+	</insert>
+		
+	<update id="deleteCustomsCustomerInfo" parameterType="com.ngen.cosys.model.CustomerModel">
+		delete Custom_ShipmentCustomerInfo
+		where CustomShipmentInfoId=#{customShipmentInfoId}
+	</update>
+	
+	<update id="updateCustomsCustomerInfo" parameterType="com.ngen.cosys.model.CustomerModel">
+	update Custom_ShipmentCustomerInfo set 
+CustomerName=#{customerName},
+CreatedUserCode=#{createdBy},
+CreatedDateTime=CURRENT_TIMESTAMP,
+CustomerType=#{customerType},
+AppointedAgentCode=#{appointedAgent}
+where CustomShipmentInfoId=#{customShipmentInfoId}
+	</update>
+	<insert id="addMrsCustomerInfo" parameterType="com.ngen.cosys.model.CustomerModel"
+		useGeneratedKeys="true" keyProperty="customShipmentCustomerInfoId">
+		insert into Custom_ShipmentCustomerInfo(CustomShipmentInfoId,CustomerName,CreatedUserCode,CreatedDateTime ,CustomerType,AppointedAgentCode)
+		values (#{customShipmentInfoId},#{customerName},#{createdBy},CURRENT_TIMESTAMP,#{customerType},#{appointedAgent})
+	</insert>
+
+	<insert id="addMrsCustomerAddressInfo" parameterType="com.ngen.cosys.model.CustomerModel"
+		useGeneratedKeys="true">
+		insert into
+		Custom_ShipmentCustomerAddressInfo(customShipmentCustomerInfoId,StreetAddress,Place,Postal,StateCode,CountryCode,CreatedUserCode,CreatedDateTime)
+		values
+		(#{customShipmentCustomerInfoId},#{streetAddress},#{place},#{postal},#{stateCode},#{countryCode},#{createdBy},CURRENT_TIMESTAMP)
+	</insert>
+	
+	<insert id="addLARInfo" parameterType="com.ngen.cosys.model.LocalAuthorityModel"
+		useGeneratedKeys="true" keyProperty="customShipmentLocalAuthorityRequirementId">
+		insert into Custom_ShipmentLocalAuthorityRequirement(CustomShipmentInfoId,Type,CreatedUserCode,CreatedDateTime)
+		values(#{customShipmentInfoId},#{localAuthorityType},'SYS',CURRENT_TIMESTAMP)
+	</insert>
+	
+	<insert id="addLARDetails" parameterType="com.ngen.cosys.model.LocalAuthorityDetailModel"
+		useGeneratedKeys="true" keyProperty="customShipmentLocalAuthorityRequirementDetailId">
+		insert into
+		Custom_ShipmentLocalAuthorityRequirementDetail(CustomShipmentLocalAuthorityRequirementId,ReferenceNumber,AppointedAgentCode,LicenseInfo,Remarks,CreatedUserCode,CreatedDateTime,TransactionSequenceNumber,RequirementDescription,DoNumber ,TSRedocFlightKey ,TSRedocFlightDate)
+		values
+		(#{customShipmentLocalAuthorityRequirementId},#{referenceNumber},
+		  <choose>
+		 <when test="appointedAgent!= null and  appointedAgent==0">
+		(select Customer_ID from customer_master where customerCode='IXX'),
+		</when>
+		<when  test="appointedAgent!= null and appointedAgent==1">
+		(select Customer_ID from customer_master where customerCode='EXX'),
+		</when>
+		<when  test="appointedAgent!= null">
+			#{appointedAgent},
+		</when>
+	  </choose>
+		#{license},#{remarks},'SYSY',CURRENT_TIMESTAMP,(SELECT
+		(select isnull(max(TransactionSequenceNumber),0) from
+		Custom_ShipmentLocalAuthorityRequirementDetail )+1),'aa',#{deliveryOrderNo},#{tsRedocFlightKey},#{tsRedocFlightDate})</insert>
+
+	<select id="isFlightExists" parameterType="com.ngen.cosys.model.FlightModel"
+		resultType="com.ngen.cosys.model.FlightModel">
+		select FlightKey,FlightDate from Customs_Flight
+	</select>
+	
+	<select id="isCheckCustomsShipment" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select * from Custom_ShipmentInfo 
+		where Custom_ShipmentInfo.ShipmentNumber=#{shipmentNumber} and Custom_ShipmentInfo.CustomFlightId=#{customsFlightId} 
+	 <if test="deliveryOrderNo != null">
+		and Custom_ShipmentInfo.DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and Custom_ShipmentInfo.PoNumber=#{poNumber} 
+		</if>
+		order by CustomFlightId 
+		<!-- and CustomFlightId=#{customsFlightId} -->
+	</select>
+
+
+	<!-- <select id="sqlGetShipperInfo" resultMap="shipperInfo"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel" resultType="com.ngen.cosys.model.CustomerModel">
+		select Shp.CustomerName,
+		Shp.CustomerType,
+		ShpAddr.StreetAddress,
+		ShpAddr.Place,
+		ShpAddr.Postal,
+		ShpAddr.StateCode,
+		ShpAddr.CountryCode
+		from Shipment_MasterCustomerInfo Shp
+		inner join Shipment_MasterCustomerAddressInfo ShpAddr on
+		Shp.ShipmentCustomerInfoId = ShpAddr.ShipmentCustomerInfoId where
+		Shp.ShipmentId=#{shipmentId}
+	</select>
+
+
+	<resultMap id="shipperInfo" type="com.ngen.cosys.model.CustomerModel">
+		<id column="shipmentCustomerInfoId" property="shipmentCustomerInfoId" />
+		<result column="AppointedAgent" property="appointedAgent" />
+		<result column="CustomerType" property="customerType" />
+		<result column="CustomerName" property="customerName" />
+		<result column="StreetAddress" property="streetAddress" />
+		<result column="Place" property="place" />
+		<result column="Postal" property="postal" />
+		<result column="StateCode" property="stateCode" />
+		<result column="CountryCode" property="countryCode" />
+	</resultMap> -->
+	
+	<update id="updateCustomsShipmentInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		update Custom_ShipmentInfo 
+		set TotalPieces=#{pieces},
+		TotalWeight=#{weight},
+		ShipmentPieces=#{shipmentPiece},
+		ShipmentWeight=#{shipmentWeight},
+		ShipmentNumber=#{shipmentNumber},
+		NatureOfGoods=#{natureOfGoodsDescription},
+		Origin=#{origin},
+		FinalDestination=#{destination},
+		CreatedUserCode=#{createdBy},
+		CreatedDateTime=CURRENT_TIMESTAMP,
+		ImportExportIndicator=#{exportOrImport},
+		PartShipmentFlag=#{partShipment},
+		CustomFlightId=#{customsFlightId},
+		DoNumber=#{deliveryOrderNo}
+		where
+		CustomShipmentInfoId=#{customShipmentInfoId} 
+	</update>
+
+
+	<update id="updateCustomsCustomerAddressInfo" parameterType="com.ngen.cosys.model.CustomerModel">
+		update
+		Custom_ShipmentCustomerAddressInfo set
+		StreetAddress=#{streetAddress},
+		Place=#{place},
+		Postal=#{postal},
+		StateCode=#{stateCode},
+		CountryCode=#{countryCode},
+		CreatedUserCode=#{createdBy},
+		CreatedDateTime=CURRENT_TIMESTAMP
+		where
+		customShipmentCustomerInfoId=#{customShipmentCustomerInfoId}
+	</update>
+	
+	<update id="updateCustomsLARInfo" parameterType="com.ngen.cosys.model.LocalAuthorityModel">
+		update
+		Custom_ShipmentLocalAuthorityRequirement set CustomShipmentInfoId=
+		#{customShipmentInfoId},Type=#{localAuthorityType},CreatedUserCode='SYS',CreatedDateTime=CURRENT_TIMESTAMP
+		where CustomShipmentInfoId= #{customShipmentInfoId}
+	</update>
+	
+	<update id="updateCustomsLARDetails" parameterType="com.ngen.cosys.model.LocalAuthorityDetailModel">
+		update
+		Custom_ShipmentLocalAuthorityRequirementDetail set
+		ReferenceNumber=#{referenceNumber},
+		AppointedAgentCode=#{appointedAgent},
+		LicenseInfo=#{license},
+		Remarks=#{remarks},
+		CreatedUserCode=#{createdBy},
+		CreatedDateTime=CURRENT_TIMESTAMP,
+		DoNumber=#{deliveryOrderNo} ,  
+		TSRedocFlightKey=#{tsRedocFlightKey} ,
+		TSRedocFlightDate=#{tsRedocFlightDate}
+		where
+		CustomShipmentLocalAuthorityRequirementId=#{customShipmentLocalAuthorityRequirementId}
+		and
+		CustomShipmentLocalAuthorityRequirementDetailId=#{customShipmentLocalAuthorityRequirementDetailId}
+	</update>
+<insert id="linkCmdToMrs"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		useGeneratedKeys="true">
+		insert into Custom_CargoManifestDeclarationLinkToMRS(
+		AwbPrefix,
+		AwbSerialNumber ,
+		HWBNumber ,
+		CMDProcessingId ,
+		CreatedUserCode ,
+		CreatedDateTime
+		,Custom_FlightId,ShipmentNumber)values(#{awbPrefix},#{awbSerialNumber},#{hwbNumber},#{cmdProcessingId},'SYSO',CURRENT_TIMESTAMP,#{customsFlightId},#{shipmentNumber})
+	</insert>
+	<delete id="deleteCmdInfoOnHold"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		delete from Custom_ShipmentHold
+		where AwbPrefix=#{awbPrefix}
+		and AwbSerialNumber=#{awbSerialNumber} 
+		and CMDProcessingId=#{cmdProcessingId}
+	</delete>
+	<select id="sqlGetHoldShipmentsForCurrentShipmentNumber"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+			select AwbPrefix as awbPrefix,AwbSerialNumber as awbSerialNumber,CMDProcessingId as cmdProcessingId from Custom_ShipmentHold where AwbPrefix=#{awbPrefix} and AwbSerialNumber=#{awbSerialNumber}
+
+	</select>
+	<select id="sqlGetCustomFlightIdAndPiecesFromLinkMrs"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select CCDM.Pieces AS pieces, CCDM.LocalAuthorityType as localAuthorityType
+		from Custom_CargoManifestDeclarationMessage CCDM
+		inner join Custom_CargoManifestDeclarationLinkToMRS CCDLM on
+		CCDM.CMDProcessingId=CCDLM.CMDProcessingId AND
+		CCDM.AwbPrefix=CCDLM.AwbPrefix AND
+		CCDM.AwbSerialNumber=CCDLM.AwbSerialNumber
+		WHERE CCDLM.Custom_FlightId=#{customsFlightId} 
+		and CCDM.AwbPrefix=#{awbPrefix}
+		 and CCDM.AwbSerialNumber=#{awbSerialNumber}
+		
+	</select>
+	<update id="updateMrSInfo"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		update
+		Custom_ShipmentInfo set partShipmentFlag=1
+
+		where CustomFlightId=#{customsFlightId} and
+		ShipmentNumber=#{shipmentNumber}   <if test="deliveryOrderNo != null">
+		and DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and Custom_ShipmentInfo.PoNumber=#{poNumber} 
+		</if>
+	</update>
+	<update id="updateMrSStatusCode"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		update
+		Custom_ShipmentInfo set MRSStatusCode=#{mrsStatusCode}
+
+		where CustomFlightId=#{customsFlightId} and
+		ShipmentNumber=#{shipmentNumber}   <if test="deliveryOrderNo != null">
+		and DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and PoNumber=#{poNumber} 
+		</if>
+	</update>
+		<select id="sqlGetCustomFlightIdAndPiecesFromCustShipInfo"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select TotalPieces as pieces ,CustomFlightId as customFlightId ,MRSSentDate
+		as mrsSentDate ,ShipmentNumber from Custom_ShipmentInfo where
+		ShipmentNumber=#{shipmentNumber} and CustomFlightId=#{customsFlightId} 
+		  <if test="deliveryOrderNo != null">
+		and Custom_ShipmentInfo.DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and Custom_ShipmentInfo.PoNumber=#{poNumber} 
+		</if> order by CustomFlightId
+	</select>
+	<select id="getCancelflag"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+select top(1) (select
+		case when Customs_Flight.FlightCancelFlag is not null and
+		Customs_Flight.FlightCancelFlag=1 then 'Y' else 'N' end) as
+		FlightCancelFlag
+		from Customs_Flight left join Custom_ShipmentInfo on
+		Customs_Flight.CustomsFlightId=Custom_ShipmentInfo.CustomFlightId
+		where Custom_ShipmentInfo.CustomFlightId=#{customsFlightId}
+			</select>
+				<update id="updateCancelFlag"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		update Customs_Flight set FlightCancelFlag=0 where
+		Customs_Flight.FlightKey=#{flightKey} and
+		cast(Customs_Flight.FlightDate as date)=#{flightDate} and
+		Customs_Flight.ImportExportIndicator=#{exportOrImport}
+	</update>
+
+	<select id="sqlGetFlightsToSendMrs"
+		resultType="com.ngen.cosys.model.ManifesrReconciliationStatementModel">
+		select
+			CustomsFlights.CustomsFlightId
+		from
+			(
+				select 
+					Customs_Flight.CustomsFlightId,
+					Customs_Flight.ImportExportIndicator,
+					DateDiff(day,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays
+				from
+					Customs_Flight
+				where
+					 Customs_Flight.MRSSentDate IS NULL
+			)CustomsFlights
+		group by
+			CustomsFlights.CustomsFlightId,
+			CustomsFlights.ImportExportIndicator,
+			CustomsFlights.DifferenceOfDays
+		having
+			(CustomsFlights.ImportExportIndicator = 'I' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR IMPORT')) OR
+			(CustomsFlights.ImportExportIndicator = 'I' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR IMPORT')) OR
+			(CustomsFlights.ImportExportIndicator = 'E' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR EXPORT')) OR
+			(CustomsFlights.ImportExportIndicator = 'E' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR EXPORT'))
+	</select>
+
+	<select id="getConsolidatedMrsInfo" resultMap="ConsolidatedMrsInfo"
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel">
+		SELECT 
+			top(1)( 
+				SELECT 
+					CASE WHEN MRS.MRSSequenceNo IS NOT NULL THEN MRS.MRSSequenceNo+1 ELSE 1 END ) MRSSequenceNo ,
+					CF.ImportExportIndicator as typeofShipment,
+					CF.FlightKey as
+					flightNumber,
+					cf.FlightDate as scheduledFlightDate,
+					CF.FlightBoardPoint
+					AS pointOfUnlading,
+					CF.FlightOffPoint AS
+					pointOfLading,CF.CustomsFlightId,
+					(select
+						case when CF.FlightCancelFlag is not null and CF.FlightCancelFlag=1 then 
+							'Y' 
+						else 
+							'N' 
+						end) as FlightCancelFlag
+		FROM 
+			Customs_Flight CF left JOIN 
+			Custom_ManifestReconciliationStatement MRS 
+				ON CF.CustomsFlightId=MRS.CustomFlightId
+		where
+			CF.CustomsFlightId=#{customsFlightId}
+	</select>
+	
+	<resultMap id="ConsolidatedMrsInfo"
+		type="com.ngen.cosys.model.ManifesrReconciliationStatementModel">
+		<id column="CustomsFlightId" property="customsFlightId" />
+		<result column="MRSSequenceNo" property="mrsSequenceNo" />
+		<result column="typeofShipment" property="typeofShipment" />
+		<result column="flightNumber" property="flightNumber" />
+		<result column="scheduledFlightDate" property="scheduledFlightDate" />
+		<result column="pointOfUnlading" property="pointOfUnlading" />
+		<result column="pointOfLading" property="pointOfLading" />
+	<result column="FlightCancelFlag" property="flightCancelFlag" />
+		<!-- <result column="StreetAddress" property="streetAddress" /> -->
+		<collection property="mAwbDetails" javaType="List"
+			ofType="com.ngen.cosys.model.MasterAwbDetailModel"
+			select="getMasterAwbDetails"
+			column="customsFlightId=customsFlightId">
+		</collection>
+		<collection property="hwbModel" javaType="List"
+			ofType="com.ngen.cosys.model.HwbModel" select="gethwbDetails"
+			column="customsFlightId=customsFlightId">
+		</collection>
+
+	</resultMap>
+	<select id="getMasterAwbDetails" resultMap="masterAwbDetails"
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel">
+	select 	
+		csc.CustomShipmentInfoId,
+		cs.ShipmentNumber,
+		cs.Origin,
+		cs.FinalDestination,
+		cs.MRSStatusCode ,
+		cs.TotalPieces,
+		cs.ShipmentPieces,
+		cs.ShipmentWeight,
+		cs.NatureOfGoods,
+		csc.CustomerName,
+		csca.StreetAddress
+	 from Custom_ShipmentInfo cs  left join 
+	 Custom_ShipmentCustomerInfo csc
+	 on cs.CustomShipmentInfoId=csc.CustomShipmentInfoId 
+	 left join 
+	 Custom_ShipmentCustomerAddressInfo csca
+	 on
+	 csc.CustomShipmentCustomerInfoId=csca.CustomShipmentCustomerInfoId
+	 where CustomFlightId=#{customsFlightId}
+	</select>
+	<resultMap id="masterAwbDetails"
+		type="com.ngen.cosys.model.MasterAwbDetailModel">
+		<id column="customShipmentInfoId" property="customShipmentInfoId" />
+		<result column="ShipmentNumber" property="masterAWBNumber" />
+		<result column="Origin" property="airportCityCodeofOrigin" />
+		<result column="FinalDestination" property="airportCityCodeofDestination" />
+		<result column="MRSStatusCode" property="disparityIndicator" />
+		<result column="TotalPieces" property="originalNumberofPackages" />
+		<result column="ShipmentPieces" property="numberofPackagesinFlight" />
+		<result column="ShipmentWeight" property="weight" />
+		<result column="NatureOfGoods" property="descriptionofGoods" />
+		<result column="CustomerName" property="shipperOrConsigneeNameOne" />
+		<result column="StreetAddress" property="shipperOrConsigneeAddressOne" />
+		<result column="MRSStatusCode" property="exemptionIndicator" />
+	</resultMap>
+
+	<select id="getConsigneeDetails" 
+		parameterType="com.ngen.cosys.model.MasterAwbDetailModel"
+		resultType="com.ngen.cosys.model.CustomerModel">
+select CustomerName,StreetAddress,CustomShipmentInfoId from Custom_ShipmentCustomerInfo inner join Custom_ShipmentCustomerAddressinfo
+on Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId=Custom_ShipmentCustomerAddressinfo.CustomShipmentCustomerInfoId
+where CustomShipmentInfoId=#{customShipmentInfoId} and CustomerType='CNE'
+	</select>
+		<select id="getShipperDetails" 
+		parameterType="com.ngen.cosys.model.MasterAwbDetailModel"
+		resultType="com.ngen.cosys.model.CustomerModel">
+select CustomerName ,StreetAddress ,CustomShipmentInfoId from Custom_ShipmentCustomerInfo inner join Custom_ShipmentCustomerAddressinfo
+on Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId=Custom_ShipmentCustomerAddressinfo.CustomShipmentCustomerInfoId
+where CustomShipmentInfoId=253 and CustomerType='SHP'
+	</select>
+	<select id="gethwbDetails" resultMap="hwbDetails"
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel"
+		resultType="com.ngen.cosys.model.HwbModel">
+		select ccdm.HWBNumber,ccdm.HWBPieces,ccdm.HWBWeight,ccdm.HWBNatureOfGoods ,ccdla.RequirementDescription from Custom_CargoManifestDeclarationMessage ccdm
+	 left join 
+	Custom_CargoManifestDeclarationLocalAuthorityInfo ccdla on ccdla.CMDProcessingId=ccdm.CMDProcessingId 
+	left join
+	Custom_CargoManifestDeclarationLinkToMRS ccdlm on
+	ccdlm.CMDProcessingId=ccdm.CMDProcessingId
+	where ccdlm.Custom_FlightId=#{customsFlightId}
+	</select>
+	<resultMap id="hwbDetails"
+		type="com.ngen.cosys.model.HwbModel">
+		<id column="customShipmentInfoId" property="customShipmentInfoId" />
+		<result column="HWBNumber" property="hawbNumber" />
+		<result column="HWBPieces" property="numberOfPackages" />
+		<result column="HWBWeight" property="weight" />
+		<result column="HWBNatureOfGoods" property="descriptionOfGoods" />
+		<result column="RequirementDescription" property="permitNumber" />
+	
+	</resultMap>
+	<insert id="insertMrsOutInfo" 
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel"
+		useGeneratedKeys="true">
+		insert into Custom_ManifestReconciliationStatement( ImportExportIndicator ,
+	MRSSequenceNo,
+	MRSSentDate,
+	FirstMRSSentDate,
+
+	CreatedUserCode,
+	CreatedDateTime,
+	LastUpdatedUserCode,
+	LastUpdatedDateTime,
+	CustomFlightId)values(#{typeofShipment},#{mrsSequenceNo},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSO',CURRENT_TIMESTAMP,'SYSO',CURRENT_TIMESTAMP,#{customsFlightId})
+</insert> 
+	<update id="updateMrsSentDateToCustomsFlight"
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel"
+		useGeneratedKeys="true">
+		update Customs_Flight set MRSSentDate=CURRENT_TIMESTAMP where CustomsFlightId=#{customsFlightId}</update>
+		
+<update id="updateMrsSentDateToLinkMrs"
+		parameterType="com.ngen.cosys.model.ManifesrReconciliationStatementModel"
+		useGeneratedKeys="true">
+		update Custom_CargoManifestDeclarationLinkToMRS set MRSSentDate=CURRENT_TIMESTAMP where Custom_FlightId=#{customsFlightId}</update>
+		<select id="getMrsDestinationAddress"
+		resultType="java.lang.String">
+			SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_DESTINATION_ADDRESS'
+	
+	</select>
+		<select id="getMrsOriginatorAddress"
+		resultType="java.lang.String">
+			SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_ORIGINATOR_ADDRESS'
+	
+	</select>
+		<select id="getMrsPimaAddress"
+		resultType="java.lang.String">
+			SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode='MRS_PIMA _ADDRESS'
+	
+	</select>
+	
+	<select id="getFlightInfoFromCustoms" 
+		resultType="com.ngen.cosys.model.FlightModel">
+<!-- select FlightKey,FlightDate from Customs_Flight where MRSSentDate is null -->
+select Flt.FlightKey , Legs.DateSTD FlightDate, 
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'E' as ImportExportIndicator	
+		from 
+		Flt_OperativeFlight Flt 
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID 
+		  where concat(Flt.FlightKey,Legs.DateSTD)  in( select concat(Customs_Flight.FlightKey,Customs_Flight.FlightDate) from  Customs_Flight)
+				AND cast(Flt.FlightOriginDate as date)='2018-07-13'  and Flt.FlightKey='sq4282'
+		UNION
+		select Flt.FlightKey , Legs.DateSTA FlightDate,
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'I' as ImportExportIndicator
+		from 
+		Flt_OperativeFlight Flt
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID 
+	 where concat(Flt.FlightKey,Legs.DateSTA)  in( select concat(Customs_Flight.FlightKey,Customs_Flight.FlightDate) from  Customs_Flight)
+		AND cast(Flt.FlightOriginDate as date)='2018-07-13'  and Flt.FlightKey='sq4282'
+		order by 2,6
+	</select>
+	
+
+			<select id="getShipmentInfoForCustomsSubmittedShipment" resultMap="CustomsShipmentInfo"
+		parameterType="com.ngen.cosys.model.FlightModel" resultType="com.ngen.cosys.model.ShipmentDataModel">		
+			SELECT SM.ShipmentId,SM.ShipmentNumber, 
+		sum(SM.Pieces) as "Pieces",
+		sum(SM.Weight) as
+		"Weight", 
+		isnull(sum(ARR.TotalPieces),sum(SI.Pieces)) as
+		"ShipmentPiece",
+		isnull(sum(ARR.Weight),sum(SI.Weight)) as
+		"ShipmentWeight",	
+		SM.NatureOfGoodsDescription,
+		SM.Origin,
+		SM.Destination,
+		(select case  when SM.PartShipment is not null then 1 else 0 end ) PartShipment,
+		'I' as ImportExportIndicator,
+		CFlt.CustomsFlightId,(SELECT CASE WHEN SMLA.Type IN ('PT', 'IA') THEN 'NO' ELSE (SELECT CASE WHEN SMLA.Type='EC' THEN 'MA' ELSE (SELECT CASE WHEN SMLA.Type='PN' THEN 'OK' END)END)END)  MRS
+		FROM Flt_OperativeFlight FLT inner join Flt_OperativeFlight_Legs LEGS on
+		FLT.Flight_ID=LEGS.Flight_ID
+		inner join Imp_ArrivalManifestByFlight IAMF on
+		 IAMF.FlightId=FLT.Flight_ID
+		inner join
+		Imp_ArrivalManifestBySegment AMS on
+        AMS.ImpArrivalManifestByFlightId=IAMF.ImpArrivalManifestByFlightId
+        inner join Imp_ArrivalManifestULD AMU on
+        AMU.ImpArrivalManifestBySegmentId=AMS.ImpArrivalManifestBySegmentId
+        inner join Imp_ArrivalManifestShipmentInfo ARR
+        on ARR.ImpArrivalManifestULDId=AMU.ImpArrivalManifestULDId
+	    inner join	 Shipment_Master SM
+	    on ARR.ShipmentNumber=SM.ShipmentNumber
+		left Join Shipment_Inventory SI on
+		SI.Shipment_ID=SM.ShipmentId		
+		left join Customs_Flight CFlt on
+		CFlt.FlightKey = Flt.FlightKey and cast(CFlt.FlightDate as Date) = cast(LEGS.DateSTA as Date) 
+		left join
+		  Shipment_MasterLocalAuthorityInfo SMLA on SMLA.ShipmentId=SM.ShipmentId
+		  LEFT JOIN Custom_ShipmentInfo CSI ON
+		  CSI.CustomFlightId=CFlt.CustomSFlightId 
+		where CFlt.MRSSentDate is null and  CSI.ManuallyUpdated IS NULL  AND
+	 Flt.FlightKey=#{flightKey} AND CAST(LEGS.DateSTA AS DATE) =CAST(#{flightDate} AS DATE)
+		group by
+		SM.ShipmentId,
+		SM.ShipmentNumber,
+		SM.NatureOfGoodsDescription,
+		SM.Origin,
+		SM.Destination,
+		CFlt.CustomsFlightId,
+		SMLA.Type,
+		SM.PartShipment
+		UNION
+		SELECT SM.ShipmentId,
+		SM.ShipmentNumber,
+		sum(SM.Pieces) as
+		"Pieces",
+		sum(EMSI.Piece) as
+		"shipmentPieces",
+		sum(EMSI.Weight)as "shipmentWeight",
+		sum(SM.Weight) as
+		"Weight",	
+		SM.NatureOfGoodsDescription,
+		SM.Origin,
+		SM.Destination,
+			(select case  when SM.PartShipment is not null then 1 else 0 end ) PartShipment,
+		'E' as ImportExportIndicator,
+		CFlt.CustomsFlightId,(SELECT CASE WHEN SMLA.Type IN ('PT', 'IA') THEN 'NO' ELSE (SELECT CASE WHEN SMLA.Type='EC' THEN 'MA' ELSE (SELECT CASE WHEN SMLA.Type='PN' THEN 'OK' END)END)END)  MRS
+		FROM Flt_OperativeFlight FLT  
+		inner join Flt_OperativeFlight_Legs LEGS on
+		FLT.Flight_ID=LEGS.Flight_ID
+	inner join Exp_Manifest EM on
+		EM.FlightId=FLT.Flight_ID
+			inner join Exp_ManifestULDInfo EMU on
+			 EM.ManifestId=EMU.ManifestId
+			 inner join Exp_ManifestShipmentInfo EMSI on
+			 	EMU.ManifestUldInfoId=EMSI.ManifestUldInfoId
+				inner join Shipment_Master SM
+				on
+				EMSI.ShipmentId=SM.ShipmentId
+		left Join Shipment_Inventory SI on
+		SI.Shipment_ID=SM.ShipmentId		
+		left join Customs_Flight CFlt on
+		CFlt.FlightKey = Flt.FlightKey and cast(CFlt.FlightDate as Date) = cast(LEGS.DateSTD as Date) 
+		left join
+		  Shipment_MasterLocalAuthorityInfo SMLA on SMLA.ShipmentId=SM.ShipmentId
+		    LEFT JOIN Custom_ShipmentInfo CSI ON
+		    CSI.CustomFlightId=CFlt.CustomSFlightId 
+		where CFlt.MRSSentDate is null and CSI.ManuallyUpdated IS NULL  AND
+	 Flt.FlightKey=#{flightKey} AND CAST(LEGS.DateSTD AS DATE)=CAST(#{flightDate} AS DATE)
+		group by
+		SM.ShipmentNumber,
+		SM.ShipmentId,
+		SM.NatureOfGoodsDescription,
+		SM.Origin,
+		SM.Destination,
+		CFlt.CustomsFlightId,
+		SMLA.Type,
+		SM.PartShipment
+	</select>
+	<!-- </select>
+		<select id="getMrsFirstWindowForExport"
+		resultType="java.math.BigInteger">
+			SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR EXPORT'
+	</select>
+	<select id="getMrsSecondWindowForExport"
+		resultType="java.math.BigInteger">
+			SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR EXPORT'
+	</select>
+	<select id="getMrsFirstWindowForImport"
+		resultType="java.math.BigInteger">
+			SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR IMPORT'
+	</select>
+	<select id="getMrsSecondWindowForImport"
+		resultType="java.math.BigInteger">
+			SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='
+'
+	</select> -->
+		<select id="getFlightInfofromOperativeFlight" parameterType="com.ngen.cosys.model.FlightModel"
+		resultType="com.ngen.cosys.model.FlightModel">
+
+			
+					select Flt.FlightKey , Legs.DateSTD FlightDate, 
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'E' as ImportExportIndicator	
+		from 
+		Flt_OperativeFlight Flt 
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID and Legs.FlightBoardPoint=#{tenantAirport}
+		  where concat(Flt.FlightKey,CAST(Legs.DateSTD AS DATE)) not in( select concat(Customs_Flight.FlightKey,CAST(Customs_Flight.FlightDate AS DATE)) from  Customs_Flight)
+			AND Legs.DateSTD >=getdate()
+		UNION
+		select Flt.FlightKey , Legs.DateSTA FlightDate,
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'I' as ImportExportIndicator
+		from 
+		Flt_OperativeFlight Flt
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID AND Legs.FlightoFFPoint=#{tenantAirport}
+	 where concat(Flt.FlightKey,CAST(Legs.DateSTA AS DATE)) not in( select concat(Customs_Flight.FlightKey,CAST(Customs_Flight.FlightDate AS DATE)) from  Customs_Flight)
+		AND Flt.FlightOriginDate BETWEEN getdate()-12 and getdate() 
+		UNION
+		select Flt.FlightKey , Legs.DateSTA FlightDate,
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'I' as ImportExportIndicator
+		from 
+		Flt_OperativeFlight Flt
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID AND Legs.FlightoFFPoint!=#{tenantAirport} and Legs.FlightBoardPoint!=#{tenantAirport}
+	 where concat(Flt.FlightKey,CAST(Legs.DateSTA AS DATE)) not in( select concat(Customs_Flight.FlightKey,CAST(Customs_Flight.FlightDate AS DATE)) from  Customs_Flight)
+		AND Flt.FlightOriginDate BETWEEN getdate()-12 and getdate() 
+		union
+		select Flt.FlightKey , Legs.DateSTD FlightDate, 
+		Legs.FlightBoardPoint, Legs.FlightOffPoint, Flt.FlightType, 'E' as ImportExportIndicator	
+		from 
+		Flt_OperativeFlight Flt 
+		inner join
+		Flt_OperativeFlight_Legs Legs
+		on Flt.Flight_ID = Legs.Flight_ID AND Legs.FlightoFFPoint!=#{tenantAirport} and Legs.FlightBoardPoint!=#{tenantAirport}
+		  where concat(Flt.FlightKey,CAST(Legs.DateSTD AS DATE)) not in( select concat(Customs_Flight.FlightKey,CAST(Customs_Flight.FlightDate AS DATE)) from  Customs_Flight)
+			AND Legs.DateSTD >=getdate()
+		order by 2,6  
+
+
+			
+			</select>
+			
+	<select id="getLarInfoForTS" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		SELECT Type FROM Custom_ShipmentLocalAuthorityRequirement where
+		CustomShipmentInfoId=(SELECT CustomShipmentInfoId FROM
+		CUSTOM_sHIPMENTiNFO WHERE CUSTOMFLIGHTID=#{customsFlightId} AND
+		ShipmentNumber=#{shipmentNumber})
+	</select>
+	<insert id="insertLARInfoforTs" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		useGeneratedKeys="true" keyProperty="customShipmentLocalAuthorityRequirementId">
+		insert into
+		Custom_ShipmentLocalAuthorityRequirement(CustomShipmentInfoId,Type,CreatedUserCode,CreatedDateTime)
+		values((SELECT CustomShipmentInfoId FROM CUSTOM_SHIPMENTINFO WHERE
+		CUSTOMFLIGHTID=#{customsFlightId} AND
+		ShipmentNumber=#{shipmentNumber}),#{localAuthorityType},'SYS',CURRENT_TIMESTAMP)
+	</insert>
+	<update id="updateLARInfoforTs" parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		update Custom_ShipmentLocalAuthorityRequirement set
+		Type=#{localAuthorityType} where CustomShipmentInfoId=(SELECT
+		CustomShipmentInfoId FROM CUSTOM_sHIPMENTiNFO WHERE
+		CUSTOMFLIGHTID=#{customsFlightId} AND
+		ShipmentNumber=#{shipmentNumber} <if test="deliveryOrderNo != null">
+		and DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and PoNumber=#{poNumber} 
+		</if>)
+	</update>
+
+	<select id="getManuallyUpdatedData" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="java.lang.Boolean">
+		select ManuallyUpdated,ShipmentNumber from
+		Custom_shipmentInfo where CustomFlightId=#{customsFlightId} and
+		ShipmentNumber = #{shipmentNumber} and ManuallyUpdated = 1
+	</select>
+
+	<delete id="deleteCustom_Shipment" parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		DELETE from
+		Custom_ShipmentInfo where
+		CustomShipmentInfoId=#{customShipmentInfoId}
+	</delete>
+	<delete id="deleteCustom_ShipmentCustomer" parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		DELETE from Custom_ShipmentCustomerInfo where
+		CustomShipmentInfoId=#{customShipmentInfoId} <!-- and CustomerType=#{customerType} -->
+	</delete>
+	<delete id="deleteCustom_ShipmentCustomerAddress" parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		DELETE from Custom_ShipmentCustomerAddressInfo where
+		CustomShipmentCustomerInfoId in (		
+select CustomShipmentCustomerInfoId from Custom_ShipmentCustomerInfo where  CustomShipmentInfoId=#{customShipmentInfoId} )
+	</delete>
+	<delete id="deleteCustom_ShipmentLocalAuthorityReq"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		DELETE from Custom_ShipmentLocalAuthorityRequirement
+		where
+		CustomShipmentInfoId=#{customShipmentInfoId}
+	</delete>
+	<delete id="deleteCustom_ShipmentLocalAuthorityRequirementDet"
+		parameterType="com.ngen.cosys.model.ShipmentDataModel">
+		DELETE from
+		Custom_ShipmentLocalAuthorityRequirementDetail where
+		CustomShipmentLocalAuthorityRequirementId in(
+select CustomShipmentLocalAuthorityRequirementId from 	 Custom_ShipmentLocalAuthorityRequirement where  CustomShipmentInfoId=#{customShipmentInfoId})
+	</delete>
+	<select id="getDoOrPoInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="java.lang.String">
+	select Imp_Delivery.CancellationReasonCode from Shipment_Master inner join Imp_Delivery on 
+Shipment_Master.ShipmentId=Imp_Delivery.ShipmentID where Shipment_Master.ShipmentNumber=#{shipmentNumber} and Imp_Delivery.Pieces=#{shipmentPiece}
+<if test="deliveryOrderNo != null and deliveryOrderNo !='NO'">
+		and Imp_Delivery.DeliveryOrderNo=#{deliveryOrderNo} 
+		</if>
+	</select>
+	<select id="getExistingShipmentInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select top(1) cs.customShipmentInfoId,csci.CustomShipmentCustomerInfoId,
+		csar.CustomShipmentLocalAuthorityRequirementId
+		,csard.customShipmentLocalAuthorityRequirementDetailId,cs.CustomFlightId
+		as customsFlightId
+		from Custom_ShipmentInfo cs
+		left join Custom_ShipmentCustomerInfo csci
+		on
+		cs.customShipmentInfoId=csci.customShipmentInfoId
+		left join
+		Custom_ShipmentCustomerAddressInfo csai
+		on
+		csai.customShipmentCustomerInfoId=csci.customShipmentCustomerInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirement csar
+		on
+		csar.customShipmentInfoId=cs.customShipmentInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirementDetail csard
+		on
+		csard.customShipmentLocalAuthorityRequirementId=csar.customShipmentLocalAuthorityRequirementId
+		where cs.CustomFlightId=#{customsFlightId} and
+		ShipmentNumber=#{shipmentNumber}   <if test="deliveryOrderNo != null">
+		and cs.DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and cs.PoNumber=#{poNumber}  
+		</if>
+	</select>
+	<select id="getExistingShipmentLarDetailInfo" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select  cs.customShipmentInfoId,csci.CustomShipmentCustomerInfoId,
+		csar.CustomShipmentLocalAuthorityRequirementId
+		,csard.customShipmentLocalAuthorityRequirementDetailId,cs.CustomFlightId
+		as customsFlightId
+		from Custom_ShipmentInfo cs
+		left join Custom_ShipmentCustomerInfo csci
+		on
+		cs.customShipmentInfoId=csci.customShipmentInfoId
+		left join
+		Custom_ShipmentCustomerAddressInfo csai
+		on
+		csai.customShipmentCustomerInfoId=csci.customShipmentCustomerInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirement csar
+		on
+		csar.customShipmentInfoId=cs.customShipmentInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirementDetail csard
+		on
+		csard.customShipmentLocalAuthorityRequirementId=csar.customShipmentLocalAuthorityRequirementId
+		where cs.CustomFlightId=#{customsFlightId} and
+		cs.ShipmentNumber=#{shipmentNumber}  <if test="deliveryOrderNo != null">
+		and cs.DoNumber=#{deliveryOrderNo} 
+		</if>
+	 <if test="poNumber != null">
+		and PoNumber=#{poNumber} 
+		</if>
+	</select>
+	<select id="getExistingShipmentInfotoDelete" parameterType="com.ngen.cosys.model.ShipmentDataModel"
+		resultType="com.ngen.cosys.model.ShipmentDataModel">
+		select top(1) cs.customShipmentInfoId,csci.CustomShipmentCustomerInfoId,
+		csar.CustomShipmentLocalAuthorityRequirementId
+		,csard.customShipmentLocalAuthorityRequirementDetailId,cs.CustomFlightId
+		as customsFlightId
+		from Custom_ShipmentInfo cs
+		left join Custom_ShipmentCustomerInfo csci
+		on
+		cs.customShipmentInfoId=csci.customShipmentInfoId
+		left join
+		Custom_ShipmentCustomerAddressInfo csai
+		on
+		csai.customShipmentCustomerInfoId=csci.customShipmentCustomerInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirement csar
+		on
+		csar.customShipmentInfoId=cs.customShipmentInfoId
+		left join
+		Custom_ShipmentLocalAuthorityRequirementDetail csard
+		on
+		csard.customShipmentLocalAuthorityRequirementId=csar.customShipmentLocalAuthorityRequirementId
+		where cs.CustomFlightId=#{customsFlightId} and
+		ShipmentNumber=#{shipmentNumber}   and  cs.DoNumber='NO'
+		 and cs.ShipmentPieces=#{shipmentPiece}
+		  and cs.ImportExportIndicator='I'
+	</select>
+</mapper>

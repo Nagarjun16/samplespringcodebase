@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HoldNotifyGroupShipments">
+
+	<select id="getHoldNotifyShipmentList"
+		parameterType="com.ngen.cosys.shipment.model.SearchHoldNotifyShipment"
+		resultMap="fetchHoldNotify">
+		select
+		sm.ShipmentNumber shipmentNumber
+		, sm.Origin origin
+		, sm.Destination destination
+		, sm.NatureOfGoodsDescription natureOfGoodsDescription
+		, si.ShipmentInventory_Id
+		, si.Shipment_ID
+		, si.ShipmentLocation
+		, si.Pieces as piecesInv
+		, si.Weight as weightInv
+		, si.WarehouseLocation
+		<!-- , si.LockReason as reasonForHold -->
+		,(select top(1) Description
+		from Mst_Reason
+		where Purpose ='SHP_ON_HOLD'
+		and ReasonCode = si.LockReason) as reasonForHold
+		, si.CreatedUser_Code as createdBy
+		, si.Created_DateTime as createdOn
+		, si.LastUpdatedUser_Code as modifiedBy
+		, si.LastUpdated_DateTime as datetime
+		, si.HoldRemarks as remarks
+		, ish.SpecialHandlingCode as specialHandlingCodeInv
+		, si.PartSuffix as partSuffix
+		, si.HoldNotifyGroup as holdNotifyGroup
+		, si.ShipmentLocation as location
+		, si.AckOrAssignDate as ackDate
+		from
+		shipment_master sm
+		inner join
+		Shipment_Inventory si
+		on
+		sm.shipmentid = si.Shipment_ID
+		left join
+		Shipment_InventorySHC ish
+		on
+		si.ShipmentInventory_Id = ish.ShipmentInventoryId
+		where
+		si.AssignedUldTrolley is null
+		and (si.holdNotifyGroup is not null and  holdNotifyGroup not like '')
+		<if test="holdNotifyGroup != null">
+			and si.holdNotifyGroup = #{holdNotifyGroup}
+		</if>
+		<if test="terminalPoint != null">
+			and si.HandlingArea like '%' +#{terminalPoint} +'%'
+		</if>
+		<if test="utl != null and utl == true">
+			and si.LockReason = 'UTL'
+		</if>
+		<choose>
+			<when
+				test="shipmentNumber != null">
+			</when>
+			<when
+				test="acknowledge != null and acknowledge != '' and acknowledge == 'Y'.toString() and shipmentNumber == null">
+				and isnull(si.Acknowledge,0) = 1
+			</when>
+			<otherwise>
+				and isnull(si.Acknowledge,0) = 0
+			</otherwise>
+		</choose>
+		<if test="shipmentNumber != null">
+			and sm.shipmentNumber = #{shipmentNumber} 
+		</if>
+		<if test="from != null and to != null ">
+			and si.LastUpdated_DateTime between #{from} and #{to}
+		</if>
+		<if test="from != null and to == null ">
+			        <![CDATA[
+			           and si.LastUpdated_DateTime >= #{from}
+			         ]]>
+		</if>
+		<if test="from == null and to != null ">
+			         <![CDATA[
+			           and si.LastUpdated_DateTime <= #{to}
+			         ]]>
+		</if>
+		order by si.LastUpdated_DateTime,si.ShipmentLocation,si.WarehouseLocation,sm.ShipmentNumber
+	</select>
+	<resultMap id="fetchHoldNotify"
+		type="com.ngen.cosys.shipment.model.HoldNotifyShipment">
+		<id property="shipmentInventoryId" column="ShipmentInventory_Id" />
+		<result property="shipmentId" column="Shipment_ID" />
+		<result property="shipmentNumber" column="shipmentNumber" />
+		<result property="origin" column="origin" />
+		<result property="destination" column="destination" />
+		<result property="natureOfGoodsDescription"
+			column="natureOfGoodsDescription" />
+		<result property="shipmentLocation" column="ShipmentLocation" />
+		<result property="piecesInv" column="piecesInv" />
+		<result property="weightInv" column="weightInv" />
+		<result property="warehouseLocation" column="WarehouseLocation" />
+		<result property="reasonForHold" column="reasonForHold" />
+		<result property="createdBy" column="createdBy" />
+		<result property="createdOn" column="createdOn"
+			javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result property="modifiedBy" column="modifiedBy" />
+		<result property="datetime" column="datetime" />
+		<result property="remarks" column="remarks" />
+		<result property="partSuffix" column="partSuffix" />
+		<result property="holdNotifyGroup" column="holdNotifyGroup" />
+		<result property="location" column="location" />
+		<result property="ackDate" column="ackDate"/>
+		<collection property="shcListInv" javaType="ArrayList"
+			ofType="java.lang.String" column="specialHandlingCodeInv">
+			<result column="specialHandlingCodeInv" property="shcListInv" />
+		</collection>
+	</resultMap>
+
+	<update id="updateHoldForNotifyShipments"
+		parameterType="com.ngen.cosys.shipment.model.HoldNotifyShipment">
+		UPDATE Shipment_Inventory
+		SET Locked = 0,
+		LockedBy = '',
+		LastUpdatedUser_Code = #{modifiedBy},
+		LastUpdated_DateTime = #{modifiedOn},
+		LockReason = '',
+		HoldRemarks = #{unHoldRemarks},
+		HoldNotifyGroup = '',
+		AckOrAssignDate = NULL,
+		Acknowledge = 0
+		WHERE ShipmentInventory_Id = #{shipmentInventoryId}
+	</update>
+
+	<update id="updateHoldForNotifyGroup"
+		parameterType="com.ngen.cosys.shipment.model.HoldNotifyShipment">
+		UPDATE Shipment_Inventory
+		SET HoldNotifyGroup = #{holdNotifyGroup},
+		AckOrAssignDate = #{modifiedOn},
+		LastUpdatedUser_Code = #{modifiedBy},
+		LastUpdated_DateTime = #{modifiedOn}
+		where ShipmentInventory_Id = #{shipmentInventoryId}
+	</update>
+
+	<update id="updateHoldForNotifyAck"
+		parameterType="com.ngen.cosys.shipment.model.UpdateHoldNotifyShipments">
+		UPDATE Shipment_Inventory
+		SET Acknowledge = 1,
+		AckOrAssignDate = #{modifiedOn},
+		LastUpdatedUser_Code = #{modifiedBy},
+		LastUpdated_DateTime = #{modifiedOn}
+		WHERE
+		1=1 and ShipmentInventory_Id in
+		<foreach item="item" index="index"
+			collection="shipmentInventoryId" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+</mapper>

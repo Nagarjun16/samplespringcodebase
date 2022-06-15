@@ -1,0 +1,1128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CmdMapper">
+
+	<select id="sqlGetAwbNumberCount"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select 
+			count(m.AWBPREFIX+m.AWBSERIALNUMBER)
+		from
+			Custom_ShipmentInfo A INNER JOIN
+			Custom_CargoManifestDeclarationMessage M
+				ON (a.SHIPMENTNUMBER = m.AWBPREFIX+m.AWBSERIALNUMBER)
+		where 
+			A.MRSSentDate IS NULL and
+			M.ActionCode NOT LIKE 'D' and
+			M.AwbPrefix=#{awbPrefix} and
+			M.AwbSerialNumber=#{awbSerialNumber}
+			<if test="houseWayBillNumber == null">
+				and M.HWBNumber is null
+			</if>
+			<if test="houseWayBillNumber != null">
+				and M.HWBNumber=#{houseWayBillNumber}
+			</if>
+	</select>
+
+	<select id="sqlGetHwbNumberCount"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select 
+			count(HWBNumber) 
+		from
+			Custom_CargoManifestDeclarationMessage 
+		where
+			AwbPrefix=#{awbPrefix} and
+			AwbSerialNumber=#{awbSerialNumber} and
+			HWBNumber=#{houseWayBillNumber}
+	</select>
+
+	<select id="sqlGetTotalHwbNumberForAwb"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select 
+			count(HWBNumber) 
+		from
+			Custom_CargoManifestDeclarationMessage 
+		where
+			AwbPrefix=#{awbPrefix} and
+			AwbSerialNumber=#{awbSerialNumber}
+	</select>
+
+	<select id="sqlCmdHAWBExist"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+	<![CDATA[	
+		select
+			count(customflightid)
+		from
+			Custom_ShipmentInfo a inner join 
+			Custom_CargoManifestDeclarationMessage b
+				on (a.SHIPMENTNUMBER = b.AWBPREFIX+b.AWBSERIALNUMBER)
+		where 
+			b.AwbPrefix =#{awbPrefix} and
+			b.AwbSerialNumber = #{awbSerialNumber} and 
+			a.MRSSentDate IS NULL and
+			b.ActionCode <> 'D' and 
+			b.HWBNumber IS NOT NULL
+	]]>
+	</select>
+
+
+	<select id="sqlCmdAWBExist"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+	<![CDATA[
+		select
+			count(customflightid)
+		from
+			Custom_ShipmentInfo a inner join 
+			Custom_CargoManifestDeclarationMessage b
+				on (a.SHIPMENTNUMBER = b.AWBPREFIX+b.AWBSERIALNUMBER)
+		where 
+			b.AwbPrefix = #{awbPrefix} and
+			b.AwbSerialNumber = #{awbSerialNumber} and 
+			a.MRSSentDate IS NULL and
+			b.ActionCode <> 'D' and 
+			b.HWBNumber IS NULL
+	]]>
+	</select>
+
+	<delete id="deleteCmdInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		delete from Custom_CargoManifestDeclarationMessage 
+		where
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber}
+			<if test="houseWayBillNumber!=null">
+				and HWBNumber= #{houseWayBillNumber}
+			</if>
+		<!-- cmd processing id needs to be added -->
+	</delete>
+
+	<delete id="deleteFromOtherLinkMrs"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		delete from Custom_CargoManifestDeclarationLinkToMRS 
+		where
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber} and 
+			MRSSentDate is null
+			<if test="houseWayBillNumber!=null">
+				and HWBNumber= #{houseWayBillNumber}
+			</if>			
+		<!-- cmd processing id needs to be added -->
+	</delete>
+	
+	<delete id="deleteCmdLarInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		delete from Custom_CargoManifestDeclarationLocalAuthorityInfo 
+		where
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber} and
+			CMDProcessingId= 
+			(select 
+				CMDProcessingId 
+			from
+				Custom_CargoManifestDeclarationMessage 
+			where 
+				AwbPrefix=#{awbPrefix} and 
+				AwbSerialNumber=#{awbSerialNumber}
+				<if test="houseWayBillNumber!=null">
+					and HWBNumber= #{houseWayBillNumber}
+				</if>
+			)
+	</delete>
+	
+	<select id="sqlGetEarliestFlightToAttachInInterface"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select
+			Top(1) CustomsFlightId
+		from(
+			select
+				ROW_NUMBER() OVER(PARTITION BY Customs_Flight.FlightDate ORDER BY Customs_Flight.FlightKey, Customs_Flight.FlightDate) EarliestFlight,
+				CustomsFlightId,Customs_Flight.MRSSentDate
+			from
+				Customs_Flight inner join
+				Custom_ShipmentInfo
+					on Customs_Flight.CustomsFlightId = Custom_ShipmentInfo.CustomFlightId
+			where
+				Custom_ShipmentInfo.ShipmentNumber = (#{awbPrefix}+#{awbSerialNumber})
+		)Customs_Flight
+		where
+			Customs_Flight.EarliestFlight = 1 and
+			Customs_Flight.MRSSentDate is null
+	</select>
+	
+	<select id="sqlGetLatestFlightToValidateLateIndicator"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		select 
+			top(1) csc.FlightDate,csc.ImportExportIndicator
+		from
+			Custom_ShipmentInfo cs inner join
+			Customs_Flight csc 
+				on cs.CustomFlightId=csc.CustomsFlightId
+		where
+			cs.ShipmentNumber=(#{awbPrefix}+#{awbSerialNumber}) 
+		order by
+			csc.FlightDate DESC
+	</select>
+
+	<select id="sqlGetCmdToAttachToEarliestFlight"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.AttachAndDetatchCargoManifestDeclerationModel">
+		select 
+			CMDProcessingId,AwbPrefix,AwbSerialNumber,HWBNumber
+		from (select
+					CCDM.CMDProcessingId,
+					CCDM.AwbPrefix, 
+					CCDM.AwbSerialNumber,
+					CCDM.HWBNumber 
+				from 
+					Custom_CargoManifestDeclarationMessage CCDM
+				where
+					CCDM.AwbPrefix = #{awbPrefix} and
+					CCDM.AwbSerialNumber = #{awbSerialNumber}
+				EXCEPT
+				select 
+					CCDLM.CMDProcessingId,
+					CCDLM.AwbPrefix, 
+					CCDLM.AwbSerialNumber,
+					CCDLM.HWBNumber 
+				from 
+					Custom_CargoManifestDeclarationLinkToMRS CCDLM
+				where
+					CCDLM.AwbPrefix = #{awbPrefix} and
+					CCDLM.AwbSerialNumber = #{awbSerialNumber}
+			)SFGF
+		where 
+			SFGF.AwbPrefix = #{awbPrefix} and
+			SFGF.AwbSerialNumber = #{awbSerialNumber}
+		ORDER BY 
+			2,4
+	</select>
+
+	<insert id="addToHoldShipmentsInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		useGeneratedKeys="true">
+		insert into Custom_ShipmentHold(
+			AwbPrefix,
+			AwbSerialNumber ,
+			ImportExportIndicator ,
+			CMDProcessingId ,
+			CreatedUserCode ,
+			CreatedDateTime
+		)values(
+			#{awbPrefix},
+			#{awbSerialNumber},
+			'E',
+			1,
+			'SYSTEM',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateToHoldShipmentsInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		UPDATE Custom_ShipmentHold
+		SET 
+			LastUpdatedUserCode = 'SYSTEM',
+			LastUpdatedDateTime = CURRENT_TIMESTAMP
+		WHERE 
+			AwbPrefix = #{awbPrefix} AND 
+			AwbSerialNumber = #{awbSerialNumber}
+	</update>
+
+	<insert id="linkCmdToMrs"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.AttachAndDetatchCargoManifestDeclerationModel"
+		useGeneratedKeys="true">
+		insert into Custom_CargoManifestDeclarationLinkToMRS(
+			AwbPrefix,
+			AwbSerialNumber ,
+			HWBNumber ,
+			CMDProcessingId ,
+			CreatedUserCode ,
+			CreatedDateTime,
+			Custom_FlightId,
+			ShipmentNumber
+		)values(
+			#{awbPrefix},
+			#{awbSerialNumber},
+			#{hwbNumber},
+			#{cmdProcessingId},
+			'SYSTEM',
+			CURRENT_TIMESTAMP,
+			#{earliestFlight},
+			#{shipmentNumber}
+		)
+	</insert>
+	
+	<update id="updateCmdToMrs"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.AttachAndDetatchCargoManifestDeclerationModel">
+		update Custom_CargoManifestDeclarationLinkToMRS 
+		set
+			LastUpdatedUserCode='SYSTEM',
+			LastUpdatedDateTime=CURRENT_TIMESTAMP,
+			Custom_FlightId=#{earliestFlight}
+		where
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber} and
+			CMDProcessingId=#{cmdProcessingId}
+			<if test="hwbNumber!=null">
+				and HWBNumber= #{hwbNumber}
+			</if>
+	</update>
+	
+	<select id="sqlGetCustomFlightIdAndPiecesFromCustShipInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		select 
+			Custom_ShipmentInfo.TotalPieces as pieces,
+			Custom_ShipmentInfo.CustomFlightId as customFlightId,
+			Custom_ShipmentInfo.MRSSentDate as mrsSentDate,
+			Custom_ShipmentInfo.MRSStatusCode as mrsStatusCode,
+			Custom_ShipmentInfo.ShipmentNumber,
+			Custom_ShipmentInfo.CustomShipmentInfoId,
+			Custom_ShipmentInfo.DoNumber,
+			Custom_ShipmentInfo.CancellationReasonCode,
+			Custom_ShipmentInfo.ImportExportIndicator,
+			Custom_ShipmentLocalAuthorityRequirement.Type as localAuthorityType 
+		from 
+			Custom_ShipmentInfo left join
+			Custom_ShipmentLocalAuthorityRequirement 
+				on Custom_ShipmentInfo.CustomShipmentInfoId=Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId
+		where
+			Custom_ShipmentInfo.ShipmentNumber=(#{awbPrefix}+#{awbSerialNumber})
+			<if test="customShipmentInfoId != null"> 
+				and Custom_ShipmentInfo.CustomShipmentInfoId=#{customShipmentInfoId}
+			</if>
+			order by 
+				CustomFlightId
+	</select>
+	
+	<select id="sqlGetShipmentsToAttachCmd"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		select 
+			Custom_ShipmentInfo.TotalPieces as pieces,
+			Custom_ShipmentInfo.CustomFlightId as customFlightId,
+			Custom_ShipmentInfo.MRSSentDate as mrsSentDate,
+			Custom_ShipmentInfo.MRSStatusCode as mrsStatusCode,
+			Custom_ShipmentInfo.ShipmentNumber,
+			Custom_ShipmentInfo.CustomShipmentInfoId,
+			Custom_ShipmentInfo.DoNumber,
+			Custom_ShipmentInfo.CancellationReasonCode,
+			Custom_ShipmentInfo.ImportExportIndicator,
+			Custom_ShipmentLocalAuthorityRequirement.Type as localAuthorityType 
+		from 
+			Custom_ShipmentInfo left join
+			Custom_ShipmentLocalAuthorityRequirement 
+				on Custom_ShipmentInfo.CustomShipmentInfoId=Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId
+		where
+			Custom_ShipmentInfo.ShipmentNumber=(#{awbPrefix}+#{awbSerialNumber})
+		order by 
+			CustomFlightId
+	</select>
+	
+	<delete id="deleteFromOtherFlights"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.AttachAndDetatchCargoManifestDeclerationModel">
+	<![CDATA[
+		delete from Custom_CargoManifestDeclarationLinkToMRS
+		where 
+			Custom_FlightId > #{earliestFlight} and 
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber} and 
+			MRSSentDate is null
+	]]>
+	</delete>
+
+	<update id="updateMrSStatusCode"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		update Custom_ShipmentInfo 
+		set
+			MRSStatusCode=#{mrsStatusCode}
+		where
+			CustomFlightId=#{customFlightId} and
+			ShipmentNumber=#{shipmentNumber}
+			<if test="customShipmentInfoId != null"> 
+				and CustomShipmentInfoId=#{customShipmentInfoId}
+			</if>
+			<if test="doNumber != null">
+				and DoNumber=#{doNumber}
+			</if>
+	</update>
+	
+	<update id="updatePartshipmentInfoInCustoms"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		update Custom_ShipmentInfo 
+		set 
+			partShipmentFlag = 1
+		where
+			CustomFlightId=#{customFlightId} and
+			ShipmentNumber=#{shipmentNumber}
+			<if test="customShipmentInfoId != null"> 
+				and CustomShipmentInfoId=#{customShipmentInfoId}
+			</if>
+	</update>
+	
+	<update id="updatePartshipmentInfoForOtherParts"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[
+		update Custom_ShipmentInfo 
+		set 
+			partShipmentFlag=1,
+			MRSStatusCode='PA'
+		where
+			ShipmentNumber=#{shipmentNumber} and
+			CustomFlightId!=#{customFlightId} and 
+			MRSStatusCode!='MA'
+	]]>
+	</update>
+	
+	<update id="InsertCmdInfoIntoCustomsShipmentInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		update custom_shipmentinfo 
+		set 
+			CMDReceivedDate=CURRENT_TIMESTAMP,
+			CMDProcessingId=(#{customCargoManifestDeclarationMessageId}+1)
+		where
+			ShipmentNumber=#{shipmentNumber}
+		<if test="customShipmentInfoId != null"> 
+			and CustomShipmentInfoId=#{customShipmentInfoId}
+		</if>
+	</update>
+	
+	<insert id="InsertCmdInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		keyColumn="CustomCargoManifestDeclarationMessageId" keyProperty="customCargoManifestDeclarationMessageId"
+		useGeneratedKeys="true">
+		insert into Custom_CargoManifestDeclarationMessage(
+			CMDProcessingId,
+			CMDReceivedDate,
+			AwbPrefix,
+			AwbSerialNumber,
+			CarrierCode,
+			FlightNumber,
+			FlightOriginDate,
+			FlightScheduleDate,
+			Origin,
+			FinalDestination,
+			ImportExportIndicator,
+			Pieces,
+			Weight,
+			WeightUnitCode,
+			NatureOfGoods,
+			HWBNumber,
+			HWBPieces,
+			HWBWeight,
+			HWBWeightUnitCode,
+			HWBNatureOfGoods,
+			LLTIndicator,
+			LATIndicator,
+			CustomerName1,
+			CustomerName2,
+			CustomerAddress1,
+			CustomerAddress2,
+			LocalAuthorityType,
+			ExemptionReason,
+			AgentIANumber,
+			SenderName,
+			SenderCompanyName,
+			DeliveredFlag,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			CargoAgentCode,
+			CargoAgentReference,
+			CmdVersionNo,
+			ActionCode,
+			MixPack 
+		)values(
+			#{cmdProcessingId},
+			CURRENT_TIMESTAMP,
+			#{awbPrefix},
+			#{awbSerialNumber},
+			#{carrierCode},
+			#{flightNumber},
+			#{flightDate},
+			#{scheduleDate},
+			#{origin},
+			#{finalDestination},
+			#{importExportIndicator},
+			#{pieces},
+			#{weight},
+			#{weightUnitCode},
+			#{natureOfGoods},
+			#{houseWayBillNumber},
+			#{hwbPieces},
+			#{hwbWeight},
+			#{hwbWeightUnitCode},
+			#{hwbNatureOfGoods},
+			#{loadListIndicator},
+			#{lateIndicator},
+			SUBSTRING(#{shipperName},1,60),
+			SUBSTRING(#{consigneeName},1,60),
+			SUBSTRING(#{shipperAddress},1,65),
+			SUBSTRING(#{consigneeAddress},1,65),
+			#{localAuthorityType},
+			#{exemptionRemarks},
+			#{agentCrOrIaNumber},
+			#{senderName},
+			#{sendrCompany},
+			(select case when
+				#{deliveredOrUndeliveredIndicator} IS NOT NULL AND #{deliveredOrUndeliveredIndicator}='Y' THEN 
+					1 
+				ELSE 
+					0
+				END),
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP,
+			#{cargoAgentCode},
+			#{cargoAgentReference},
+			#{cmdVersionNumber},
+			#{actionCode},
+			#{mixPack}
+		)
+	</insert>
+	
+	<select id="sqlGetCustomFlightIdAndPiecesFromLinkMrs"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[
+		select 
+			CCDM.Pieces AS pieces,
+			sum(CCDM.HWBPieces) HWBPieces,
+			CCDM.LocalAuthorityType as localAuthorityType,
+			CCDM.origin,
+			CCDM.FinalDestination
+		from
+			Custom_CargoManifestDeclarationMessage CCDM inner join
+			Custom_CargoManifestDeclarationLinkToMRS CCDLM 
+				on CCDM.CMDProcessingId=CCDLM.CMDProcessingId AND
+					CCDM.AwbPrefix=CCDLM.AwbPrefix AND 
+					CCDM.AwbSerialNumber=CCDLM.AwbSerialNumber
+		where
+			CCDLM.Custom_FlightId=#{customFlightId} and 
+			CCDM.AwbPrefix=#{awbPrefix} and 
+			CCDM.AwbSerialNumber=#{awbSerialNumber}		
+		group by
+			CCDM.Pieces,
+			CCDM.LocalAuthorityType,
+			CCDM.origin,
+			CCDM.FinalDestination
+	]]>
+	</select>
+	
+	<!-- CMD LAR Update -->
+	<update id="updateCmdlarInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CmdLocalAuthorityInfoModel">
+		update Custom_CargoManifestDeclarationLocalAuthorityInfo
+		set 
+			LocalAuthorityType = #{localAuthorityType}, 
+			RequirementDescription = #{permitNumber},
+			LastUpdatedUserCode = 'SYSTEM',
+			LastUpdatedDateTime = GETDATE()
+		where 
+			AwbPrefix = #{awbPrefix} and
+			AwbSerialNumber = #{awbSerialNumber} and 
+			CMDProcessingId = (select 
+					CMDProcessingId 
+				from
+					Custom_CargoManifestDeclarationMessage 
+				where 
+					AwbPrefix=#{awbPrefix} and 
+					AwbSerialNumber=#{awbSerialNumber}
+					<if test="houseWayBillNumber!=null">
+						and HWBNumber= #{houseWayBillNumber}
+					</if>
+			)
+	</update>
+	
+	<insert id="insertCmdlarInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CmdLocalAuthorityInfoModel"
+		useGeneratedKeys="true">
+		insert into Custom_CargoManifestDeclarationLocalAuthorityInfo(
+			CMDProcessingId,
+			AwbPrefix,
+			AwbSerialNumber,
+			LocalAuthorityType,
+			RequirementDescription,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values( 
+			(select 
+					CMDProcessingId 
+				from
+					Custom_CargoManifestDeclarationMessage 
+				where 
+					AwbPrefix=#{awbPrefix} and 
+					AwbSerialNumber=#{awbSerialNumber}
+					<if test="houseWayBillNumber!=null">
+						and HWBNumber= #{houseWayBillNumber}
+					</if>
+			),
+			#{awbPrefix},
+			#{awbSerialNumber},
+			#{localAuthorityType},
+			#{permitNumber},
+			'SYSTEM',
+			CURRENT_TIMESTAMP,
+			'SYSTEM',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<insert id="insertMrsAckInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.manifestreconcillationstatement.model.ManifesrReconciliationStatementModel"
+		useGeneratedKeys="true">
+		insert into Custom_ManifestReconciliationStatementAcknowledgement(
+			CarrierCode,
+			FlightNumber,
+			FlightScheduleDate,
+			FlightOriginDate,
+			FlightBoardPoint,
+			FlightOffPoint,
+			AcknowledgeCodeSequenceNo,
+			AcknowledgeCode,
+			ImportExportIndicator,
+			AcknowledgeDate,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			#{carrierCode},
+			#{flightNumber},
+			#{scheduledFlightDate},
+			#{flightOriginDate},
+			#{pointOfUnlading},
+			#{pointOfLading},
+			#{acknowledgeCodeSequenceNo},
+			#{acknowledgeCode},
+			#{importExportIndicator},
+			CURRENT_TIMESTAMP,
+			'SYSTEM',
+			CURRENT_TIMESTAMP,
+			'SYSTEM',
+			CURRENT_TIMESTAMP
+		)
+	</insert>
+
+	<update id="updateMrsAckInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.manifestreconcillationstatement.model.ManifesrReconciliationStatementModel">
+		update Custom_ManifestReconciliationStatementAcknowledgement
+		set 
+			AcknowledgeCode = #{acknowledgeCode} , 
+			AcknowledgeDate = #{modifiedOn}
+		where 
+			CarrierCode = #{carrierCode} and 
+			FlightNumber = #{flightNumber} and
+			FlightBoardPoint = #{pointOfUnlading} and 
+			FlightOffPoint = #{pointOfLading}
+	</update>
+
+	<select id="sqlGetShipmentFromCustShipInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		select 
+			top(1) Custom_ShipmentInfo.TotalPieces as pieces,
+			Custom_ShipmentInfo.CustomShipmentInfoID,
+			Mst_AcesCode.AcesCodePriority,
+			Custom_ShipmentInfo.CustomFlightId as customFlightId ,
+			Custom_ShipmentInfo.MRSSentDate as mrsSentDate,
+			Custom_ShipmentInfo.MRSStatusCode as mrsStatusCode,
+			Custom_ShipmentInfo.ShipmentNumber ,
+			Custom_ShipmentInfo.CustomShipmentInfoId,
+			Custom_ShipmentInfo.DoNumber,
+			Custom_ShipmentInfo.CancellationReasonCode,
+			Custom_ShipmentInfo.ImportExportIndicator,
+			Custom_ShipmentLocalAuthorityRequirement.Type as localAuthorityType
+		from 
+			Custom_ShipmentInfo left join
+			Custom_ShipmentLocalAuthorityRequirement 
+				on Custom_ShipmentInfo.CustomShipmentInfoId=Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId left join 
+			mst_AcesCode 
+				on Custom_ShipmentInfo.mrsStatusCode=mst_AcesCode.AcesCode and
+					mst_AcesCode.Type='STS'
+		where
+			Custom_ShipmentInfo.ShipmentNumber=(#{awbPrefix}+(#{awbSerialNumber}))
+			<if test="earliestFlight != null">
+				and CustomFlightId=#{earliestFlight}
+			</if>
+		order by 
+			Mst_AcesCode.AcesCodePriority asc
+	</select>
+
+	<select id="sqlGetShipmentCountfromCustoms"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select count(*) from Custom_ShipmentInfo where Custom_ShipmentInfo.ShipmentNumber=(#{awbPrefix}+#{awbSerialNumber}) order by CustomFlightId
+	</select>
+	
+	<update id="InsertCmdDeleteInfoIntoCustomsShipmentInfo"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		update custom_shipmentinfo 
+		set 
+			CMDReceivedDate=null,
+			CMDProcessingId=null
+		where 
+			ShipmentNumber=#{shipmentNumber}
+			<if test="customShipmentInfoId != null"> 
+				and CustomShipmentInfoId=#{customShipmentInfoId}
+			</if>
+	</update>
+	
+	<delete id="deleteFromCurrentFlight"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.AttachAndDetatchCargoManifestDeclerationModel">
+		delete from Custom_CargoManifestDeclarationLinkToMRS
+		where 
+			Custom_FlightId =#{earliestFlight} and 
+			AwbPrefix=#{awbPrefix} and 
+			AwbSerialNumber=#{awbSerialNumber} and 
+			MRSSentDate is null
+	</delete>
+
+	<select id="isValidexemptioncode" resultType="java.math.BigInteger">
+		select 
+			count(1)
+		from 
+			Mst_CodeAdministration_SubGroupDetails 
+		where
+			AdministrationSubGroupCode='ExemptionCode' and
+			AdministrationSubGroupDetailCode=#{exemptionCode}
+	</select>
+
+	<select id="getShipmentCountFromCosys" resultType="java.math.BigInteger">
+		select count(ShipmentNumber) from
+(
+select
+			ShipmentNumber
+		from 
+			Shipment_master 
+		where
+			ShipmentNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+		
+
+		union
+
+		select ShipmentNumber  from 
+		exp_shipmentbooking
+		where
+		ShipmentNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+	
+		union
+
+		select ShipmentNumber  from 
+		Imp_ArrivalManifestShipmentInfo
+		where
+		ShipmentNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+	
+		
+		union
+
+			select AwbNumber AS ShipmentNumber  from 
+		Shipment_FreightHouseListByAWB
+		where
+		AwbNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+	
+		
+		union
+
+		select AwbNumber AS ShipmentNumber  from 
+		Shipment_FreightWayBill
+		where
+		AwbNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+	
+
+		) A
+
+	</select>
+	
+	<select id="getShipmentCountFromAces" resultType="java.math.BigInteger">
+		select 
+			count(1)
+		from 
+			custom_ShipmentInfo 
+		where
+			ShipmentNumber=CAST((#{awbPrefix}+#{awbSerialNumber}) AS VARCHAR)
+		and (CMDReceivedDate IS NULL OR CMDReceivedDate BETWEEN #{fromDate} AND #{toDate}) 
+	</select>
+	
+	<select id="getMrsSentDate"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select 
+			max(CF.CustomsFlightId) 
+		from 
+			Customs_Flight CF inner join 
+			Custom_ShipmentInfo CSI
+				on CF.CustomsFlightId = CSI.CustomFlightId
+		where
+			CSI.ShipmentNumber=(#{awbPrefix}+#{awbSerialNumber}) and
+			CSI.MRSSentDate is null
+	</select>
+	
+	<select id="getMrsSentDetail"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.math.BigInteger">
+		select 
+			max(CF.CustomsFlightId) 
+		from 
+			Customs_Flight CF inner join
+			Custom_ShipmentInfo CSI
+				on CF.CustomsFlightId = CSI.CustomFlightId
+		where
+			CSI.ShipmentNumber = (#{awbPrefix}+#{awbSerialNumber}) and
+			CF.MRSSentDate is not null
+	</select>
+	
+	<select id="getFlightDetailsDetail"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[
+		select 
+			top 1 
+			F2.DateSTA as scheduleArrivalDate,
+			F2.DateSTD as scheduleDepartureDate
+		from
+			Flt_OperativeFlight F1 Join 
+			Flt_OperativeFlight_Legs F2 
+				on F1.Flight_ID = F2.Flight_ID
+		where
+			F1.FlightKey = #{flightkey} and
+			(cast(F2.DateSTA as date) = cast(#{flightDate} as date) 
+					OR cast(F2.DateSTD as date) = cast(#{flightDate} as date)) and
+			(F2.FlightBoardPoint = #{tenantAirport} OR F2.FlightOffPoint = #{tenantAirport})
+	]]>
+	</select>
+
+	<select id="validateCarrierCodeForMrs" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		SELECT Count(*) from Mst_Carrier WHERE CarrierCode = #{carrierCode}
+	</select>
+
+	<select id="sqlGetCustomsFlightDate"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel"
+		resultType="java.time.LocalDateTime">
+	<![CDATA[
+		SELECT 
+			TOP(1) MAX(Customs_Flight.FlightDate) AS FLIGHTDATE
+		FROM 
+			Custom_ShipmentInfo INNER JOIN
+			Customs_Flight
+				on Custom_ShipmentInfo.CustomFlightId = Customs_Flight.CustomsFlightId  
+		WHERE 
+			Custom_ShipmentInfo.ShipmentNumber = (#{awbPrefix}+#{awbSerialNumber}) AND 
+			Customs_Flight.FlightKey = (#{carrierCode}+#{flightNumber})
+	]]>
+	</select>
+	
+	<update id="update_Customs_FlightsForFMA" 
+		parameterType="com.ngen.cosys.satssg.interfaces.manifestreconcillationstatement.model.ManifesrReconciliationStatementModel">
+		update Customs_Flight 
+		set  
+			FMAAcknowledgeDate = #{modifiedOn},
+			AcknowledgeCode = #{acknowledgeCode}
+		where 
+			ImportExportIndicator = #{importExportIndicator} and 
+			FlightKey = (#{carrierCode}+ #{flightNumber}) and 
+			cast(FlightDate as date)= cast(#{scheduledFlightDate} as date)
+	</update>
+	
+	<update id="update_Customs_FlightsForFNA" 
+		parameterType="com.ngen.cosys.satssg.interfaces.manifestreconcillationstatement.model.ManifesrReconciliationStatementModel" >
+		update Customs_Flight 
+		set  
+			FNAAcknowledgeDate = #{modifiedOn},
+			AcknowledgeCode = #{acknowledgeCode}
+		where 
+			ImportExportIndicator = #{importExportIndicator} and 
+			FlightKey = (#{carrierCode}+ #{flightNumber}) and 
+			cast(FlightDate as date)= cast(#{scheduledFlightDate} as date)
+	</update>
+	
+	<update id="sqlGetPossiblestatusFromInterface"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[			
+	with CustomShpimentInfo AS (
+			select 
+				CS.CustomShipmentInfoId,
+				CS.ShipmentNumber, 
+				CS.DoNumber,
+              	CS.CustomFlightId, 
+              	CS.TotalPieces, 
+              	CS.TotalWeight, 
+              	CsFlt.ImportExportIndicator,
+              	CsFlt.FlightKey, 
+              	CsFlt.FlightDate, 
+              	CS.ShipmentPieces, 
+              	CS.ShipmentWeight,
+              	CASE 
+              	    WHEN CS.Origin!=#{tenantAirport} and CS.Finaldestination!=#{tenantAirport} Then
+				        1 else 0 end Transhipment,
+              	SUM(CS.ShipmentPieces) OVER (partition by CS.ShipmentNumber, CsFlt.FlightKey, CsFlt.FlightDate) AS FlightPieces,
+              	SUM(CS.ShipmentWeight) OVER (partition by CS.ShipmentNumber, CsFlt.FlightKey, CsFlt.FlightDate) AS FlightWeight
+            from 
+            	Custom_ShipmentInfo CS INNER JOIN 
+              	Customs_Flight CsFlt 
+              		ON CS.CustomFlightId = CsFlt.CustomsFlightId
+			WHERE 
+				CS.ShipmentNumber = cast(#{shipmentNumber} as varchar)
+       ), CmdExemptType AS (
+            select 
+            	DISTINCT AwbPrefix+AwbSerialNumber ShipmentNumber, 
+              	LocalAuthorityType
+            from 
+            	Custom_CargoManifestDeclarationLocalAuthorityInfo
+            where 
+            	AwbPrefix = cast(#{awbPrefix} as varchar) and
+				AwbSerialNumber = cast(#{awbSerialNumber} as varchar) and
+            	LocalAuthorityType = 'EC'
+       ), CustomsRawInfo AS (
+       		select 
+       			CS.CustomShipmentInfoId, 
+       			CS.ShipmentNumber, 
+       			CS.DoNumber,
+              	CS.CustomFlightId, 
+              	CS.ImportExportIndicator, 
+              	CS.FlightKey, 
+              	CS.FlightDate,
+              	ISNULL(CmdLar.LocalAuthorityType,Cslar.Type) CustomLarType,
+              	CASE 
+              		WHEN CmdLar.LocalAuthorityType IS NULL THEN 
+              			'FALSE' 
+              		ELSE 
+              			'TRUE' 
+              		END AS LarFromCmdIndicator,
+              	CS.TotalPieces, 
+              	CS.TotalWeight, 
+              	CS.ShipmentPieces, 
+              	CS.ShipmentWeight, 
+              	CS.FlightPieces, 
+              	CS.FlightWeight,
+              	CS.Transhipment,
+              	SUM(ISNULL(CMD.HWBPieces,CMD.Pieces)) CMDPieces, 
+              	SUM(ISNULL(CMD.HWBWeight,CMD.Weight)) CMDWeight,
+              	(SELECT 
+	              		count(1)
+                	FROM 
+                		CustomShpimentInfo PrevCS
+                    WHERE 
+                    	PrevCS.ShipmentNumber = CS.ShipmentNumber AND 
+                    	PrevCS.ImportExportIndicator = CS.ImportExportIndicator AND 
+                    	PrevCS.CustomFlightId <> CS.CustomFlightId AND 
+                    	(PrevCS.FlightDate < CS.FlightDate OR (PrevCS.FlightDate = CS.FlightDate AND PrevCS.CustomShipmentInfoId < CS.CustomShipmentInfoId))) PrevFltCnt,
+                      	DENSE_RANK() over (partition by CS.ShipmentNumber,CS.FlightKey, CS.FlightDate order by CASE WHEN CS.DoNumber= 'NO' THEN 1 ELSE 0 END, CS.CustomShipmentInfoId) rankShpInFlt,
+                      	SUM(1) over (partition by CS.ShipmentNumber,CS.FlightKey, CS.FlightDate
+                ) totPartInFlt
+			from 
+				CustomShpimentInfo CS LEFT JOIN 
+				Custom_ShipmentLocalAuthorityRequirement CsLar 
+					ON CS.CustomShipmentInfoId = CsLar.CustomShipmentInfoId LEFT JOIN 
+				Custom_CargoManifestDeclarationMessage CMD 
+					ON substring(CS.ShipmentNumber, 1, 3) = CMD.AwbPrefix and
+						substring(CS.ShipmentNumber, 4, 8) = CMD.AwbSerialNumber LEFT JOIN 
+				CmdExemptType CmdLar 
+					ON CmdLar.ShipmentNumber = CS.ShipmentNumber 
+            GROUP BY 
+            	CS.CustomShipmentInfoId, 
+            	CS.ShipmentNumber, 
+            	CS.DoNumber,
+              	CS.CustomFlightId, 
+              	CS.ImportExportIndicator, 
+              	CS.FlightKey, 
+              	CS.FlightDate,
+              	CmdLar.LocalAuthorityType,
+              	Cslar.Type, 
+              	CS.TotalPieces, 
+              	CS.TotalWeight,
+              	CS.ShipmentPieces, 
+              	CS.ShipmentWeight, 
+              	CS.FlightPieces, 
+              	CS.FlightWeight,
+                CS.Transhipment
+       ),CustomsSummaryTab AS (
+       		SELECT 
+       			CustomsRawInfo.CustomShipmentInfoId, 
+       			CustomsRawInfo.ShipmentNumber,
+              	CustomsRawInfo.DoNumber, 
+              	CustomsRawInfo.CustomFlightId,
+              	CustomsRawInfo.CustomLarType, 
+              	CustomsRawInfo.LarFromCmdIndicator,
+              	CASE 
+              		WHEN CustomsRawInfo.ImportExportIndicator= 'I' THEN 
+              			'IMPORT'
+              		ELSE 
+              			'EXPORT' 
+              		END ImportExportIndicator,
+              	CustomsRawInfo.FlightKey, 
+              	CustomsRawInfo.FlightDate, 
+              	CustomsRawInfo.TotalPieces, 
+              	CustomsRawInfo.TotalWeight,
+              	CustomsRawInfo.ShipmentPieces, 
+              	CustomsRawInfo.ShipmentWeight, 
+              	CustomsRawInfo.FlightPieces, 
+              	CustomsRawInfo.FlightWeight,
+              	CustomsRawInfo.CMDPieces, 
+              	CustomsRawInfo.CMDWeight, 
+              	CustomsRawInfo.PrevFltCnt, 
+              	CustomsRawInfo.rankShpInFlt,
+              	CASE 
+              	    WHEN CustomsRawInfo.Transhipment=1  Then
+              	     'MA'
+              		WHEN CustomsRawInfo.CMDPieces IS NULL AND CustomsRawInfo.DoNumber<> 'NO' AND (CustomLarType IN ('IA','IAN') OR CustomLarType IS NULL) AND rankShpInFlt=1 AND PrevFltCnt=0 THEN 
+              			'NO'
+              		WHEN CustomsRawInfo.CMDPieces IS NULL AND CustomsRawInfo.DoNumber = 'NO' AND (CustomLarType IN ('IA','IAN') OR CustomLarType IS NULL) AND rankShpInFlt=1 AND PrevFltCnt=0 THEN 
+              			'UN'
+              		WHEN CustomsRawInfo.CMDPieces IS NULL AND CustomsRawInfo.CustomLarType IN ('PTF') AND rankShpInFlt=1 AND PrevFltCnt=0 THEN 
+              			'NO'
+              		WHEN CustomsRawInfo.CMDPieces IS NULL AND CustomsRawInfo.CustomLarType IN ('PN') THEN 
+              			'OK'
+              		WHEN CustomsRawInfo.CMDPieces IS NULL AND CustomsRawInfo.CustomLarType IN ('EC') THEN 
+              			'MA'
+              		WHEN (CustomsRawInfo.CMDPieces = CustomsRawInfo.TotalPieces AND CustomsRawInfo.CMDPieces = CustomsRawInfo.FlightPieces) AND CustomsRawInfo.CustomLarType IN ('EC') AND totPartInFlt=1 AND PrevFltCnt=0 THEN 
+              			'MA'
+              		WHEN (CustomsRawInfo.CMDPieces = CustomsRawInfo.TotalPieces AND CustomsRawInfo.CMDPieces = CustomsRawInfo.FlightPieces) AND totPartInFlt=1 AND PrevFltCnt=0 THEN 
+              			'OK'
+              		WHEN CustomsRawInfo.CMDPieces IS NOT NULL AND rankShpInFlt=1 AND PrevFltCnt=0 THEN 
+              			'PC'
+              		ELSE 
+              			'PA' END possibleStatus,
+                    totPartInFlt
+              FROM 
+              	CustomsRawInfo
+              WHERE 
+              	CustomsRawInfo.ShipmentNumber = cast(#{shipmentNumber} as varchar)
+       )
+		update CS 
+		set 
+			CS.MRSStatusCode = CustomsSummaryTab.possibleStatus
+		from 
+			CustomsSummaryTab inner join
+			Custom_shipmentinfo CS 
+				On CustomsSummaryTab.CustomShipmentInfoId = CS.CustomShipmentInfoId
+		WHERE 
+			CS.MRSStatusCode != possibleStatus
+	
+	]]>
+	</update>
+	
+	<update id="updatePaShipmentsCmdInfoFromInterface"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+		<![CDATA[			
+			update Custom_Shipmentinfo 
+			set 
+				CMDProcessingId = NULL, 
+				CMDReceivedDate=NULL
+			from(select 
+					cs.CustomShipmentInfoId
+				from 
+					Custom_Shipmentinfo cs INNER JOIN 
+					Customs_Flight CsFlt 
+						ON CS.CustomFlightId = CsFlt.CustomsFlightId
+				where 
+					MrsStatusCode='PA' AND 
+					CsFlt.ImportExportIndicator =#{importExportIndicator} AND 
+					(CMDReceivedDate IS NOT NULL OR CMDProcessingId IS NOT NULL) AND 
+					cs.ShipmentNumber = #{shipmentNumber}
+			)CustProcessInfo
+			where 
+				Custom_Shipmentinfo.CustomShipmentInfoId = CustProcessInfo.CustomShipmentInfoId and
+				Custom_Shipmentinfo.ShipmentNumber=#{shipmentNumber}
+		]]>
+	</update>
+	
+	<update id="AttachCmdToShipmentFromInterface"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[
+		with CustProcessDate as(
+			select 
+				CustomShipmentInfoId,
+				CS.ShipmentNumber, 
+				MAX(CMD.CMDReceivedDate) CMDReceivedDate
+			from 
+				Custom_Shipmentinfo CS INNER JOIN 
+				Customs_Flight CsFlt 
+					ON CS.CustomFlightId = CsFlt.CustomsFlightId INNER JOIN 
+				Custom_CargoManifestDeclarationMessage CMD 
+					ON  substring(CS.ShipmentNumber, 1, 3) = CMD.AwbPrefix and 
+						substring(CS.ShipmentNumber, 4, 8) = CMD.AwbSerialNumber
+			WHERE 
+				MrsStatusCode IN ('PC','OK','MA') AND 
+				CsFlt.ImportExportIndicator =#{importExportIndicator} AND 
+				(CS.CMDReceivedDate IS NULL OR CS.CMDProcessingId IS NULL) AND 
+				CS.ShipmentNumber = #{shipmentNumber}			
+			GROUP BY 
+				CustomShipmentInfoId,CS.ShipmentNumber
+		), CustProcessIdInfo as(
+			select 
+				CustomShipmentInfoId,
+				CS.ShipmentNumber, 
+				CS.CMDReceivedDate,
+				CMD.CMDProcessingId
+			from 
+				CustProcessDate CS inner join 
+				Custom_CargoManifestDeclarationMessage CMD
+					ON substring(CS.ShipmentNumber, 1, 3) = CMD.AwbPrefix and 
+						substring(CS.ShipmentNumber, 4, 8) = CMD.AwbSerialNumber AND 
+						CS.CMDReceivedDate = CMD.CMDReceivedDate	
+		)
+		update CS 
+		set 
+			CS.CMDProcessingId = CmdCs.CMDProcessingId, 
+			CS.CMDReceivedDate = CmdCs.CMDReceivedDate
+		from 
+			Custom_Shipmentinfo CS inner join 
+			CustProcessIdInfo CmdCs 
+				ON CmdCs.CustomShipmentInfoId = CS.CustomShipmentInfoId
+		WHERE 
+			CS.ShipmentNumber=#{shipmentNumber}
+	]]>
+	</update>
+
+	<update id="updateCmdLinkTableFromInterface"
+		parameterType="com.ngen.cosys.satssg.interfaces.cargomanifestdecleration.model.CustomCargoManifestDeclarationMessageModel">
+	<![CDATA[
+		with LinkUpdate As(
+			select 
+				Link.CustomCargoManifestDeclarationLinkToMRSId,
+				Link.ShipmentNumber, 
+				CsFlt.CustomsFlightId
+			from
+				Custom_CargoManifestDeclarationLinkToMRS Link inner join
+				Custom_Shipmentinfo CS 
+					ON Link.ShipmentNumber = CS.ShipmentNumber AND
+						CS.CMDProcessingId IS NOT NULL INNER JOIN 
+				Customs_Flight CsFlt 
+					ON CS.CustomFlightId = CsFlt.CustomsFlightId
+			where 
+				Link.AwbPrefix = substring(#{shipmentNumber}, 1, 3) and
+				Link.AwbSerialNumber = substring(#{shipmentNumber}, 8, 4) and
+				CS.MrsStatusCode IN ('PC','OK','MA') and 
+				CsFlt.ImportExportIndicator = #{importExportIndicator} and 
+				CsFlt.CustomsFlightId != Link.Custom_FlightId
+		)
+		update Custom_CargoManifestDeclarationLinkToMRS 
+		set 
+			Custom_FlightId = LinkUpdate.CustomsFlightId
+		from (
+				select
+					CustomCargoManifestDeclarationLinkToMRSId, 
+					ShipmentNumber, 
+					CustomsFlightId
+				from
+					LinkUpdate		
+			)LinkUpdate
+		WHERE 
+			Custom_CargoManifestDeclarationLinkToMRS.CustomCargoManifestDeclarationLinkToMRSId = LinkUpdate.CustomCargoManifestDeclarationLinkToMRSId and
+			Custom_CargoManifestDeclarationLinkToMRS.AwbPrefix + Custom_CargoManifestDeclarationLinkToMRS.AwbSerialNumber = #{shipmentNumber}			
+	]]>
+	</update>
+	
+</mapper>	

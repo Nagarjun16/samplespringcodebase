@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration scan="true" scanPeriod="10 seconds" >
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+	<root level="ERROR">
+		<appender-ref ref="CONSOLE" />
+	</root>
+
+	<springProfile name="dev">
+		<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+		</appender>
+		<logger name="com.ngen.cosys" level="debug" additivity="false">
+			<appender-ref ref="STDOUT" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="STDOUT" />
+		</root>
+	</springProfile>
+
+	<springProfile name="qa">
+		<appender name="FILE"
+			class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>/data/logs/qa/satssgbatches-application.log</file>
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+			<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+				<maxFileSize>10MB</maxFileSize>
+			</triggeringPolicy>
+			<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			   <fileNamePattern>/data/logs/qa/satssgbatches-application.%i.gz</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>50</maxIndex>
+			</rollingPolicy>
+		</appender>
+		<logger name="com.ngen.cosys" level="debug" additivity="false">
+			<appender-ref ref="FILE" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+	<springProfile name="uat">
+		<appender name="FILE"
+			class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>/data/logs/uat/satssgbatches-application.log</file>
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+			<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+				<maxFileSize>10MB</maxFileSize>
+			</triggeringPolicy>
+			<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			   <fileNamePattern>/data/logs/uat/satssgbatches-application.%i.gz</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>50</maxIndex>
+			</rollingPolicy>
+		</appender>
+		<logger name="com.ngen.cosys" level="info" additivity="false">
+			<appender-ref ref="FILE" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+	<springProfile name="trg">
+		<appender name="FILE"
+			class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>/data/logs/trg/satssgbatches-application.log</file>
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+			<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+				<maxFileSize>10MB</maxFileSize>
+			</triggeringPolicy>
+			<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			   <fileNamePattern>/data/logs/trg/satssgbatches-application.%i.gz</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>50</maxIndex>
+			</rollingPolicy>
+		</appender>
+		<logger name="com.ngen.cosys" level="info" additivity="false">
+			<appender-ref ref="FILE" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+	<springProfile name="stg">
+		<appender name="FILE"
+			class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>/data/logs/prod/satssgbatches-application.log</file>
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+			<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+				<maxFileSize>10MB</maxFileSize>
+			</triggeringPolicy>
+			<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			   <fileNamePattern>/data/logs/prod/satssgbatches-application.%i.gz</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>50</maxIndex>
+			</rollingPolicy>
+		</appender>
+		<logger name="com.ngen.cosys" level="info" additivity="false">
+			<appender-ref ref="FILE" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+	<springProfile name="prod">
+		<appender name="FILE"
+			class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>/data/logs/prod/satssgbatches-application.log</file>
+			<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+				<Pattern>
+				<![CDATA[
+					HEAD#%X{TenantID:-SPRING} | %X{AuthUserID:-SPRING} | %X{RequestID:-SPRING} | %X{MeterID:-SPRING} | %d{yyyy-MM-dd HH:mm:ss},%d{SSS} | %-5level %msg%n
+				]]>
+				</Pattern>
+			</encoder>
+			<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+				<maxFileSize>10MB</maxFileSize>
+			</triggeringPolicy>
+			<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			   <fileNamePattern>/data/logs/prod/satssgbatches-application.%i.gz</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>50</maxIndex>
+			</rollingPolicy>
+		</appender>
+		<logger name="com.ngen.cosys" level="info" additivity="false">
+			<appender-ref ref="FILE" />
+		</logger>
+		<root level="error">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+</configuration>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ForeignUldArrivedOnIncomingFlightMapper">
+
+	<select id="getReportOnTheBasisOfCarriercode" resultType="java.lang.String">
+		select
+			STRING_AGG(Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode, ',')
+		from
+			Mst_CodeAdministration_Group inner join
+			Mst_CodeAdministration_SubGroup
+			on Mst_CodeAdministration_Group.AdministrationGroupCode = Mst_CodeAdministration_SubGroup.AdministrationGroupCode
+		where
+		Mst_CodeAdministration_Group.AdministrationGroupCode = 'SQFRGULD'
+		
+	</select>
+
+	<select id="sqlGetFromDateForForeignUldsCarrier" resultMap="parametersMap">
+		select 
+			cast(parametervaluechar as datetime) as fromDate,
+			getdate() toDate
+		from 
+		App_SystemParameters 
+		where 
+			ParameterCode = 'FROMDATE_FOR_FOREIGN_INCOMING_ULD_IN_CSV_FORMAT_TO_TRIGGER_MAIL';
+			
+	</select>
+	
+	<resultMap type="com.ngen.cosys.ForeignUld.Model.ForeignUldArrivedOnIncomingFlightModel" id="parametersMap">
+		<result column="fromDate" property="fromDate"/>
+		<result column="toDate" property="toDate"/>
+	</resultMap>
+	
+	<select id="getEmailAddresses" resultType="java.lang.String">
+	select distinct Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress from Interface_MessageDefinitionByCustomer inner join
+		Interface_MessageDefinitionByCustomerCommunication on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId=Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId INNER JOIN
+		Interface_MessageDefinitionByCustomerCommunicationAddress ON
+		Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId = Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId
+		where Interface_MessageDefinitionByCustomerCommunication.CommunicationType = 'SQFRGULD'	
+	</select>
+	
+	<update id="sqlUpdateLatestFromDateForForeignULD">
+	update App_SystemParameters
+	set
+	parametervaluechar =  getdate()
+	where
+	ParameterCode = 'FROMDATE_FOR_FOREIGN_INCOMING_ULD_IN_CSV_FORMAT_TO_TRIGGER_MAIL';
+	</update>
+</mapper>	
+	

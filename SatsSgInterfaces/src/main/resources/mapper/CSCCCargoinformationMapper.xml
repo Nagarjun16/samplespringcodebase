@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ngen.cosys.cscc.dao.CargoInformationDao">
+  <resultMap id="BaseResultMap" type="com.ngen.cosys.cscc.modal.ShipmentInform">
+    <id column="flightNo" jdbcType="VARCHAR" property="flightNo" />
+    <result column="flightDate" jdbcType="VARCHAR" property="flightDate" />
+    <result column="importExport" jdbcType="VARCHAR" property="importExport" />
+    <result column="AWBNO" jdbcType="VARCHAR" property="AWBNo" />
+    <result column="SHC" jdbcType="VARCHAR" property="SHC" />
+    <result column="NOG" jdbcType="VARCHAR" property="NOG" />
+    <result column="Origin" jdbcType="VARCHAR" property="origin" />
+    <result column="Destination" jdbcType="VARCHAR" property="destination" />
+    <result column="pcs" jdbcType="INTEGER" property="pcs" />
+    <result column="Weight" jdbcType="NUMERIC" property="weight" />
+    <result column="bookingChangesFlag" jdbcType="VARCHAR" property="bookingChanges" />
+    <result column="isTransshipment" jdbcType="VARCHAR" property="transshipment" />
+    <result column="flightNoIn" jdbcType="VARCHAR" property="flightNoIns" />
+    <result column="flightNoOut" jdbcType="VARCHAR" property="flightNoOuts" />
+    <result column="acceptanceTime" jdbcType="VARCHAR" property="acceptanceTime" />
+    <result column="buildUpTime" jdbcType="VARCHAR" property="buildUpTime" />
+    <result column="AWBReceivedTime" jdbcType="VARCHAR" property="AWBReceivedTime" />
+    <result column="AWBScannedTime" jdbcType="VARCHAR" property="AWBScannedTime" />
+    <result column="loadedInfo" jdbcType="VARCHAR" property="loadedInfos" />
+    <result column="locationInfo" jdbcType="VARCHAR" property="locationInfos" />
+    <result column="screenFlag" jdbcType="VARCHAR" property="screenFlag" />
+    <result column="screenedBy" jdbcType="VARCHAR" property="screenedBy" />
+    <result column="screenedAt" jdbcType="TIMESTAMP" property="screenedAt" />
+    <result column="offloadFinalizationTiming" jdbcType="TIMESTAMP" property="offloadFinalizationTiming" />
+    <result column="rampReceivedTiming" jdbcType="VARCHAR" property="rampReceivedTiming" />
+    <result column="importULDS" jdbcType="VARCHAR" property="importULDSString" />
+    <result column="XAF1" jdbcType="VARCHAR" property="XAF1" />
+    <result column="XAF2" jdbcType="VARCHAR" property="XAF2" />
+    <result column="XAF3" jdbcType="VARCHAR" property="XAF3" />
+  </resultMap>
+
+  <select id="getExportCargoInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody"
+          resultMap="BaseResultMap">
+    with flightInfo as (
+    SELECT flight.Flight_ID                                                                as flightId,
+           flight.FlightKey,
+           legs.DateSTD                                                                    as flightDate,
+           awb.ShipmentId,
+           bookingInfo.ShipmentNumber,
+           bookingInfo.ShipmentDate,
+           ISNULL(awb.NatureOfGoodsDescription,bookingInfo.NatureOfGoodsDescription)       as nog,
+           ISNULL(awb.Origin,bookingInfo.Origin)                                           as Origin,
+           ISNULL(awb.Destination,bookingInfo.Destination)                                 as Destination,
+           max(partDetail.PartSuffix)                                                      as partSuffix,
+           max(awb.Pieces)                                                                 as pieces,
+           max(awb.Weight)                                                                 as weight,
+           (select string_agg(masterSHC.SpecialHandlingCode, '')
+            from Shipment_MasterSHC as masterSHC
+            where masterSHC.ShipmentId = awb.ShipmentId)                                   as SHC,
+           string_agg(bookingFlightSHC.specialHandlingCode,'')                             as BookingSHC,
+           max(isnull(loadedShipment.lastUpdatedDatetime, loadedShipment.createdDateTime)) as buildUpTime,
+           max(acceptance.AcceptedDateTime)                                                as acceptanceTime,
+           max(iif(rcar.ScreeningEndDate is not null,'1', '0'))                            as screenFlag,
+           max(rcar.ScreeningEndDate)                                                      as screenedAt,
+           max(iif(rcar.ScreeningEndDate is not null,rcar.LastUpdatedUser_Code,null))      as screenedBy,
+           max(offloadShipment.CreatedDateTime)                                            as offloadFinalizationTiming,
+           min(fwb.MessageProcessedDate)                                                   as AWBReceivedTime,
+           max(iif(partBookingConfig.CarrierCode is not null,1,0))                         as SQCarrier
+      FROM Exp_ShipmentBooking bookingInfo
+         inner join Shipment_Master awb
+                    on bookingInfo.ShipmentNumber = awb.ShipmentNumber
+                        and bookingInfo.ShipmentDate = awb.ShipmentDate
+         inner join Exp_ShipmentFlightBookingDetail bookingFlight
+                    on bookingInfo.BookingId = bookingFlight.BookingId and bookingFlight.FlightBoardPoint = 'SIN'
+         inner join Flt_OperativeFlight flight on flight.Flight_ID = bookingFlight.FlightId
+         inner join Flt_OperativeFlight_Legs legs
+                    on flight.Flight_ID = legs.Flight_ID and legs.FlightBoardPoint = 'SIN'
+         left join Exp_ShipmentFlightBookingDetailSHC bookingFlightSHC
+                    on bookingFlightSHC.FlightBookingId = bookingFlight.FlightBookingId
+         left join Exp_ShipmentFlightPartDetail partFlight on partFlight.FlightBookingId = bookingFlight.FlightBookingId
+         left join Exp_ShipmentPartBookingDetail partDetail on partDetail.PartBookingId = partFlight.PartBookingId
+         left join Exp_eAcceptanceDocumentInformation acceptance
+                   on acceptance.ShipmentNumber = awb.ShipmentNumber and acceptance.ShipmentDate = awb.ShipmentDate
+                       and acceptance.Accepted = 1 and acceptance.Status = 'ACCEPTED'
+         left join Exp_Screening rcar
+                   on rcar.ShipmentNumber = awb.ShipmentNumber and rcar.ShipmentDate = awb.ShipmentDate
+         left join Exp_OffloadULDInfo offloadUld on offloadUld.FlightSegmentId = bookingFlight.FlightSegmentId
+         left join Exp_OffloadShipmentInfo offloadShipment
+                   on offloadUld.ExpOffloadULDInfoId = offloadShipment.ExpOffloadULDInfoId
+                       and offloadShipment.ShipmentId = awb.ShipmentId
+         left join Shipment_FreightWayBill fwb
+                   on fwb.AwbNumber = awb.ShipmentNumber and fwb.AwbDate = awb.ShipmentDate
+         left join Exp_AssignedULDTrolleyToFlight assignedUld on assignedUld.FlightId = flight.Flight_ID
+         left join Exp_LoadedShipmentInfo loadedShipment
+                   on assignedUld.AssUldTrolleyId = loadedShipment.AssUldTrolleyId
+                       and loadedShipment.ShipmentId = awb.ShipmentId
+         left join Exp_Airline_Part_Booking_Config partBookingConfig
+                   on partBookingConfig.CarrierCode = flight.CarrierCode
+         <where>
+         <if test="flightNo != null and flightNo !=''">
+          AND flight.FlightKey = #{flightNo}
+          AND CAST(legs.DateSTD AS DATE) = #{flightLocalDate}
+         </if>
+         <if test="fromTime != null and fromTime !=''">
+          AND legs.DateSTD between #{dbFromTime} AND #{dbToTime}
+         </if>
+        </where>
+        group by flight.Flight_ID,
+                 flight.FlightKey,
+                 legs.DateSTD,
+                 awb.ShipmentId,
+                 bookingInfo.ShipmentNumber,
+                 bookingInfo.ShipmentDate,
+                 ISNULL(awb.NatureOfGoodsDescription,bookingInfo.NatureOfGoodsDescription),
+                 ISNULL(awb.Origin,bookingInfo.Origin),
+                 ISNULL(awb.Destination,bookingInfo.Destination)
+        union all
+        select flight.flight_id                                         as flightId,
+               flight.FlightKey,
+               legs.DateSTD,
+               awb.ShipmentId,
+               awb.ShipmentNumber,
+               awb.ShipmentDate,
+               awb.NatureOfGoodsDescription                             as nog,
+               awb.Origin,
+               awb.Destination,
+               max(partShipmentBooking.PartSuffix)                      as partSuffix,
+               max(awb.Pieces)                                          as pieces,
+               max(awb.Weight)                                          as weight,
+               (select string_agg(masterSHC.SpecialHandlingCode, '')
+                from Shipment_MasterSHC as masterSHC
+                where masterSHC.ShipmentId = awb.ShipmentId)            as SHC,
+               null                                                     as BookingSHC,
+               null                                                     as buildUpTime,
+               max(acceptance.AcceptedDateTime)                         as acceptanceTime,
+               max(iif(rcar.ScreeningEndDate is not null, '1', '0'))
+                                                                        as screenFlag,
+               max(rcar.ScreeningEndDate)                               as screenedAt,
+               max(iif(rcar.ScreeningEndDate is not null, rcar.LastUpdatedUser_Code, null))
+                                                                        as screenedBy,
+               max(ofdShp.CreatedDateTime)                              as offloadFinalizationTiming,
+               min(fwb.MessageProcessedDate)                            as AWBReceivedTime,
+               max(iif(partBookingConfig.CarrierCode is not null,1,0))  as SQCarrier
+      from Exp_OffloadULDInfo ofdUld
+         INNER JOIN Exp_OffloadShipmentInfo ofdShp
+                    on ofdUld.expOffloadUldInfoId = ofdShp.ExpOffloadULDInfoId
+         INNER JOIN Flt_OperativeFlight_Segments segs on segs.FlightSegmentId = ofdUld.FlightSegmentId
+         INNER JOIN Flt_OperativeFlight flight on flight.Flight_ID = segs.Flight_ID
+         INNER JOIN Flt_OperativeFlight_Legs legs on legs.flight_id = flight.flight_id and legs.flightBoardPoint = 'SIN'
+         INNER JOIN shipment_master awb
+         left join Exp_eAcceptanceDocumentInformation acceptance
+                   on acceptance.ShipmentNumber = awb.ShipmentNumber and acceptance.ShipmentDate = awb.ShipmentDate
+                       and acceptance.Accepted = 1 and acceptance.Status = 'ACCEPTED'
+         left join Exp_Screening rcar
+                   on rcar.ShipmentNumber = awb.ShipmentNumber and rcar.ShipmentDate = awb.ShipmentDate
+                   on ofdShp.ShipmentId = awb.shipmentid
+         left join Shipment_FreightWayBill fwb
+                   on fwb.AwbNumber = awb.ShipmentNumber and fwb.AwbDate = awb.ShipmentDate
+         left join exp_shipmentBooking shipmentBooking on shipmentBooking.ShipmentNumber = awb.ShipmentNumber
+                    and shipmentBooking.ShipmentDate = awb.ShipmentDate
+         left join Exp_ShipmentPartBookingDetail partShipmentBooking
+                   on shipmentBooking.BookingId = partShipmentBooking.BookingId
+          left join Exp_Airline_Part_Booking_Config partBookingConfig
+                   on partBookingConfig.CarrierCode = flight.CarrierCode
+        <where>
+         <if test="flightNo != null and flightNo !=''">
+          AND flight.FlightKey = #{flightNo}
+          AND CAST(legs.DateSTD AS DATE) = #{flightLocalDate}
+         </if>
+         <if test="fromTime != null and fromTime !=''">
+          AND legs.DateSTD between #{dbFromTime} AND #{dbToTime}
+         </if>
+        </where>
+          and not exists(select top 1 'Y'
+                         from Exp_ShipmentBooking booking
+                                  INNER JOIN Exp_ShipmentFlightBookingDetail bookingFlight
+                                             on booking.BookingId = bookingFlight.BookingId
+                         where booking.shipmentNumber = awb.shipmentNumber
+                           and booking.shipmentDate = awb.shipmentDate
+                           and bookingFlight.flightId = flight.Flight_ID)
+        group by flight.flight_id,
+                 flight.FlightKey,
+                 legs.DateSTD,
+                 awb.ShipmentId,
+                 awb.ShipmentNumber,
+                 awb.ShipmentDate,
+                 awb.NatureOfGoodsDescription,
+                 awb.Origin,
+                 awb.Destination),
+         inboundInfo as (
+             select flightInfo.ShipmentId,
+                    string_agg(flight.FlightKey + '/' + format(legs.DateSTA, 'dd-MM-yyyy'), ',') as flightNoIn,
+                    string_agg(flight.FlightKey + '/' + format(legs.DateSTA, 'dd-MM-yyyy') + '/' + arrivalULD.ULDNumber,
+                               ',')                                                              as importULDS
+             from Imp_ArrivalManifestByFlight arrivalFlight
+                      inner join Flt_OperativeFlight flight on flight.Flight_ID = arrivalFlight.FlightId
+                      inner join Flt_OperativeFlight_Legs legs on flight.Flight_ID = legs.Flight_ID and legs.FlightOffPoint ='SIN'
+                      inner join Imp_ArrivalManifestBySegment arrivalSegment
+                                 on arrivalFlight.ImpArrivalManifestByFlightId = arrivalSegment.ImpArrivalManifestByFlightId
+                      inner join Imp_ArrivalManifestULD arrivalULD
+                                 on arrivalSegment.ImpArrivalManifestBySegmentId = arrivalULD.ImpArrivalManifestBySegmentId
+                      inner join Imp_ArrivalManifestShipmentInfo arrivalShipment
+                                 on arrivalULD.ImpArrivalManifestULDId = arrivalShipment.ImpArrivalManifestULDId
+                      inner join flightInfo on flightInfo.ShipmentNumber = arrivalShipment.ShipmentNumber
+                 and flightInfo.ShipmentDate = arrivalShipment.ShipmentDate
+             group by flightInfo.ShipmentId
+         ),
+         outboundinfo as (
+             select ShipmentId, string_agg(FlightKey + '/' + flightDate, ',') as flightNoOut
+             from (select freightOut.ShipmentId,
+                          flight.FlightKey,
+                          format(legs.DateSTD, 'dd-MM-yyyy') flightDate
+                   from Shipment_FreightOut freightOut
+                            INNER JOIN
+                        flightInfo on flightInfo.ShipmentId = freightOut.ShipmentId
+                            inner join Flt_OperativeFlight flight on freightOut.FlightId = flight.Flight_ID
+                            INNER JOIN Flt_OperativeFlight_Legs legs
+                                       on flight.Flight_ID = legs.Flight_ID and legs.FlightBoardPoint = 'SIN'
+                   group by freightOut.ShipmentId, flight.FlightKey, format(legs.DateSTD, 'dd-MM-yyyy')) outboundFlight
+             group by ShipmentId
+         ),
+         awbScannedInfo as (
+             select Cdh_FlightPouch.flightId,
+                    Cdh_DocumentMaster.shipmentId,
+                    max(Cdh_DocumentMaster.LastUpdatedDateTime) as AWBScannedDate
+             from Cdh_FlightPouch
+                      inner join flightInfo on Cdh_FlightPouch.FlightId = flightInfo.flightId
+                      inner join Cdh_DocumentMaster
+                                 on Cdh_FlightPouch.CdhFlightPouchId = Cdh_DocumentMaster.CdhFlightPouchId
+                                     and Cdh_DocumentMaster.ShipmentId = flightInfo.ShipmentId
+                                     and Cdh_DocumentMaster.DocumentStatus = 'In Pouch'
+             group by Cdh_FlightPouch.flightId, Cdh_DocumentMaster.shipmentId
+         ),
+         offLoadedRamp as (
+             select segments.flight_id            as FlightId,
+                    OfdShp.ShipmentId,
+                    max(chkInUld.CreatedDateTime) as rampReceivedTiming
+               from Exp_OffloadULDInfo ofdUld
+                    INNER JOIN Flt_OperativeFlight_segments segments on ofdUld.FlightSegmentId = segments.flightSegmentId
+                    INNER JOIN Exp_OffloadShipmentInfo OfdShp
+                               on ofdUld.ExpOffloadULDInfoId = OfdShp.ExpOffloadULDInfoId
+                    left join Exp_CheckInOffloadReturntoWarehouse chkIn
+                              on chkIn.FlightId = segments.Flight_Id
+                    left join Exp_CheckInContainerTrolleyInfo chkInUld
+                              on chkIn.ExpCheckInId = chkInUld.ExpCheckInId and chkInUld.ContainerTrolleyNumber = ofdUld.ULDNumber
+            group by segments.flight_id, OfdShp.ShipmentId
+         ),
+         inventoryInfo as (
+             select
+                 Shipment_Inventory.ShipmentInventory_Id,
+                 Shipment_Inventory.Shipment_ID,
+                 Shipment_Inventory.ShipmentLocation,
+                 Shipment_Inventory.Pieces,
+                 Shipment_Inventory.Weight,
+                 Shipment_Inventory.WarehouseLocation,
+                 Shipment_Inventory.PartSuffix,
+                 Shipment_Inventory.AssignedUldTrolley,
+                 null as FlightKey,
+                 null as FlightDate,
+                 Shipment_Inventory.Flight_Id ShipmentInventoryFlightId
+            from
+                 Shipment_Inventory inner join
+                 Shipment_Master on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+            where
+                 exists(select null
+                          from flightInfo
+                         where flightInfo.ShipmentNumber = Shipment_Master.ShipmentNumber
+                           and flightInfo.ShipmentDate = Shipment_Master.ShipmentDate
+                           and ((flightInfo.partSuffix = Shipment_Inventory.partSuffix
+                                       and flightInfo.SQCarrier = 1)
+                                 or flightInfo.SQCarrier = 0)
+                 )and not exists(
+                                select null
+                                  from Flt_OperativeFlight  inner join Flt_OperativeFlight_Legs
+                                    on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+                                    and Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN'
+                                where Flt_OperativeFlight.Flight_ID = Shipment_Inventory.Flight_ID
+                 )
+            union
+            select Shipment_Inventory.ShipmentInventory_Id,
+                 Shipment_Inventory.Shipment_ID,
+                 Shipment_Inventory.ShipmentLocation,
+                 Shipment_Inventory.Pieces,
+                 Shipment_Inventory.Weight,
+                 Shipment_Inventory.WarehouseLocation,
+                 Shipment_Inventory.PartSuffix,
+                 Shipment_Inventory.AssignedUldTrolley,
+                 Flt_OperativeFlight.FlightKey,
+                 cast(Flt_OperativeFlight_Legs.DateSTA as date) as FlightDate,
+                 Shipment_Inventory.Flight_Id ShipmentInventoryFlightId
+            from
+                 Shipment_Inventory inner join
+                 Shipment_Master
+                                on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId inner join
+                 Flt_OperativeFlight
+                                on Shipment_Inventory.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+                 Flt_OperativeFlight_Legs
+                                on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+                                             Flt_OperativeFlight_Legs.FlightOffPoint = 'SIN'
+            where
+                 exists(select null
+                          from flightInfo
+                         where flightInfo.ShipmentNumber = Shipment_Master.ShipmentNumber
+                           and flightInfo.ShipmentDate = Shipment_Master.ShipmentDate
+                           and ((flightInfo.partSuffix = Shipment_Inventory.partSuffix
+                                       and flightInfo.SQCarrier = 1)
+                                 or flightInfo.SQCarrier = 0)
+                 )),
+         loadedInfo as (
+             select FlightId,
+                    ShipmentID,
+                    string_agg(LoadedULD + '/' + cast(LoadedPieces as varchar(10))
+                                         + '/' + cast(LoadedWeight as varchar(30)), ',') loadedUld
+             from (
+                    SELECT Shipment_Inventory.Shipment_ID        AS ShipmentID,
+                           Shipment_Inventory.Flight_ID          AS FlightID,
+                           Shipment_Inventory.AssignedUldTrolley AS LoadedULD,
+                           Shipment_Inventory.PartSuffix,
+                           SUM(Shipment_Inventory.Pieces)        AS LoadedPieces,
+                           SUM(Shipment_Inventory.Weight)        AS LoadedWeight
+                    FROM Shipment_Inventory inner join flightInfo
+                        on flightInfo.flightId = Shipment_Inventory.Flight_ID
+                        and flightInfo.ShipmentId = Shipment_Inventory.Shipment_ID
+                        and Shipment_Inventory.AssignedUldTrolley IS NOT NULL
+                    GROUP BY Shipment_Inventory.Shipment_ID,
+                             Shipment_Inventory.Flight_ID,
+                             Shipment_Inventory.AssignedUldTrolley,
+                             Shipment_Inventory.PartSuffix
+                    UNION ALL
+                    SELECT Shipment_FreightOut.ShipmentID,
+                           Shipment_FreightOut.FlightID,
+                           Shipment_FreightOut.AssignedUldTrolley AS LoadedULD,
+                           Shipment_FreightOut.PartSuffix,
+                           SUM(Shipment_FreightOut.Pieces)        AS LoadedPieces,
+                           SUM(Shipment_FreightOut.Weight)        AS LoadedWeight
+                    FROM Shipment_FreightOut inner join flightInfo
+                        on flightInfo.flightId = Shipment_FreightOut.FlightId
+                        and flightInfo.ShipmentId = Shipment_FreightOut.ShipmentId
+                        and Shipment_FreightOut.AssignedUldTrolley IS NOT NULL
+                    GROUP BY Shipment_FreightOut.ShipmentID,
+                             Shipment_FreightOut.FlightID,
+                             Shipment_FreightOut.AssignedUldTrolley,
+                             Shipment_FreightOut.PartSuffix) loadedShipment
+        group by FlightId, ShipmentID
+         ),
+         locationInfo as (
+             select Shipment_ID ShipmentID,
+                    string_agg(iif(ShipmentLocation is null or ShipmentLocation='',WarehouseLocation,ShipmentLocation)
+                        + '/' + cast(Pieces as varchar(10))
+                                   + '/' + cast(Weight as varchar(30))
+                        + iif(FlightKey is not null,
+                            '/'+FlightKey + '/'+upper(format(FlightDate,'ddMMMyyyy')),''),',') locationUld
+               from inventoryInfo
+              where AssignedUldTrolley is null
+             group by Shipment_ID
+         )
+
+    select flightInfo.FlightKey                                                    as flightNo,
+           format(flightInfo.flightDate, 'dd-MM-yyyy')                             as flightDate,
+           'E'                                                                     as importExport,
+           flightInfo.ShipmentNumber                                               as AWBNO,
+           flightInfo.SHC,
+           flightInfo.nog                                                          as NOG,
+           flightInfo.Origin,
+           flightInfo.Destination,
+           flightInfo.pieces                                                       as pcs,
+           flightInfo.weight                                                       as weight,
+           null                                                                    as bookingChangesFlag,
+           iif('SIN' not in (flightInfo.Origin, flightInfo.Destination), '1', '0') as isTransshipment,
+           inboundInfo.flightNoIn,
+           outboundinfo.flightNoOut,
+           format(DATEADD(hh,8,flightInfo.acceptanceTime), 'dd/MM/yyyy HH:mm')     as acceptanceTime,
+           format(DATEADD(hh,8,flightInfo.buildUpTime), 'dd/MM/yyyy HH:mm')        as buildUpTime,
+           format(DATEADD(hh,8,flightInfo.AWBReceivedTime), 'dd/MM/yyyy HH:mm')    as AWBReceivedTime,
+           format(DATEADD(hh,8,awbScannedInfo.AWBScannedDate), 'dd/MM/yyyy HH:mm') as AWBScannedTime,
+           loadedInfo.loadedUld                                                    as loadedInfo,
+           locationInfo.locationUld                                                as locationInfo,
+           flightInfo.screenFlag,
+           flightInfo.screenedBy,
+           format(flightInfo.screenedAt, 'dd/MM/yyyy HH:mm')                       as screenedAt,
+           format(DATEADD(hh,8,flightInfo.offloadFinalizationTiming), 'dd/MM/yyyy HH:mm')
+                                    as offloadFinalizationTiming,
+           format(DATEADD(hh,8,offLoadedRamp.rampReceivedTiming), 'dd/MM/yyyy HH:mm')
+                                    as rampReceivedTiming,
+           inboundInfo.importULDS
+    from flightInfo
+             left join inboundInfo on flightInfo.ShipmentId = inboundInfo.ShipmentId
+             left join outboundinfo on flightInfo.ShipmentId = outboundinfo.ShipmentId
+             left join awbScannedInfo on flightInfo.flightId = awbScannedInfo.FlightId and
+                                         flightInfo.ShipmentId = awbScannedInfo.ShipmentId
+             left join offLoadedRamp
+                       on flightInfo.flightId = offLoadedRamp.flightId and
+                          flightInfo.ShipmentId = offLoadedRamp.ShipmentId
+             left join loadedInfo
+                       on flightInfo.flightId = loadedInfo.flightId and
+                          flightInfo.ShipmentId = loadedInfo.ShipmentId
+            left join locationInfo
+                       on flightInfo.ShipmentId = locationInfo.ShipmentId
+    order by flightInfo.flightId
+  </select>
+  <select id="getImportCargoInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody"
+          resultMap="BaseResultMap">
+      with 
+        flightInfo as (
+            select flight.Flight_ID,
+                    flight.FlightKey,
+                   legs.DateSTA,
+                   awb.ShipmentNumber,
+                   awb.ShipmentDate,
+                   awb.ShipmentId,
+                   awb.Origin,
+                   awb.Destination,
+                   awb.Pieces,
+                   awb.Weight,
+                   awb.NatureOfGoodsDescription,
+                   (select string_agg(masterSHC.SpecialHandlingCode, '')
+                    from Shipment_MasterSHC as masterSHC
+                    where masterSHC.ShipmentId = awb.ShipmentId) as SHC,
+                   fwb.MessageProcessedDate               as AWBReceivedTime
+            from shipment_master awb
+            Inner Join (Select arrivalFlight.FlightId,
+                                arrivalShipment.ShipmentNumber, arrivalShipment.ShipmentDate
+                        from  Imp_ArrivalManifestByFlight arrivalFlight
+                        inner join Imp_ArrivalManifestBySegment arrivalSegment
+                                on arrivalFlight.ImpArrivalManifestByFlightId =
+                                   arrivalSegment.ImpArrivalManifestByFlightId
+                        inner join Imp_ArrivalManifestULD arrivalULD
+                                on arrivalSegment.ImpArrivalManifestBySegmentId =
+                                   arrivalULD.ImpArrivalManifestBySegmentId
+                        inner join Imp_ArrivalManifestShipmentInfo arrivalShipment
+                                on arrivalULD.ImpArrivalManifestULDId = 
+                                   arrivalShipment.ImpArrivalManifestULDId                              
+                        Group By arrivalFlight.FlightId, 
+                                arrivalShipment.ShipmentNumber, arrivalShipment.ShipmentDate
+                        ) ArrivalManifest
+                    on ArrivalManifest.ShipmentNumber = awb.ShipmentNumber
+                    and ArrivalManifest.ShipmentDate = awb.ShipmentDate
+            inner join Flt_OperativeFlight flight on flight.Flight_ID = ArrivalManifest.FlightId
+            Inner Join Flt_OperativeFlight_Legs legs on flight.Flight_ID = legs.Flight_ID   
+            left join Shipment_FreightWayBill fwb
+                    on fwb.AwbNumber = awb.ShipmentNumber and fwb.AwbDate = awb.ShipmentDate
+            <where>
+               <if test="flightNo != null and flightNo !=''">
+                  AND flight.FlightKey = #{flightNo}
+                  AND CAST(legs.DateSTA AS DATE) = #{flightLocalDate}
+               </if>
+               <if test="fromTime != null and fromTime !=''">
+                  AND legs.DateSTA between #{dbFromTime} AND #{dbToTime}
+               </if>
+            </where>
+            and legs.FlightOffPoint = 'SIN'
+        ),
+        inboundInfo as (
+            select ShipmentNumber, shipmentdate,
+                   string_agg(flightNo,',') as flightNoIn,
+                   string_agg(importULDS,',') as importULDS
+              from (
+            select flightInfo.ShipmentNumber, flightInfo.ShipmentDate,
+                   flight.FlightKey + '/' + format(legs.DateSTA, 'dd-MM-yyyy') as flightNo,
+                    string_agg(flight.FlightKey + '/' + format(legs.DateSTA, 'dd-MM-yyyy') + '/' + arrivalULD.ULDNumber,',') as importULDS
+            from  Imp_ArrivalManifestByFlight arrivalFlight
+            inner join Flt_OperativeFlight flight on flight.Flight_ID = arrivalFlight.FlightId
+            inner join Flt_OperativeFlight_Legs legs
+                    on flight.Flight_ID = legs.Flight_ID and legs.FlightOffPoint = 'SIN'
+            inner join Imp_ArrivalManifestBySegment arrivalSegment
+                    on arrivalFlight.ImpArrivalManifestByFlightId =
+                        arrivalSegment.ImpArrivalManifestByFlightId
+            inner join Imp_ArrivalManifestULD arrivalULD
+                    on arrivalSegment.ImpArrivalManifestBySegmentId =
+                        arrivalULD.ImpArrivalManifestBySegmentId
+            inner join Imp_ArrivalManifestShipmentInfo arrivalShipment
+                    on arrivalULD.ImpArrivalManifestULDId = 
+                       arrivalShipment.ImpArrivalManifestULDId
+            inner join flightInfo on flightInfo.ShipmentNumber = arrivalShipment.ShipmentNumber
+                    and flightInfo.ShipmentDate = arrivalShipment.ShipmentDate
+            group by flightInfo.ShipmentNumber, flightInfo.ShipmentDate,
+                     flight.FlightKey + '/' + format(legs.DateSTA, 'dd-MM-yyyy')) innerInboundInfo
+            group by ShipmentNumber, shipmentdate
+         ),
+        outboundinfo as (
+            select ShipmentId, string_agg(FlightKey + '/' + flightDate, ',') as flightNoOut
+            from (select freightOut.ShipmentId, 
+                          flight.FlightKey,
+                          format(legs.DateSTD, 'dd-MM-yyyy') flightDate
+                    from Shipment_FreightOut freightOut
+                    INNER JOIN flightInfo on flightInfo.ShipmentId = freightOut.ShipmentId
+                    inner join Flt_OperativeFlight flight on freightOut.FlightId = flight.Flight_ID
+                    INNER JOIN Flt_OperativeFlight_Legs legs
+                           on flight.Flight_ID = legs.Flight_ID and legs.FlightBoardPoint = 'SIN'
+                    group by freightOut.ShipmentId, flight.FlightKey, format(legs.DateSTD, 'dd-MM-yyyy')
+                    ) outboundFlight
+            group by ShipmentId
+        )
+        select flightInfo.FlightKey                                                    as flightNo,
+               format(flightInfo.DateSTA, 'dd-MM-yyyy')                                as flightDate,
+               'I'                                                                     as importExport,
+               flightInfo.ShipmentNumber                                               as AWBNO,
+               flightInfo.SHC,
+               flightInfo.NatureOfGoodsDescription                                     as NOG,
+               flightInfo.Origin,
+               flightInfo.Destination,
+               flightInfo.pieces                                                       as pcs,
+               flightInfo.weight                                                       as weight,
+               null                                                                    as bookingChangesFlag,
+               iif('SIN' not in (flightInfo.Origin, flightInfo.Destination), '1', '0') as isTransshipment,
+               inboundInfo.flightNoIn,
+               outboundinfo.flightNoOut,
+               null                                                                    as acceptanceTime,
+               null                                                                    as buildUpTime,
+               format(DATEADD(hh,8,flightInfo.AWBReceivedTime),'dd/MM/yyyy HH:mm')     as AWBReceivedTime,
+               null                                                                    as AWBScannedTime,
+               null                                                                    as loadedInfo,
+               null                                                                    as locationInfo,
+               null                                                                    as screenFlag,
+               null                                                                    as screenedBy,
+               null                                                                    as screenedAt,
+               null                                                                    as offloadFinalizationTiming,
+               null                                                                    as rampReceivedTiming,
+               inboundInfo.importULDS
+        from flightInfo
+        left join inboundInfo on flightInfo.ShipmentNumber = inboundInfo.ShipmentNumber 
+              and flightInfo.ShipmentDate = inboundInfo.ShipmentDate
+        left join outboundinfo on flightInfo.ShipmentId = outboundinfo.ShipmentId       
+  </select>
+</mapper>

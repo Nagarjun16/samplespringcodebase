@@ -1,0 +1,2246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="Month" id="152">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Year" id="153">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Carrier" id="154">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="155">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="161">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="130">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="131">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ShipmentType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentType</text-property>
+                    <text-property name="heading">ShipmentType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <text-property name="heading">ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ServiceCargoIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ServiceCargoIndicator</text-property>
+                    <text-property name="heading">ServiceCargoIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AwbPrefix</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AwbPrefix</text-property>
+                    <text-property name="heading">AwbPrefix</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AwbNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AwbNumber</text-property>
+                    <text-property name="heading">AwbNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <text-property name="heading">ShipmentDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">PartShipmentIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">PartShipmentIndicator</text-property>
+                    <text-property name="heading">PartShipmentIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Origin</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <text-property name="heading">Origin</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Destination</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Destination</text-property>
+                    <text-property name="heading">Destination</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfGoods</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfGoods</text-property>
+                    <text-property name="heading">NatureOfGoods</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AwbPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">AwbPieces</text-property>
+                    <text-property name="heading">AwbPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AwbWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">AwbWeight</text-property>
+                    <text-property name="heading">AwbWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DGWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">DGWeight</text-property>
+                    <text-property name="heading">DGWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DocumentAcceptanceDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DocumentAcceptanceDate</text-property>
+                    <text-property name="heading">DocumentAcceptanceDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DocumentCompletionDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DocumentCompletionDate</text-property>
+                    <text-property name="heading">DocumentCompletionDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TranshipmentIndicator</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">TranshipmentIndicator</text-property>
+                    <text-property name="heading">TranshipmentIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ChargeCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ChargeCode</text-property>
+                    <text-property name="heading">ChargeCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">RcarTypeCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">RcarTypeCode</text-property>
+                    <text-property name="heading">RcarTypeCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">PouchIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">PouchIndicator</text-property>
+                    <text-property name="heading">PouchIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">eAWBIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">eAWBIndicator</text-property>
+                    <text-property name="heading">eAWBIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">IsFromStock</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">IsFromStock</text-property>
+                    <text-property name="heading">IsFromStock</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NeutralAWBIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">NeutralAWBIndicator</text-property>
+                    <text-property name="heading">NeutralAWBIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipperCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipperCode</text-property>
+                    <text-property name="heading">ShipperCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipperName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipperName</text-property>
+                    <text-property name="heading">ShipperName</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ControlFormAgentCode</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ControlFormAgentCode</text-property>
+                    <text-property name="heading">ControlFormAgentCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ManualFWBIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ManualFWBIndicator</text-property>
+                    <text-property name="heading">ManualFWBIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ManualFHLIndicator</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ManualFHLIndicator</text-property>
+                    <text-property name="heading">ManualFHLIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FWBPieces</text-property>
+                    <text-property name="heading">FWBPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FWBWeight</text-property>
+                    <text-property name="heading">FWBWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBRcarTypeCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FWBRcarTypeCode</text-property>
+                    <text-property name="heading">FWBRcarTypeCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBFinalDestination</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FWBFinalDestination</text-property>
+                    <text-property name="heading">FWBFinalDestination</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBNatureOfGoods</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FWBNatureOfGoods</text-property>
+                    <text-property name="heading">FWBNatureOfGoods</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBChargeCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FWBChargeCode</text-property>
+                    <text-property name="heading">FWBChargeCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ManualFWBChargeAmount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ManualFWBChargeAmount</text-property>
+                    <text-property name="heading">ManualFWBChargeAmount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FwbPaid</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FwbPaid</text-property>
+                    <text-property name="heading">FwbPaid</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBCreateDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FWBCreateDate</text-property>
+                    <text-property name="heading">FWBCreateDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBReceivedFlag</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FWBReceivedFlag</text-property>
+                    <text-property name="heading">FWBReceivedFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FWBReadyFlag</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FWBReadyFlag</text-property>
+                    <text-property name="heading">FWBReadyFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ManualFHLChargeAmount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ManualFHLChargeAmount</text-property>
+                    <text-property name="heading">ManualFHLChargeAmount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FhlPaid</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FhlPaid</text-property>
+                    <text-property name="heading">FhlPaid</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">EditFHLCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">EditFHLCount</text-property>
+                    <text-property name="heading">EditFHLCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ActualFHLCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ActualFHLCount</text-property>
+                    <text-property name="heading">ActualFHLCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc1</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc1</text-property>
+                    <text-property name="heading">shpShc1</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc2</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc2</text-property>
+                    <text-property name="heading">shpShc2</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc3</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc3</text-property>
+                    <text-property name="heading">shpShc3</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc4</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc4</text-property>
+                    <text-property name="heading">shpShc4</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc5</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc5</text-property>
+                    <text-property name="heading">shpShc5</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc6</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc6</text-property>
+                    <text-property name="heading">shpShc6</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc7</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc7</text-property>
+                    <text-property name="heading">shpShc7</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc8</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc8</text-property>
+                    <text-property name="heading">shpShc8</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shpShc9</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shpShc9</text-property>
+                    <text-property name="heading">shpShc9</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">HandlingTerminalCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">HandlingTerminalCode</text-property>
+                    <text-property name="heading">HandlingTerminalCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">LastUpdatedOn</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">LastUpdatedOn</text-property>
+                    <text-property name="heading">LastUpdatedOn</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CarrierCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <text-property name="heading">CarrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightNumber</text-property>
+                    <text-property name="heading">FlightNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightOriginDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightOriginDate</text-property>
+                    <text-property name="heading">FlightOriginDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DateSTD</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DateSTD</text-property>
+                    <text-property name="heading">DateSTD</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightOffPoint</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightOffPoint</text-property>
+                    <text-property name="heading">FlightOffPoint</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightType</text-property>
+                    <text-property name="heading">FlightType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CarrierCode_1</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <text-property name="heading">CarrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FirstBookedFlight</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FirstBookedFlight</text-property>
+                    <text-property name="heading">FirstBookedFlight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FirstBookedFlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FirstBookedFlightDate</text-property>
+                    <text-property name="heading">FirstBookedFlightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CashOnlyCustomer</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CashOnlyCustomer</text-property>
+                    <text-property name="heading">CashOnlyCustomer</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">3</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Month</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">Year</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">Carrier</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ShipmentType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">ServiceCargoIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">AwbPrefix</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">AwbNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">ShipmentDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">PartShipmentIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">Origin</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">Destination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">NatureOfGoods</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">AwbPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">AwbWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">DGWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">DocumentAcceptanceDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">DocumentCompletionDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">TranshipmentIndicator</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">ChargeCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">RcarTypeCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">PouchIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">eAWBIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">IsFromStock</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">22</property>
+                        <property name="name">NeutralAWBIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">23</property>
+                        <property name="name">ShipperCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">24</property>
+                        <property name="name">ShipperName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">25</property>
+                        <property name="name">ControlFormAgentCode</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">26</property>
+                        <property name="name">ManualFWBIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">27</property>
+                        <property name="name">ManualFHLIndicator</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">28</property>
+                        <property name="name">FWBPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">29</property>
+                        <property name="name">FWBWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">30</property>
+                        <property name="name">FWBRcarTypeCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">31</property>
+                        <property name="name">FWBFinalDestination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">32</property>
+                        <property name="name">FWBNatureOfGoods</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">33</property>
+                        <property name="name">FWBChargeCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">34</property>
+                        <property name="name">ManualFWBChargeAmount</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">35</property>
+                        <property name="name">FwbPaid</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">36</property>
+                        <property name="name">FWBCreateDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">37</property>
+                        <property name="name">FWBReceivedFlag</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">38</property>
+                        <property name="name">FWBReadyFlag</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">39</property>
+                        <property name="name">ManualFHLChargeAmount</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">40</property>
+                        <property name="name">FhlPaid</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">41</property>
+                        <property name="name">EditFHLCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">42</property>
+                        <property name="name">ActualFHLCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">43</property>
+                        <property name="name">shpShc1</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">44</property>
+                        <property name="name">shpShc2</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">45</property>
+                        <property name="name">shpShc3</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">46</property>
+                        <property name="name">shpShc4</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">47</property>
+                        <property name="name">shpShc5</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">48</property>
+                        <property name="name">shpShc6</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">49</property>
+                        <property name="name">shpShc7</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">50</property>
+                        <property name="name">shpShc8</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">51</property>
+                        <property name="name">shpShc9</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">52</property>
+                        <property name="name">HandlingTerminalCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">53</property>
+                        <property name="name">LastUpdatedOn</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">54</property>
+                        <property name="name">CarrierCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">55</property>
+                        <property name="name">FlightNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">56</property>
+                        <property name="name">FlightOriginDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">57</property>
+                        <property name="name">DateSTD</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">58</property>
+                        <property name="name">FlightOffPoint</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">59</property>
+                        <property name="name">FlightType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">60</property>
+                        <property name="name">CarrierCode_1</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">61</property>
+                        <property name="name">FirstBookedFlight</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">62</property>
+                        <property name="name">FirstBookedFlightDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">63</property>
+                        <property name="name">CashOnlyCustomer</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ShipmentType</property>
+                    <property name="nativeName">ShipmentType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">ServiceCargoIndicator</property>
+                    <property name="nativeName">ServiceCargoIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">AwbPrefix</property>
+                    <property name="nativeName">AwbPrefix</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">AwbNumber</property>
+                    <property name="nativeName">AwbNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">ShipmentDate</property>
+                    <property name="nativeName">ShipmentDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">PartShipmentIndicator</property>
+                    <property name="nativeName">PartShipmentIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">Origin</property>
+                    <property name="nativeName">Origin</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">Destination</property>
+                    <property name="nativeName">Destination</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">NatureOfGoods</property>
+                    <property name="nativeName">NatureOfGoods</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">AwbPieces</property>
+                    <property name="nativeName">AwbPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">AwbWeight</property>
+                    <property name="nativeName">AwbWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">DGWeight</property>
+                    <property name="nativeName">DGWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">DocumentAcceptanceDate</property>
+                    <property name="nativeName">DocumentAcceptanceDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">DocumentCompletionDate</property>
+                    <property name="nativeName">DocumentCompletionDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">TranshipmentIndicator</property>
+                    <property name="nativeName">TranshipmentIndicator</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">ChargeCode</property>
+                    <property name="nativeName">ChargeCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">RcarTypeCode</property>
+                    <property name="nativeName">RcarTypeCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">PouchIndicator</property>
+                    <property name="nativeName">PouchIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">eAWBIndicator</property>
+                    <property name="nativeName">eAWBIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">IsFromStock</property>
+                    <property name="nativeName">IsFromStock</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">22</property>
+                    <property name="name">NeutralAWBIndicator</property>
+                    <property name="nativeName">NeutralAWBIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">23</property>
+                    <property name="name">ShipperCode</property>
+                    <property name="nativeName">ShipperCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">24</property>
+                    <property name="name">ShipperName</property>
+                    <property name="nativeName">ShipperName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">25</property>
+                    <property name="name">ControlFormAgentCode</property>
+                    <property name="nativeName">ControlFormAgentCode</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">26</property>
+                    <property name="name">ManualFWBIndicator</property>
+                    <property name="nativeName">ManualFWBIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">27</property>
+                    <property name="name">ManualFHLIndicator</property>
+                    <property name="nativeName">ManualFHLIndicator</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">28</property>
+                    <property name="name">FWBPieces</property>
+                    <property name="nativeName">FWBPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">29</property>
+                    <property name="name">FWBWeight</property>
+                    <property name="nativeName">FWBWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">30</property>
+                    <property name="name">FWBRcarTypeCode</property>
+                    <property name="nativeName">FWBRcarTypeCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">31</property>
+                    <property name="name">FWBFinalDestination</property>
+                    <property name="nativeName">FWBFinalDestination</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">32</property>
+                    <property name="name">FWBNatureOfGoods</property>
+                    <property name="nativeName">FWBNatureOfGoods</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">33</property>
+                    <property name="name">FWBChargeCode</property>
+                    <property name="nativeName">FWBChargeCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">34</property>
+                    <property name="name">ManualFWBChargeAmount</property>
+                    <property name="nativeName">ManualFWBChargeAmount</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">35</property>
+                    <property name="name">FwbPaid</property>
+                    <property name="nativeName">FwbPaid</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">36</property>
+                    <property name="name">FWBCreateDate</property>
+                    <property name="nativeName">FWBCreateDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">37</property>
+                    <property name="name">FWBReceivedFlag</property>
+                    <property name="nativeName">FWBReceivedFlag</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">38</property>
+                    <property name="name">FWBReadyFlag</property>
+                    <property name="nativeName">FWBReadyFlag</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">39</property>
+                    <property name="name">ManualFHLChargeAmount</property>
+                    <property name="nativeName">ManualFHLChargeAmount</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">40</property>
+                    <property name="name">FhlPaid</property>
+                    <property name="nativeName">FhlPaid</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">41</property>
+                    <property name="name">EditFHLCount</property>
+                    <property name="nativeName">EditFHLCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">42</property>
+                    <property name="name">ActualFHLCount</property>
+                    <property name="nativeName">ActualFHLCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">43</property>
+                    <property name="name">shpShc1</property>
+                    <property name="nativeName">shpShc1</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">44</property>
+                    <property name="name">shpShc2</property>
+                    <property name="nativeName">shpShc2</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">45</property>
+                    <property name="name">shpShc3</property>
+                    <property name="nativeName">shpShc3</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">46</property>
+                    <property name="name">shpShc4</property>
+                    <property name="nativeName">shpShc4</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">47</property>
+                    <property name="name">shpShc5</property>
+                    <property name="nativeName">shpShc5</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">48</property>
+                    <property name="name">shpShc6</property>
+                    <property name="nativeName">shpShc6</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">49</property>
+                    <property name="name">shpShc7</property>
+                    <property name="nativeName">shpShc7</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">50</property>
+                    <property name="name">shpShc8</property>
+                    <property name="nativeName">shpShc8</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">51</property>
+                    <property name="name">shpShc9</property>
+                    <property name="nativeName">shpShc9</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">52</property>
+                    <property name="name">HandlingTerminalCode</property>
+                    <property name="nativeName">HandlingTerminalCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">53</property>
+                    <property name="name">LastUpdatedOn</property>
+                    <property name="nativeName">LastUpdatedOn</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">54</property>
+                    <property name="name">CarrierCode</property>
+                    <property name="nativeName">CarrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">55</property>
+                    <property name="name">FlightNumber</property>
+                    <property name="nativeName">FlightNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">56</property>
+                    <property name="name">FlightOriginDate</property>
+                    <property name="nativeName">FlightOriginDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">57</property>
+                    <property name="name">DateSTD</property>
+                    <property name="nativeName">DateSTD</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">58</property>
+                    <property name="name">FlightOffPoint</property>
+                    <property name="nativeName">FlightOffPoint</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">59</property>
+                    <property name="name">FlightType</property>
+                    <property name="nativeName">FlightType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">60</property>
+                    <property name="name">CarrierCode_1</property>
+                    <property name="nativeName">CarrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">61</property>
+                    <property name="name">FirstBookedFlight</property>
+                    <property name="nativeName">FirstBookedFlight</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">62</property>
+                    <property name="name">FirstBookedFlightDate</property>
+                    <property name="nativeName">FirstBookedFlightDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">63</property>
+                    <property name="name">CashOnlyCustomer</property>
+                    <property name="nativeName">CashOnlyCustomer</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[WITH shpshcRawData as 
+(
+select ShipmentId, SpecialHandlingCode, DENSE_RANK() over (PARTITION BY ShipmentId order by SpecialHandlingCode) shpShcRank
+from Shipment_MasterSHC),
+shpShcData as(
+select ShipmentId, 
+MIN(case when shpShcRank=1 then SpecialHandlingCode else null end) shpShc1,
+MIN(case when shpShcRank=2 then SpecialHandlingCode else null end) shpShc2,
+MIN(case when shpShcRank=3 then SpecialHandlingCode else null end) shpShc3,
+MIN(case when shpShcRank=4 then SpecialHandlingCode else null end) shpShc4,
+MIN(case when shpShcRank=5 then SpecialHandlingCode else null end) shpShc5,
+MIN(case when shpShcRank=6 then SpecialHandlingCode else null end) shpShc6,
+MIN(case when shpShcRank=7 then SpecialHandlingCode else null end) shpShc7,
+MIN(case when shpShcRank=8 then SpecialHandlingCode else null end) shpShc8,
+MIN(case when shpShcRank=9 then SpecialHandlingCode else null end) shpShc9
+from shpshcRawData
+group by ShipmentId
+)
+
+SELECT distinct
+sm.ShipmentType ShipmentType
+, eAcpDoc.ShipmentNumber
+, sm.SVC ServiceCargoIndicator
+, SUBSTRING(eAcpDoc.ShipmentNumber, 1, 3) AwbPrefix
+, SUBSTRING(eAcpDoc.ShipmentNumber, 4, 8) AwbNumber
+, eAcpDoc.ShipmentDate
+, sm.PartShipment PartShipmentIndicator
+, eAcpDoc.Origin
+, eAcpDoc.Destination
+, sm.NatureOfGoodsDescription NatureOfGoods
+, sm.Pieces AwbPieces
+, sm.Weight AwbWeight
+, eAcpDoc.DgAcceptedWeight DGWeight
+, eAcpDoc.AcceptanceStartedOn DocumentAcceptanceDate
+, eAcpDoc.AcceptedDateTime DocumentCompletionDate
+, case when sm.Origin != ? and sm.Destination != ? then 'Y'
+       else 'N' end TranshipmentIndicator
+, otherChargeInfo.ChargeCode
+, sm.RCARStatus RcarTypeCode
+, eAcpDoc.AwbPouch PouchIndicator
+, case when (shpShcData.shpShc1 = 'EAW' or shpShcData.shpShc2 = 'EAW'
+or shpShcData.shpShc3 = 'EAW' or shpShcData.shpShc4 = 'EAW' or shpShcData.shpShc5 = 'EAW'
+or shpShcData.shpShc6 = 'EAW' or shpShcData.shpShc7 = 'EAW' or shpShcData.shpShc8 = 'EAW'
+or shpShcData.shpShc9 = 'EAW') and FWB.ReceivedManuallyFlag = 0 then 1 else 0 end as eAWBIndicator
+, null as IsFromStock
+, null as NeutralAWBIndicator
+, eAcpSvc.CustomerCode ShipperCode
+, eAcpSvc.CustomerName ShipperName
+, null as ControlFormAgentCode
+, FWB.ReceivedManuallyFlag ManualFWBIndicator
+, FHLdata.ManualFHLIndicator as ManualFHLIndicator
+, FWB.Pieces FWBPieces
+, FWB.Weight FWBWeight
+, SUBSTRING(SSROInf.ServiceRequestcontent,6,2) as FWBRcarTypeCode
+, FWB.Destination FWBFinalDestination
+, FWB.NatureOfGoodsDescription FWBNatureOfGoods
+, shpChargedesc.ChargeCode FWBChargeCode
+, billingChargesForFWB.Amount ManualFWBChargeAmount
+, case when billingChargesForFWB.Amount = billingChargesForFWB.BillPaidAmount then 'Y'
+       else 'N' end FwbPaid
+, UPPER(FORMAT(( select convert(datetime,SWITCHOFFSET(converT(datetimeoffset,FWB.CreatedDateTime),(SELECT current_utc_offset  FROM   sys.time_zone_info 
+WHERE  NAME = (select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))))) 
+       ))) as FWBCreateDate
+, null as FWBReceivedFlag
+, null as FWBReadyFlag
+, billingChargesForFHL.Amount ManualFHLChargeAmount
+, case when billingChargesForFHL.Amount = billingChargesForFHL.BillPaidAmount then 'Y'
+       else 'N' end FhlPaid
+, FHLdata.EditFHLCount
+, FHLdata.ActualFHLCount
+, shpShcData.shpShc1
+, shpShcData.shpShc2
+, shpShcData.shpShc3
+, shpShcData.shpShc4
+, shpShcData.shpShc5
+, shpShcData.shpShc6
+, shpShcData.shpShc7
+, shpShcData.shpShc8
+, shpShcData.shpShc9
+, eAcpDoc.HandlingArea as HandlingTerminalCode
+, ISNULL(manifest.LastUpdatedDateTime, manifest.CreatedDateTime) as LastUpdatedOn
+, opr.CarrierCode
+, opr.FlightNumber
+,FORMAT(opr.FlightOriginDate) as FlightOriginDate
+, opr. DateSTD
+, leg.FlightOffPoint
+, opr.FlightType
+, eAcpDoc.CarrierCode
+, eAcpDoc.FirstBookedFlight
+, eAcpDoc.FirstBookedFlightDate
+, case when cstInfo.PaymentType = 'Collect' then 'Y'
+       else 'N' end CashOnlyCustomer
+FROM 
+Exp_Manifest manifest
+INNER JOIN Exp_ManifestULDInfo uld ON manifest.ManifestId = uld.ManifestId
+INNER JOIN Exp_ManifestShipmentInfo info ON uld.ManifestUldInfoId = info.ManifestUldInfoId
+INNER JOIN Shipment_Master sm ON info.ShipmentId = sm.ShipmentId
+INNER JOIN Exp_eAcceptanceDocumentInformation eAcpDoc ON sm.ShipmentNumber = eAcpDoc.ShipmentNumber AND sm.ShipmentDate = eAcpDoc.ShipmentDate
+INNER JOIN Exp_eAcceptanceServiceInformation eAcpSvc ON eAcpDoc.ServiceInformationId = eAcpSvc.ServiceInformationId
+INNER JOIN Exp_eAcceptanceWeighing eAcpWeigh ON eAcpDoc.DocumentInformationId = eAcpWeigh.DocumentInformationId
+INNER JOIN Flt_OperativeFlight opr ON eAcpDoc.FirstBookedFlight = opr.FlightKey
+INNER JOIN Flt_OperativeFlight_Legs leg ON opr.Flight_ID = leg.Flight_ID 
+AND cast(eAcpDoc.FirstBookedFlightDate as date) = cast(leg.DateSTD as date)
+AND leg.FlightBoardPoint=?
+LEFT JOIN Shipment_OtherChargeInfo otherChargeInfo ON sm.ShipmentId = otherChargeInfo.ShipmentId
+LEFT join shpShcData ON sm.ShipmentId = shpShcData.ShipmentId
+
+LEFT JOIN Billing_CustomerInfo cstInfo ON eAcpSvc.CustomerId = cstInfo.CustomerId
+
+LEFT JOIN Shipment_FreightWayBill FWB ON eAcpDoc.ShipmentNumber = FWB.AwbNumber AND eAcpDoc.ShipmentDate = fwb.AwbDate
+LEFT JOIN Shipment_FreightWayBillSSROSIInfo SSROInf ON SSROInf.ShipmentFreightWayBillId= FWB.ShipmentFreightWayBillId AND SSROInf.ServiceRequestType = 'SSR' AND CHARINDEX('RCAR', SSROInf.ServiceRequestcontent)> 0
+LEFT JOIN Shipment_FreightWayBillChargeDeclaration shpChargedesc ON FWB.ShipmentFreightWayBillId = shpChargedesc.ShipmentFreightWayBillId
+
+LEFT JOIN (select 
+count(HAWB.HAWBNumber) ActualFHLCount
+, null as EditFHLCount
+, HAWB.ReceivedManually ManualFHLIndicator
+, FHL.AwbNumber
+, FHL.AwbDate
+from
+Shipment_FreightHouseListByAWB FHL
+inner join Shipment_FreightHouseListByHAWB HAWB
+on FHL.ShipmentFreightHouseListByAWBId = HAWB.ShipmentFreightHouseListByAWBId
+group by HAWB.ReceivedManually, FHL.AwbNumber, FHL.AwbDate) FHLdata
+ON sm.ShipmentNumber = FHLdata.AwbNumber and sm.ShipmentDate = FHLdata.AwbDate
+
+LEFT JOIN (select 
+chargeGrp.BillingChargeCodeId
+, ce.ShipmentServiceReferenceId
+, ce.ReferenceType
+, ce.Amount
+, ce.BillPaidAmount
+from 
+Billing_ChargeCodeGroup chargeGrp
+inner join Billing_ChargeGroup cg on chargeGrp.ChargeGroupId = cg.ChargeGroupId
+and cg.Code = 'FWBCharge'
+inner join Billing_ChargeEntry ce on chargeGrp.BillingChargeCodeId = ce.ChargeCodeId and ce.ChargingStatus = 'Closed') billingChargesForFWB
+ON sm.ShipmentId = billingChargesForFWB.ShipmentServiceReferenceId and billingChargesForFWB.ReferenceType = 'Shipment'
+
+LEFT JOIN (select 
+chargeGrp.BillingChargeCodeId
+, ce.ShipmentServiceReferenceId
+, ce.ReferenceType
+, ce.Amount
+, ce.BillPaidAmount
+from 
+Billing_ChargeCodeGroup chargeGrp
+inner join Billing_ChargeGroup cg on chargeGrp.ChargeGroupId = cg.ChargeGroupId
+and cg.Code = 'FHLCharge'
+inner join Billing_ChargeEntry ce on chargeGrp.BillingChargeCodeId = ce.ChargeCodeId and ce.ChargingStatus = 'Closed') billingChargesForFHL
+ON sm.ShipmentId = billingChargesForFHL.ShipmentServiceReferenceId and billingChargesForFHL.ReferenceType = 'Shipment'
+------------------------------------
+where MONTH(sm.ShipmentDate) =? AND YEAR(sm.ShipmentDate) = ? and opr.CarrierCode = ?
+ ]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="orientation">landscape</property>
+            <page-footer>
+                <grid id="157">
+                    <property name="width">1.225in</property>
+                    <column id="158">
+                        <property name="width">1.225in</property>
+                    </column>
+                    <row id="159">
+                        <cell id="160">
+                            <data id="162">
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">tenantCurrentDateTime</property>
+                                        <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                        <property name="dataType">string</property>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">tenantCurrentDateTime</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <table id="6">
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ShipmentType</property>
+                    <text-property name="displayName">ShipmentType</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentType"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentNumber</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ServiceCargoIndicator</property>
+                    <text-property name="displayName">ServiceCargoIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ServiceCargoIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">AwbPrefix</property>
+                    <text-property name="displayName">AwbPrefix</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AwbPrefix"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AwbNumber</property>
+                    <text-property name="displayName">AwbNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AwbNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentDate</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">PartShipmentIndicator</property>
+                    <text-property name="displayName">PartShipmentIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PartShipmentIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">Origin</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Origin"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Destination</property>
+                    <text-property name="displayName">Destination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Destination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfGoods</property>
+                    <text-property name="displayName">NatureOfGoods</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfGoods"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AwbPieces</property>
+                    <text-property name="displayName">AwbPieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AwbPieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">AwbWeight</property>
+                    <text-property name="displayName">AwbWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AwbWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">DGWeight</property>
+                    <text-property name="displayName">DGWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DGWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">DocumentAcceptanceDate</property>
+                    <text-property name="displayName">DocumentAcceptanceDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DocumentAcceptanceDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">DocumentCompletionDate</property>
+                    <text-property name="displayName">DocumentCompletionDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DocumentCompletionDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">TranshipmentIndicator</property>
+                    <text-property name="displayName">TranshipmentIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["TranshipmentIndicator"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ChargeCode</property>
+                    <text-property name="displayName">ChargeCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ChargeCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">RcarTypeCode</property>
+                    <text-property name="displayName">RcarTypeCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["RcarTypeCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">PouchIndicator</property>
+                    <text-property name="displayName">PouchIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PouchIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">eAWBIndicator</property>
+                    <text-property name="displayName">eAWBIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["eAWBIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">IsFromStock</property>
+                    <text-property name="displayName">IsFromStock</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["IsFromStock"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">NeutralAWBIndicator</property>
+                    <text-property name="displayName">NeutralAWBIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NeutralAWBIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipperCode</property>
+                    <text-property name="displayName">ShipperCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipperCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipperName</property>
+                    <text-property name="displayName">ShipperName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipperName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ControlFormAgentCode</property>
+                    <text-property name="displayName">ControlFormAgentCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ControlFormAgentCode"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ManualFWBIndicator</property>
+                    <text-property name="displayName">ManualFWBIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ManualFWBIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ManualFHLIndicator</property>
+                    <text-property name="displayName">ManualFHLIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ManualFHLIndicator"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBPieces</property>
+                    <text-property name="displayName">FWBPieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBPieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBWeight</property>
+                    <text-property name="displayName">FWBWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBRcarTypeCode</property>
+                    <text-property name="displayName">FWBRcarTypeCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBRcarTypeCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBFinalDestination</property>
+                    <text-property name="displayName">FWBFinalDestination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBFinalDestination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBNatureOfGoods</property>
+                    <text-property name="displayName">FWBNatureOfGoods</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBNatureOfGoods"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBChargeCode</property>
+                    <text-property name="displayName">FWBChargeCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBChargeCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ManualFWBChargeAmount</property>
+                    <text-property name="displayName">ManualFWBChargeAmount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ManualFWBChargeAmount"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">FwbPaid</property>
+                    <text-property name="displayName">FwbPaid</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FwbPaid"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBCreateDate</property>
+                    <text-property name="displayName">FWBCreateDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBCreateDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBReceivedFlag</property>
+                    <text-property name="displayName">FWBReceivedFlag</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBReceivedFlag"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">FWBReadyFlag</property>
+                    <text-property name="displayName">FWBReadyFlag</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FWBReadyFlag"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ManualFHLChargeAmount</property>
+                    <text-property name="displayName">ManualFHLChargeAmount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ManualFHLChargeAmount"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">FhlPaid</property>
+                    <text-property name="displayName">FhlPaid</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FhlPaid"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">EditFHLCount</property>
+                    <text-property name="displayName">EditFHLCount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["EditFHLCount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">ActualFHLCount</property>
+                    <text-property name="displayName">ActualFHLCount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ActualFHLCount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc1</property>
+                    <text-property name="displayName">shpShc1</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc1"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc2</property>
+                    <text-property name="displayName">shpShc2</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc2"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc3</property>
+                    <text-property name="displayName">shpShc3</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc3"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc4</property>
+                    <text-property name="displayName">shpShc4</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc4"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc5</property>
+                    <text-property name="displayName">shpShc5</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc5"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc6</property>
+                    <text-property name="displayName">shpShc6</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc6"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc7</property>
+                    <text-property name="displayName">shpShc7</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc7"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc8</property>
+                    <text-property name="displayName">shpShc8</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc8"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shpShc9</property>
+                    <text-property name="displayName">shpShc9</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shpShc9"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">HandlingTerminalCode</property>
+                    <text-property name="displayName">HandlingTerminalCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HandlingTerminalCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">LastUpdatedOn</property>
+                    <text-property name="displayName">LastUpdatedOn</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["LastUpdatedOn"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">CarrierCode</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CarrierCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightNumber</property>
+                    <text-property name="displayName">FlightNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightOriginDate</property>
+                    <text-property name="displayName">FlightOriginDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightOriginDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">DateSTD</property>
+                    <text-property name="displayName">DateSTD</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DateSTD"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightOffPoint</property>
+                    <text-property name="displayName">FlightOffPoint</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightOffPoint"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightType</property>
+                    <text-property name="displayName">FlightType</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightType"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CarrierCode_1</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CarrierCode_1"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FirstBookedFlight</property>
+                    <text-property name="displayName">FirstBookedFlight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FirstBookedFlight"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FirstBookedFlightDate</property>
+                    <text-property name="displayName">FirstBookedFlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FirstBookedFlightDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">CashOnlyCustomer</property>
+                    <text-property name="displayName">CashOnlyCustomer</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CashOnlyCustomer"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="82"/>
+            <column id="83"/>
+            <column id="84"/>
+            <column id="85"/>
+            <column id="86"/>
+            <column id="87"/>
+            <column id="88"/>
+            <column id="89"/>
+            <column id="90"/>
+            <column id="91"/>
+            <column id="92"/>
+            <column id="93"/>
+            <column id="94"/>
+            <column id="95"/>
+            <column id="96"/>
+            <column id="97"/>
+            <column id="98"/>
+            <column id="99"/>
+            <column id="100"/>
+            <column id="101"/>
+            <column id="102"/>
+            <column id="103"/>
+            <column id="104"/>
+            <column id="105"/>
+            <header>
+                <row id="7">
+                    <cell id="8">
+                        <label id="106">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">export.dashboardtv.dep.date</text-property>
+                        </label>
+                    </cell>
+                    <cell id="9">
+                        <label id="107">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.flight.car</text-property>
+                        </label>
+                    </cell>
+                    <cell id="10">
+                        <label id="108">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">customs.flight.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="11">
+                        <label id="109">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.cod.awb.pfx</text-property>
+                        </label>
+                    </cell>
+                    <cell id="12">
+                        <label id="110">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.cod.awb.num</text-property>
+                        </label>
+                    </cell>
+                    <cell id="13">
+                        <label id="111">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">g.origin</text-property>
+                        </label>
+                    </cell>
+                    <cell id="14">
+                        <label id="112">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">maroon</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">g.destination</text-property>
+                        </label>
+                    </cell>
+                    <cell id="15">
+                        <label id="113">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">uld.transit</text-property>
+                        </label>
+                    </cell>
+                    <cell id="16">
+                        <label id="114">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.cf.agent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="17">
+                        <label id="115">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">g.rcar.type</text-property>
+                        </label>
+                    </cell>
+                    <cell id="18">
+                        <label id="116">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">flight.flightType</text-property>
+                        </label>
+                    </cell>
+                    <cell id="19">
+                        <label id="117">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.fwb.amount</text-property>
+                        </label>
+                    </cell>
+                    <cell id="20">
+                        <label id="118">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.fwb.paid</text-property>
+                        </label>
+                    </cell>
+                    <cell id="21">
+                        <label id="119">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.fhl.amount</text-property>
+                        </label>
+                    </cell>
+                    <cell id="22">
+                        <label id="120">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.fhl.paid</text-property>
+                        </label>
+                    </cell>
+                    <cell id="23">
+                        <label id="121">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.charge.flight.car</text-property>
+                        </label>
+                    </cell>
+                    <cell id="24">
+                        <label id="122">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.charge.flight.num</text-property>
+                        </label>
+                    </cell>
+                    <cell id="25">
+                        <label id="123">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.charge.dep.date</text-property>
+                        </label>
+                    </cell>
+                    <cell id="26">
+                        <label id="124">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.charge.off.point</text-property>
+                        </label>
+                    </cell>
+                    <cell id="27">
+                        <label id="125">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.fhl.created.by.staff</text-property>
+                        </label>
+                    </cell>
+                    <cell id="28">
+                        <label id="126">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.cash.handling</text-property>
+                        </label>
+                    </cell>
+                    <cell id="29">
+                        <label id="127">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">imp.service.cargo</text-property>
+                        </label>
+                    </cell>
+                    <cell id="30">
+                        <label id="128">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.flg.fwb.man.edit</text-property>
+                        </label>
+                    </cell>
+                    <cell id="31">
+                        <label id="129">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="backgroundColor">#400080</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="color">white</property>
+                            <text-property name="text">billing.date.fwb.create</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="32">
+                    <cell id="33">
+                        <data id="146">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.DateDataItemEventHandler</property>
+                            <property name="resultSetColumn">FlightOriginDate</property>
+                        </data>
+                    </cell>
+                    <cell id="34">
+                        <data id="140">
+                            <property name="resultSetColumn">CarrierCode</property>
+                        </data>
+                    </cell>
+                    <cell id="35">
+                        <data id="139">
+                            <property name="resultSetColumn">FlightNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="36">
+                        <data id="138">
+                            <property name="resultSetColumn">AwbPrefix</property>
+                        </data>
+                    </cell>
+                    <cell id="37">
+                        <data id="151">
+                            <property name="resultSetColumn">AwbNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="38">
+                        <data id="133">
+                            <property name="resultSetColumn">Origin</property>
+                        </data>
+                    </cell>
+                    <cell id="39">
+                        <data id="132">
+                            <property name="resultSetColumn">Destination</property>
+                        </data>
+                    </cell>
+                    <cell id="40">
+                        <data id="145">
+                            <property name="resultSetColumn">TranshipmentIndicator</property>
+                        </data>
+                    </cell>
+                    <cell id="41">
+                        <data id="135">
+                            <property name="resultSetColumn">ControlFormAgentCode</property>
+                        </data>
+                    </cell>
+                    <cell id="42">
+                        <data id="134">
+                            <property name="resultSetColumn">RcarTypeCode</property>
+                        </data>
+                    </cell>
+                    <cell id="43">
+                        <data id="143">
+                            <property name="resultSetColumn">FlightType</property>
+                        </data>
+                    </cell>
+                    <cell id="44">
+                        <data id="149">
+                            <property name="resultSetColumn">ManualFWBChargeAmount</property>
+                        </data>
+                    </cell>
+                    <cell id="45">
+                        <data id="137">
+                            <property name="resultSetColumn">FwbPaid</property>
+                        </data>
+                    </cell>
+                    <cell id="46">
+                        <data id="150">
+                            <property name="resultSetColumn">ManualFHLChargeAmount</property>
+                        </data>
+                    </cell>
+                    <cell id="47">
+                        <data id="136">
+                            <property name="resultSetColumn">FhlPaid</property>
+                        </data>
+                    </cell>
+                    <cell id="48"/>
+                    <cell id="49"/>
+                    <cell id="50"/>
+                    <cell id="51">
+                        <data id="148">
+                            <property name="resultSetColumn">FlightOffPoint</property>
+                        </data>
+                    </cell>
+                    <cell id="52"/>
+                    <cell id="53">
+                        <data id="147">
+                            <property name="resultSetColumn">CashOnlyCustomer</property>
+                        </data>
+                    </cell>
+                    <cell id="54">
+                        <data id="142">
+                            <property name="resultSetColumn">ServiceCargoIndicator</property>
+                        </data>
+                    </cell>
+                    <cell id="55"/>
+                    <cell id="56">
+                        <data id="141">
+                            <property name="resultSetColumn">FWBCreateDate</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="57">
+                    <cell id="58"/>
+                    <cell id="59"/>
+                    <cell id="60"/>
+                    <cell id="61"/>
+                    <cell id="62"/>
+                    <cell id="63"/>
+                    <cell id="64"/>
+                    <cell id="65"/>
+                    <cell id="66"/>
+                    <cell id="67"/>
+                    <cell id="68"/>
+                    <cell id="69"/>
+                    <cell id="70"/>
+                    <cell id="71"/>
+                    <cell id="72"/>
+                    <cell id="73"/>
+                    <cell id="74"/>
+                    <cell id="75"/>
+                    <cell id="76"/>
+                    <cell id="77"/>
+                    <cell id="78"/>
+                    <cell id="79"/>
+                    <cell id="80"/>
+                    <cell id="81"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentVerificationMapper">
+
+	<resultMap id="ShipmentVerificationResultMap"
+		type="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel">
+		<id column="ImpShipmentVerificationId" property="impShipmentVerificationId" />
+		<id column="FlightId" property="flightId" />
+		<id column="ShipmentId" property="shipmentId" />
+		<result column="BreakDownPieces" property="breakDownPieces" />
+		<result column="BreakDownWeight" property="breakDownWeight" />
+		<result column="DocumentReceivedFlag" property="documentReceivedFlag" />
+		<result column="PhotoCopyAwbFlag" property="photoCopyAwbFlag" />
+		<result column="DocumentPouchReceivedFlag" property="documentPouchReceivedFlag" />
+		<result column="BarcodePrintedFlag" property="barcodePrintedFlag" />		
+	</resultMap>
+
+	<sql id="ShipmentVerificationResultColumn">
+		ImpShipmentVerificationId,
+		FlightId,
+		ShipmentId,
+		BreakDownPieces,
+		BreakDownWeight,
+		DocumentReceivedFlag,
+		PhotoCopyAwbFlag,
+		DocumentPouchReceivedFlag,
+		BarcodePrintedFlag		
+	</sql>
+	
+	<select id="sqlGetShipmentVerification" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel"
+		resultMap="ShipmentVerificationResultMap">
+		select
+			<include refid="ShipmentVerificationResultColumn" />
+		from
+			Imp_ShipmentVerification
+		where
+			FlightId = #{flightId} and 
+			 ShipmentId = #{shipmentId}
+	</select>
+	
+	<insert id="sqlInsertShipmentVerification"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel"
+		keyProperty="impShipmentVerificationId" keyColumn="ImpShipmentVerificationId" useGeneratedKeys="true">
+		insert into Imp_ShipmentVerification
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="flightId != null">
+				FlightId,
+			</if>			
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="breakDownPieces != null">
+				BreakDownPieces,
+			</if>
+			<if test="breakDownWeight != null">
+				BreakDownWeight,
+			</if>
+			<if test="documentReceivedFlag != null">
+				DocumentReceivedFlag,
+			</if>
+			<if test="photoCopyAwbFlag != null">
+				PhotoCopyAwbFlag,
+			</if>
+			<if test="documentPouchReceivedFlag != null">
+				DocumentPouchReceivedFlag,
+			</if>
+			<if test="barcodePrintedFlag != null">
+				BarcodePrintedFlag,
+			</if>			
+			
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime,
+			</if>
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode,
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="flightId != null">
+				#{flightId},
+			</if>		
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="breakDownPieces != null">
+				#{breakDownPieces},
+			</if>
+			<if test="breakDownWeight != null">
+				#{breakDownWeight},
+			</if>
+			<if test="documentReceivedFlag != null">
+				#{documentReceivedFlag},
+			</if>
+			<if test="photoCopyAwbFlag != null">
+				#{photoCopyAwbFlag},
+			</if>
+			<if test="documentPouchReceivedFlag != null">
+				#{documentPouchReceivedFlag},
+			</if>
+			<if test="barcodePrintedFlag != null">
+				#{barcodePrintedFlag},
+			</if>			
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn},
+			</if>
+			<if test="modifiedBy != null">
+				#{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				#{modifiedOn}
+			</if>
+		</trim>
+	</insert>
+	
+	<update id="sqlUpdateShipmentVerification"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel">
+		update Imp_ShipmentVerification
+		<set>			
+			<if test="breakDownPieces != null">
+				BreakDownPieces = isnull(BreakDownPieces,0) + #{breakDownPieces},
+			</if>
+			<if test="breakDownWeight != null">
+				BreakDownWeight = isnull(BreakDownWeight,0.0) + #{breakDownWeight},
+			</if>
+			<if test="documentReceivedFlag != null">
+				DocumentReceivedFlag = #{documentReceivedFlag},
+			</if>
+			<if test="photoCopyAwbFlag != null">
+				PhotoCopyAwbFlag = #{photoCopyAwbFlag},
+			</if>
+			<if test="documentPouchReceivedFlag != null">
+				DocumentPouchReceivedFlag = #{documentPouchReceivedFlag},
+			</if>
+			<if test="barcodePrintedFlag != null">
+				BarcodePrintedFlag = #{barcodePrintedFlag},
+			</if>
+			LastUpdatedUserCode = #{modifiedBy},			
+			LastUpdatedDateTime = #{modifiedOn}
+		</set>
+		where 
+			FlightId = #{flightId} and 
+			ShipmentId = #{shipmentId}
+	</update>
+	
+	
+	<update id="sqlUpdateDgChecklist"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel">
+		update Imp_ShipmentVerificationDocumentInfo set 
+		  DocumentReceived=#{checkListRequired},
+		  LastUpdatedUserCode=#{modifiedBy},
+          LastUpdatedDateTime=#{modifiedOn} 
+		 where DocumentName=#{documentName} 
+		 and ImpShipmentVerificationId=#{impShipmentVerificationId}
+	</update>
+	
+	<insert id="sqlInsertDgChecklist"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel">
+		
+		INSERT INTO Imp_ShipmentVerificationDocumentInfo
+           (ImpShipmentVerificationId
+           ,DocumentName
+           ,DocumentReceived
+           ,CreatedUserCode
+           ,CreatedDateTime
+          )
+     VALUES
+           (#{impShipmentVerificationId}
+           ,#{documentName}
+           ,#{checkListRequired}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+		
+	</insert>
+	
+</mapper>

@@ -1,0 +1,2057 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="Month" id="308">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Year" id="309">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="314">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="4">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="CurrentDate" id="43">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">currentDateTime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">currentDateTime</text-property>
+                    <text-property name="heading">currentDateTime</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters"/>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">currentDateTime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">currentDateTime</property>
+                    <property name="nativeName">currentDateTime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select UPPER(convert(datetime, CONVERT(datetimeoffset, getDate()) AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))) currentDateTime ]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>currentDateTime</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>currentDateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>currentDateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="ExportDateSet" id="120">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">MRSSentDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">MRSSentDate</text-property>
+                    <text-property name="heading">MRSSentDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <text-property name="heading">FlightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-SENT MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-SENT MRSCount</text-property>
+                    <text-property name="heading">MRS-SENT MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-SENT FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-SENT FMACount</text-property>
+                    <text-property name="heading">MRS-SENT FMACount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT MRSCount</text-property>
+                    <text-property name="heading">MRS-RESENT MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT FMACount</text-property>
+                    <text-property name="heading">MRS-RESENT FMACount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  MRSCount</text-property>
+                    <text-property name="heading">MRS-RESENT-Previous  MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT-Previous  FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  FMACount</text-property>
+                    <text-property name="heading">MRS-RESENT-Previous  FMACount</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">MRSSentDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">MRS-SENT MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">MRS-SENT FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">MRS-RESENT MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">MRS-RESENT FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">MRS-RESENT-Previous  FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">MRSSentDate</property>
+                    <property name="nativeName">MRSSentDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">MRS-SENT MRSCount</property>
+                    <property name="nativeName">MRS-SENT MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">MRS-SENT FMACount</property>
+                    <property name="nativeName">MRS-SENT FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">MRS-RESENT MRSCount</property>
+                    <property name="nativeName">MRS-RESENT MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">MRS-RESENT FMACount</property>
+                    <property name="nativeName">MRS-RESENT FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="nativeName">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">MRS-RESENT-Previous  FMACount</property>
+                    <property name="nativeName">MRS-RESENT-Previous  FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[
+WITH CustomMRS
+AS (
+       SELECT  FlightKey
+              ,cast(FlightDate as date) FlightDate
+              ,ImportExportIndicator
+              ,count(MRSSentdate) AS MRSCount
+              ,cast(MRSSentdate as date) MRSSentdate
+              ,CustomsFlightId
+       FROM customs_flight
+       WHERE MRSSentdate IS NOT NULL
+              AND ImportExportIndicator = 'E'
+             AND month(MRSSentdate) = ?
+              AND Year(MRSSentdate) = ?
+       GROUP BY FlightKey
+              ,FlightDate
+              ,ImportExportIndicator
+              ,MRSSentdate
+              ,CustomsFlightId
+       )
+       ,CustomFMA
+AS (
+       SELECT FlightKey
+              ,cast(FlightDate as date) FlightDate
+              ,ImportExportIndicator
+              ,count(FMAAcknowledgeDate) AS FMACount
+			  ,FMAAcknowledgeDate
+			  ,FNAAcknowledgeDate
+       FROM customs_flight
+       WHERE FMAAcknowledgeDate IS NOT NULL
+              AND ImportExportIndicator = 'E'
+              AND month(MRSSentdate) = ?
+              AND Year(MRSSentdate) = ?
+       GROUP BY FlightKey
+              ,FlightDate
+              ,ImportExportIndicator
+			  ,FMAAcknowledgeDate
+			  ,FNAAcknowledgeDate
+       )
+       ,MRS
+AS (
+       SELECT CustomMRS.FlightKey
+              ,CustomMRS.CustomsFlightId
+              ,CustomMRS.FlightDate
+              ,CustomMRS.ImportExportIndicator
+              ,CustomMRS.MRSCount
+              ,CustomMRS.MRSSentdate
+              ,CustomFMA.FMACount
+			  ,CustomFMA.FMAAcknowledgeDate
+			  ,CustomFMA.FNAAcknowledgeDate
+       FROM CustomMRS
+       LEFT JOIN CustomFMA ON CustomMRS.FlightKey = CustomFMA.FlightKey
+              AND CustomMRS.FlightDate = CustomFMA.FlightDate
+              AND CustomMRS.ImportExportIndicator = CustomFMA.ImportExportIndicator
+       )
+       ,TEMP
+AS (
+       SELECT Count(MRS.MRSCount) MRSCount
+              ,count(MRS.FMACount) FMACount
+              ,MRS.FlightKey
+              ,MRS.FlightDate
+			  ,MRS.MRSSentdate
+              ,MRS.CustomsFlightId
+			  ,MRS.FMAAcknowledgeDate
+			  ,MRS.FNAAcknowledgeDate
+
+       FROM MRS
+       GROUP BY MRS.FlightKey
+              ,MRS.FlightDate
+              ,MRS.MRSSentdate
+              ,MRS.CustomsFlightId
+			  ,MRS.FMAAcknowledgeDate
+			  ,MRS.FNAAcknowledgeDate
+       )
+       ,FinalMRS
+AS (
+       SELECT TEMP.MRSSentdate
+              ,TEMP.FlightDate
+              ,TEMP.MRSCount "MRS-SENT MRSCount"
+              ,TEMP.FMACount "MRS-SENT FMACount"
+              ,CASE 
+                     WHEN month(CMR.MRSSentDate) = month(CMR.FirstMRSSentDate) and year(CMR.MRSSentDate) = year(CMR.FirstMRSSentDate)   AND CMR.MRSSequenceNo > 1
+                           THEN TEMP.MRSCount
+                     ELSE 0
+                     END "MRS-RESENT MRSCount"
+              ,CASE 
+                     WHEN TEMP.MRSCount > 0 and  ((TEMP.FMAAcknowledgeDate != null and TEMP.FMAAcknowledgeDate != '') or (TEMP.FNAAcknowledgeDate != null and TEMP.FNAAcknowledgeDate != ''))
+                           THEN TEMP.FMACount
+                     ELSE 0
+                     END "MRS-RESENT FMACount"
+              ,CASE 
+                     WHEN month(CMR.MRSSentDate) != month(CMR.FirstMRSSentDate) and year(CMR.MRSSentDate) != year(CMR.FirstMRSSentDate)   AND  CMR.MRSSequenceNo > 1
+                           THEN TEMP.MRSCount
+                     ELSE 0
+                     END "MRS-RESENT-Previous  MRSCount"
+              ,CASE 
+                     WHEN TEMP.MRSCount > 0 and  ((TEMP.FMAAcknowledgeDate != null and TEMP.FMAAcknowledgeDate != '') or (TEMP.FNAAcknowledgeDate != null and TEMP.FNAAcknowledgeDate != ''))
+                           THEN TEMP.FMACount
+                     ELSE 0
+                     END "MRS-RESENT-Previous  FMACount"
+       FROM TEMP
+       LEFT JOIN Custom_ManifestReconciliationStatement CMR ON TEMP.CustomsFlightId = CMR.CustomFlightId
+       )
+SELECT distinct 
+cast(MRSSentDate as date) MRSSentDate
+       ,cast(FlightDate as date) FlightDate
+       ,sum("MRS-SENT MRSCount") "MRS-SENT MRSCount"
+       ,sum("MRS-SENT FMACount") "MRS-SENT FMACount"
+       ,sum("MRS-RESENT MRSCount") "MRS-RESENT MRSCount"
+       ,sum("MRS-RESENT FMACount") "MRS-RESENT FMACount"
+       ,sum("MRS-RESENT-Previous  MRSCount") "MRS-RESENT-Previous  MRSCount"
+       ,sum("MRS-RESENT-Previous  FMACount") "MRS-RESENT-Previous  FMACount"
+FROM FinalMRS
+GROUP BY FinalMRS.MRSSentdate,
+         FlightDate
+
+ ]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRSSentDate</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRSSentDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRSSentDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightDate</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-SENT MRSCount</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-SENT MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-SENT MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-SENT FMACount</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-SENT FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-SENT FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT MRSCount</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT FMACount</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT-Previous  MRSCount</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT-Previous  MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT-Previous  MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT-Previous  FMACount</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT-Previous  FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT-Previous  FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="ImportDataSet" id="202">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">MRSSentDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">MRSSentDate</text-property>
+                    <text-property name="heading">MRSSentDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <text-property name="heading">FlightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-SENT MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-SENT MRSCount</text-property>
+                    <text-property name="heading">MRS-SENT MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-SENT FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-SENT FMACount</text-property>
+                    <text-property name="heading">MRS-SENT FMACount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT MRSCount</text-property>
+                    <text-property name="heading">MRS-RESENT MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT FMACount</text-property>
+                    <text-property name="heading">MRS-RESENT FMACount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  MRSCount</text-property>
+                    <text-property name="heading">MRS-RESENT-Previous  MRSCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRS-RESENT-Previous  FMACount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  FMACount</text-property>
+                    <text-property name="heading">MRS-RESENT-Previous  FMACount</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">MRSSentDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">MRS-SENT MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">MRS-SENT FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">MRS-RESENT MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">MRS-RESENT FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">MRS-RESENT-Previous  FMACount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">MRSSentDate</property>
+                    <property name="nativeName">MRSSentDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">MRS-SENT MRSCount</property>
+                    <property name="nativeName">MRS-SENT MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">MRS-SENT FMACount</property>
+                    <property name="nativeName">MRS-SENT FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">MRS-RESENT MRSCount</property>
+                    <property name="nativeName">MRS-RESENT MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">MRS-RESENT FMACount</property>
+                    <property name="nativeName">MRS-RESENT FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="nativeName">MRS-RESENT-Previous  MRSCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">MRS-RESENT-Previous  FMACount</property>
+                    <property name="nativeName">MRS-RESENT-Previous  FMACount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[
+WITH CustomMRS
+AS (
+       SELECT  FlightKey
+              ,cast(FlightDate as date) FlightDate
+              ,ImportExportIndicator
+              ,count(MRSSentdate) AS MRSCount
+              ,cast(MRSSentdate as date) MRSSentdate
+              ,CustomsFlightId
+       FROM customs_flight
+       WHERE MRSSentdate IS NOT NULL
+              AND ImportExportIndicator = 'I'
+             AND month(MRSSentdate) = ?
+              AND Year(MRSSentdate) = ?
+       GROUP BY FlightKey
+              ,FlightDate
+              ,ImportExportIndicator
+              ,MRSSentdate
+              ,CustomsFlightId
+       )
+       ,CustomFMA
+AS (
+       SELECT FlightKey
+              ,cast(FlightDate as date) FlightDate
+              ,ImportExportIndicator
+              ,count(FMAAcknowledgeDate) AS FMACount
+			  ,FMAAcknowledgeDate
+			  ,FNAAcknowledgeDate
+       FROM customs_flight
+       WHERE FMAAcknowledgeDate IS NOT NULL
+              AND ImportExportIndicator = 'I'
+              AND month(MRSSentdate) = ?
+              AND Year(MRSSentdate) = ?
+       GROUP BY FlightKey
+              ,FlightDate
+              ,ImportExportIndicator
+			  ,FMAAcknowledgeDate
+			  ,FNAAcknowledgeDate
+       )
+       ,MRS
+AS (
+       SELECT CustomMRS.FlightKey
+              ,CustomMRS.CustomsFlightId
+              ,CustomMRS.FlightDate
+              ,CustomMRS.ImportExportIndicator
+              ,CustomMRS.MRSCount
+              ,CustomMRS.MRSSentdate
+              ,CustomFMA.FMACount
+			  ,CustomFMA.FMAAcknowledgeDate
+			  ,CustomFMA.FNAAcknowledgeDate
+       FROM CustomMRS
+       LEFT JOIN CustomFMA ON CustomMRS.FlightKey = CustomFMA.FlightKey
+              AND CustomMRS.FlightDate = CustomFMA.FlightDate
+              AND CustomMRS.ImportExportIndicator = CustomFMA.ImportExportIndicator
+       )
+       ,TEMP
+AS (
+       SELECT Count(MRS.MRSCount) MRSCount
+              ,count(MRS.FMACount) FMACount
+              ,MRS.FlightKey
+              ,MRS.FlightDate
+			  ,MRS.MRSSentdate
+              ,MRS.CustomsFlightId
+			  ,MRS.FMAAcknowledgeDate
+			  ,MRS.FNAAcknowledgeDate
+
+       FROM MRS
+       GROUP BY MRS.FlightKey
+              ,MRS.FlightDate
+              ,MRS.MRSSentdate
+              ,MRS.CustomsFlightId
+			  ,MRS.FMAAcknowledgeDate
+			  ,MRS.FNAAcknowledgeDate
+       )
+       ,FinalMRS
+AS (
+       SELECT TEMP.MRSSentdate
+              ,TEMP.FlightDate
+              ,TEMP.MRSCount "MRS-SENT MRSCount"
+              ,TEMP.FMACount "MRS-SENT FMACount"
+              ,CASE 
+                     WHEN month(CMR.MRSSentDate) = month(CMR.FirstMRSSentDate) and year(CMR.MRSSentDate) = year(CMR.FirstMRSSentDate)   AND CMR.MRSSequenceNo > 1
+                           THEN TEMP.MRSCount
+                     ELSE 0
+                     END "MRS-RESENT MRSCount"
+              ,CASE 
+                     WHEN TEMP.MRSCount > 0 and  ((TEMP.FMAAcknowledgeDate != null and TEMP.FMAAcknowledgeDate != '') or (TEMP.FNAAcknowledgeDate != null and TEMP.FNAAcknowledgeDate != ''))
+                           THEN TEMP.FMACount
+                     ELSE 0
+                     END "MRS-RESENT FMACount"
+              ,CASE 
+                     WHEN month(CMR.MRSSentDate) != month(CMR.FirstMRSSentDate) and year(CMR.MRSSentDate) != year(CMR.FirstMRSSentDate)   AND CMR.MRSSequenceNo > 1
+                           THEN TEMP.MRSCount
+                     ELSE 0
+                     END "MRS-RESENT-Previous  MRSCount"
+              ,CASE 
+                     WHEN TEMP.MRSCount > 0 and  ((TEMP.FMAAcknowledgeDate != null and TEMP.FMAAcknowledgeDate != '') or (TEMP.FNAAcknowledgeDate != null and TEMP.FNAAcknowledgeDate != ''))
+                           THEN TEMP.FMACount
+                     ELSE 0
+                     END "MRS-RESENT-Previous  FMACount"
+       FROM TEMP
+       LEFT JOIN Custom_ManifestReconciliationStatement CMR ON TEMP.CustomsFlightId = CMR.CustomFlightId
+       )
+SELECT distinct 
+cast(MRSSentDate as date) MRSSentDate
+       ,cast(FlightDate as date) FlightDate
+       ,sum("MRS-SENT MRSCount") "MRS-SENT MRSCount"
+       ,sum("MRS-SENT FMACount") "MRS-SENT FMACount"
+       ,sum("MRS-RESENT MRSCount") "MRS-RESENT MRSCount"
+       ,sum("MRS-RESENT FMACount") "MRS-RESENT FMACount"
+       ,sum("MRS-RESENT-Previous  MRSCount") "MRS-RESENT-Previous  MRSCount"
+       ,sum("MRS-RESENT-Previous  FMACount") "MRS-RESENT-Previous  FMACount"
+FROM FinalMRS
+GROUP BY FinalMRS.MRSSentdate,
+         FlightDate
+
+ ]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRSSentDate</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRSSentDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRSSentDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightDate</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-SENT MRSCount</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-SENT MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-SENT MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-SENT FMACount</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-SENT FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-SENT FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT MRSCount</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT FMACount</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT-Previous  MRSCount</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT-Previous  MRSCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT-Previous  MRSCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRS-RESENT-Previous  FMACount</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRS-RESENT-Previous  FMACount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRS-RESENT-Previous  FMACount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="bottomMargin">-0.25in</property>
+            <page-header>
+                <grid id="16">
+                    <property name="fontFamily">"Courier New"</property>
+                    <column id="17"/>
+                    <column id="18"/>
+                    <column id="19"/>
+                    <row id="20">
+                        <cell id="21"/>
+                        <cell id="22"/>
+                        <cell id="23">
+                            <grid id="24">
+                                <property name="width">3in</property>
+                                <column id="312">
+                                    <property name="width">1in</property>
+                                </column>
+                                <column id="25"/>
+                                <column id="26"/>
+                                <column id="27"/>
+                                <row id="28">
+                                    <cell id="311">
+                                        <label id="313">
+                                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                            <text-property name="text">custom.page.number</text-property>
+                                        </label>
+                                    </cell>
+                                    <cell id="29">
+                                        <auto-text id="30">
+                                            <property name="type">page-number</property>
+                                        </auto-text>
+                                    </cell>
+                                    <cell id="31">
+                                        <text id="32">
+                                            <property name="contentType">plain</property>
+                                            <text-property name="content"><![CDATA[/]]></text-property>
+                                        </text>
+                                    </cell>
+                                    <cell id="33">
+                                        <auto-text id="34">
+                                            <property name="type">total-page</property>
+                                        </auto-text>
+                                    </cell>
+                                </row>
+                            </grid>
+                        </cell>
+                    </row>
+                </grid>
+            </page-header>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="35">
+            <property name="fontFamily">"Courier New"</property>
+            <column id="36"/>
+            <column id="37"/>
+            <column id="38"/>
+            <row id="39">
+                <cell id="40"/>
+                <cell id="41"/>
+                <cell id="42">
+                    <data id="315">
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">tenantCurrentDateTime</property>
+                                <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">tenantCurrentDateTime</property>
+                    </data>
+                </cell>
+            </row>
+        </grid>
+        <grid id="45">
+            <property name="fontFamily">"Courier New"</property>
+            <column id="46"/>
+            <column id="47"/>
+            <row id="48">
+                <property name="fontFamily">"Courier New"</property>
+                <property name="fontWeight">bold</property>
+                <cell id="49">
+                    <label id="53">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="textAlign">right</property>
+                        <text-property name="text">custom.mrs.summary</text-property>
+                    </label>
+                </cell>
+                <cell id="50">
+                    <text-data id="310">
+                        <expression name="valueExpr">if(params["Month"].value == '1')&#13;
+{&#13;
+'JAN'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '2')&#13;
+{&#13;
+'FEB'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '3')&#13;
+{&#13;
+'MAR'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '4')&#13;
+{&#13;
+'APR'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '5')&#13;
+{&#13;
+'MAY'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '6')&#13;
+{&#13;
+'JUN'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '7')&#13;
+{&#13;
+'JUL'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '8')&#13;
+{&#13;
+'AUG'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '9')&#13;
+{&#13;
+'SEP'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '10')&#13;
+{&#13;
+'OCT'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '11')&#13;
+{&#13;
+'NOV'+" "+params["Year"].value&#13;
+}&#13;
+if(params["Month"].value == '12')&#13;
+{&#13;
+'DEC'+" "+params["Year"].value&#13;
+}</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+        </grid>
+        <table id="55">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="textAlign">center</property>
+            <property name="pageBreakAfter">avoid</property>
+            <property name="canShrink">true</property>
+            <property name="dataSet">ExportDateSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">MRSSentDate</property>
+                    <text-property name="displayName">MRSSentDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRSSentDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-SENT MRSCount</property>
+                    <text-property name="displayName">MRS-SENT MRSCount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRS-SENT MRSCount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-SENT FMACount</property>
+                    <text-property name="displayName">MRS-SENT FMACount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRS-SENT FMACount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT MRSCount</property>
+                    <text-property name="displayName">MRS-RESENT MRSCount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT MRSCount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT MRSCount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT FMACount</property>
+                    <text-property name="displayName">MRS-RESENT FMACount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT FMACount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT FMACount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  MRSCount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT-Previous  MRSCount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT-Previous  MRSCount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT-Previous  FMACount</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  FMACount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT-Previous  FMACount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT-Previous  FMACount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-SENT MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_1</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-SENT FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_2</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_3</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_4</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT-Previous  MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_5</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT-Previous  FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <property name="repeatHeader">false</property>
+            <column id="83"/>
+            <column id="84"/>
+            <column id="85"/>
+            <column id="86"/>
+            <column id="87"/>
+            <column id="88"/>
+            <column id="89"/>
+            <column id="90"/>
+            <header>
+                <row id="91">
+                    <property name="borderTopStyle">dotted</property>
+                    <property name="borderTopWidth">thin</property>
+                    <cell id="92"/>
+                    <cell id="93"/>
+                    <cell id="94">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="108">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.sent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="96">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="109">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.resent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="98"/>
+                    <cell id="99"/>
+                </row>
+                <row id="56">
+                    <cell id="57">
+                        <label id="100">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.date.sent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="58">
+                        <label id="101">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.FlightDate</text-property>
+                        </label>
+                    </cell>
+                    <cell id="59">
+                        <label id="102">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="60">
+                        <label id="103">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                    <cell id="61">
+                        <label id="104">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.month</text-property>
+                        </label>
+                    </cell>
+                    <cell id="62">
+                        <label id="105">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                    <cell id="63">
+                        <label id="106">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.first</text-property>
+                        </label>
+                    </cell>
+                    <cell id="64">
+                        <label id="107">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                </row>
+                <row id="110">
+                    <cell id="111">
+                        <property name="colSpan">3</property>
+                        <property name="rowSpan">1</property>
+                        <label id="119">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="borderBottomStyle">dotted</property>
+                            <property name="borderBottomWidth">thin</property>
+                            <text-property name="text">custom.export.e</text-property>
+                        </label>
+                    </cell>
+                    <cell id="114">
+                        <property name="colSpan">5</property>
+                        <property name="rowSpan">1</property>
+                        <label id="135">
+                            <property name="borderBottomStyle">dotted</property>
+                            <property name="borderBottomWidth">thin</property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="65">
+                    <cell id="66">
+                        <data id="122">
+                            <property name="resultSetColumn">MRSSentDate</property>
+                        </data>
+                    </cell>
+                    <cell id="67">
+                        <data id="124">
+                            <property name="resultSetColumn">FlightDate</property>
+                        </data>
+                    </cell>
+                    <cell id="68">
+                        <data id="125">
+                            <property name="resultSetColumn">MRS-SENT MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="69">
+                        <data id="126">
+                            <property name="resultSetColumn">MRS-SENT FMACount</property>
+                        </data>
+                    </cell>
+                    <cell id="70">
+                        <data id="230">
+                            <property name="resultSetColumn">MRS-RESENT MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="71">
+                        <data id="133">
+                            <property name="resultSetColumn">MRS-RESENT FMACount</property>
+                        </data>
+                    </cell>
+                    <cell id="72">
+                        <data id="128">
+                            <property name="resultSetColumn">MRS-RESENT-Previous  MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="73">
+                        <data id="130">
+                            <property name="resultSetColumn">MRS-RESENT-Previous  FMACount</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="278">
+                    <property name="fontWeight">bold</property>
+                    <cell id="279">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="287">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.total.e</text-property>
+                        </label>
+                    </cell>
+                    <cell id="281">
+                        <data id="288">
+                            <method name="onCreate"><![CDATA[vars["MRSSENTMRSCountExport"] =this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="282">
+                        <data id="289">
+                            <method name="onCreate"><![CDATA[vars["MRSSENTFMACountExport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_1</property>
+                        </data>
+                    </cell>
+                    <cell id="283">
+                        <data id="290">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTMRSCountExport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_2</property>
+                        </data>
+                    </cell>
+                    <cell id="284">
+                        <data id="291">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTFMACountExport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_3</property>
+                        </data>
+                    </cell>
+                    <cell id="285">
+                        <data id="292">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTPreviousMRSCountExport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_4</property>
+                        </data>
+                    </cell>
+                    <cell id="286">
+                        <data id="293">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTPreviousFMACountExport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_5</property>
+                        </data>
+                    </cell>
+                </row>
+            </footer>
+        </table>
+        <table id="136">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="textAlign">center</property>
+            <property name="dataSet">ImportDataSet</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">MRSSentDate</property>
+                    <text-property name="displayName">MRSSentDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRSSentDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-SENT MRSCount</property>
+                    <text-property name="displayName">MRS-SENT MRSCount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRS-SENT MRSCount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-SENT FMACount</property>
+                    <text-property name="displayName">MRS-SENT FMACount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRS-SENT FMACount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT MRSCount</property>
+                    <text-property name="displayName">MRS-RESENT MRSCount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT MRSCount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT MRSCount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT FMACount</property>
+                    <text-property name="displayName">MRS-RESENT FMACount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT FMACount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT FMACount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT-Previous  MRSCount</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  MRSCount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT-Previous  MRSCount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT-Previous  MRSCount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">MRS-RESENT-Previous  FMACount</property>
+                    <text-property name="displayName">MRS-RESENT-Previous  FMACount</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["MRS-RESENT-Previous  FMACount"] > 1)&#13;
+{'1'}&#13;
+else&#13;
+{dataSetRow["MRS-RESENT-Previous  FMACount"]}</expression>
+                    <property name="dataType">integer</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-SENT MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_1</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-SENT FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_2</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_3</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_4</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT-Previous  MRSCount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation_5</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">SUM</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">row["MRS-RESENT-Previous  FMACount"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <property name="repeatHeader">false</property>
+            <column id="164"/>
+            <column id="165"/>
+            <column id="166"/>
+            <column id="167"/>
+            <column id="168"/>
+            <column id="169"/>
+            <column id="170"/>
+            <column id="171"/>
+            <header>
+                <row id="172">
+                    <property name="borderTopStyle">dotted</property>
+                    <property name="borderTopWidth">thin</property>
+                    <cell id="173"/>
+                    <cell id="174"/>
+                    <cell id="175">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="181">
+                            <text-property name="text">custom.mrs.sent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="177">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="182">
+                            <text-property name="text">custom.mrs.resent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="179"/>
+                    <cell id="180"/>
+                </row>
+                <row id="137">
+                    <cell id="138">
+                        <label id="183">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.date.sent</text-property>
+                        </label>
+                    </cell>
+                    <cell id="139">
+                        <label id="184">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.FlightDate</text-property>
+                        </label>
+                    </cell>
+                    <cell id="140">
+                        <label id="185">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="141">
+                        <label id="186">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                    <cell id="142">
+                        <label id="187">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.month</text-property>
+                        </label>
+                    </cell>
+                    <cell id="143">
+                        <label id="188">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                    <cell id="144">
+                        <label id="189">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.mrs.first</text-property>
+                        </label>
+                    </cell>
+                    <cell id="145">
+                        <label id="190">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">custom.fma</text-property>
+                        </label>
+                    </cell>
+                </row>
+                <row id="191">
+                    <cell id="192">
+                        <property name="colSpan">3</property>
+                        <property name="rowSpan">1</property>
+                        <label id="200">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="borderBottomStyle">dotted</property>
+                            <property name="borderBottomWidth">thin</property>
+                            <text-property name="text">custom.import.i</text-property>
+                        </label>
+                    </cell>
+                    <cell id="195">
+                        <property name="colSpan">5</property>
+                        <property name="rowSpan">1</property>
+                        <label id="201">
+                            <property name="borderBottomStyle">dotted</property>
+                            <property name="borderBottomWidth">thin</property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="146">
+                    <cell id="147">
+                        <data id="204">
+                            <property name="resultSetColumn">MRSSentDate</property>
+                        </data>
+                    </cell>
+                    <cell id="148">
+                        <data id="206">
+                            <property name="resultSetColumn">FlightDate</property>
+                        </data>
+                    </cell>
+                    <cell id="149">
+                        <data id="207">
+                            <property name="resultSetColumn">MRS-SENT MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="150">
+                        <data id="208">
+                            <property name="resultSetColumn">MRS-SENT FMACount</property>
+                        </data>
+                    </cell>
+                    <cell id="151">
+                        <data id="240">
+                            <property name="resultSetColumn">MRS-RESENT MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="152">
+                        <data id="211">
+                            <property name="resultSetColumn">MRS-RESENT FMACount</property>
+                        </data>
+                    </cell>
+                    <cell id="153">
+                        <data id="248">
+                            <property name="resultSetColumn">MRS-RESENT-Previous  MRSCount</property>
+                        </data>
+                    </cell>
+                    <cell id="154">
+                        <data id="210">
+                            <property name="resultSetColumn">MRS-RESENT-Previous  FMACount</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="155">
+                    <property name="fontWeight">bold</property>
+                    <cell id="156">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <label id="237">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">center</property>
+                            <text-property name="text">custom.total.i</text-property>
+                        </label>
+                    </cell>
+                    <cell id="158">
+                        <data id="294">
+                            <method name="onCreate"><![CDATA[vars["MRSSENTMRSCountImport"] =this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="159">
+                        <data id="295">
+                            <method name="onCreate"><![CDATA[vars["MRSSENTFMACountImport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_1</property>
+                        </data>
+                    </cell>
+                    <cell id="160">
+                        <data id="296">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTMRSCountImport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_2</property>
+                        </data>
+                    </cell>
+                    <cell id="161">
+                        <data id="298">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTFMACountImport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_3</property>
+                        </data>
+                    </cell>
+                    <cell id="162">
+                        <data id="299">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTPreviousMRSCountImport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_4</property>
+                        </data>
+                    </cell>
+                    <cell id="163">
+                        <data id="300">
+                            <method name="onCreate"><![CDATA[vars["MRSRESENTPreviousFMACountImport"]=this.getValue();]]></method>
+                            <property name="resultSetColumn">Aggregation_5</property>
+                        </data>
+                    </cell>
+                </row>
+            </footer>
+        </table>
+        <grid id="251">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="textAlign">center</property>
+            <column id="252"/>
+            <column id="268"/>
+            <column id="266"/>
+            <column id="253"/>
+            <column id="254"/>
+            <column id="255"/>
+            <column id="256"/>
+            <column id="257"/>
+            <row id="258">
+                <property name="fontWeight">bold</property>
+                <cell id="259">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <label id="269">
+                        <property name="textAlign">center</property>
+                        <text-property name="text">custom.grand.total</text-property>
+                    </label>
+                </cell>
+                <cell id="265">
+                    <text-data id="302">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSSENTMRSCountExport"],vars["MRSSENTMRSCountImport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+                <cell id="260">
+                    <text-data id="303">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSSENTFMACountExport"],vars["MRSSENTFMACountImport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+                <cell id="261">
+                    <text-data id="304">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSRESENTMRSCountExport"],vars["MRSRESENTMRSCountImport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+                <cell id="262">
+                    <text-data id="305">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSRESENTFMACountExport"],vars["MRSRESENTFMACountImport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+                <cell id="263">
+                    <text-data id="306">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSRESENTPreviousMRSCountImport"],vars["MRSRESENTPreviousMRSCountExport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+                <cell id="264">
+                    <text-data id="307">
+                        <expression name="valueExpr">BirtMath.add(vars["MRSRESENTPreviousFMACountExport"],vars["MRSRESENTPreviousFMACountImport"])</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+        </grid>
+    </body>
+    <property name="pageVariables">
+        <variable-element name="MRSSENTMRSCountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSSENTMRSCountImport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSSENTFMACountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSSENTFMACountImport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTMRSCountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTMRSCountImport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTFMACountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTFMACountImport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTPreviousMRSCountImport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTPreviousMRSCountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTPreviousFMACountExport">
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="MRSRESENTPreviousFMACountImport">
+            <property name="type">report</property>
+        </variable-element>
+    </property>
+</report>

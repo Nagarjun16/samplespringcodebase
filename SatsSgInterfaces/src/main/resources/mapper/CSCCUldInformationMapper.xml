@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ngen.cosys.cscc.dao.UldInformationDao">
+    <resultMap id="BaseResultMap" type="com.ngen.cosys.cscc.modal.UldInform">
+        <result column="ULDNo" jdbcType="VARCHAR" property="ULDNo"/>
+        <result column="SHC" jdbcType="VARCHAR" property="SHC"/>
+        <result column="weight" jdbcType="NUMERIC" property="weight"/>
+        <result column="importExport" jdbcType="VARCHAR" property="importExport"/>
+        <result column="flightNo" jdbcType="VARCHAR" property="flightNo"/>
+        <result column="flightDate" jdbcType="TIMESTAMP" property="flightDate"/>
+        <result column="TTHConnectedFlightNo" jdbcType="VARCHAR" property="TTHConnectedFlightNo"/>
+        <result column="TTHConnectedFlightDate" jdbcType="VARCHAR" property="TTHConnectedFlightDate"/>
+        <result column="rampReleaseTime" jdbcType="VARCHAR" property="rampReleaseTime"/>
+        <result column="towInTimeByAFT" jdbcType="VARCHAR" property="towInTimeByAFT"/>
+        <result column="warehouseLocation" jdbcType="VARCHAR" property="warehouseLocation"/>
+        <result column="breakdownTime" jdbcType="VARCHAR" property="breakdownTime"/>
+        <result column="XAF1" jdbcType="VARCHAR" property="XAF1"/>
+        <result column="XAF2" jdbcType="VARCHAR" property="XAF2"/>
+        <result column="XAF3" jdbcType="VARCHAR" property="XAF3"/>
+    </resultMap>
+    
+    <select id="getUldExportInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody"
+            resultMap="BaseResultMap">
+        with uldInfo as (
+            select uldMaster.UldKey,
+                   uldMaster.UldLocationCode,
+                   uldMaster.HandlingCarrierCode,
+                   dls.DLSId,
+                   exportDLS.DLSUldTrolleyId,
+                   exportDLS.FlightSegmentId,
+                   exportDLS.ActualWeight,
+                   flt.FlightKey,
+                   flt.Flight_ID                             as                flightId,
+                   legs.DateSTD,
+                   iif(exportDLS.TransferType = 'TTH', 1, 0) as                tthFlag,
+                   max(iif(Exp_HandOver.CompletedAt > handUld.CreatedDateTime,
+                           Exp_HandOver.CompletedAt, handUld.CreatedDateTime)) rampReleaseTime
+            from exp_dls dls
+                     inner join Flt_OperativeFlight flt
+                                on dls.FlightId = flt.Flight_ID and flt.GroundHandlerCode !='DNATA'
+                     inner join Flt_OperativeFlight_Legs legs
+                                on flt.Flight_ID = legs.Flight_ID and legs.FlightBoardPoint = 'SIN'
+                     inner join Exp_DLSULDTrolley exportDLS on dls.DLSId = exportDLS.DLSId
+                     inner join Uld_UldMaster uldMaster
+                                on exportDLS.ULDTrolleyNumber = uldMaster.UldKey
+                                    and uldMaster.UldCarrierCode is not null
+                                    and uldMaster.UldNumber is not null
+                                    and uldMaster.UldType is not null
+                     left join Exp_HandOver
+                               on Exp_HandOver.FlightId = dls.FlightId and Exp_HandOver.CompletedAt is not null
+                     left join Exp_HandOverContainerTrolleyInfo handUld
+                               on Exp_HandOver.ExpHandOverId = handUld.ExpHandOverId
+                                   and handUld.ContainerTrolleyNumber = exportDLS.ULDTrolleyNumber
+            <where>
+            <if test="uldNo != null and uldNo != ''">
+                AND exportDLS.ULDTrolleyNumber = #{uldNo}
+            </if>
+            <if test="flightNo != null and flightNo !=''">
+                AND flt.FlightKey = #{flightNo}
+                AND CAST(legs.DateSTD AS DATE) = #{flightLocalDate}
+            </if>
+            <if test="fromTime != null and fromTime !=''">
+                AND legs.DateSTD BETWEEN #{dbFromTime} AND #{dbToTime}
+            </if>
+            </where>
+            group by uldMaster.UldKey,
+                     uldMaster.UldLocationCode,
+                     uldMaster.HandlingCarrierCode,
+                     dls.DLSId,
+                     exportDLS.DLSUldTrolleyId,
+                     exportDLS.FlightSegmentId,
+                     exportDLS.ActualWeight,
+                     flt.FlightKey,
+                     flt.Flight_ID,
+                     legs.DateSTD,
+                     iif(exportDLS.TransferType = 'TTH', 1, 0)),
+             connectFlight AS (
+                 select outboundFlight.OutboundFlightId as flightId,
+                        innerflt.FlightKey,
+                        connectUld.ULDNumber            as uldKey,
+                        innerlegs.DateSTA
+                 from Transhipment_TTWAConnectingFlight conn
+                          inner join Transhipment_TTWAOutboundFlight outboundFlight
+                                     on conn.TransTTWAOutboundFlightId = outboundFlight.TransTTWAOutboundFlightId
+                          inner join Transhipment_TTWAConnectingFlightULD connectUld
+                                     on conn.TransTTWAConnectingFlightId = connectUld.TransTTWAConnectingFlightId
+                          inner join uldInfo
+                                     on uldInfo.flightId = OutboundFlight.OutboundFlightId
+                                         and uldinfo.UldKey = connectUld.ULDNumber
+                                         and uldInfo.tthFlag = 1
+                          inner join Flt_OperativeFlight innerflt on innerflt.Flight_ID = conn.InboundFlightId
+                          inner join Flt_OperativeFlight_Legs innerlegs on innerflt.Flight_ID = innerlegs.Flight_ID
+                     and innerlegs.FlightOffPoint = 'SIN'
+             ),
+             shcInfo as (
+                 select flightId, ULDTrolleyNumber as uldKey, string_agg(SpecialHandlingCode, '') shcs
+                 from (select distinct uldInfo.flightId, assignedUld.ULDTrolleyNumber, loadedShpSHC.SpecialHandlingCode
+                       from Exp_AssignedULDTrolleyToFlight assignedUld
+                                inner join uldInfo on uldInfo.FlightSegmentId = assignedUld.FlightSegmentId
+                           and uldInfo.UldKey = assignedUld.ULDTrolleyNumber
+                                inner join
+                            Exp_LoadedShipmentInfo loadedShp on assignedUld.AssUldTrolleyId = loadedShp.AssUldTrolleyId
+                                inner join Exp_LoadedShipmentSHCInfo loadedShpSHC
+                                           on loadedShp.LoadedShipmentInfoId = loadedShpSHC.LoadedShipmentInfoId
+                      ) uldShc
+                 group by flightId, ULDTrolleyNumber
+             )
+        select uldInfo.UldKey                              as ULDNo,
+               shcInfo.shcs                                as SHC,
+               uldInfo.ActualWeight                        as weight,
+               'E'                                         as importExport,
+               uldinfo.FlightKey                           as flightNo,
+               format(uldinfo.DateSTD, 'dd/MM/yyyy')       as flightDate,
+               connectFlight.FlightKey                     as TTHConnectedFlightNo,
+               format(connectFlight.DateSTA, 'dd/MM/yyyy') as TTHConnectedFlightDate,
+               format(dateadd(hh, 8, uldInfo.rampReleaseTime),
+                      'dd/MM/yyyy HH:mm')                  as rampReleaseTime,
+               uldInfo.HandlingCarrierCode                 as handlingArea,
+               null                                        as towInTimeByAFT,
+               uldInfo.UldLocationCode                     as warehouseLocation,
+               null                                        as breakdownTime,
+               null                                        as XAF1,
+               null                                        as XAF2,
+               null                                        as XAF3
+        from uldInfo
+                 left join connectFlight on uldInfo.flightId = connectFlight.flightId and uldInfo.UldKey = connectFlight.uldKey
+                 left join shcInfo on shcInfo.flightId = uldInfo.flightId and shcInfo.uldKey = uldInfo.UldKey
+        order by uldInfo.DateSTD
+    </select>
+
+    <select id="getUldImportInformation" parameterType="com.ngen.cosys.cscc.modal.request.RequestBody"
+            resultMap="BaseResultMap">
+        with uldInfo as (
+            select flt.Flight_ID,
+                   flt.FlightKey,
+                   legs.DateSTA,
+                   arrivalULD.ULDNumber,
+                   uldMaster.UldLocationCode,
+                   uldMaster.HandlingCarrierCode,
+                   arrivalSegment.FlightSegmentId,
+                   sum(arrivalShipment.Weight) as ActualWeight
+            from Imp_ArrivalManifestByFlight arrivalFlight
+                     inner join Flt_OperativeFlight flt
+                                on arrivalFlight.FlightId = flt.Flight_ID
+                                   and flt.GroundHandlerCode != 'DNATA'
+                     inner join Flt_OperativeFlight_Legs legs
+                                on flt.Flight_ID = legs.Flight_ID and legs.FlightOffPoint = 'SIN'
+                     inner join Imp_ArrivalManifestBySegment arrivalSegment
+                                on arrivalFlight.ImpArrivalManifestByFlightId = arrivalSegment.ImpArrivalManifestByFlightId
+                     inner join Imp_ArrivalManifestULD arrivalULD
+                                on arrivalSegment.ImpArrivalManifestBySegmentId = arrivalULD.ImpArrivalManifestBySegmentId
+                     inner join Imp_ArrivalManifestShipmentInfo arrivalShipment
+                                on arrivalULD.ImpArrivalManifestULDId = arrivalShipment.ImpArrivalManifestULDId
+                     inner join Uld_UldMaster uldMaster
+                                on arrivalULD.ULDNumber = uldMaster.UldKey
+                                    and uldMaster.UldCarrierCode is not null
+                                    and uldMaster.UldNumber is not null
+                                    and uldMaster.UldType is not null
+                <where>
+                <if test="uldNo != null and uldNo != ''">
+                    AND arrivalULD.ULDNumber = #{uldNo}
+                </if>
+                <if test="flightNo != null and flightNo !=''">
+                    AND flt.FlightKey = #{flightNo}
+                    AND CAST(legs.DateSTA AS DATE) = #{flightLocalDate}
+                </if>
+                <if test="fromTime != null and fromTime !=''">
+                    AND legs.DateSTA BETWEEN #{dbFromTime} AND #{dbToTime}
+                </if>
+                </where>
+            group by flt.Flight_ID,
+                     flt.FlightKey,
+                     legs.DateSTA,
+                     arrivalULD.ULDNumber,
+                     uldMaster.UldLocationCode,
+                     uldMaster.HandlingCarrierCode,
+                     arrivalSegment.FlightSegmentId
+        ),
+             connectFlight AS (
+                 select conn.InboundFlightId as flightId,
+                        innerflt.FlightKey,
+                        connectUld.ULDNumber as uldKey,
+                        innerlegs.DateSTD
+                 from Transhipment_TTWAConnectingFlight conn
+                          inner join Transhipment_TTWAOutboundFlight outboundFlight
+                                     on conn.TransTTWAOutboundFlightId = outboundFlight.TransTTWAOutboundFlightId
+                          inner join Transhipment_TTWAConnectingFlightULD connectUld
+                                     on conn.TransTTWAConnectingFlightId = connectUld.TransTTWAConnectingFlightId
+                          inner join uldInfo
+                                     on uldInfo.Flight_ID = conn.InboundFlightId
+                                         and uldinfo.ULDNumber = connectUld.ULDNumber
+                          inner join Flt_OperativeFlight innerflt
+                                     on innerflt.Flight_ID = outboundFlight.OutboundFlightId
+                          inner join Flt_OperativeFlight_Legs innerlegs
+                                     on innerflt.Flight_ID = innerlegs.Flight_ID
+                                         and innerlegs.FlightBoardPoint = 'SIN'),
+             towInInfo as (
+                 select handover.flightId,
+                        handedULD.ContainerTrolleyNumber as ULDNumber,
+                        max(iif(handover.CompletedAt > handedUld.CreatedDateTime,
+                                handover.CompletedAt,
+                                handedULD.CreatedDateTime)) towInTimeByAFT
+                 from Imp_HandOver handover
+                          inner join Imp_HandOverContainerTrolleyInformation handedULD
+                                     on handover.ImpHandOverId = handedULD.ImpHandOverId
+                          inner join uldInfo
+                                     on uldInfo.Flight_ID = handover.FlightId
+                                         and uldInfo.ULDNumber = handedULD.ContainerTrolleyNumber
+                 group by handover.flightId,
+                          handedULD.ContainerTrolleyNumber
+             ),
+             breakdownInfo as (
+                 select verify.flightId,
+                        breakdownULD.ULDTrolleyNumber      as ULDNumber,
+                        max(breakdownULD.BreakDownEndedAt) as breakdownTime
+                 from Imp_ShipmentVerification verify
+                          inner join Imp_BreakDownULDTrolleyInfo breakdownULD
+                                     on verify.ImpShipmentVerificationId = breakdownULD.ImpShipmentVerificationId
+                          inner join uldInfo on uldInfo.Flight_ID = verify.FlightId
+                     and uldInfo.ULDNumber = breakdownULD.ULDTrolleyNumber
+                 group by verify.flightId, breakdownULD.ULDTrolleyNumber
+             )
+
+        select uldInfo.ULDNumber                           as ULDNo,
+               null                                        as SHC,
+               uldInfo.ActualWeight                        as weight,
+               'I'                                         as importExport,
+               uldinfo.FlightKey                           as flightNo,
+               format(uldinfo.DateSTA, 'dd/MM/yyyy')       as flightDate,
+               connectFlight.FlightKey                     as TTHConnectedFlightNo,
+               format(connectFlight.DateSTD, 'dd/MM/yyyy') as TTHConnectedFlightDate,
+               null                                        as rampReleaseTime,
+               uldInfo.HandlingCarrierCode                 as handlingArea,
+               format(DATEADD(hh,8,towInInfo.towInTimeByAFT),
+                    'dd/MM/yyyy HH:mm')                    as towInTimeByAFT,
+               uldInfo.UldLocationCode                     as warehouseLocation,
+              format(DATEADD(hh,8,breakdownInfo.breakdownTime),
+                    'dd/MM/yyyy HH:mm')                    as breakdownTime,
+               null                                        as XAF1,
+               null                                        as XAF2,
+               null                                        as XAF3
+        from uldInfo
+                 left join connectFlight
+                           on uldInfo.Flight_ID = connectFlight.flightId and uldInfo.ULDNumber = connectFlight.uldKey
+                 left join towInInfo
+                           on uldInfo.Flight_ID = towInInfo.FlightId and uldInfo.ULDNumber = towInInfo.ULDNumber
+                 left join breakdownInfo
+                           on uldInfo.Flight_ID = breakdownInfo.FlightId and uldInfo.ULDNumber = breakdownInfo.ULDNumber
+        order by uldInfo.DateSTA
+    </select>
+
+</mapper>

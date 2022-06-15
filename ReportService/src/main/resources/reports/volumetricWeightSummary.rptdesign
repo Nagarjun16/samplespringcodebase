@@ -1,0 +1,1252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="awbNumber" id="264">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="carrier" id="265">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="agentCode" id="266">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="302">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="133">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="134">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">shipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shipmentNumber</text-property>
+                    <text-property name="heading">shipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">carrier</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">carrier</text-property>
+                    <text-property name="heading">carrier</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">skidHeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">skidHeight</text-property>
+                    <text-property name="heading">skidHeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">dimensions</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">dimensions</text-property>
+                    <text-property name="heading">dimensions</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">accptdatetime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">accptdatetime</text-property>
+                    <text-property name="heading">accptdatetime</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">pieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">pieces</text-property>
+                    <text-property name="heading">pieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">length</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">length</text-property>
+                    <text-property name="heading">length</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">width</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">width</text-property>
+                    <text-property name="heading">width</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">height</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">height</text-property>
+                    <text-property name="heading">height</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">wsWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">wsWeight</text-property>
+                    <text-property name="heading">wsWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">volumetricWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">volumetricWeight</text-property>
+                    <text-property name="heading">volumetricWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">manualscan</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">manualscan</text-property>
+                    <text-property name="heading">manualscan</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">reason</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">reason</text-property>
+                    <text-property name="heading">reason</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">oddSize</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">oddSize</text-property>
+                    <text-property name="heading">oddSize</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">volumetricScannerName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">volumetricScannerName</text-property>
+                    <text-property name="heading">volumetricScannerName</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">texture</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">texture</text-property>
+                    <text-property name="heading">texture</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">awbNumber</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">awbNumber</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">shipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">carrier</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">skidHeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">dimensions</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">accptdatetime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">pieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">length</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">width</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">height</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">wsWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">volumetricWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">manualscan</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">reason</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">oddSize</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">volumetricScannerName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">texture</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">shipmentNumber</property>
+                    <property name="nativeName">shipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">carrier</property>
+                    <property name="nativeName">carrier</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">skidHeight</property>
+                    <property name="nativeName">skidHeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">dimensions</property>
+                    <property name="nativeName">dimensions</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">accptdatetime</property>
+                    <property name="nativeName">accptdatetime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">pieces</property>
+                    <property name="nativeName">pieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">length</property>
+                    <property name="nativeName">length</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">width</property>
+                    <property name="nativeName">width</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">height</property>
+                    <property name="nativeName">height</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">wsWeight</property>
+                    <property name="nativeName">wsWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">volumetricWeight</property>
+                    <property name="nativeName">volumetricWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">manualscan</property>
+                    <property name="nativeName">manualscan</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">reason</property>
+                    <property name="nativeName">reason</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">oddSize</property>
+                    <property name="nativeName">oddSize</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">volumetricScannerName</property>
+                    <property name="nativeName">volumetricScannerName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">texture</property>
+                    <property name="nativeName">texture</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[		   		select           
+                 exp_eacceptancedocumentinformation.ShipmentNumber AS shipmentNumber,
+				    Exp_eAcceptanceDocumentInformation.CarrierCode AS carrier,
+                        exp_eacceptanceweighing.SkidHeight AS skidHeight,
+						 Exp_eAcceptanceWeighingDim.UnitCode AS dimensions,
+						   UPPER(FORMAT(( select convert
+				(datetime,SWITCHOFFSET(converT(datetimeoffset,Exp_eAcceptanceDocumentInformation.AcceptedDateTime),
+				(SELECT current_utc_offset 
+				FROM   sys.time_zone_info 
+				WHERE  NAME = 
+					(select ParameterValueChar from App_SystemParameters where 
+					upper(ParameterCode)=upper('Station_timezone'))))) 
+				), 'ddMMMyyyy HH:mm:ss')) as accptdatetime,
+                      (Exp_eAcceptanceWeighingDimLineItems.Pieces*Exp_eAcceptanceWeighingDimLineItems.Multiplier) AS pieces,
+                     Exp_eAcceptanceWeighingDimLineItems.Length AS length,
+                        Exp_eAcceptanceWeighingDimLineItems.Width AS width,
+                        Exp_eAcceptanceWeighingDimLineItems.Height AS height,
+                        sum(Exp_eAcceptanceWeighing.GrossWeight) - sum(Exp_eAcceptanceWeighing.TareWeight) as wsWeight,
+                        (Exp_eAcceptanceWeighingDimLineItems.VolumetricWeight* Exp_eAcceptanceWeighingDimLineItems.Multiplier) AS volumetricWeight,
+                     CASE WHEN Exp_eAcceptanceWeighingDimLineItems.ManualScanReason = 0 THEN 'N'  ELSE 'Y' END AS manualscan,
+                        (select AdministrationSubGroupDetailDescription from Mst_CodeAdministration_SubGroupDetails where AdministrationSubGroupCode = 'ManualScanReason' 
+                        and AdministrationSubGroupDetailCode = Exp_eAcceptanceWeighingDimLineItems.ManualScanReason) AS reason,
+                        CASE WHEN exp_eacceptanceweighing.OddSize = 1 THEN 'Y' WHEN exp_eacceptanceweighing.OddSize = 0 then 'N' ELSE 'N' END AS oddSize,
+                        Exp_eAcceptanceWeighingDimLineItems.VolumetricScannerName as volumetricScannerName,
+                        Exp_eAcceptanceWeighingDimLineItems.Texture as texture
+              
+          from exp_eacceptancedocumentinformation 
+          inner join exp_eacceptanceweighing on exp_eacceptancedocumentinformation.DocumentInformationId = exp_eacceptanceweighing.DocumentInformationId
+          inner join Exp_eAcceptanceWeighingDim on  Exp_eAcceptanceWeighingDim.DocumentInformationId = exp_eacceptanceweighing.DocumentInformationId
+          inner join Exp_eAcceptanceWeighingDimLineItems  on Exp_eAcceptanceWeighingDimLineItems.WeighingId = exp_eacceptanceweighing.WeighingId
+         WHERE exp_eacceptancedocumentinformation.ShipmentNumber =?
+          group By
+          exp_eacceptancedocumentinformation.ShipmentNumber,
+          exp_eacceptanceweighing.SkidHeight,
+          Exp_eAcceptanceWeighingDimLineItems.Pieces,
+          Exp_eAcceptanceWeighingDimLineItems.Length,
+          Exp_eAcceptanceWeighingDimLineItems.Width,
+          Exp_eAcceptanceWeighingDimLineItems.Height,
+          Exp_eAcceptanceWeighingDimLineItems.VolumetricWeight,
+          Exp_eAcceptanceWeighingDimLineItems.ManualScanReason,
+          exp_eacceptanceweighing.OddSize ,
+          Exp_eAcceptanceWeighingDimLineItems.VolumetricScannerName,
+          Exp_eAcceptanceWeighingDimLineItems.Texture,
+           Exp_eAcceptanceWeighingDimLineItems.Multiplier,
+		   Exp_eAcceptanceWeighingDim.UnitCode,
+		   exp_eacceptancedocumentinformation.AcceptedDateTime,
+		   exp_eacceptancedocumentinformation.CarrierCode
+
+union
+		 
+		 
+		  select                 
+                        exp_eacceptancedocumentinformation.ShipmentNumber AS shipmentNumber,
+						   Exp_eAcceptanceDocumentInformation.CarrierCode AS carrier,
+                            null AS skidHeight,
+						 (select UnitCode from Exp_eAcceptanceWeighingDim where Exp_eAcceptanceWeighingDim.DocumentInformationId = exp_eacceptancedocumentinformation.DocumentInformationId) AS dimensions,
+						   UPPER(FORMAT(( select convert
+				(datetime,SWITCHOFFSET(converT(datetimeoffset,Exp_eAcceptanceDocumentInformation.AcceptedDateTime),
+				(SELECT current_utc_offset 
+				FROM   sys.time_zone_info 
+				WHERE  NAME = 
+					(select ParameterValueChar from App_SystemParameters where 
+					upper(ParameterCode)=upper('Station_timezone'))))) 
+				), 'ddMMMyyyy HH:mm:ss')) as accptdatetime,
+                      (Exp_eAcceptanceWeighingDimLineItems.Pieces*Exp_eAcceptanceWeighingDimLineItems.Multiplier) AS pieces,
+                     Exp_eAcceptanceWeighingDimLineItems.Length AS length,
+                        Exp_eAcceptanceWeighingDimLineItems.Width AS width,
+                        Exp_eAcceptanceWeighingDimLineItems.Height AS height,
+                       null as wsWeight,
+                        (Exp_eAcceptanceWeighingDimLineItems.VolumetricWeight* Exp_eAcceptanceWeighingDimLineItems.Multiplier) AS volumetricWeight,
+                     CASE WHEN Exp_eAcceptanceWeighingDimLineItems.ManualScanReason = 0 THEN 'N'  ELSE 'Y' END AS manualscan,
+                        (select AdministrationSubGroupDetailDescription from Mst_CodeAdministration_SubGroupDetails where AdministrationSubGroupCode = 'ManualScanReason' 
+                        and AdministrationSubGroupDetailCode = Exp_eAcceptanceWeighingDimLineItems.ManualScanReason) AS reason,
+                      ' ' AS oddSize,
+                        Exp_eAcceptanceWeighingDimLineItems.VolumetricScannerName as volumetricScannerName,
+                        Exp_eAcceptanceWeighingDimLineItems.Texture as texture  
+          from Exp_eAcceptanceWeighingDimLineItems 
+           INNER JOIN   
+                exp_eacceptancedocumentinformation  
+                 on Exp_eAcceptanceWeighingDimLineItems.DocumentInformationId = exp_eacceptancedocumentinformation.DocumentInformationId             
+         WHERE exp_eacceptancedocumentinformation.ShipmentNumber =? and Exp_eAcceptanceWeighingDimLineItems.ManualScanReason != 0
+          group By
+          exp_eacceptancedocumentinformation.ShipmentNumber,
+      
+          Exp_eAcceptanceWeighingDimLineItems.Pieces,
+          Exp_eAcceptanceWeighingDimLineItems.Length,
+          Exp_eAcceptanceWeighingDimLineItems.Width,
+          Exp_eAcceptanceWeighingDimLineItems.Height,
+          Exp_eAcceptanceWeighingDimLineItems.VolumetricWeight,
+          Exp_eAcceptanceWeighingDimLineItems.ManualScanReason,
+         
+          Exp_eAcceptanceWeighingDimLineItems.VolumetricScannerName,
+          Exp_eAcceptanceWeighingDimLineItems.Texture,
+           Exp_eAcceptanceWeighingDimLineItems.Multiplier,
+	
+		   exp_eacceptancedocumentinformation.AcceptedDateTime,
+		   exp_eacceptancedocumentinformation.CarrierCode,
+		   exp_eacceptancedocumentinformation.DocumentInformationId
+	   ]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>shipmentNumber</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>shipmentNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>shipmentNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>skidHeight</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>skidHeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>skidHeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>pieces</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>pieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>pieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>length</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>length</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>length</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>width</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>width</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>width</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>height</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>height</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>height</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>wsWeight</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>7</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>wsWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>wsWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>9</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>volumetricWeight</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>2</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>volumetricWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>volumetricWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">custom</property>
+            <property name="orientation">landscape</property>
+            <property name="height">210mm</property>
+            <property name="width">14in</property>
+            <page-footer>
+                <grid id="303">
+                    <column id="304"/>
+                    <row id="305">
+                        <cell id="306">
+                            <data id="307">
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">tenantCurrentDateTime</property>
+                                        <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                        <property name="dataType">string</property>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">tenantCurrentDateTime</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="29">
+            <column id="30">
+                <property name="fontFamily">"@Microsoft JhengHei"</property>
+            </column>
+            <column id="31"/>
+            <column id="32"/>
+            <column id="33"/>
+            <row id="34">
+                <cell id="35">
+                    <label id="130">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">g.agentCode</text-property>
+                    </label>
+                </cell>
+                <cell id="36">
+                    <data id="243">
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">agentCode</property>
+                                <expression name="expression" type="javascript">params["agentCode"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">agentCode</property>
+                    </data>
+                </cell>
+                <cell id="37">
+                    <label id="131">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">g.awbNumber</text-property>
+                    </label>
+                </cell>
+                <cell id="38">
+                    <data id="239">
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">awbNumber</property>
+                                <expression name="expression" type="javascript">params["awbNumber"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">awbNumber</property>
+                    </data>
+                </cell>
+            </row>
+            <row id="39">
+                <cell id="40">
+                    <label id="129">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">g.carrier</text-property>
+                    </label>
+                </cell>
+                <cell id="41">
+                    <data id="301">
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">carrier</property>
+                                <expression name="expression" type="javascript">params["carrier"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">carrier</property>
+                    </data>
+                </cell>
+                <cell id="42"/>
+                <cell id="43"/>
+            </row>
+        </grid>
+        <table id="141">
+            <property name="verticalAlign">middle</property>
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">shipmentNumber</property>
+                    <text-property name="displayName">shipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">carrier</property>
+                    <text-property name="displayName">carrier</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["carrier"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">skidHeight</property>
+                    <text-property name="displayName">skidHeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["skidHeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">dimensions</property>
+                    <text-property name="displayName">dimensions</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["dimensions"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">accptdatetime</property>
+                    <text-property name="displayName">accptdatetime</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["accptdatetime"]</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">pieces</property>
+                    <text-property name="displayName">pieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["pieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">length</property>
+                    <text-property name="displayName">length</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["length"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">width</property>
+                    <text-property name="displayName">width</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["width"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">height</property>
+                    <text-property name="displayName">height</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["height"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">wsWeight</property>
+                    <text-property name="displayName">wsWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["wsWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">volumetricWeight</property>
+                    <text-property name="displayName">volumetricWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["volumetricWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">manualscan</property>
+                    <text-property name="displayName">manualscan</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["manualscan"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">reason</property>
+                    <text-property name="displayName">reason</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["reason"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">oddSize</property>
+                    <text-property name="displayName">oddSize</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["oddSize"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">volumetricScannerName</property>
+                    <text-property name="displayName">volumetricScannerName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["volumetricScannerName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">texture</property>
+                    <text-property name="displayName">texture</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["texture"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">integer</property>
+                    <property name="aggregateFunction">RUNNINGCOUNT</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="190">
+                <property name="width">0.4in</property>
+            </column>
+            <column id="191">
+                <property name="width">0.999in</property>
+            </column>
+            <column id="192"/>
+            <column id="193">
+                <property name="width">0.678in</property>
+            </column>
+            <column id="194">
+                <property name="width">1.12in</property>
+            </column>
+            <column id="195">
+                <property name="width">0.799in</property>
+            </column>
+            <column id="196">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="278">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="197">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="198">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="199">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="200">
+                <property name="width">0.624in</property>
+            </column>
+            <column id="201">
+                <property name="width">0.599in</property>
+            </column>
+            <column id="202">
+                <property name="width">0.865in</property>
+            </column>
+            <column id="289">
+                <property name="width">0.865in</property>
+            </column>
+            <column id="286">
+                <property name="width">0.865in</property>
+            </column>
+            <column id="283">
+                <property name="width">0.865in</property>
+            </column>
+            <column id="204">
+                <property name="width">0.678in</property>
+            </column>
+            <header>
+                <row id="142">
+                    <property name="height">0.4270833333333333in</property>
+                    <cell id="143">
+                        <label id="205">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.s.no</text-property>
+                        </label>
+                    </cell>
+                    <cell id="144">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="206">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">g.awbNumber</text-property>
+                        </label>
+                    </cell>
+                    <cell id="145">
+                        <label id="207">
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">Carrier</text-property>
+                        </label>
+                    </cell>
+                    <cell id="146">
+                        <label id="208">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">g.agentCode</text-property>
+                        </label>
+                    </cell>
+                    <cell id="147">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="209">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">g.carrier</text-property>
+                        </label>
+                    </cell>
+                    <cell id="148">
+                        <property name="textAlign">left</property>
+                        <label id="210">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.date.of.acceptance</text-property>
+                        </label>
+                    </cell>
+                    <cell id="149">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="211">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">g.pieces</text-property>
+                        </label>
+                    </cell>
+                    <cell id="276">
+                        <property name="textAlign">left</property>
+                        <label id="279">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <text-property name="text">export.dimension.type</text-property>
+                        </label>
+                    </cell>
+                    <cell id="150">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="212">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">tracing.length</text-property>
+                        </label>
+                    </cell>
+                    <cell id="151">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="213">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">tracing.width</text-property>
+                        </label>
+                    </cell>
+                    <cell id="152">
+                        <property name="fontFamily">monospace</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="textAlign">left</property>
+                        <label id="214">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="textAlign">justify</property>
+                            <text-property name="text">tracing.height</text-property>
+                        </label>
+                    </cell>
+                    <cell id="153">
+                        <property name="textAlign">left</property>
+                        <label id="215">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.volumetric.weightinfo.skid.height</text-property>
+                        </label>
+                    </cell>
+                    <cell id="154">
+                        <property name="textAlign">left</property>
+                        <label id="216">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.volumetric.weightinfo.manual.scan</text-property>
+                        </label>
+                    </cell>
+                    <cell id="155">
+                        <property name="textAlign">left</property>
+                        <label id="217">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.reason.for.manual.scan</text-property>
+                        </label>
+                    </cell>
+                    <cell id="287">
+                        <property name="textAlign">left</property>
+                        <label id="290">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.scanner</text-property>
+                        </label>
+                    </cell>
+                    <cell id="284">
+                        <property name="textAlign">left</property>
+                        <label id="291">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.texture</text-property>
+                        </label>
+                    </cell>
+                    <cell id="281">
+                        <property name="textAlign">left</property>
+                        <label id="292">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.oddsize</text-property>
+                        </label>
+                    </cell>
+                    <cell id="157">
+                        <property name="textAlign">left</property>
+                        <label id="219">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.volumetric.weight</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="158">
+                    <property name="height">0.4791666666666667in</property>
+                    <cell id="159">
+                        <data id="299">
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="160">
+                        <data id="247">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">shipmentNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="161">
+                        <data id="248">
+                            <property name="resultSetColumn">carrier</property>
+                        </data>
+                    </cell>
+                    <cell id="162">
+                        <data id="298">
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">agentCode</property>
+                                    <expression name="expression" type="javascript">params["agentCode"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <property name="resultSetColumn">agentCode</property>
+                        </data>
+                    </cell>
+                    <cell id="163">
+                        <data id="297">
+                            <property name="resultSetColumn">carrier</property>
+                        </data>
+                    </cell>
+                    <cell id="164">
+                        <data id="251">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">accptdatetime</property>
+                        </data>
+                    </cell>
+                    <cell id="165">
+                        <data id="254">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.PiecesDataItemEventHandler</property>
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">pieces</property>
+                        </data>
+                    </cell>
+                    <cell id="277">
+                        <data id="280">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">dimensions</property>
+                        </data>
+                    </cell>
+                    <cell id="166">
+                        <data id="255">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">length</property>
+                        </data>
+                    </cell>
+                    <cell id="167">
+                        <data id="256">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">width</property>
+                        </data>
+                    </cell>
+                    <cell id="168">
+                        <data id="257">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">height</property>
+                        </data>
+                    </cell>
+                    <cell id="169">
+                        <data id="258">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">skidHeight</property>
+                        </data>
+                    </cell>
+                    <cell id="170">
+                        <data id="259">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">manualscan</property>
+                        </data>
+                    </cell>
+                    <cell id="171">
+                        <data id="260">
+                            <property name="fontFamily">monospace</property>
+                            <property name="fontSize">9pt</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">reason</property>
+                        </data>
+                    </cell>
+                    <cell id="288">
+                        <data id="294">
+                            <property name="resultSetColumn">volumetricScannerName</property>
+                        </data>
+                    </cell>
+                    <cell id="285">
+                        <data id="295">
+                            <property name="resultSetColumn">texture</property>
+                        </data>
+                    </cell>
+                    <cell id="282">
+                        <data id="293">
+                            <property name="resultSetColumn">oddSize</property>
+                        </data>
+                    </cell>
+                    <cell id="173">
+                        <data id="300">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.WeightDataItemEventHandler</property>
+                            <property name="resultSetColumn">volumetricWeight</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

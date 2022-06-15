@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ImpBDShipmentNotificationMapper">
+
+	<resultMap id="shipmentNotificationContactDetailMap" 
+				type="com.ngen.cosys.impbd.notification.ShipmentNotificationDetail">
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="CustomerName" property="customerName" />
+		<result column="CustomerType" property="customerType" />
+		<result column="ContactTypeCode" property="contactTypeCode" />
+		<result column="ContactTypeDetail" property="contactTypeDetail" />
+	</resultMap>
+	
+	<select id="sqlSelectShipmentNotificationContactDetail" 
+			parameterType="com.ngen.cosys.events.payload.ShipmentNotification"
+			resultMap="shipmentNotificationContactDetailMap">
+		<![CDATA[
+		SELECT	TOP(1) Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				CAST(Shipment_Master.ShipmentDate AS DATE) AS ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName,
+				IVRS_NotificationContactInfo.CustomerType,
+				IVRS_NotificationContactInfo.ContactTypeCode,
+				IVRS_NotificationContactInfo.ContactTypeDetail
+		FROM	Shipment_Master
+			INNER JOIN
+				IVRS_NotificationContactInfo
+			ON	IVRS_NotificationContactInfo.ShipmentId = Shipment_Master.ShipmentId
+			LEFT JOIN
+				Shipment_MasterCustomerInfo
+			ON	Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.ShipmentId
+			AND	Shipment_MasterCustomerInfo.CustomerType IN ('CNE','DCNE')
+			INNER JOIN
+				(
+				SELECT	Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode AS NotificationType,
+						Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode AS NotificationPriority,
+						CASE WHEN Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode = 'EMAIL' THEN 'EM'
+						ELSE 
+							CASE WHEN Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode = 'FAX' THEN 'FX'
+							ELSE
+								CASE WHEN Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode = 'SMS' THEN 'SM'
+								ELSE 'TE'
+								END
+							END
+						END AS NotificationTypeCode
+				FROM	Mst_CodeAdministration_Group
+					INNER JOIN
+						Mst_CodeAdministration_SubGroup
+					ON	Mst_CodeAdministration_SubGroup.AdministrationGroupCode 
+							= Mst_CodeAdministration_Group.AdministrationGroupCode
+					INNER JOIN
+						Mst_CodeAdministration_SubGroupDetails
+					ON	Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode
+							= Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode
+				WHERE	Mst_CodeAdministration_Group.AdministrationGroupCode = 'NOTIFICATION'
+				) AS IVRSConfig
+			ON	IVRSConfig.NotificationTypeCode = IVRS_NotificationContactInfo.ContactTypeCode
+		WHERE	Shipment_Master.ShipmentNumber = CAST(#{shipmentNumber} AS VARCHAR)
+		AND		Shipment_Master.ShipmentDate = CAST(#{shipmentDate} AS DATE)
+		ORDER BY IVRSConfig.NotificationPriority ASC
+		]]>
+	</select>
+
+</mapper>

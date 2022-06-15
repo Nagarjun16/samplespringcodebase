@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="unloadShipment">
+	<select id="getShpmtInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentSearch"
+		resultMap="fetchShcs">
+		select shpmt.ShipmentId shipmentId
+              ,#{flight.flightId}  "flight.flightId"
+              ,shpmt.ShipmentNumber shipmentNumber
+              ,shpmt.ShipmentDate shipmentDate
+              , trolly.ULDTrolleyNumber assUldTrolleyNumber
+              ,trolly.FlightSegmentId "segment.segmentId"
+              ,trolly.AssUldTrolleyId assUldTrolleyId
+              ,trolly.HeightCode heightCode
+              ,ldshpmt.Pieces loadedPieces
+              ,ldshpmt.Weight loadedWeight
+              ,ldshpmt.LoadedShipmentInfoId  loadedShipmentInfoId
+              ,shpmt.NatureOfGoodsDescription  natureOfGoods
+              ,schcode.LoadedShipmentSHCInfoId
+              ,schcode.SpecialHandlingCode
+              ,house.Number
+              from Shipment_Master  shpmt left join Exp_LoadedShipmentInfo ldshpmt on  shpmt.ShipmentId = ldshpmt.ShipmentId 
+             left join Exp_AssignedULDTrolleyToFlight  trolly on ldshpmt.AssUldTrolleyId = trolly.AssUldTrolleyId 
+			  left join  Exp_LoadedShipmentSHCInfo schcode  on ldshpmt.LoadedShipmentInfoId = schcode.LoadedShipmentInfoId
+			   left join  Exp_LoadedShipmentHouseInfo house on ldshpmt.LoadedShipmentInfoId  =  house.LoadedShipmentInfoId
+			   where 
+		trolly.FlightId= #{flight.flightId}
+		and ldshpmt.Pieces &gt; 0  and ldshpmt.Weight &gt; 0
+		 <if test = "segment != null and segment.segmentId != null and segment.segmentId != '' ">
+		 and trolly.FlightSegmentId = #{segment.segmentId}
+		 </if>
+		<choose>
+			<when
+				test="uldNumber != null and uldNumber != '' " >
+				AND trolly.ULDTrolleyNumber = #{uldNumber}
+				 <if test = "shipmentNumberList != null and shipmentNumberList.size() > 0 ">
+				AND shpmt.ShipmentNumber
+				IN
+				<foreach item="item" index="index" collection="shipmentNumberList"
+					open="(" separator="," close=")">
+					#{item.shipmentNumber}
+				</foreach>
+				</if> 
+			</when>
+			 <when
+				test="shipmentNumber != null and shipmentNumber != '' ">
+				AND shpmt.ShipmentNumber = #{shipmentNumber}
+			</when> 
+		</choose>
+	</select>
+	<resultMap id="fetchShcs"
+		type="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		<id property="loadedShipmentInfoId" column="loadedShipmentInfoId" />
+		<result property="shipmentId" column="shipmentId" />
+		<result property="shipmentNumber" column="shipmentNumber" />
+		<result property ="shipmentDate" column="shipmentDate" />
+		<result property="loadedPieces" column="loadedPieces" />
+		<result property="loadedWeight" column="loadedWeight" />
+		<result property="flight.flightId" column="flight.flightId" />
+		<result property="assUldTrolleyId" column="assUldTrolleyId" />
+		<result property="assUldTrolleyNumber" column="assUldTrolleyNumber" />
+		<result property="heightCode"  column="heightCode"/>
+		<result property="loadedShipmentInfoId" column="loadedShipmentInfoId" />
+		<result property="natureOfGoods" column="natureOfGoods" />
+		<result property="weightUnitCode" column="weightUnitCode" />
+		<collection property="shcCodes" ofType="java.lang.String">
+			<result column="SpecialHandlingCode" property="code"/>
+		</collection>
+		<collection property="houseNumbers" ofType="java.lang.String">
+			<result column="Number" property="number"/>
+		</collection>
+	</resultMap>
+	<select id="searchFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.Flight"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.Flight">
+		Select optFlt.Flight_ID flightId
+		,optFlt.FlightKey as flightKey
+		,leg.DateSTD as flightOriginDate
+		,leg.DateSTD as std
+		,leg.DateETD as etd
+		,CASE WHEN
+		event.FlightCompletedAt IS NULL  THEN
+		   CASE WHEN 
+		     event.ManifestCompletedAt IS NULL THEN
+			     CASE WHEN 
+				    event.DLSCompletedAt IS NULL  THEN
+					  CASE WHEN 
+					    event.BuildupCompletedAt IS NULL THEN 'Worklist Created'
+					  ELSE  'BuildupCompleted' END 
+				  ELSE 'DLSCompleted' END
+             ELSE 'ManifestCompleted' END 
+		ELSE 'FlightCompleted' END as status
+		from
+		Flt_OperativeFlight optFlt INNER JOIN Flt_OperativeFlight_Legs leg	ON optFlt.Flight_ID = leg.Flight_ID
+		left join Exp_FlightEvents event on event.FlightId = optFlt.Flight_ID	 
+		where 
+		optFlt.Flightkey = #{flightKey}	
+		AND
+		cast(leg.DateSTD
+		AS DATE)  = cast(#{flightOriginDate} as date )
+		AND leg.FlightBoardPoint = #{tenantAirport}		
+	</select>
+	
+	<update id="reduceLoadShpmt" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		update
+		Exp_LoadedShipmentInfo set Pieces = Pieces - #{unloadPieces},
+		Weight = weight - #{unloadWeight} 
+		,LastUpdatedUserCode = #{modifiedBy}
+	    ,LastUpdatedDateTime =#{modifiedOn}
+		where
+		LoadedShipmentInfoId = #{loadedShipmentInfoId}
+	</update>
+	
+	<select id="isHouseExists" parameterType="java.math.BigInteger" resultType ="java.lang.Integer">
+
+		select count(1) from Exp_LoadedShipmentHouseInfo where
+		LoadedShipmentInfoId
+		=
+		#{loadedShipmentInfoId}
+	</select>
+
+	<update id="updateHouseInfoForMSS" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		UPDATE
+		Exp_LoadedShipmentHouseInfo SET
+		                            Pieces = Pieces - #{unloadPieces}
+		                            ,Weight = Weight - #{unloadWeight}
+		                            ,LastUpdatedUserCode = #{modifiedBy}
+		                            ,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		LoadedShipmentInfoId = #{loadedShipmentInfoId}
+	</update>
+	<select id="inventoryLocations" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory"
+		resultType="java.lang.String">
+		select distinct locationStatus from (select CASE
+		WHEN
+		ShipmentLocation = #{shipmentLocation} and
+		WarehouseLocation = #{warehouseLocation}
+		THEN
+		'A'
+		WHEN
+		ShipmentLocation IS
+		NULL and WarehouseLocation = #{warehouseLocation} THEN
+		'B'
+		WHEN
+		ShipmentLocation = #{shipmentLocation} and WarehouseLocation IS NULL
+		THEN
+		'C'
+		else
+		null
+		END locationStatus
+		FROM
+		Shipment_Inventory
+		where Shipment_ID = #{shipmentId}) inventory where inventory.locationStatus is not null;
+	</select>
+<select id="getShipmentInventoryId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory" resultType = "java.math.BigInteger">
+select ShipmentInventory_Id from Shipment_Inventory where Shipment_ID =
+		#{shipmentId}
+		<choose>
+			<when test="status == 'A'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<when test="status == 'B'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation IS NULL
+			</when>
+			<when test="status == 'C'.toString()">
+				AND ShipmentLocation IS NULL and WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<otherwise>
+				AND ShipmentLocation IS NULL and
+				WarehouseLocation IS
+				NULL
+			</otherwise>
+		</choose>
+</select>
+
+	<update id="updateShpmtInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory">
+	update Shipment_Inventory set
+	Pieces = Pieces + #{pieces}
+	,Weight = Weight + #{weight}
+	
+	,ShipmentLocation= #{shipmentLocation}
+	,WarehouseLocation =#{warehouseLocation}
+	,ReferenceDetails  = #{referenceDetails}
+	,LastUpdatedUser_Code = #{modifiedBy}
+	,LastUpdated_DateTime =#{modifiedOn}
+	where Shipment_ID =
+	#{shipmentId}
+		<choose>
+			<when test="status == 'A'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<when test="status == 'B'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation IS NULL
+			</when>
+			<when test="status == 'C'.toString()">
+				AND ShipmentLocation IS NULL and WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<otherwise>
+				AND ShipmentLocation IS NULL and
+				WarehouseLocation IS
+				NULL
+			</otherwise>
+		</choose>
+		AND Flight_ID IS NULL
+	</update>
+
+	<insert id="saveShpmtInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory" useGeneratedKeys="true" keyProperty="shipmentInventoryId">
+		INSERT INTO
+		Shipment_Inventory
+		(Shipment_ID
+		,ShipmentLocation
+		,Pieces
+		,Weight
+		,WarehouseLocation
+		,ReferenceDetails 
+		,CreatedUser_Code
+		,Created_DateTime
+		)
+		VALUES
+		(#{shipmentId}
+		,#{shipmentLocation}
+		,#{pieces}
+		,#{weight}
+		,#{warehouseLocation}
+		,#{referenceDetails} 
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+	<update id="updateManifestShpmtInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		update 
+			Exp_ManifestShipmentInfo
+		set
+			Piece = Piece - #{unloadPieces}
+			,Weight= Weight - #{unloadWeight}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime =#{modifiedOn}
+		WHERE 
+			ShipmentId = #{shipmentId} and 
+			ManifestShipmentInfoId = (select 
+											shipment.ManifestShipmentInfoId 
+									from 
+										Exp_Manifest manifest
+										, Exp_ManifestULDInfo uld
+										, Exp_ManifestShipmentInfo shipment									
+									where
+										manifest.ManifestId = uld.ManifestId and 
+										uld.ManifestUldInfoId = shipment.ManifestUldInfoId and
+										manifest.FlightId = #{flight.flightId} and
+										uld.ULDNumber =  #{assUldTrolleyNumber} and									
+										shipment.ShipmentId = #{shipmentId}
+									)
+	</update>
+	
+	<delete id="deleteLoadShipmentHouseInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_LoadedShipmentHouseInfo where LoadedShipmentInfoId = (
+			select 
+				LoadedShipmentInfoId 
+			from 
+				Exp_LoadedShipmentInfo 
+			where 
+				Pieces= 0 and 
+				Weight = 0 and 
+				LoadedShipmentInfoId  = #{loadedShipmentInfoId}
+		)
+		<!-- delete from Exp_LoadedShipmentHouseInfo where LoadedShipmentInfoId = (
+			select 
+				LoadedShipmentInfoId 
+			from 
+				Exp_LoadedShipmentInfo 
+			where LoadedShipmentHouseInfoId = #{loadedShipmentInfoHouseId} -->
+	</delete>
+	
+	<delete id="deleteLoadShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_LoadedShipmentInfo where Pieces= 0 and Weight = 0 and LoadedShipmentInfoId = #{loadedShipmentInfoId}
+	</delete>
+	<select id="getLoadedShipmentIdForZeroPieces" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment" resultType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+	select 
+				LoadedShipmentInfoId loadedShipmentInfoId,
+				Pieces loadedPieces ,
+				Weight loadedWeight
+			from 
+				Exp_LoadedShipmentInfo 
+			where 
+				 
+				LoadedShipmentInfoId  = #{loadedShipmentInfoId}
+	</select>
+	<delete id="deleteLoadShipmentSHCInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_LoadedShipmentSHCInfo  where LoadedShipmentInfoId = (
+			select 
+				LoadedShipmentInfoId 
+			from 
+				Exp_LoadedShipmentInfo 
+			where 
+				Pieces= 0 and 
+				Weight = 0 and 
+				LoadedShipmentInfoId  = #{loadedShipmentInfoId}
+		)
+	</delete>
+     <delete id ="assignedULDTrolleyToFlightPiggyBackInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment"> 
+     delete from  Exp_AssignedULDTrolleyToFlightPiggyBackInfo where AssUldTrolleyId =
+		#{assUldTrolleyId} and
+		NOT EXISTS
+		(select  Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId from
+		Exp_AssignedULDTrolleyToFlight,Exp_LoadedShipmentInfo where
+		Exp_LoadedShipmentInfo.AssUldTrolleyId =
+		Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId and Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId=#{assUldTrolleyId})
+     
+     </delete>
+	<delete id="deleteAssingedULDTrolly" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_AssignedULDTrolleyToFlight where AssUldTrolleyId =
+		#{assUldTrolleyId} and
+		NOT EXISTS
+		(select  Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId from
+		Exp_AssignedULDTrolleyToFlight,Exp_LoadedShipmentInfo where
+		Exp_LoadedShipmentInfo.AssUldTrolleyId =
+		Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId and Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId=#{assUldTrolleyId})
+	</delete>
+
+	<delete id="deleteManifestShpmtInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_ManifestShipmentInfo where  Piece= 0 
+		and Weight = 0 and ShipmentId = #{shipmentId} 
+	</delete>
+
+<delete id="deleteManifestShpmtShcs" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+delete from Exp_ManifestShipmentSHCInfo where ManifestShipmentInfoId = 
+(
+	select 
+		Exp_ManifestShipmentInfo.ManifestShipmentInfoId 
+	from 
+		Exp_Manifest,
+		Exp_ManifestULDInfo,
+		Exp_ManifestShipmentInfo 
+	where 
+		Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId and 
+		Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId and 
+		Exp_Manifest.FlightId = #{flight.flightId}  and 
+		Exp_ManifestULDInfo.ULDNumber =  #{assUldTrolleyNumber}  and 
+		Exp_ManifestShipmentInfo.ShipmentId = #{shipmentId} and
+		piece = 0 and  
+		weight = 0
+)
+</delete>
+<delete id="deleteManifestShpmtHouseInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+delete from Exp_ManifestShipmentHouseInfo where ManifestShipmentInfoId = 
+(
+	select 
+		Exp_ManifestShipmentInfo.ManifestShipmentInfoId 
+	from 
+		Exp_Manifest,
+		Exp_ManifestULDInfo,
+		Exp_ManifestShipmentInfo 
+	where 
+		Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId and 
+		Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId and 
+		Exp_Manifest.FlightId = #{flight.flightId}  and 
+		Exp_ManifestULDInfo.ULDNumber =  #{assUldTrolleyNumber}  and 
+		Exp_ManifestShipmentInfo.ShipmentId = #{shipmentId} and
+		piece = 0 and  
+		weight = 0
+)
+</delete>
+	<delete id="deleteManifestULDInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		delete from Exp_ManifestULDInfo where ManifestUldInfoId =
+		   (select Top 1  uld.ManifestUldInfoId  
+		                   from Exp_Manifest manifest, Exp_ManifestULDInfo uld
+		                         where
+		                             manifest.ManifestId = uld.ManifestId and 
+										manifest.FlightId = #{flight.flightId} and
+										uld.ULDNumber =  #{assUldTrolleyNumber} 								
+			) 
+				  and NOT EXISTS
+				   (select null from Exp_ManifestULDInfo ,Exp_ManifestShipmentInfo,Exp_Manifest where
+				    Exp_ManifestShipmentInfo.ManifestUldInfoId = Exp_ManifestULDInfo.ManifestUldInfoId 
+					and Exp_ManifestULDInfo.ULDNumber =  #{assUldTrolleyNumber}  
+					and Exp_Manifest.ManifestId=Exp_ManifestULDInfo.ManifestId
+					and Exp_Manifest.FlightId=#{flight.flightId})
+	</delete>
+
+	<delete id="deleteManifestInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+	delete from Exp_Manifest where not exists(
+                            select
+       manifest.ManifestId from Exp_Manifest manifest
+       inner join Exp_ManifestULDInfo manifestULD on manifest.ManifestId =
+       manifestULD.ManifestId
+       inner join Exp_ManifestShipmentInfo manifestShpmt on
+       manifestULD.ManifestUldInfoId = manifestShpmt.ManifestUldInfoId and 
+          flightId = #{flight.flightId}) and type in( 'Main' ,'Supplementary') and  flightId = #{flight.flightId}                                                                                                                                                                    	                                                         
+	</delete>
+	<update id="updateDLSULDTrolly" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment">
+		update Exp_DLSULDTrolley   set  ActualWeight =  ActualWeight - #{unloadWeight}
+		,LastUpdatedUserCode = #{modifiedBy}
+	,LastUpdatedDateTime =#{modifiedOn}
+		where  ULDTrolleyNumber = (select ULDTrolleyNumber from  Exp_DLSULDTrolley uld,
+		Exp_DLS dls where  uld.ULDTrolleyNumber =  #{assUldTrolleyNumber} and uld.DLSId = dls.DLSId and 
+	dls.FlightId = #{flight.flightId})
+	</update>
+	<select id="getDLSId"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentRequest"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD">
+	select DLSUldTrolleyId dlsUldTrolleyId from Exp_DLSULDTrolley where
+	ActualWeight = 0 or ActualWeight is null and ULDTrolleyNumber IN (select ULDTrolleyNumber from
+	Exp_DLSULDTrolley uld,
+	Exp_DLS dls where
+	 uld.DLSId = dls.DLSId and
+	uld.ULDTrolleyNumber
+	IN
+	<foreach item="item" index="index" collection="unloadShipments"
+		open="(" separator="," close=")">
+		#{item.assUldTrolleyNumber}
+	</foreach>
+	and dls.FlightId IN
+	<foreach item="item" index="index" collection="unloadShipments"
+		open="(" separator="," close=")">
+		#{item.flight.flightId}
+	</foreach>
+	)
+	</select>
+	<insert id="insertShipmentInventorySHCs"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentSHCs">
+		INSERT INTO Shipment_InventorySHC
+		( ShipmentInventoryId
+		, SpecialHandlingCode
+		, CreatedUserCode
+		, CreatedDateTime
+		)
+		VALUES
+		( #{shipmentInventoryId}
+		, #{code}
+		, #{createdBy}
+		, #{createdOn}
+		)
+	</insert>
+	
+	<select id="getShipmentHouseId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse"
+	resultType="java.math.BigInteger">
+	select ShipmentHouseId from
+	Shipment_HouseInformation where
+	ShipmentId =#{shipmentId} and Number =#{number}
+</select>
+<insert id="createShipmentInventoryHouseInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse">
+INSERT INTO  Shipment_InventoryHouse 
+           ( ShipmentInventoryId 
+           , ShipmentHouseId 
+           , Pieces 
+           , Weight 
+           , CreatedUserCode 
+           , CreatedDateTime 
+           )
+     VALUES
+           ( #{shipmentInventoryId}
+           , #{shipmentHouseId}
+           , #{pieces}
+           , #{weight}
+           ,#{createdBy}
+		, #{createdOn}
+         )
+ </insert>
+ <select id="getUldCount" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipment" resultType ="java.lang.Integer">
+ select count(*)  from Exp_LoadedShipmentInfo where AssUldTrolleyId = #{assUldTrolleyId}
+ </select>
+ 
+<select id="valiadateShipmentLocation"  parameterType= "com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory" resultType ="java.lang.Integer" >
+select count(1) from Exp_AssignedULDTrolleyToFlight,Exp_FlightEvents 
+ where  Exp_FlightEvents.FlightId = Exp_AssignedULDTrolleyToFlight.FlightId 
+ and   ULDTrolleyNumber = #{shipmentLocation} 
+ and Exp_FlightEvents.FlightCompletedAt IS NULL
+</select>
+
+<select id="getLoadShipmentHousePieceCount"   parameterType= "com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory"   resultType ="java.lang.Boolean">
+  select 
+  case when #{pieces} = SUM(Pieces) then 1 else 0 end result from  Exp_LoadedShipmentHouseInfo  WHERE 
+  Number IN 
+  <foreach item="item" index="index" collection="houseNumbers"
+		open="(" separator="," close=")">
+		#{item}
+	</foreach>
+	and LoadedShipmentInfoId = #{loadedShipmentInfoId}
+</select>
+
+<select id="validSHCList" parameterType= "com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory"  resultType ="java.lang.Integer" >
+ select  count(*)  from Mst_SpecialHandlingCode where SpecialHandlingCode  IN 
+ <foreach item="item" index="index" collection="shcCodes"
+		open="(" separator="," close=")">
+		#{item}
+	</foreach>
+</select>
+<select id="getFlightDetailsByULD"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentSearch"  
+ resultType ="com.ngen.cosys.satssginterfaces.mss.model.FlightDetails">
+	Select optFlt.Flight_ID "flight.flightId"
+	,#{uldNumber} "uld.assUldTrolleyNo"
+	,trolly.FlightSegmentId "segment.segmentId"
+	,trolly.AssUldTrolleyId  "uld.assUldTrolleyId"
+	,optFlt.FlightKey "flight.flightKey"
+	,legs.DateSTD  "flight.flightOriginDate"
+	,segments.FlightBoardPoint  "segment.flightBoardPoint"
+	,segments.FlightOffPoint  "segment.flightOffPoint",
+	case when Exp_LoadedShipmentInfo.loadedPieces > 0 then
+	1
+	else
+	0
+	end loadedOrNot
+	from
+	Flt_OperativeFlight optFlt
+	inner join
+	Flt_OperativeFlight_Segments segments on optFlt.Flight_ID = segments.Flight_ID
+	inner join 
+	  Flt_OperativeFlight_Legs  legs on  legs.Flight_ID = optFlt.Flight_ID 
+	inner join
+	Exp_AssignedULDTrolleyToFlight trolly on optFlt.Flight_ID = trolly.FlightId left join
+	(
+	select
+	AssUldTrolleyId,
+	sum(pieces) loadedPieces
+	from
+	Exp_LoadedShipmentInfo
+	group by
+	AssUldTrolleyId
+	) Exp_LoadedShipmentInfo on trolly.AssUldTrolleyId =
+	Exp_LoadedShipmentInfo.AssUldTrolleyId
+	where
+	trolly.ULDTrolleyNumber = #{uldNumber}
+	and legs.FlightBoardPoint = #{tenantAirport}
+  </select>
+<select id="shipmentId"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentSearch" >
+select ShipmentId from Shipment_Master where ShipmentNumber = #{shipmentNumber} 
+ </select>
+ <select id="getFlightDetailsByShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentSearch" 
+ resultType ="com.ngen.cosys.satssginterfaces.mss.model.FlightDetails">
+   select distinct
+      ldInfo.ShipmentId "shipment.shipmentId",
+      shpmastr.ShipmentNumber "shipment.shipmentNumber",
+      shpmastr.ShipmentDate "shipment.shipmentDate",
+      flt.Flight_ID  "flight.flightId",
+      flt.FlightKey "flight.flightKey",
+     legs.DateSTD  "flight.flightOriginDate"
+     ,segment.FlightSegmentId  "segment.segmentId"
+     ,segment.FlightBoardPoint  "segment.flightBoardPoint"
+	,segment.FlightOffPoint  "segment.flightOffPoint"
+from
+       Exp_LoadedShipmentInfo ldInfo inner join
+      Shipment_Master shpmastr on shpmastr.ShipmentId =  ldInfo.ShipmentId inner join
+        Exp_AssignedULDTrolleyToFlight uld on  ldInfo.AssUldTrolleyId =   uld.AssUldTrolleyId inner join
+        Flt_OperativeFlight  flt on  flt.Flight_ID =  uld.FlightId inner join
+        Flt_OperativeFlight_Legs  legs on  legs.Flight_ID = flt.Flight_ID inner join
+         Flt_OperativeFlight_Segments segment on   segment.Flight_ID = flt.Flight_ID
+         and  uld.FlightSegmentId = segment.FlightSegmentId  
+where
+       shpmastr.ShipmentNumber = #{shipmentNumber}  and   shpmastr.ShipmentDate = #{shipmentDate} and 
+      legs.FlightBoardPoint = #{tenantAirport}
+ </select>
+ 
+ <select id="getSegment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.FlightDetails" 
+ resultType ="com.ngen.cosys.satssginterfaces.mss.model.Segment">
+ select
+       segment.FlightSegmentId segmentId,
+       segment.FlightBoardPoint flightBoardPoint,
+       segment.FlightOffPoint  flightOffPoint  
+from
+        Flt_OperativeFlight flt  inner join
+        Flt_OperativeFlight_Segments segment on   segment.Flight_ID = flt .Flight_ID
+where
+        flt.Flight_ID = #{flight.flightId} and 
+       segment.FlightBoardPoint = #{tenantAirport}
+  </select>
+  
+  <select id="searchFlightDetails" parameterType="com.ngen.cosys.satssginterfaces.mss.model.FlightDetails"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentRequest">
+		
+		 Select distinct optFlt.Flight_ID flightId
+		,optFlt.FlightKey as "flight.flightKey"
+		,leg.DateSTD as "flight.flightOriginDate"
+		,leg.DateSTD as "flight.std"
+		,leg.DateETD as "flight.etd"
+        ,#{segment.flightBoardPoint}  "segment.flightBoardPoint"
+        ,#{segment.flightOffPoint}   "segment.flightOffPoint"
+		from
+		Flt_OperativeFlight optFlt inner join 
+	Flt_OperativeFlight_Legs leg on leg.Flight_ID =  optFlt.Flight_ID inner join Flt_OperativeFlight_Segments segment 
+	on segment.Flight_ID  = optFlt.Flight_ID
+		where 
+		optFlt.Flight_ID = #{flight.flightId}
+		AND leg.FlightBoardPoint = #{flight.tenantAirport} 	
+	
+	</select>
+	
+	<select id="schExists" parameterType = "com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory" resultType="java.lang.Integer">
+	select count(1)  from  Shipment_InventorySHC  where 
+	ShipmentInventoryId = (Select ShipmentInventory_Id from Shipment_Inventory where 
+	Shipment_ID = #{shipmentId}
+	<choose>
+			<when test="status == 'A'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<when test="status == 'B'.toString()">
+				AND ShipmentLocation = #{shipmentLocation} and
+				WarehouseLocation IS NULL
+			</when>
+			<when test="status == 'C'.toString()">
+				AND ShipmentLocation IS NULL and WarehouseLocation =
+				#{warehouseLocation}
+			</when>
+			<otherwise>
+				AND ShipmentLocation IS NULL and
+				WarehouseLocation IS
+				NULL
+			</otherwise>
+		</choose>
+		)
+	and 
+	SpecialHandlingCode = #{code}
+	</select>
+	
+	<select id="bookedPiecesAndWeight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.FlightDetails"
+	 resultType = "com.ngen.cosys.satssginterfaces.mss.model.Shipment">
+	  select
+		BookingInfo.ShipmentId shipmentId,
+		BookingInfo.ShipmentNumber shipmentNumber,
+		BookingInfo.ShipmentDate shipmentDate,
+		sum(Exp_LoadedShipmentInfo.Pieces) loadedPieces,
+		sum(Exp_LoadedShipmentInfo.Weight) loadedWeight,
+		BookingInfo.BookingPieces bookedPieces,
+		BookingInfo.BookingWeight bookedWeight
+	  from
+		Exp_AssignedULDTrolleyToFlight inner join
+		Exp_LoadedShipmentInfo
+			on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join
+		(
+			select
+				Shipment_Master.ShipmentId,
+				Exp_ShipmentBooking.ShipmentNumber,
+				Exp_ShipmentBooking.ShipmentDate,
+				Exp_ShipmentFlightBookingDetail.FlightId,
+				sum(Exp_ShipmentFlightBookingDetail.BookingPieces) BookingPieces,
+				sum(Exp_ShipmentFlightBookingDetail.BookingWeight) BookingWeight
+			from
+			Exp_ShipmentBooking inner join
+			Exp_ShipmentFlightBookingDetail
+				on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+			Shipment_Master
+				on Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber and 
+					Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate
+			group by
+				Shipment_Master.ShipmentId,
+				Exp_ShipmentBooking.ShipmentNumber,
+				Exp_ShipmentBooking.ShipmentDate,
+				Exp_ShipmentFlightBookingDetail.FlightId
+		)BookingInfo
+			on Exp_AssignedULDTrolleyToFlight.FlightId = BookingInfo.FlightId and 
+				Exp_LoadedShipmentInfo.ShipmentId = BookingInfo.ShipmentId
+	  where	
+		Exp_AssignedULDTrolleyToFlight.FlightId = #{flight.flightId} and Exp_LoadedShipmentInfo.ShipmentId  = #{shipment.shipmentId} 
+		group by 
+			BookingInfo.ShipmentId,
+			BookingInfo.ShipmentNumber,
+			BookingInfo.ShipmentDate,
+			BookingInfo.BookingPieces,
+		BookingInfo.BookingWeight
+	</select>
+<select id ="isLoadDone" parameterType="com.ngen.cosys.satssginterfaces.mss.model.Flight"
+		resultType="java.lang.Integer">	
+		select count(1)from (select distinct
+		trolly.ULDTrolleyNumber as code,
+		trolly.ULDTrolleyNumber as "desc"
+		from
+		Exp_LoadedShipmentInfo shpInfo
+		INNER JOIN  Exp_AssignedULDTrolleyToFlight trolly ON  shpInfo.AssUldTrolleyId = trolly.AssUldTrolleyId
+		INNER JOIN  Flt_OperativeFlight opfFlt ON  	trolly.FlightId = opfFlt.Flight_ID
+        INNER JOIN Flt_OperativeFlight_Legs leg ON  opfFlt.Flight_ID = leg.Flight_ID	
+	    where  opfFlt.Flight_ID=#{flightId})    as loadshipment         
+		</select>
+		
+<delete id="deleteInventoryForFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory">
+ delete from Shipment_Inventory 
+      WHERE Shipment_ID =#{shipmentId} 
+      AND Flight_ID= #{flight.flightId} 
+      AND Pieces = #{pieces}
+	  AND Weight = #{weight}
+	  AND AssignedUldTrolley = #{assUldTrolleyNumber}
+</delete>
+
+<update id="updateInventoryforExistedFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.UnloadShipmentInventory">
+update  Shipment_Inventory set Pieces = Pieces - #{pieces} 
+                               ,Weight = Weight - #{weight}
+        WHERE  Flight_ID= #{flight.flightId} 
+               AND Shipment_ID =#{shipmentId} 
+              AND  AssignedUldTrolley = #{assUldTrolleyNumber}
+
+</update>	
+</mapper>

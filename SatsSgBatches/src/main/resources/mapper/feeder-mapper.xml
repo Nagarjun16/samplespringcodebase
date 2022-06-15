@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FeederMapper">
+
+	<select id="getAuthUserPasswordRFID" resultType="com.ngen.cosys.platform.rfid.tracker.interfaces.model.AuthModel">
+		SELECT top 1
+		 	(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterShortDescription='RFID' AND ParameterCode='XPS_USR') username,
+		 	(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterShortDescription='RFID' AND ParameterCode='XPS_PWD') password
+		FROM App_SystemParameters 
+	</select>
+	
+	<select id="getJobStatus" resultType="com.ngen.cosys.platform.rfid.tracker.feeder.model.JobStatus">
+		SELECT top 1
+		  SyncEnabled 				AS jobEnabled, 
+		  GETDATE() 			    AS currentJobRun, 
+		  LastSyncDateTime 			AS lastJobRun,
+		  LastSyncSeqNo 			AS lastSeqNo,
+		  PrintTagServiceURL 		AS printTagService,
+		  DeleteTagServiceURL 		AS deleteTagService,
+		  UpdateTagServiceURL 		AS updateTagService
+		FROM Tracker_SyncTagStatus 
+	</select>
+	
+	<update id="updateJobStatusLastJobRun" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.JobStatus">
+		UPDATE Tracker_SyncTagStatus SET LastSyncDateTime = #{lastJobRun}
+	</update>
+	
+	<update id="updateJobStatusLastSequenceNumber" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.JobStatus">
+		UPDATE Tracker_SyncTagStatus SET LastSyncSeqNo = #{lastSeqNo}
+	</update>
+	
+	<select id="getScanFeeds" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.JobStatus" resultType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed">
+		SELECT
+		  tag.TrackerTagHistoryId 		AS msgSeqNo,
+		  tag.tagid				  		AS tagId,
+		  UPPER(Tag.TagCode) 			AS rfidTag,
+		  UPPER(UldTag.TagCode)			AS uldRfidTag,
+		  tag.Stage         			AS stageName,
+		  tag.FlowType					AS flowType,
+		  tag.TagType     				AS flagUldAwb,
+		  shipmentNumber  				AS awbNumber,
+		  tag.shipmentId				AS shipmentId,
+		  tag.containerTagid			AS containerTagid,
+		  tag.UldKey        			AS uldBtNumber,
+		  whs_location.LocationCode		AS location,
+		  FlightKey  					AS flightKey,
+		  FlightOriginDate 				AS flightOriginDate,
+		  tag.FlightType         		AS flightType,
+		  tag.PieceNo         			AS tagNo,
+		  tag.Pieces         			AS tagPieces,
+		  --tag.Pieces         			AS totalPieces,
+		  case when tag.TagType='ULD' then 1 else
+		  	Shipment_Master.pieces end		AS totalPieces,
+		  case when tag.TagType='ULD' then 1 else
+		  	(select sum(pieces) from tracker_tag where ShipmentId = tag.shipmentid) end totalTagPieces,
+		  case when tag.TagType='ULD' then 1 else
+		  	(select count(pieces) from tracker_tag where ShipmentId = tag.shipmentid) end totalTags,
+		  tag.CreatedUserCode       	AS userId,
+		  tag.CreatedDateTime      		AS scanDate,
+		  tag.CreatedDateTime      		AS createdDate
+		FROM tracker_TagHistory  tag
+		 left outer join Shipment_Master
+			on tag.ShipmentId = Shipment_Master.ShipmentId
+		 left outer join Tracker_Tag UldTag
+			on tag.ContainerTagId = UldTag.tagid and UldTag.TagType='ULD'
+		 left outer join uld_uldmaster uld
+			on tag.uldid = uld.uld_id
+		 left outer join flt_OperativeFlight 
+			on tag.flightid = flt_OperativeFlight.flight_ID
+		 left outer join Flt_OperativeFlight_Legs
+			on flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id 
+		  left outer join WHS_Location
+			on tag.whslocationid=whs_location.whslocationid
+		WHERE <!-- tag.createdDateTime > #{lastJobRun} AND --> tag.TrackerTagHistoryId > #{lastSeqNo}
+		--and tag.TagType ='uld' 
+		--and tag.Stage='RECEIVED' 
+		--and UldTag.TagCode is not null
+		--and tag.FlowType='EXPORT'
+		--and shipmentnumber='61832487222'
+		ORDER BY tag.createdDateTime, TrackerTagHistoryId 
+	</select>
+	
+	<insert id="copyScanFeedToBuffer" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed">
+		INSERT INTO  Tracker_SyncTagErrorLog (
+			[Stage],[StageDateTime],[WhsLocationId],[TagType],[TrackerTagHistoryId],[TagId],
+			[IsManualVerified],[FlightId],[FlightType],[FlowType],[TagCode],
+			[Pieces],[PieceNo],[ShipmentId],[ULDId],
+			[ContainerTagId],[CreatedUserCode],[CreatedDateTime],[LastUpdatedUserCode],[LastUpdatedDateTime])
+		SELECT 
+			[Stage],[StageDateTime] ,[WhsLocationId],[TagType] ,[TrackerTagHistoryId],[TagId],
+			[IsManualVerified],[FlightId],[FlightType],[FlowType],[TagCode],
+			[Pieces],[PieceNo],[ShipmentId],[ULDId],
+			[ContainerTagId],[CreatedUserCode] ,[CreatedDateTime],[LastUpdatedUserCode],[LastUpdatedDateTime]
+		  FROM [Tracker_TagHistory]
+		WHERE TrackerTagHistoryId = #{tagId}
+	</insert> 
+	
+	
+	<select id="getAWBTotalTags" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed" 
+		resultType="java.lang.Integer">	
+			SELECT count(*) totalTags --, sum(pieces) totalPieces 
+			FROM tracker_Tag 
+			WHERE shipmentId = #{shipmentId} and TagType ='AWB' and Stage = 'PRINT'
+	</select>
+	
+	<select id="getULDTotalTags" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed" 
+		resultType="java.lang.Integer">
+			SELECT count(*) totalTags 
+			FROM tracker_Tag 
+			WHERE ULDKey = #{uldBtNumber} and TagType ='ULD' and Stage = 'PRINT'
+	</select>
+	<select id="getBuilUpScanFeeds" parameterType="java.util.Map" resultType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed">
+		<!--  Gets the AWB tags for a ULD if they are associated (buildup) -->
+		<!-- ..............Add location to this query......   -->
+		SELECT
+		  tag.tagid 				AS msgSeqNo,
+		  tag.tagid				  	AS tagId,
+		  #{tenantAirport}          AS stationId,
+		  UPPER(Tag.TagCode) 		AS rfidTag,
+		  UPPER(UldTag.TagCode)		AS uldRfidTag,
+		  tag.Stage         		AS stageName,
+		  tag.FlowType				AS flowType,
+		  tag.TagType     			AS flagUldAwb,
+		  shipmentNumber  			AS awbNumber,
+		  tag.shipmentId			AS shipmentId,
+		  tag.containerTagid		AS containerTagid,
+		  uld.UldKey      			AS uldBtNumber,
+		  FlightKey  				AS flightKey,
+		  FlightOriginDate 			AS flightOriginDate,
+		  tag.FlightType         	AS flightType,
+		  tag.PieceNo         		AS tagNo,
+		  tag.Pieces         		AS tagPieces,
+		  tag.Pieces         		AS totalPieces,
+		  tag.CreatedUserCode       AS userId,
+		  tag.CreatedDateTime      	AS scanDate,
+		  tag.CreatedDateTime      	AS createdDate
+		FROM tracker_Tag tag
+		 left outer join Shipment_Master
+			on tag.ShipmentId = Shipment_Master.ShipmentId
+		 left outer join Tracker_Tag UldTag
+			on tag.ContainerTagId = UldTag.tagid and UldTag.TagType='ULD'
+		 left outer join uld_uldmaster uld
+			on tag.uldid = uld.uld_id
+		 left outer join flt_OperativeFlight 
+			on tag.flightid = flt_OperativeFlight.flight_ID
+		 left outer join Flt_OperativeFlight_Legs
+			on flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id 
+		WHERE tag.ContainerTagId= #{param}
+	</select>
+	<select id="getBuildUpFlightInfo" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed" resultType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed">
+		<!-- Removed.. check if required -->
+	</select>
+	
+	<delete id="deleteScanFeedFromBuffer" parameterType="com.ngen.cosys.platform.rfid.tracker.feeder.model.ScanFeed">
+		DELETE FROM Tracker_SyncTagErrorLog WHERE MSG_SEQ_NUM = #{msgSeqNo}
+	</delete>
+	
+	<select id="getRFIDStationId" resultType="java.lang.Integer">	
+		SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterShortDescription='RFID' AND ParameterCode='STATION_ID'
+	</select>
+	
+	
+</mapper>

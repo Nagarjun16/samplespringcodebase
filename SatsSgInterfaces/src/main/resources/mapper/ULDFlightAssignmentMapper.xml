@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ULDFlightAssignmentMapper">
+
+	<select id="flightAssignmentStatus" 
+		parameterType="com.ngen.cosys.ics.model.ICSULDFlightAssignmentRequestPayload"
+		resultType="com.ngen.cosys.ics.model.ICSULDFlightAssignmentResponsePayload">
+			SELECT Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+				Flt_OperativeFlight.CarrierCode,
+				Flt_OperativeFlight.FlightNumber,
+				Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight_Legs.DateSTD,
+				Exp_AssignedULDTrolleyToFlight.UsedForPerishableContainer,
+				Flt_OperativeFlight_Legs.FlightOffPoint AS offPoint
+			FROM Exp_AssignedULDTrolleyToFlight
+			INNER JOIN Flt_OperativeFlight
+				ON Exp_AssignedULDTrolleyToFlight.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Flt_OperativeFlight_Legs
+				ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+					AND Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+			WHERE Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{uldNumber}
+				AND Exp_AssignedULDTrolleyToFlight.TrolleyInd = 0
+				AND	Exp_AssignedULDTrolleyToFlight.flightId = #{flightId}
+	</select>
+	
+</mapper>

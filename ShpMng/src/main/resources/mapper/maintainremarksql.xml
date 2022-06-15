@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="AwbShipmentMapper">
+	<!-- Maintain Remark Sql Query Start -->
+	<insert id="insertMaintainRemarkDetail" 		
+		parameterType="com.ngen.cosys.shipment.model.MaintainRemark">
+	INSERT INTO Shipment_Remarks 
+           (
+           ShipmentNumber
+           ,ShipmentDate
+           ,Flight_ID
+           ,ShipmentType   
+           ,RemarkType          
+           ,ShipmentRemarks 
+           ,CreatedUser_Code 
+           ,Created_DateTime 
+            )
+     VALUES
+           (
+            #{shipmentNumber}
+           ,#{shipmentDate}
+           ,#{flightId}
+           ,#{shipmentType}
+		   ,#{remarkType}
+		   ,#{shipmentRemarks}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+	</insert>
+	
+	<!-- To insert HAWB Remarks -->
+	<insert id="insertMaintainHWBRemarkDetail" 		
+		parameterType="com.ngen.cosys.shipment.model.MaintainRemark">
+	INSERT INTO Shipment_Remarks 
+           (
+           ShipmentNumber
+           ,HousewayBillNumber
+           ,ShipmentDate
+           ,Flight_ID
+           ,ShipmentType   
+           ,RemarkType          
+           ,ShipmentRemarks 
+           ,CreatedUser_Code 
+           ,Created_DateTime 
+            )
+     VALUES
+           (
+            #{shipmentNumber}
+           ,#{hawbNumber}
+           ,#{shipmentDate}
+           ,#{flightId}
+           ,#{shipmentType}
+		   ,#{remarkType}
+		   ,#{shipmentRemarks}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+	</insert>
+	
+
+	
+	<select id="fetchShipmentRemark" parameterType="com.ngen.cosys.shipment.model.RequestSearchRemarksBO"
+		resultMap="getRemarksResponse">
+		SELECT rmk.ShipmentRemark_Id as shipmentRemarkId
+		,rmk.ShipmentNumber as shipmentNumber
+		,rmk.ShipmentType as shipmentType
+		,rmk.RemarkType as remarkType
+		,rmk.ShipmentRemarks as shipmentRemarks
+		,rmk.CreatedUser_Code as createdBy
+		,rmk.Created_DateTime as createdOn
+		,flt.Flight_ID as flightId
+		,flt.FlightKey as flightKey
+		,flt.FlightOriginDate as flightDate
+		,flegs.FlightBoardPoint as flightSource
+		,flegs.FlightOffPoint as flightDestination
+		,flegs.FlightSegmentOrder as segmentOrder
+		FROM Shipment_Remarks rmk left join Flt_OperativeFlight  flt on rmk.Flight_ID = flt.Flight_Id 
+		left join Flt_OperativeFlight_Legs flegs on flt.Flight_Id = flegs.Flight_Id
+		WHERE 
+		 ShipmentNumber= #{shipmentNumber}
+		 AND  ShipmentDate = #{shipmentDate}
+		<if test="flightId != null and flightId !=''">
+			AND rmk.Flight_ID=#{flightId}
+		</if>
+		<if test="shipmentType != null and shipmentType !=''">
+			AND (ShipmentType = #{shipmentType} OR ShipmentType is null)
+		</if>
+		AND HousewayBillNumber is null
+		ORDER BY createdOn desc, FlightOriginDate, FlightKey, RemarkType, segmentOrder desc
+	</select>
+	<select id="fetchShipmentRemarkMasters" parameterType="com.ngen.cosys.shipment.model.RequestSearchRemarksBO"
+		resultMap="getRemarksResponse">
+		SELECT rmk.ShipmentRemark_Id as shipmentRemarkId
+		,rmk.ShipmentNumber as shipmentNumber
+		,rmk.ShipmentType as shipmentType
+		,rmk.RemarkType as remarkType
+		,rmk.ShipmentRemarks as shipmentRemarks
+		,rmk.CreatedUser_Code as createdBy
+		,rmk.Created_DateTime as createdOn
+		,flt.Flight_ID as flightId
+		,flt.FlightKey as flightKey
+		,flt.FlightOriginDate as flightDate
+		,flegs.FlightBoardPoint as flightSource
+		,flegs.FlightOffPoint as flightDestination
+		,flegs.FlightSegmentOrder as segmentOrder
+		FROM Shipment_Remarks rmk left join Flt_OperativeFlight  flt on rmk.Flight_ID = flt.Flight_Id 
+		left join Flt_OperativeFlight_Legs flegs on flt.Flight_Id = flegs.Flight_Id
+		WHERE 
+		 ShipmentNumber= #{shipmentNumber}
+		 AND  ShipmentDate = #{shipmentDate}
+		<if test="flightId != null and flightId !=''">
+			AND rmk.Flight_ID=#{flightId}
+		</if>
+		<if test="shipmentType != null and shipmentType !=''">
+			AND (ShipmentType = #{shipmentType} OR ShipmentType is null)
+		</if>
+		ORDER BY createdOn desc, FlightOriginDate, FlightKey, RemarkType, segmentOrder desc
+	</select>
+	
+		<resultMap type="com.ngen.cosys.shipment.model.MaintainRemark" id="getRemarksResponse">
+		<result column="flightId" property="flightId"/>
+		<result column="flightKey" property="flightKey"/>
+		<result column="flightDate" property="flightDate"/>
+		<result column="flightSource" property="flightSource"/>
+		<result column="flightDestination" property="flightDestination"/>
+		<result column="segmentOrder" property="segmentOrder"/>
+		<collection property="remarks" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.ShipmentRemarksResponse">
+			 <result column="shipmentNumber" property="shipmentNumber" />
+			 <result property="shipmentRemarkId" column="shipmentRemarkId"/>
+			 <result property="shipmentType" column="shipmentType"/>
+			 <result property="remarkType" column="remarkType"/>
+			 <result property="shipmentRemarks" column="shipmentRemarks"/>
+			 <result property="createdBy" column="createdBy"/>
+			 <result property="createdOn" column="createdOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		 </collection>
+		</resultMap>
+
+	<select id="getRemarksDetails" parameterType="java.lang.Integer"
+		resultType="com.ngen.cosys.shipment.model.MaintainRemark">
+		select ShipmentRemark_Id shipmentRemarkId, ShipmentNumber shipmentNumber, 
+		ShipmentType shipmentType, ShipmentRemarks shipmentRemarks
+		from Shipment_Remarks where shipmentremark_id = #{remarkId} 
+	</select>
+	
+	<delete id="deleteMaintainRemark" parameterType="com.ngen.cosys.shipment.model.MaintainRemark">
+		DELETE
+		Shipment_Remarks where ShipmentRemark_Id=#{shipmentRemarkId}
+	</delete>
+	<select id="sqlQueryFetchAwbDetails" parameterType="com.ngen.cosys.shipment.model.RequestSearchRemarksBO"
+		resultMap="getAWBDetails">
+		select 
+			sm.ShipmentNumber,
+			sm.ShipmentId,
+			sm.Origin,
+			sm.Destination,
+			sm.Pieces,
+			sm.Weight,
+			sm.NatureOfGoodsDescription,
+			shc.SpecialHandlingCode,
+			#{hawbNumber} HawbNumber
+		from 
+			Shipment_Master sm left join 
+			Shipment_MasterSHC shc 
+				on sm.ShipmentId = shc.ShipmentId
+		where 
+			sm.ShipmentNumber = #{shipmentNumber} and 
+			cast(sm.ShipmentDate as date) = cast(#{shipmentDate} as date)
+	</select>
+	<resultMap id="getAWBDetails" type="com.ngen.cosys.shipment.model.ResponseSearchRemarksBO">
+  		<result property="shipmentNumber" column="ShipmentNumber"/>
+  		<result property="shipmentId" column="ShipmentId"/>
+  		<result column="HawbNumber" property="hawbNumber" />
+  		<result property="origin" column="Origin"/>
+  		<result property="destination" column="Destination"/>
+  		<result property="pieces" column="Pieces"/>
+  		<result property="weight" column="Weight"/>
+  		<result property="natureOfGoods" column="NatureOfGoodsDescription"/> 
+  		<association property="shipmentHouseInfo"
+			select="sqlGetHawbInfo"
+			column="hawbNumber=HawbNumber,shipmentId=ShipmentId"></association>		  		
+  		<collection property="specialHandlingCode" 
+  			column="SpecialHandlingCode" 
+  			ofType="java.lang.String" 
+  			javaType="ArrayList">
+  			<result column="SpecialHandlingCode" property="specialHandlingCode"/>
+  		</collection>
+  		</resultMap>
+  		
+  		<select id="fetchHouseSHCLIST"  parameterType="com.ngen.cosys.shipment.model.ResponseSearchRemarksBO"
+  	resultType="java.lang.String">
+  	select SpecialHandlingCode 
+		from Shipment_HouseSHC 
+		where 
+		ShipmentHouseId=(select ShipmentHouseId from Shipment_HouseInformation where ShipmentId=#{shipmentId} and Number=#{hawbNumber})
+  		
+  		
+  		</select>
+  		
+  			<!-- To fetch HAWB details -->
+  		<select id="sqlGetHawbInfo" parameterType="com.ngen.cosys.shipment.model.RequestSearchRemarksBO"
+		resultType="com.ngen.cosys.shipment.model.ShipmentHouseInformation">
+		SELECT
+		Origin hwbOrigin,
+		Pieces hwbPieces,
+		Weight hwbWeight,
+		Number hwbNumber,
+		Destination hwbDestination,
+		NatureOfGoodsDescription hwbNatureOfGoods
+		
+	FROM
+		Shipment_HouseInformation
+	WHERE
+		ShipmentId = #{shipmentId}
+	AND
+		Number = #{hawbNumber}
+	</select>
+	
+	<!-- To fetch HAWB Remarks -->
+	<select id="fetchHawbRemark" parameterType="com.ngen.cosys.shipment.model.RequestSearchRemarksBO"
+		resultMap="getRemarksResponse">
+		SELECT rmk.ShipmentRemark_Id as shipmentRemarkId
+		,rmk.ShipmentNumber as shipmentNumber
+		,rmk.ShipmentType as shipmentType
+		,rmk.RemarkType as remarkType
+		,rmk.ShipmentRemarks as shipmentRemarks
+		,rmk.CreatedUser_Code as createdBy
+		,rmk.Created_DateTime as createdOn
+		,flt.Flight_ID as flightId
+		,flt.FlightKey as flightKey
+		,flt.FlightOriginDate as flightDate
+		,flegs.FlightBoardPoint as flightSource
+		,flegs.FlightOffPoint as flightDestination
+		,flegs.FlightSegmentOrder as segmentOrder
+		FROM Shipment_Remarks rmk left join Flt_OperativeFlight  flt on rmk.Flight_ID = flt.Flight_Id 
+		left join Flt_OperativeFlight_Legs flegs on flt.Flight_Id = flegs.Flight_Id
+		WHERE 
+		 ShipmentNumber= #{shipmentNumber}
+		 AND  ShipmentDate = #{shipmentDate}
+		<if test="flightId != null and flightId !=''">
+			AND rmk.Flight_ID=#{flightId}
+		</if>
+		<if test="shipmentType != null and shipmentType !=''">
+			AND (ShipmentType = #{shipmentType} OR ShipmentType is null)
+		</if>
+		<if test=" hawbNumber!= null">
+		AND (HousewayBillNumber=#{hawbNumber})
+		</if>
+		ORDER BY createdOn desc, FlightOriginDate, FlightKey, RemarkType, segmentOrder desc
+	</select>
+</mapper>

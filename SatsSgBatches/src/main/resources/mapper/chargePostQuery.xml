@@ -1,0 +1,774 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+
+<mapper namespace="ChargePostCustomerinfoMapper">
+
+	<resultMap id="FetchCustomerMap"
+		type="com.ngen.cosys.billing.chargepost.model.CustomerChargeWiseConsolidateData">
+
+		<result column="ChargeCodeId" property="chargeCodeId" />
+		<result column="CustomerId" property="customerId" />
+		<result column="Amount" property="amount" />
+		<result column="TotalAmount" property="totalAmount" />
+		<result column="ChargeGroupId" property="chargeGroupId" />
+
+		<result column="chargeEntryIds" property="chargeEntryId" />
+		<result column="billPaidAmounts" property="billPaidAmount" />
+
+
+	</resultMap>
+
+	<resultMap id="BillChargeConsolidationMap"
+		type="com.ngen.cosys.billing.chargepost.model.BillChargeConsolidationBO">
+		<result column="BillChargeConsolidationId" property="billChargeConsolidationId" />
+		<result column="BillGenId" property="billGenId" />
+		<result column="CustomerId" property="customerId" />
+		<result column="ChargeCodeId" property="chargeCodeId" />
+		<result column="ChargeTotalAmount" property="chargeTotalAmount" />
+		<result column="DiscountAmount" property="discountAmount" />
+		<result column="Amount" property="amount" />
+		<result column="CreatedUserCode" property="createdUserCode" />
+		<result column="CreatedDateTime" property="createdDateTime" />
+		<result column="LastUpdatedUserCode" property="lastUpdatedUserCode" />
+		<result column="LastUpdatedDateTime" property="lastUpdatedDateTime" />
+	</resultMap>
+
+	
+	<select id="fetchBillChargeConsolidationDetails" resultMap="BillChargeConsolidationMap"
+	parameterType="com.ngen.cosys.billing.chargepost.model.BillChargeConsolidationBO">
+	
+	SELECT ChargeTotalAmount,DiscountAmount,Amount FROM Billing_BillChargeConsolidation 
+	WHERE CustomerId=#{customerId} 
+	AND BillGenId=#{billGenId} 
+	<if test="chargeCodeId != null">
+		AND	ChargecodeId=#{chargeCodeId} 
+	</if>
+	<if test="chargeGroupId != null">
+		AND	ChargeGroupId=#{chargeGroupId}
+	</if>
+	
+	</select>
+
+	<resultMap id="CycleInfoMap"
+		type="com.ngen.cosys.billing.chargepost.model.CustomerBillingInfo">
+		<result column="CustomerId" property="customerId" />
+		<result column="NextBillingDate" property="nextBillingDate" />
+		<result column="NextSDPostingDate" property="nextSDPostingDate" />
+		<collection property="sdCycleList" ofType="com.ngen.cosys.billing.chargepost.model.CustomerBillingCycle" javaType="List">
+		<result column="BillGenerationDay" property="billGenerationDay" />
+		<result column="PostingDay" property="postingDay" />
+		</collection>
+	</resultMap>
+
+	<select id="fetchCycleInfo" parameterType="java.util.List" resultMap="CycleInfoMap">
+		WITH TIMEZONE AS (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'),
+
+		DATA_PARAMS AS (
+                     SELECT
+                           Customer.CustomerId, 
+                           Customer.CustomerInfoId,
+                           Customer.PaymentType,
+                           Customer.BillingFrequency,
+                           Customer.BilledByGHA,
+                           Customer.BilledByAirline,
+                           NextBillingDate,
+                           isnull(NextSDPostingDate, NextBillingDate) NextSDPostingDate,
+						   BillGenerationDay,
+						   PostingDay
+                     FROM
+                           Billing_CustomerInfo Customer 
+							inner join Billing_CustomerBillCycle Cycle
+								on Customer.CustomerInfoId = Cycle.CustomerInfoId
+								and PostingType = 'SD'
+						   where PaymentType='Credit'
+                           and isnull(NextSDPostingDate, NextBillingDate) &lt;= convert(date, CONVERT(datetimeoffset, getdate()) 
+						   AT TIME ZONE (select * from TIMEZONE))
+                     )
+
+                     select * from DATA_PARAMS
+					 where CustomerId in 
+					<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+						#{item}
+					</foreach>
+					 order by CustomerId, BillGenerationDay
+	</select>
+
+	<select id="fetchSDCustomerId" resultMap="FetchCustomerMap"
+		parameterType="com.ngen.cosys.billing.chargepost.model.CustomerChargeWiseConsolidateData">
+		
+		<![CDATA[
+		
+			WITH DATE_PARAMS AS (
+			SELECT
+				Customer.CustomerId, 
+				Customer.CustomerInfoId,
+				Customer.PaymentType,
+				Customer.BillingFrequency,
+				Customer.BillingBuffer,
+				Customer.BilledByGHA,
+				Customer.BilledByAirline,
+				Customer.NextBillingDate,
+				Customer.NextSDPostingDate
+			FROM
+				Billing_CustomerInfo Customer where PaymentType='Credit'
+			)
+			SELECT DATE_PARAMS.CustomerId,
+				Billing_ChargeEntry.ChargeCodeId AS ChargeCodeId,
+				Billing_ChargeCodeGroup.ChargeGroupId,
+				--Billing_ChargeEntry.SubGroupId,
+				sum(Billing_ChargeEntry.Amount) AS 'TotalAmount'
+			FROM Billing_ChargeEntry
+			INNER JOIN DATE_PARAMS 
+			ON Billing_ChargeEntry.CustomerId = DATE_PARAMS.CustomerId
+			LEFT JOIN Billing_ChargeCodeGroup 
+			ON Billing_ChargeEntry.ChargeCodeId = Billing_ChargeCodeGroup.BillingChargeCodeId
+			WHERE 1=1
+				--AND DATE_PARAMS.BillingEndDate &lt; GETDATE() 
+				AND	DATE_PARAMS.PaymentType = 'Credit' 
+				--AND DATE_PARAMS.BilledByGHA=1 
+				--AND DATE_PARAMS.BilledByAirline=0
+			    AND Billing_ChargeEntry.VerificationStatus = 1
+				AND Billing_ChargeEntry.PaymentStatus = 'Pending'
+				AND Billing_ChargeEntry.PayablePaymentType = 'Bill/Collect'
+				AND Billing_ChargeEntry.ChargingStatus = 'Closed'
+				AND Billing_ChargeEntry.CreatedDateTime <= DATE_PARAMS.NextBillingDate 
+				AND isnull(DATE_PARAMS.NextSDPostingDate, DATE_PARAMS.NextBillingDate) <= convert(date, CONVERT(datetimeoffset, getdate()) 
+						   AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))  
+				and Billing_ChargeEntry.CustomerId not in 
+				(SELECT CustomerId FROM BILLING_BILLGEN WHERE CAST(BILLGENDATE AS DATE) = CONVERT(DATE,GETDATE()) AND APOrSD='SD')
+			GROUP BY DATE_PARAMS.CustomerId,
+				--Billing_ChargeEntry.SubGroupId,
+				Billing_ChargeEntry.ChargeCodeId,
+				Billing_ChargeCodeGroup.ChargeGroupId
+				having sum(Billing_ChargeEntry.Amount) > 0
+			ORDER BY 1,2,3
+			
+		]]>
+	</select>
+	
+	<select id="fetchSDCustomerWithoutCharges" parameterType="java.util.List" resultMap="FetchCustomerMap">
+		
+			WITH DATA_PARAMS AS (
+			SELECT
+				Customer.CustomerId, 
+				Customer.CustomerInfoId,
+				Customer.PaymentType,
+				Customer.BillingFrequency,
+				Customer.BillingBuffer,
+				Customer.BilledByGHA,
+				Customer.BilledByAirline,
+				Customer.NextBillingDate,
+				Customer.NextSDPostingDate
+			FROM
+				Billing_CustomerInfo Customer where PaymentType='Credit'
+			)
+
+            select * from DATA_PARAMS
+			where DATA_PARAMS.CustomerId not in (0
+			<foreach item="item" index="index" collection="list">
+				, #{item}
+			</foreach>)
+			and isnull(DATA_PARAMS.NextSDPostingDate, DATA_PARAMS.NextBillingDate) &lt;= convert(date, CONVERT(datetimeoffset, getdate()) 
+			AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))
+			order by DATA_PARAMS.CustomerId
+	</select>
+
+	<select id="fetchAPCustomerId" resultMap="FetchCustomerMap"
+		parameterType="com.ngen.cosys.billing.chargepost.model.CustomerChargeWiseConsolidateData">
+		<![CDATA[
+		WITH DATE_PARAMS AS (
+			SELECT
+				Customer.CustomerId, 
+				Customer.CustomerInfoId,
+				Customer.PaymentType,
+				Customer.APGenFrequency,
+				Customer.BillingBuffer,
+				Customer.BilledByGHA,
+				Customer.BilledByAirline,
+				CASE
+					WHEN Customer.APGenDay1 > DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0))) THEN
+						DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0)))
+					ELSE
+						Customer.APGenDay1
+				END AS APGenDay1,
+
+				CASE
+					WHEN Customer.APGenDay2 > DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0))) THEN
+						DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0)))
+					ELSE
+						Customer.APGenDay2
+				END AS APGenDay2,
+
+				CASE
+					WHEN Customer.APGenDay1 = DAY(GETDATE()) THEN
+						CAST(FORMAT(GETDATE(), 'MM') + '/' + CAST(Customer.APGenDay1 AS VARCHAR) + '/' + FORMAT(GETDATE(), 'yyyy') AS DATE)
+					WHEN Customer.BillingFrequency = 'Fortnightly' AND Customer.APGenDay2 = DAY(GETDATE()) THEN
+						CAST(FORMAT(GETDATE(), 'MM') + '/' + CAST(Customer.APGenDay2 AS VARCHAR) + '/' + FORMAT(GETDATE(), 'yyyy') AS DATE)
+					WHEN Customer.APGenDay1 > DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0)))  THEN
+						CAST(FORMAT(GETDATE(), 'MM') + '/' + CAST(DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0))) AS VARCHAR) + '/' + FORMAT(GETDATE(), 'yyyy') AS DATE)
+				    WHEN Customer.BillingFrequency = 'Fortnightly' AND Customer.APGenDay2 > DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0)))  THEN
+						CAST(FORMAT(GETDATE(), 'MM') + '/' + CAST(DAY(DATEADD (dd, -1, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()) + 1, 0))) AS VARCHAR) + '/' + FORMAT(GETDATE(), 'yyyy') AS DATE)
+					ELSE
+						CAST(FORMAT(GETDATE(), 'MM') + '/' + CAST(Customer.APGenDay1 AS VARCHAR) + '/' + FORMAT(GETDATE(), 'yyyy') AS DATE)
+				END AS BillingEndDate
+			FROM
+				Billing_CustomerInfo Customer
+			)
+			SELECT DATE_PARAMS.CustomerId,
+				Billing_ChargeEntry.ChargeCodeId,
+				sum(Billing_ChargeEntry.Amount) AS 'TotalAmount',STRING_AGG(Billing_ChargeEntry.ChargeEntryId, ',') as chargeEntryIds,STRING_AGG(Billing_ChargeEntry.Amount, ',') as billPaidAmounts
+			FROM Billing_ChargeEntry
+			INNER JOIN DATE_PARAMS 
+			ON Billing_ChargeEntry.AirlineCustomerId = DATE_PARAMS.CustomerId
+			WHERE 
+			(DATE_PARAMS.APGenDay1 = DAY(GETDATE()) OR DATE_PARAMS.APGenDay2 = DAY(GETDATE())) 
+				AND DATE_PARAMS.PaymentType = 'Collect'
+				AND DATE_PARAMS.BilledByGHA=1 
+				AND DATE_PARAMS.BilledByAirline=0
+				AND Billing_ChargeEntry.VerificationStatus = 1
+				AND Billing_ChargeEntry.PaymentStatus = 'Paid'
+				AND Billing_ChargeEntry.ChargingStatus = 'Closed'
+				AND Billing_ChargeEntry.BehalfOfAirline=1
+				AND CONVERT(DATE,Billing_ChargeEntry.CreatedDateTime) <= DATEADD(DAY,-DATE_PARAMS.BillingBuffer,DATE_PARAMS.BillingEndDate)  
+				AND Billing_ChargeEntry.ChargeEntryId NOT IN (SELECT ChargeEntryId FROM Billing_APChargeEntryBillPaid)
+			GROUP BY DATE_PARAMS.CustomerId,
+				Billing_ChargeEntry.ChargeCodeId
+				UNION ALL
+			SELECT DATE_PARAMS.CustomerId,
+				Billing_ChargeEntry.ChargeCodeId,
+				sum(Billing_ChargeEntry.Amount) AS 'TotalAmount',STRING_AGG(Billing_ChargeEntry.ChargeEntryId, ',') as chargeEntryIds,STRING_AGG(Billing_ChargeEntry.Amount, ',') as billPaidAmounts
+			FROM Billing_ChargeEntry
+			INNER JOIN DATE_PARAMS 
+			ON Billing_ChargeEntry.AirlineCustomerId = DATE_PARAMS.CustomerId
+			WHERE 
+			(DATE_PARAMS.APGenDay1 = DAY(GETDATE()) OR DATE_PARAMS.APGenDay2 = DAY(GETDATE())) 
+				AND DATE_PARAMS.PaymentType = 'Credit'
+				AND DATE_PARAMS.BilledByGHA=1 
+				AND DATE_PARAMS.BilledByAirline=0
+				AND Billing_ChargeEntry.VerificationStatus = 1
+				--AND Billing_ChargeEntry.PaymentStatus = 'Pending'
+				AND Billing_ChargeEntry.ChargingStatus = 'Closed'
+				AND Billing_ChargeEntry.BehalfOfAirline=1
+				AND CONVERT(DATE,Billing_ChargeEntry.CreatedDateTime) <= DATEADD(DAY,-DATE_PARAMS.BillingBuffer,DATE_PARAMS.BillingEndDate)  
+				AND Billing_ChargeEntry.ChargeEntryId NOT IN (SELECT ChargeEntryId FROM Billing_APChargeEntryBillPaid)
+			GROUP BY DATE_PARAMS.CustomerId,
+				Billing_ChargeEntry.ChargeCodeId	
+			ORDER BY 1,2,3		
+			
+		]]>
+	</select>
+	
+	<update id="updateCycleDates" parameterType="com.ngen.cosys.billing.chargepost.model.CustomerBillingInfo">
+		update Billing_CustomerInfo
+			set
+				NextBillingDate = #{nextBillingDate}
+				, NextSDPostingDate = #{nextSDPostingDate}
+				, LastUpdatedUserCode = 'BATCHUSER'
+				, LastUpdatedDateTime = getdate()
+		where CustomerId = #{customerId}
+	</update>
+
+
+	<insert id="SaveBillChargeConsolidation"
+		parameterType="com.ngen.cosys.billing.chargepost.model.BillChargeConsolidationBO"
+		useGeneratedKeys="true" keyProperty="BillGenId" keyColumn="BillGenId">
+
+		INSERT INTO Billing_BillChargeConsolidation (
+		BillGenId
+		,CustomerId
+		,ChargeCodeId
+		,ChargeTotalAmount
+		,DiscountAmount
+		,Amount
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		,ChargeGroupId
+		)
+		VALUES (
+		#{billGenId}
+		,#{customerId}
+		,#{chargeCodeId}
+		,#{chargeTotalAmount}
+		,#{discountAmount}
+		,#{amount}
+		,#{createdUserCode}
+		,#{createdDateTime}
+		,#{lastUpdatedUserCode}
+		,#{lastUpdatedDateTime}
+		,#{chargeGroupId}
+		)
+	</insert>
+
+	<update id="setDiscountAmountBillChargeConsolidation"
+		parameterType="com.ngen.cosys.billing.chargepost.model.BillChargeConsolidationBO">
+
+		UPDATE billing_billchargeconsolidation
+		SET
+		billing_billchargeconsolidation.discountamount = #{discountAmount},
+		billing_billchargeconsolidation.amount = #{amount}
+		WHERE
+		billing_billchargeconsolidation.customerid = #{customerId}
+		AND
+		billing_billchargeconsolidation.chargecodeid = #{chargeCodeId}
+	</update>
+
+
+	<update id="setDiscountAmountBillChargeConsolidationByGroupId"
+		parameterType="com.ngen.cosys.billing.chargepost.model.BillChargeConsolidationBO">
+
+		UPDATE billing_billchargeconsolidation
+		SET
+		billing_billchargeconsolidation.discountamount = #{discountAmount},
+		billing_billchargeconsolidation.amount = #{amount}
+		WHERE
+		billing_billchargeconsolidation.customerid = #{customerId}
+		AND
+		billing_billchargeconsolidation.ChargeGroupId = #{chargeGroupId}
+	</update>
+
+
+
+	<resultMap id="BillGenMap"
+		type="com.ngen.cosys.billing.chargepost.model.BillGenBO">
+		<result column="BillGenId" property="billGenId" />
+		<result column="BillGenDate" property="billGenDate" />
+		<result column="CustomerId" property="customerId" />
+		<result column="ConsolidationStatus" property="consolidationStatus" />
+		<result column="PostingStatus" property="postingStatus" />
+		<result column="CreatedUserCode" property="createdUserCode" />
+		<result column="CreatedDateTime" property="createdDateTime" />
+		<result column="LastUpdatedUserCode" property="lastUpdatedUserCode" />
+		<result column="LastUpdatedDateTime" property="lastUpdatedDateTime" />
+		<result column="BillGenMonthNo" property="billGenMonthNo" />
+		<result column="BillGenDayNo" property="billGenDayNo" />
+	</resultMap>
+
+	<select id="fetchCustomersRecord" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.billing.chargepost.model.BillGenBO">
+		SELECT count(*) FROM BILLING_BILLGEN WHERE
+		CUSTOMERID=#{customerId} AND CAST
+		(BILLGENDATE AS DATE) = CONVERT(DATE,
+		GETDATE()) AND APOrSD=#{serviceType}
+	</select>
+
+
+
+	<insert id="SaveBillGen" parameterType="com.ngen.cosys.billing.chargepost.model.BillGenBO"
+		useGeneratedKeys="true" keyProperty="billGenId" keyColumn="BillGenId">
+		INSERT INTO
+		Billing_BillGen
+		(BillGenDate
+		,CustomerId
+		,ConsolidationStatus
+		,PostingStatus
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime,
+		BillGenMonthNo,
+		BillGenDayNo,
+		APOrSD)
+		VALUES
+		(#{billGenDate}
+		,#{customerId}
+		,#{consolidationStatus}
+		,#{postingStatus}
+		,#{createdUserCode}
+		,#{createdDateTime}
+		,#{lastUpdatedUserCode}
+		,#{lastUpdatedDateTime}
+		,#{billGenMonthNo}
+		,#{billGenDayNo}
+		,#{serviceType})
+
+	</insert>
+
+	<update id="updatePostingStatus">
+
+		UPDATE Billing_BillGen set
+		Billing_BillGen.ConsolidationStatus=1
+
+	</update>
+
+	<resultMap id="FetchDiscountCustomerMap"
+		type="com.ngen.cosys.billing.chargepost.model.CustomerDiscountBO">
+		<result column="ChargeCodeId" property="billingChargeCodeId" />
+		<result column="CustomerId" property="customerId" />
+		<result column="ChargeGroupId" property="chargeGroupId" />
+		<result column="ChargeTotalAmount" property="chargeTotalAmount" />
+		<result column="FlatAmount" property="flatAmount" />
+		<result column="Percentage" property="percentage" />
+		<result column="threshhold" property="threshhold" />
+		<result column="MinAmount" property="minAmount" />
+	</resultMap>
+
+	<select id="fetchDiscountCustomerDetailsByChargecodeId"
+		resultMap="FetchDiscountCustomerMap" parameterType="java.util.List">
+		SELECT Billing_BillChargeConsolidation.ChargeTotalAmount,
+		Billing_BillChargeConsolidation.ChargecodeId,
+		Billing_BillChargeConsolidation.CustomerId,
+		Billing_CustomerDiscountModel.FlatAmount,
+		Billing_CustomerDiscountModel.Percentage,
+		Billing_CustomerDiscountModel.Threshhold,
+		Billing_CustomerDiscountModel.MinAmount
+		FROM
+		Billing_BillChargeConsolidation LEFT JOIN Billing_CustomerDiscountModel ON
+		Billing_BillChargeConsolidation.ChargecodeId =Billing_CustomerDiscountModel.BillingChargeCodeId
+		AND
+		Billing_BillChargeConsolidation.CustomerId =isnull(Billing_CustomerDiscountModel.CustomerId, Billing_BillChargeConsolidation.CustomerId)
+		WHERE Billing_BillChargeConsolidation.ChargecodeId IS NOT NULL
+		AND Billing_BillChargeConsolidation.BillGenId IN
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item.billGenId}
+		</foreach>
+		ORDER BY
+		Billing_BillChargeConsolidation.CustomerId,Billing_BillChargeConsolidation.ChargecodeId,Billing_CustomerDiscountModel.Threshhold
+	</select>
+
+	<select id="fetchDiscountDetailsBygroupId" resultMap="FetchDiscountCustomerMap">
+		SELECT
+		Billing_BillChargeConsolidation.ChargeTotalAmount,
+		Billing_BillChargeConsolidation.ChargeGroupId,
+		Billing_BillChargeConsolidation.CustomerId,
+		Billing_CustomerDiscountModel.FlatAmount,
+		Billing_CustomerDiscountModel.Percentage,
+		Billing_CustomerDiscountModel.Threshhold,
+		Billing_CustomerDiscountModel.MinAmount
+		FROM Billing_BillChargeConsolidation
+		JOIN Billing_ChargeCodeGroup ON Billing_ChargeCodeGroup.ChargeCodeGroupId=Billing_BillChargeConsolidation.ChargeGroupId
+		JOIN Billing_CustomerDiscountModel ON Billing_BillChargeConsolidation.ChargeGroupId =Billing_ChargeCodeGroup.ChargeGroupId
+		AND
+		Billing_BillChargeConsolidation.CustomerId = Billing_CustomerDiscountModel.CustomerId WHERE Billing_BillChargeConsolidation.ChargeGroupId IS NOT NULL
+		ORDER BY
+		Billing_BillChargeConsolidation.CustomerId,
+		Billing_BillChargeConsolidation.ChargeGroupId,
+		Billing_CustomerDiscountModel.Threshhold
+	</select>
+
+	<insert id="SaveBillEntry" parameterType="com.ngen.cosys.billing.chargepost.model.BillEntryBO"
+		useGeneratedKeys="true" keyProperty="billEntryId" keyColumn="BillEntryId">
+		INSERT
+		INTO Billing_BillEntry
+		(BillGenId
+		,CustomerId
+		,ChargeCodeId
+		,ApportionedChargeTotalAmount
+		,ApportionedDiscountAmount
+		,ApportionedAmount
+		,ApportioningPercentage
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		,ApportionedQuantity
+		,ApportionedQuantityWeight
+		,ApportionedQuantityNetWeight
+		,FinSysInvoiceNumber
+		,FinSysChargeCode
+		,BillingNo
+		,PostingStatus
+		,PricingType
+		,ChargeSubGroupId)
+		VALUES
+		(#{billGenId}
+		,#{customerId}
+		,#{chargeCodeId}
+		,#{apportionedChargeTotalAmount}
+		,#{apportionedDiscountAmount}
+		,#{apportionedAmount}
+		,#{apportioningPercentage}
+		,#{createdUserCode}
+		,#{createdDateTime}
+		,#{lastUpdatedUserCode}
+		,#{lastUpdatedDateTime}
+		,#{apportionedQuantity}
+		,#{apportionedQuantityWeight}
+		,#{apportionedQuantityNetWeight}
+		,#{finSysInvoiceNumber}
+		,#{finSysChargeCode}
+		,#{billingNo}
+		,#{postingStatus}
+		,#{pricingType}
+		,#{chargeSubGroupId})
+
+	</insert>
+
+
+
+	<insert id="SaveAPBillEntry" parameterType="com.ngen.cosys.billing.chargepost.model.BillEntryBO"
+		useGeneratedKeys="true" keyProperty="billEntryId" keyColumn="BillEntryId">
+		INSERT
+		INTO Billing_APEntry
+		(BillGenId
+		,CustomerId
+		,ChargeCodeId
+		,ChargeTotalAmount
+		,CreatedUserCode
+		,CreatedDateTime
+		,PostingStatus
+		)
+		VALUES
+		(#{billGenId}
+		,#{customerId}
+		,#{chargeCodeId}
+		,#{apportionedChargeTotalAmount}
+		,#{createdUserCode}
+		,#{createdDateTime}
+		,#{postingStatus})
+
+	</insert>
+
+
+	<update id="updateBillEntryId" parameterType="com.ngen.cosys.billing.chargepost.model.BillEntryBO">
+
+		UPDATE
+		Billing_BillEntry SET BillingNo = BillEntryId WHERE BillingNo = 0
+
+	</update>
+
+	<resultMap id="BillEntryMap"
+		type="com.ngen.cosys.billing.chargepost.model.BillEntryBO">
+		<result column="BillEntryId" property="billEntryId" />
+		<result column="BillGenId" property="billGenId" />
+		<result column="CustomerId" property="customerId" />
+		<result column="ChargeCodeId" property="chargeCodeId" />
+		<result column="ChargeGroupId" property="groupChargeCodeId" />
+		<result column="ApportionedChargeTotalAmount" property="apportionedChargeTotalAmount" />
+		<result column="ApportionedDiscountAmount" property="apportionedDiscountAmount" />
+		<result column="ApportionedAmount" property="apportionedAmount" />
+		<result column="ApportionPercentage" property="apportioningPercentage" />
+		<result column="PostingStatus" property="postingStatus" />
+		<result column="PricingType" property="pricingType" />
+		<result column="CreatedUserCode" property="createdUserCode" />
+		<result column="CreatedDateTime" property="createdDateTime" />
+		<result column="LastUpdatedUserCode" property="lastUpdatedUserCode" />
+		<result column="LastUpdatedDateTime" property="lastUpdatedDateTime" />
+		<result column="ChargeableQuantity" property="apportionedQuantity" />
+		<result column="ChargeableDuration" property="apportionedQuantityWeight" />
+		<result column="ChargeableDuration" property="apportionedQuantityNetWeight" />
+		<result column="FinSysInvoiceNumber" property="finSysInvoiceNumber" />
+		<result column="FinSysChargeCode" property="finSysChargeCode" />
+		<result column="BillingNo" property="billingNo" />
+		<result column="chargeentryid" property="chargeEntryId" />
+		<result column="SubGroupId" property="chargeSubGroupId" />
+	</resultMap>
+
+	<select id="fetchApportionRecords" resultMap="BillEntryMap" parameterType="java.util.List">
+	SELECT distinct CustomerId,
+       ChargecodeId,
+       chargeentryid,
+       SubGroupId,
+       amount AS ApportionedChargeTotalAmount,
+       ChargeableQuantity,
+       ChargeableDuration,
+       FinSysChargeCode,
+       ApportionPercentage,
+       Billing_ChargeCode.PricingType
+FROM
+  ( SELECT customerid,
+          STRING_AGG (CAST(chargeentryid AS nvarchar(max)) , ',') AS chargeentryid,
+          chargecodeid,
+          FinSysChargeCode,
+          ApportionPercentage,
+          SubGroupId,
+          MatchOrderNo matchorderno,
+          sum(amount) amount,
+          sum(ChargeableQuantity) ChargeableQuantity,
+          sum(ChargeableDuration) ChargeableDuration,
+          min(QryMatchOrderNo) QryMatchOrderNo
+   FROM
+     ( SELECT chargeentryid,
+              Billing_ChargeEntry.CustomerId,
+              Billing_ChargeEntry.ChargeCodeId,
+              Billing_ChargeEntry.SubGroupId,
+              Billing_ChargeCodeGroup.ChargeGroupId,
+              Billing_ChargeEntry.HandlingArea,
+              Billing_ChargeEntry.SHCHandlingGroupCode,
+              Billing_ChargeEntry.ProcessType,
+              FinSysChargeCode,
+              Billing_ChargePostConfiguration.ApportionPercentage,
+              (Billing_ChargeEntry.Amount * (Billing_ChargePostConfiguration.ApportionPercentage / 100)) Amount,
+              Billing_ChargePostConfiguration.MatchOrderNo,
+              isnull(Billing_chargeentry.ChargeableQuantity, isnull(Billing_chargeentry.ChargeableQuantity2, 0)) ChargeableQuantity,
+              Billing_chargeentry.ChargeableDuration, - 1 AS QryMatchOrderNo
+      FROM Billing_ChargeEntry
+      	INNER JOIN Billing_CustomerInfo 
+			ON Billing_ChargeEntry.CustomerId = Billing_CustomerInfo.CustomerId
+		INNER JOIN Billing_ChargePostConfiguration 
+			ON Billing_ChargeEntry.ChargeCodeId = isnull(Billing_ChargePostConfiguration.BillingChargeCodeId, Billing_ChargeEntry.ChargeCodeId)
+			--AND Billing_ChargeEntry.HandlingArea = isnull(Billing_ChargePostConfiguration.HandlingArea, Billing_ChargeEntry.HandlingArea)
+			AND isnull(Billing_ChargeEntry.HandlingArea, '') = isnull(Billing_ChargePostConfiguration.HandlingArea, isnull(Billing_ChargeEntry.HandlingArea, ''))
+			AND Billing_ChargeEntry.SubGroupId = isnull(Billing_ChargePostConfiguration.ChargeSubGroupId, Billing_ChargeEntry.SubGroupId)
+			AND Billing_ChargeEntry.ProcessType = isnull(Billing_ChargePostConfiguration.ProcessType, Billing_ChargeEntry.ProcessType)
+      LEFT JOIN Billing_ChargeCodeGroup ON Billing_ChargeCodeGroup.BillingChargeCodeId=Billing_ChargePostConfiguration.BillingChargeCodeId
+      WHERE Billing_ChargeEntry.VerificationStatus = 1
+        AND Billing_ChargeEntry.PaymentStatus = 'Pending'
+        AND Billing_ChargeEntry.PayablePaymentType = 'Bill/Collect'
+        AND Billing_ChargeEntry.ChargingStatus = 'Closed'
+        AND Billing_ChargeEntry.CreatedDateTime &lt;= Billing_CustomerInfo.NextBillingDate
+        ) Billentrycons
+   GROUP BY customerid,
+            SubGroupId,
+            chargecodeid,
+            FinSysChargeCode,
+            ApportionPercentage,
+            matchorderno) CPT1
+INNER JOIN Billing_ChargeCode ON CPT1.ChargeCodeId=Billing_ChargeCode.BillingChargeCodeId
+     where amount > 0 and CustomerId 
+     IN
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+ORDER BY customerid,
+         chargecodeid
+	</select>
+
+
+	<resultMap id="ChargeEntryBillPaidEntryMap"
+		type="com.ngen.cosys.billing.chargepost.model.ChargeEntryBillPaidBO">
+		<result column="ChargeEntryId" property="chargeEntryId" />
+		<result column="CreatedUserCode" property="createdUserCode" />
+		<result column="Amount" property="billPaidAmount" />
+		<result column="ChargeableQuantity" property="chargeableQuantity" />
+		<result column="ChargeableDuration" property="chargeableDuration" />
+		<result column="WaivedAmount" property="waivedAmount" />
+		<result column="WaivedUpdatedQuantity" property="waivedUpdatedQuantity" />
+		<result column="WaivedUpdatedDuration" property="waivedUpdatedDuration" />
+		<result column="WaivedPercentage" property="waivedPercentage" />
+	</resultMap>
+
+	<select id="fetchChargeEntryIdBillEntryId" resultMap="ChargeEntryBillPaidEntryMap">
+
+		SELECT
+		ce.ChargeEntryId,
+		ce.CreatedUserCode,
+		ce.Amount,
+		ce.ChargeableQuantity,
+		ce.ChargeableDuration,
+		ce.WaivedAmount,
+		ce.WaivedUpdatedQuantity,
+		ce.WaivedUpdatedDuration,
+		ce.WaivedPercentage
+		FROM Billing_ChargeEntry
+		ce
+		WHERE ce.VerificationStatus = 1
+		AND ce.PaymentStatus = 'Pending'
+		AND
+		ce.PayablePaymentType = 'Bill/Collect'
+		AND ce.ChargingStatus = 'Closed'
+
+	</select>
+	
+	
+	
+	
+
+	<update id="updateBillPaidAmount"
+		parameterType="com.ngen.cosys.billing.chargepost.model.ChargeEntryBillPaidBO">
+
+		UPDATE Billing_ChargeEntry
+		SET PaymentStatus = 'Paid',
+		BillPaidAmount = #{billPaidAmount},
+		PaymentStatusDate = GETDATE()
+		WHERE
+		ChargeEntryId =#{chargeEntryId} AND ChargingStatus = 'Closed'
+
+	</update>
+
+	<insert id="SaveChargeEntryBillPaid"
+		parameterType="com.ngen.cosys.billing.chargepost.model.ChargeEntryBillPaidBO"
+		useGeneratedKeys="true">
+		INSERT INTO Billing_ChargeEntryBillPaid
+		(BillEntryId
+		,ChargeEntryId
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,BillPaidAmount
+		,PaidType
+		,ChargeableQuantity
+		,ChargeableDuration
+		,WaivedAmount
+		,WaivedUpdatedQuantity
+		,WaivedUpdatedDuration
+		,WaivedPercentage
+		)
+		VALUES
+		(#{billEntryId}
+		,#{chargeEntryId}
+		,#{createdUserCode}
+		,getDate()
+		,#{lastUpdatedUserCode}
+		,#{billPaidAmount}
+		,'BILL'
+		,#{chargeableQuantity}
+		,#{chargeableDuration}
+		,#{waivedAmount}
+		,#{waivedUpdatedQuantity}
+		,#{waivedUpdatedDuration}
+		,#{waivedPercentage}
+		)
+	</insert>
+
+
+
+	<insert id="SaveAPChargeEntryBillPaid"
+		parameterType="com.ngen.cosys.billing.chargepost.model.ChargeEntryBillPaidBO"
+		useGeneratedKeys="true">
+		INSERT INTO Billing_APChargeEntryBillPaid
+		(BillAPEntryId
+		,ChargeEntryId
+		,CreatedUserCode
+		,CreatedDateTime
+		,BillPaidAmount
+		,PaidType
+		,ChargeableQuantity
+		,ChargeableDuration
+		)
+		VALUES
+		(#{billEntryId}
+		,#{chargeEntryId}
+		,#{createdUserCode}
+		,getDate()
+		,#{billPaidAmount}
+		,'BILL'
+		,#{chargeableQuantity}
+		,#{chargeableDuration}
+		)
+	</insert>
+
+
+	<insert id="insertIntoChargeEntryBillPaid"
+		parameterType="com.ngen.cosys.billing.chargepost.model.ChargeEntryBillPaidBO"
+		useGeneratedKeys="true">
+		INSERT INTO Billing_ChargeEntryBillPaid
+		(BillEntryId
+		,ChargeEntryId
+		,PaymentReceiptId
+		,CreatedUserCode
+		,CreatedDateTime
+		,BillPaidAmount
+		,PaidType
+		,ChargeableQuantity
+		,ChargeableDuration
+		)
+		VALUES
+		(#{billEntryId}
+		,#{chargeEntryIdForCharge}
+		,#{paymentReceiptId}
+		,#{createdBy}
+		,#{createdOn}
+		,#{billPaidAmount}
+		,'BILL'
+		,#{chargeableQuantity}
+		,#{chargeableDuration}
+		)
+	</insert>
+
+
+
+</mapper>

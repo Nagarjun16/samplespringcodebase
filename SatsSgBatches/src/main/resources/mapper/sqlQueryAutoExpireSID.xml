@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoExpireSIDBatchJobMapper">
+
+	<update id="sqlQueryAutoExpireSID">
+		<![CDATA[
+			update
+				Agt_SIDHeader
+			set
+				Status = 'EXPIRED',
+				LastUpdatedUser_Code = 'AUTOBATCHJOB',
+				LastUpdated_DateTime = getdate()
+			where
+				upper(Status) = 'CREATED' and
+				datediff(HOUR,  Created_DateTime, getdate()) > 
+													(select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where ParameterCode = 'SID_EXPIRY')
+		]]>
+	</update>
+	
+</mapper>

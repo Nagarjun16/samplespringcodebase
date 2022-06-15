@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BreakDownHandlingInformationMapper">
+
+	<select id="selectImpBreakDownHandlingInformation"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationQuery"
+		resultMap="ImpBreakDownHandlingInformationResultMap">
+			SELECT FOF.Flight_ID AS flightId,
+				FOF.FlightOriginDate,
+				FOF.FlightKey,
+				FOL.DateSTA,
+				FOL.DateETA,
+				FOL.DateATA,
+				FOL.AircraftRegCode,
+				(select
+					string_agg(FlightSegmentInfo.FlightBoardPoint, '-') + '-' + #{tenantAirport}
+					from(
+						select
+							TOP 100
+								Flt_OperativeFlight_Segments.FlightBoardPoint
+						from
+							Flt_OperativeFlight_Segments
+						where
+							Flt_OperativeFlight_Segments.Flight_ID = FOF.Flight_ID and
+							Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+						order by
+							Flt_OperativeFlight_Segments.FlightSegmentOrder)FlightSegmentInfo
+				) as segment
+			FROM Flt_OperativeFlight FOF
+			INNER JOIN Flt_OperativeFlight_Legs FOL
+				ON FOL.Flight_ID = FOF.Flight_ID
+			WHERE FOF.Flight_ID = ANY (
+					SELECT Flight_Id
+					FROM Flt_OperativeFlight
+					WHERE Flt_OperativeFlight.FlightKey = #{flightKey}
+						AND CAST(FOL.DateSTA AS DATE) = #{flightOriginDate}
+						AND FlightOffPoint = #{tenantAirport}
+					);
+	</select>
+
+	<resultMap id="ImpBreakDownHandlingInformationResultMap"
+		type="com.ngen.cosys.impbd.instruction.model.BreakdownHandlingListResModel">
+		<id column="flightId" property="flightId" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="DateSTA" property="sta" />
+		<result column="DateETA" property="eta" />
+		<result column="DateATA" property="ata" />
+		<result column="AircraftRegCode" property="accountRegistration" />
+		<result column="segment" property="segment" />
+		<collection property="breakDownHandlingInformation"
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformation"
+			select="selectImpBreakDownHandlingInformationList" column="flightId=flightId ">
+		</collection>
+	</resultMap>
+
+
+	<!-- <resultMap id="ImpBreakDownHandlingInformationByHouseResultMap" type="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationByHouse"> 
+		<id column="ImpBreakDownHandlingInformationId" property="impBreakDownHandlingInformationId" 
+		/> <id column="HouseNumber" property="houseNumber" /> <result column="ImpBreakDownHandlingInformationByHouseId" 
+		property="ImpBreakDownHandlingInformationByHouseId" /> </resultMap> -->
+
+	<resultMap id="ImpBreakDownHandlingInformationResultMaplist"
+		type="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformation">
+		<id column="flightId" property="flightId" />
+		<id column="ShipmentNumber" property="shipmentNumber" />
+		<id column="ShipmentDate" property="shipmentDate" />
+		<result column="breakdownId" property="breakdownId" />
+		<result column="hawbNumber" property="hawbNumber" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Instruction " property="instruction " />
+		<result column="NatureOfGoodsDescription " property="natureOfGoodsDescription " />
+		<result column="Weight " property="weight " />
+		<result column="SpecialHandlingCode " property="shc " />
+		<collection property="houseNumberList" javaType="List"
+			ofType="com.ngen.cosys.impbd.instruction.model.HouseListModel"
+			select="sqlGetBreakDownListHouse" column="breakdownId=breakdownId">
+		</collection>
+
+	</resultMap>
+
+	<resultMap id="houseListMap"
+		type="com.ngen.cosys.impbd.instruction.model.HouseListModel">
+		<result column="houseNumber" property="houseNumber" />
+		<result column="breakdownInstruction" property="breakdownInstruction" />
+	</resultMap>
+
+
+	<select id="sqlGetBreakDownListHouse"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformation"
+		resultMap="houseListMap">
+		select HouseNumber AS houseNumber, breakdownInstruction as breakdownInstruction
+		from
+		Imp_BreakDownHandlingInformationByHouse
+		where
+		Imp_BreakDownHandlingInformationByHouse.ImpBreakDownHandlingInformationId
+		= #{breakdownId}
+	</select>
+
+	<select id="selectImpBreakDownHandlingInformationList"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformation"
+		resultMap="ImpBreakDownHandlingInformationResultMaplist">
+	<![CDATA[
+		select 
+			Imp_BreakDownHandlingInformation.ImpBreakDownHandlingInformationId AS breakdownId,
+			Imp_BreakDownHandlingInformation.FlightId AS flightId,
+			Imp_BreakDownHandlingInformation.ShipmentNumber,
+			Imp_BreakDownHandlingInformation.ShipmentDate,
+			Imp_BreakDownHandlingInformation.Origin,
+			Imp_BreakDownHandlingInformation.Destination,
+			Imp_BreakDownHandlingInformation.Pieces,
+			Imp_BreakDownHandlingInformation.Instruction,
+			ArrivalManifestInfo.NatureOfGoodsDescription,
+			ArrivalManifestInfo.Weight,
+			ArrivalManifestInfo.shc
+		from 
+			Imp_BreakDownHandlingInformation left join
+			(select		
+					Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+					sum(Imp_ArrivalManifestShipmentInfo.Weight) as Weight,
+					(select
+							string_agg( innerShipment.NatureOfGoodsDescription,' ')
+						from
+							Imp_ArrivalManifestULD innerULD inner join
+							Imp_ArrivalManifestShipmentInfo innerShipment
+								on 	innerULD.ImpArrivalManifestULDId = innerShipment.ImpArrivalManifestULDId
+						where
+							innerShipment.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+							innerShipment.ShipmentDate  = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+							innerULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId			
+					) AS NatureOfGoodsDescription,
+					(select
+							string_agg(ManifestSHC.SpecialHandlingCode, ' ') as shc
+						from(
+							select
+								distinct innerSHC.SpecialHandlingCode
+							from
+								Imp_ArrivalManifestULD innerULD inner join
+								Imp_ArrivalManifestShipmentInfo innerShipment
+									on 	innerULD.ImpArrivalManifestULDId = innerShipment.ImpArrivalManifestULDId inner join
+								Imp_ArrivalManifestByShipmentSHC innerSHC
+									on innerShipment.ImpArrivalManifestShipmentInfoId = innerSHC.ImpArrivalManifestShipmentInfoId
+							where
+								innerShipment.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+								innerShipment.ShipmentDate  = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+								innerULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+							) ManifestSHC
+					) AS SHC
+				from
+					Imp_ArrivalManifestByFlight inner join 
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join 
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join 
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = #{flightId}
+				group by
+					Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+					Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+			)ArrivalManifestInfo
+				on Imp_BreakDownHandlingInformation.FlightId = ArrivalManifestInfo.FlightId and
+					Imp_BreakDownHandlingInformation.ShipmentNumber = ArrivalManifestInfo.ShipmentNumber and
+					Imp_BreakDownHandlingInformation.ShipmentDate = ArrivalManifestInfo.ShipmentDate
+		where 
+			Imp_BreakDownHandlingInformation.FlightId = #{flightId}
+	]]>
+	</select>
+    <select id="getHAWBInfo"
+		parameterType="java.lang.String"
+		resultType="java.lang.String">
+     select Shipment_FreightHouseListByHAWB.HAWBNumber from  Shipment_FreightHouseListByHAWB inner join Shipment_FreightHouseListByAWB
+        on Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId=Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId
+       where Shipment_FreightHouseListByAWB.awbnumber=#{shipmentNumber}
+	</select>
+	<insert id="insertBreakDownHandlingInformation"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInstructionShipmentModel"
+		useGeneratedKeys="true" keyProperty="impBreakDownHandlingInformationId">
+			INSERT INTO Imp_BreakDownHandlingInformation (
+				FlightId,
+				ShipmentNumber,
+				ShipmentDate,
+				Origin,
+				Destination,
+				Pieces,
+				Instruction,
+				CreatedUserCode,
+				CreatedDateTime,
+				LastUpdatedUserCode,
+				LastUpdatedDateTime
+				)
+			OUTPUT INSERTED.impBreakDownHandlingInformationId
+			VALUES (
+				#{flightId},
+				#{shipmentNumber},
+				CAST(#{shipmentDate} AS DATE),
+				#{origin},
+				#{destination},
+				#{totalPieces},
+				#{instruction},
+				#{createdBy},
+				#{createdOn},
+				#{modifiedBy},
+				#{createdOn}
+		)
+	</insert>
+
+	<insert id="insertSHCInfoBHouse"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationByHouse"
+		useGeneratedKeys="true" keyProperty="impBreakDownHandlingInformationByHouseId">
+		INSERT INTO Imp_BreakDownHandlingInformationByHouse (
+			ImpBreakDownHandlingInformationId,
+			HouseNumber,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			breakdownInstruction
+			)
+		VALUES (
+			#{impBreakDownHandlingInformationId},
+			#{houseNumber},
+			#{createdBy},
+			#{createdOn},
+			#{modifiedBy},
+			#{createdOn},
+			#{breakdownInstruction}
+			)
+	</insert>
+
+
+
+	<update id="updateBreakdownHandling"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInstructionShipmentModel">
+			UPDATE Imp_BreakDownHandlingInformation
+			SET Instruction = #{instruction},
+				Pieces = #{totalPieces},
+				LastUpdatedUserCode = #{modifiedBy},
+				LastUpdatedDateTime = #{createdOn},
+				Destination = #{destination},
+				Origin = #{origin}
+			WHERE ImpBreakDownHandlingInformationId = #{breakdownId}
+	</update>
+
+	<update id="updateBreakdownHandlingHouse"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationByHouse">
+		UPDATE Imp_BreakDownHandlingInformationByHouse
+		SET HouseNumber = #{houseNumber},
+			breakdownInstruction = #{breakdownInstruction},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{createdOn}
+		WHERE ImpBreakDownHandlingInformationId = #{impBreakDownHandlingInformationId}
+	</update>
+
+	<delete id="deleteBreakdownHandlingHouse"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInstructionShipmentModel">
+		DELETE FROM Imp_BreakDownHandlingInformationByHouse
+		WHERE ImpBreakDownHandlingInformationId = #{breakdownId}
+	</delete>
+
+	<delete id="deleteBreakdownHandling"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationByHouse">
+		DELETE FROM Imp_BreakDownHandlingInformation
+		WHERE
+		ImpBreakDownHandlingInformationId = #{breakdownId}
+	</delete>
+	<select id="selectManifestData" parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformationQuery" resultType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInformation">
+		SELECT ShipmentNumber AS "code",
+			ShipmentDate,
+			Origin AS param1,
+			Destination AS param2,
+			NatureOfGoodsDescription AS param4,
+			SUM(Piece) AS param5,
+			SUM(Weight) AS param6,
+			Imp_ArrivalManifestByShipmentSHC.shcs AS param7
+		FROM Imp_ArrivalManifestShipmentInfo
+		INNER JOIN Imp_ArrivalManifestULD
+			ON Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+		INNER JOIN Imp_ArrivalManifestBySegment
+			ON Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+		INNER JOIN Imp_ArrivalManifestByFlight
+			ON Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId
+		INNER JOIN Flt_OperativeFlight
+			ON Flt_OperativeFlight.Flight_ID = Imp_ArrivalManifestByFlight.FlightId
+		INNER JOIN (
+			SELECT outerSHC.ImpArrivalManifestShipmentInfoId,
+				substring((
+						SELECT ' ' + innerSHC.SpecialHandlingCode AS [text()]
+						FROM Imp_ArrivalManifestByShipmentSHC AS innerSHC
+						WHERE innerSHC.ImpArrivalManifestShipmentInfoId = outerSHC.ImpArrivalManifestShipmentInfoId
+						ORDER BY innerSHC.ImpArrivalManifestShipmentInfoId
+						FOR XML PATH('')
+						), 2, 1000) AS shcs
+			FROM Imp_ArrivalManifestByShipmentSHC AS outerSHC
+			GROUP BY outerSHC.ImpArrivalManifestShipmentInfoId
+			) Imp_ArrivalManifestByShipmentSHC
+			ON Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+		WHERE Flt_OperativeFlight.FlightKey = #{parameter1}
+			AND Flt_OperativeFlight.FlightOriginDate = CONVERT(DATE, #{parameter2})
+		GROUP BY ShipmentNumber,
+			ShipmentDate,
+			Origin,
+			Destination,
+			NatureOfGoodsDescription,
+			Piece,
+			Weight,
+			shcs
+		</select>
+		
+	<insert id="saveToMaintainRemark"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInstructionShipmentModel">
+		INSERT INTO Shipment_Remarks (
+			ShipmentNumber,
+			ShipmentDate,
+			ShipmentId,
+			RemarkType,
+			Flight_ID,
+			ShipmentRemarks,
+			ShipmentType,
+			CreatedUser_Code,
+			Created_DateTime,
+			LastUpdatedUser_Code,
+			LastUpdated_DateTime
+			)
+		VALUES (
+			#{shipmentNumber},
+			CAST(#{shipmentDate} AS DATE),
+			#{shipmentId},
+			'BDI',
+			#{flightId},
+			#{instruction},
+			'AWB',
+			#{createdBy},
+			#{createdOn},
+			#{modifiedBy},
+			#{modifiedOn}
+			)
+	</insert>
+	
+	<update id="updateMaintainRemark"
+		parameterType="com.ngen.cosys.impbd.instruction.model.BreakDownHandlingInstructionShipmentModel">
+		UPDATE Shipment_Remarks
+			SET ShipmentRemarks = #{instruction}
+			WHERE ShipmentNumber = #{shipmentNumber}
+				AND ShipmentDate = CAST(#{shipmentDate} AS DATE)
+				AND Flight_ID = #{flightId}
+				AND RemarkType = 'BDI'
+	</update>
+<select id="sqlCheckForManifestData"
+	parameterType="java.lang.String" 
+	resultType="java.lang.Boolean">
+		   select  
+			   case 
+			     when count(1)>0 then 
+				 1
+			     else
+			     0 
+				 end 
+				from
+						Imp_ArrivalManifestByFlight inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Imp_ArrivalManifestULD
+							on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+					where				
+						Imp_ArrivalManifestShipmentInfo.ShipmentNumber =#{shipmentNumber}
+	</select>
+	
+	<select id="sqlQueryCheckBreakDownInstructionExistsForShipmentORHouse"
+		parameterType="java.util.Map"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Imp_BreakDownHandlingInformation 
+	]]>
+		<if test="houseNumber != null and houseNumber != ''">
+			left join Imp_BreakDownHandlingInformationByHouse
+				on Imp_BreakDownHandlingInformation.ImpBreakDownHandlingInformationId = Imp_BreakDownHandlingInformationByHouse.ImpBreakDownHandlingInformationId
+		</if>
+	<![CDATA[			
+		where
+			Imp_BreakDownHandlingInformation.FlightId = #{flightId} and
+			Imp_BreakDownHandlingInformation.ShipmentNumber = #{shipmentNumber} and
+			Imp_BreakDownHandlingInformation.ShipmentDate = #{shipmentDate}
+	]]>
+		<if test="houseNumber != null and houseNumber != ''">
+			and Imp_BreakDownHandlingInformationByHouse.HouseNumber = #{houseNumber}
+		</if>
+	</select>		
+		
+</mapper>

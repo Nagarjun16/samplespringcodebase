@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="IncomingOutgoingShipmentsMissingFSUMessageSend">
+
+	<select id="sqlGetIncomingShipmentsMissingForBreakDownComplete"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.events.payload.InboundShipmentBreakDownCompleteStoreEvent">
+	<![CDATA[
+		
+		select
+			Imp_ShipmentVerification.ShipmentId as shipmentId,
+		    Imp_ShipmentVerification.FlightId as flightId,
+		    Imp_ShipmentVerification.BreakDownPieces as pieces,
+		    Imp_ShipmentVerification.BreakDownWeight as weight,
+			Shipment_Master.ShipmentNumber as shipmentNumber,
+			Imp_ShipmentVerification.CreatedDateTime completedAt,
+			Imp_ShipmentVerification.CreatedUserCode as completedBy
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+			Imp_ShipmentVerification
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_ShipmentVerification.FlightId inner join
+			Shipment_Master
+				on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+			Imp_FlightEvents
+				on Imp_ShipmentVerification.FlightId = Imp_FlightEvents.FlightId
+		where	
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			Imp_ShipmentVerification.BreakDownPieces > 0 and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+			Imp_FlightEvents.BreakDownCompletedAt
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+														ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+														getdate()) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+											ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+											getdate()) and
+			Imp_FlightEvents.BreakDownCompletedAt is not null and
+			(not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType in ('RCF', 'NFD') and
+					Shipment_StatusUpdateEvent.IncomingFlightId = Imp_ShipmentVerification.FlightId and
+					Shipment_StatusUpdateEvent.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Shipment_Master.ShipmentDate					
+			) and not exists(
+				select
+					null
+				from
+					Transhipment_TTWAConnectingFlightShipment inner join
+					Transhipment_TTWAConnectingFlight
+						on Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId
+				where
+					Transhipment_TTWAConnectingFlightShipment.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Transhipment_TTWAConnectingFlightShipment.ShipmentDate = Shipment_Master.ShipmentDate and
+					Transhipment_TTWAConnectingFlight.InboundFlightId = Imp_ShipmentVerification.FlightId
+			) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Flt_OperativeFlight.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType in ('RCF', 'NFD')
+			))
+		option (maxdop 1)
+	]]>	
+	</select>
+	
+	<select id="sqlGetIncomingShipmentsMissingForDocumentRelease"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.events.payload.InboundShipmentDocumentReleaseStoreEvent">
+	<![CDATA[
+		With GetCurrentTime As(
+				select convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		)
+		select
+			Imp_ShipmentVerification.ShipmentId as shipmentId,
+		    Imp_ShipmentVerification.FlightId as flightId,
+		    Imp_ShipmentVerification.BreakDownPieces as pieces,
+		    Imp_ShipmentVerification.BreakDownWeight as weight,
+			Imp_ShipmentVerification.ReleasedOn as releasedAt,
+			Imp_ShipmentVerification.ReleasedBy as releasedBy
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+			Imp_ShipmentVerification
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_ShipmentVerification.FlightId inner join
+			Shipment_Master
+				on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId
+		where	
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			(Imp_ShipmentVerification.BreakDownPieces > 0 OR Imp_ShipmentVerification.DocumentReceivedFlag = 1) and
+			Imp_ShipmentVerification.ReleasedOn is not null and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+			Imp_ShipmentVerification.ReleasedOn
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+													ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+													getdate()) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+										ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+										getdate()) and
+		    (not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType = 'AWD' and			
+					Shipment_StatusUpdateEvent.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Shipment_Master.ShipmentDate
+		    ) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Flt_OperativeFlight.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType in ('AWD')
+			)) 
+		option (maxdop 1)
+	]]>	
+	</select>
+	
+	<select id="sqlGetIncomingShipmentsMissingForDelivered"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.events.payload.InboundShipmentDeliveredStoreEvent">
+	<![CDATA[
+		
+		select
+		   Imp_Delivery.DeliveryOrderNo as doNumber,
+		   Imp_Delivery.DeliveredOn as deliveredAt,
+		   Imp_Delivery.CreatedUserCode as deliveredBy,
+		   Shipment_Master.ShipmentNumber as shipmentNumber,
+		   Shipment_Master.ShipmentId as shipmentId,
+		   Shipment_Master.ShipmentDate as shipmentDate,
+		   Shipment_Master.ShipmentType as shipmentType,
+		   Shipment_Master.CarrierCode as carrier
+		from
+			Imp_Delivery inner join
+			Shipment_Master
+				on Imp_Delivery.ShipmentId = Shipment_Master.ShipmentId
+		where	
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			Imp_Delivery.Status = 'COMPLETED' and
+			Imp_Delivery.DeliveredOn 
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+													ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+													getdate()) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+										ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+										getdate()) and
+			(not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType = 'DLV' and			
+					Shipment_StatusUpdateEvent.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Shipment_Master.ShipmentDate and
+					Shipment_StatusUpdateEvent.DeliveryId = Imp_Delivery.ImpDeliveryId
+			) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Shipment_Master.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType in ('DLV')
+			))
+		option (maxdop 1)
+	]]>	
+	</select>
+	
+	<select id="sqlGetOutgoingShipmentsMissingForManifestedShipments"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.events.payload.OutboundShipmentManifestedStoreEvent">
+	<![CDATA[
+		With GetCurrentTime As(
+				select convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		)
+		select
+		     Flt_OperativeFlight.Flight_ID as flightId,
+		     Shipment_Master.ShipmentId as shipmentId,
+		     sum(Exp_ManifestShipmentInfo.Piece) as pieces,
+		     sum(Exp_ManifestShipmentInfo.Weight) as weight,
+		     Exp_FlightEvents.ManifestCompletedBy as manifestedBy,
+		     Exp_FlightEvents.ManifestCompletedAt as manifestedAt
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Segments
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID inner join
+			Exp_Manifest
+				on Flt_OperativeFlight_Segments.Flight_ID = Exp_Manifest.FlightId and
+					Flt_OperativeFlight_Segments.FlightSegmentId = Exp_Manifest.FlightSegmentId inner join
+			Exp_ManifestShipmentInfo
+				on Exp_Manifest.ManifestId = Exp_ManifestShipmentInfo.ManifestId inner join
+			Shipment_Master
+				on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+			Exp_FlightEvents
+				on Exp_Manifest.FlightId = Exp_FlightEvents.FlightId
+		where	
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} and
+			Flt_OperativeFlight_Segments.DateSTD 
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+													ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+													(select CurrentTime from GetCurrentTime)) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+										ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+										(select CurrentTime from GetCurrentTime)) and
+			Exp_FlightEvents.ManifestCompletedAt is not null and
+			not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType = 'MAN' and			
+					Shipment_StatusUpdateEvent.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Shipment_Master.ShipmentDate and
+					Shipment_StatusUpdateEvent.OutgoingFlightId = Exp_Manifest.FlightId
+			) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Flt_OperativeFlight.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType = 'MAN'
+			)
+		group by			
+		     Flt_OperativeFlight.Flight_ID,
+		     Shipment_Master.ShipmentId,
+			 Exp_FlightEvents.ManifestCompletedBy,
+		     Exp_FlightEvents.ManifestCompletedAt
+		option (maxdop 1)
+	]]>	
+	</select>
+	
+	<select id="sqlGetOutgoingShipmentsMissingForFlightComplete"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.events.payload.OutboundShipmentFlightCompletedStoreEvent">
+	<![CDATA[
+		With GetCurrentTime As(
+				select convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		)
+		select
+			 Flt_OperativeFlight.FlightKey as flightKey,
+		     Flt_OperativeFlight.CarrierCode as carrierCode,
+		     Shipment_Master.ShipmentNumber as shipmentNumber,
+		     Shipment_Master.ShipmentDate as shipmentDate,
+		     Shipment_Master.ShipmentType as shipmentType,
+		     Flt_OperativeFlight_Segments.FlightOffPoint as sector,
+		     Flt_OperativeFlight.Flight_ID as flightId,
+		     Shipment_Master.ShipmentId as shipmentId,
+		     sum(Exp_ManifestShipmentInfo.Piece) as pieces,
+		     sum(Exp_ManifestShipmentInfo.Weight) as weight,
+		     Exp_FlightEvents.FlightCompletedBy as completedBy,
+		     Exp_FlightEvents.FlightCompletedAt as completedAt		     
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Segments
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID inner join
+			Exp_Manifest
+				on Flt_OperativeFlight_Segments.Flight_ID = Exp_Manifest.FlightId and
+					Flt_OperativeFlight_Segments.FlightSegmentId = Exp_Manifest.FlightSegmentId inner join
+			Exp_ManifestShipmentInfo
+				on Exp_Manifest.ManifestId = Exp_ManifestShipmentInfo.ManifestId inner join
+			Shipment_Master
+				on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+			Exp_FlightEvents
+				on Exp_Manifest.FlightId = Exp_FlightEvents.FlightId
+		where	
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} and
+			Flt_OperativeFlight_Segments.DateSTD 
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+													ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+													(select CurrentTime from GetCurrentTime)) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+										ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+										(select CurrentTime from GetCurrentTime)) and
+			Exp_FlightEvents.FlightCompletedAt is not null and
+			not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType = 'DEP' and			
+					Shipment_StatusUpdateEvent.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Shipment_Master.ShipmentDate and
+					Shipment_StatusUpdateEvent.OutgoingFlightId = Exp_Manifest.FlightId
+			) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Flt_OperativeFlight.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType = 'DEP'
+			)
+		group by
+			Flt_OperativeFlight.FlightKey,
+		     Flt_OperativeFlight.CarrierCode,
+		     Shipment_Master.ShipmentNumber,
+		     Shipment_Master.ShipmentDate,
+		     Shipment_Master.ShipmentType,
+		     Flt_OperativeFlight_Segments.FlightOffPoint,
+		     Flt_OperativeFlight.Flight_ID,
+		     Shipment_Master.ShipmentId,
+			 Exp_FlightEvents.FlightCompletedBy,
+		     Exp_FlightEvents.FlightCompletedAt
+		option (maxdop 1)
+	]]>	
+	</select>
+	
+	<select id="sqlGetOutgoingShipmentsMissingForAcceptedShipments"
+		parameterType="java.lang.String"
+		resultType="com.ngen.cosys.message.resend.model.OutgoingShipmentsMissingFSURCSMessageSendModel">
+	<![CDATA[
+		With GetCurrentTime As(
+			select convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+				(select current_utc_offset FROM sys.time_zone_info where name = 
+					(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+				))
+			) CurrentTime
+		)
+		
+		select
+			Exp_eAcceptanceServiceInformation.AcceptanceType as acceptanceType,
+			Exp_eAcceptanceServiceInformation.ServiceNumber as serviceNumber,
+			Exp_eAcceptanceDocumentInformation.ShipmentNumber as shipmentNumber,
+			Exp_eAcceptanceDocumentInformation.ShipmentDate as shipmentDate,
+			Shipment_Master.ShipmentId as shipmentId,
+			Shipment_Master.ShipmentType as shipmentType,
+			Exp_eAcceptanceDocumentInformation.Piece as piece,
+			Exp_eAcceptanceDocumentInformation.Weight as weight,
+			Exp_eAcceptanceDocumentInformation.FinalizeWeight as finalizeWeight,
+			Exp_eAcceptanceDocumentInformation.CargoPhysicallyAccepted as cargoPhysicallyAccepted,
+			Exp_eAcceptanceDocumentInformation.CreatedUserCode as createdUserCode,
+			Exp_eAcceptanceDocumentInformation.CreatedDateTime as createdDateTime,
+			Shipment_Master.CarrierCode as carrierCode,
+			case
+				when (select 
+							count(1) 
+						from 
+							Com_CargoProcessingEngineCheckShipmentSuccess inner join
+							Com_CargoProcessingEngineProcessArea
+								on Com_CargoProcessingEngineCheckShipmentSuccess.ComCargoProcessingEngineProcessAreaId = Com_CargoProcessingEngineProcessArea.ComCargoProcessingEngineProcessAreaId
+						where
+							Com_CargoProcessingEngineProcessArea.ProcessAreaCode in('FWB_REQUIRED','EAWB') and
+							Com_CargoProcessingEngineCheckShipmentSuccess.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Com_CargoProcessingEngineCheckShipmentSuccess.ShipmentDate = Shipment_Master.ShipmentDate) > 0 then
+					1
+				else
+					0
+				end as eawb,
+			isnull(Shipment_FreightWayBill.Pieces, 0) as fwbPieces,
+			isnull(Shipment_FreightWayBill.Weight, 0) as fwbWeight,
+			case
+				when (select
+							count(1)
+						from
+							Exp_eAcceptanceDocumentInfoShc inner join
+							Mst_AssociateSHCByHandlingGroup
+								on Exp_eAcceptanceDocumentInfoShc.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+							Mst_SHCHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+						where
+							Exp_eAcceptanceDocumentInfoShc.DocumentInformationId = Exp_eAcceptanceDocumentInformation.DocumentInformationId and
+							Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('RAC')) > 0 then
+					1
+				else
+					0
+				end as rac,
+			case
+				when (select
+							count(1) 
+						from
+							Com_CargoProcessingEngineCheckShipmentFailures inner join
+							Com_CargoProcessingEnginePrecedents
+								on Com_CargoProcessingEnginePrecedents.ComCargoProcessingEnginePrecedentsId = Com_CargoProcessingEngineCheckShipmentFailures.ComCargoProcessingEnginePrecedentsId inner join
+							Com_CargoProcessingEngineProcessArea
+								on Com_CargoProcessingEngineProcessArea.ComCargoProcessingEngineProcessAreaId = Com_CargoProcessingEnginePrecedents.ComCargoProcessingEngineProcessAreaId
+						where 
+							Com_CargoProcessingEngineCheckShipmentFailures.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Com_CargoProcessingEngineCheckShipmentFailures.ShipmentDate = Shipment_Master.ShipmentDate and
+							Com_CargoProcessingEngineProcessArea.ProcessAreaCode = 'WEIGHT_TOLERANCE') > 0 then
+					1
+				else
+					0
+				end as weightToleranceCheckTriggered,
+			isnull((select
+						TOP 1 IssueClosedFlag
+					from
+						Com_CargoProcessingEngineCheckShipmentFailures inner join
+						Com_CargoProcessingEnginePrecedents
+							on Com_CargoProcessingEnginePrecedents.ComCargoProcessingEnginePrecedentsId = Com_CargoProcessingEngineCheckShipmentFailures.ComCargoProcessingEnginePrecedentsId inner join
+						Com_CargoProcessingEngineProcessArea
+							on Com_CargoProcessingEngineProcessArea.ComCargoProcessingEngineProcessAreaId = Com_CargoProcessingEnginePrecedents.ComCargoProcessingEngineProcessAreaId
+					where 
+						Com_CargoProcessingEngineCheckShipmentFailures.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						Com_CargoProcessingEngineCheckShipmentFailures.ShipmentDate = Shipment_Master.ShipmentDate and
+						Com_CargoProcessingEngineProcessArea.ProcessAreaCode = 'WEIGHT_TOLERANCE'), 0) as weightToleranceIssueClosed,
+			isnull(datediff(mi, (select CurrentTime from GetCurrentTime), 
+						(select
+							min(Flt_OperativeFlight_Legs.DateSTD)
+						from
+							Flt_OperativeFlight inner join
+							Flt_OperativeFlight_Legs
+								on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+									Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+							Exp_ShipmentFlightBookingDetail
+								on Flt_OperativeFlight_Legs.Flight_ID = Exp_ShipmentFlightBookingDetail.FlightId inner join
+							Exp_ShipmentBooking
+								on Exp_ShipmentFlightBookingDetail.BookingId = Exp_ShipmentBooking.BookingId
+						where
+							Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate
+					)),0) as depTime
+		from
+			Exp_eAcceptanceServiceInformation inner join
+			Exp_eAcceptanceDocumentInformation
+				on Exp_eAcceptanceServiceInformation.ServiceInformationId = Exp_eAcceptanceDocumentInformation.ServiceInformationId inner join
+			Shipment_Master
+				on Exp_eAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Exp_eAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate left join
+			Shipment_FreightWayBill
+				on Shipment_Master.ShipmentNumber = Shipment_FreightWayBill.AwbNumber and
+					Shipment_Master.ShipmentDate = Shipment_FreightWayBill.AwbDate
+		where
+			Shipment_Master.ShipmentType in ('AWB', 'CBV') and
+			Exp_eAcceptanceDocumentInformation.Accepted = 1 and
+			Exp_eAcceptanceServiceInformation.AcceptanceType not in ('TERMINAL_TO_TERMINAL', 'TRUCKING_SERVICE_FLIGHT') and
+			Exp_eAcceptanceDocumentInformation.AcceptedDateTime 
+				between dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+													ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_FROM_TIME'), 
+													getdate()) and 
+						dateadd(hour, (select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where 
+										ParameterCode = 'INCOMING_OUTGOING_MISSING_FSU_MESSAGE_FIRE_TO_TIME'), 
+										getdate()) and
+			not exists(
+				select
+					null
+				from
+					Shipment_StatusUpdateEvent
+				where
+					Shipment_StatusUpdateEvent.EventType = 'RCS' and
+					Shipment_StatusUpdateEvent.ShipmentNumber = Exp_eAcceptanceDocumentInformation.ShipmentNumber and
+					Shipment_StatusUpdateEvent.ShipmentDate = Exp_eAcceptanceDocumentInformation.ShipmentDate and
+					Shipment_StatusUpdateEvent.AcceptanceServiceNumber = Exp_eAcceptanceServiceInformation.ServiceNumber
+			) and exists(
+				select
+					null
+				from
+					Interface_MessageDefinitionByCustomer inner join
+					Interface_AssociateCustomerWithMessageDefinition
+						on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId = Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId inner join
+					Interface_IncomingOutgoingMessageDefinition
+						on Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId = Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				where
+					Interface_MessageDefinitionByCustomer.CarrierCode = Shipment_Master.CarrierCode and
+					Interface_IncomingOutgoingMessageDefinition.MessageType = 'FSU' and
+					Interface_IncomingOutgoingMessageDefinition.SubMessageType = 'RCS' and
+					Interface_IncomingOutgoingMessageDefinition.EventType = 'OutboundShipmentPiecesEqualsToAcceptedPieces'			
+			)
+		option (maxdop 1)
+	]]>
+	</select>
+</mapper>

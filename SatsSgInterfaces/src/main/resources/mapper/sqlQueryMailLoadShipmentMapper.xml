@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MailloadShipmentMapper">
+	<!-- <select id="sqlGetFlightDetail"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch"
+		resultMap="fetchMailFlightDetail">
+	select
+flt.flight_id,
+flt.FlightKey,
+flt.FlightOriginDate,
+flt.CarrierCode,
+seg.FlightOffPoint,
+seg.FlightSegmentId,
+case
+when evt.DLSCompletedAt is not null then 1
+else 0 end as dlsCompleted,
+uld.ULDTrolleyNumber,
+LdInfo.ShipmentId,
+Shp.ShipmentNumber,
+Shp.Origin,
+Shp.Destination,
+Hse.NextDestination,
+LdInfo.Pieces,
+LdInfo.Weight,
+LdInfo.LoadedShipmentInfoId,
+LdSHInfo.Number,
+uldmaster.ContainerDestination,
+CASE
+when Shp.ShipmentNumber IS NULL
+THEN NULL
+WHEN Dmg.EntityKey IS NOT NULL
+THEN 'true'
+ELSE 'false'
+END AS damage
+from
+Flt_OperativeFlight flt
+inner join Flt_OperativeFlight_Segments seg on flt.Flight_ID = seg.Flight_ID
+left join Exp_FlightEvents evt on flt.Flight_ID = evt.FlightId and Evt.FlightDepartedOn is null
+inner join Exp_AssignedULDTrolleyToFlight uld on seg.FlightSegmentId = uld.FlightSegmentId
+inner join Uld_UldMaster uldmaster on uld.ULDTrolleyNumber = uldmaster.UldKey
+left outer join Exp_LoadedShipmentInfo LdInfo on uld.AssUldTrolleyId = LdInfo.AssUldTrolleyId
+left outer join Shipment_Master Shp on LdInfo.ShipmentId = Shp.ShipmentId
+left outer join Exp_LoadedShipmentHouseInfo LdSHInfo on LdInfo.LoadedShipmentInfoId = LdSHInfo.LoadedShipmentInfoId
+left outer join Shipment_HouseInformation Hse on LdSHInfo.Number = Hse.Number
+LEFT JOIN Com_DamageInfo Dmg ON Dmg.EntityKey = Hse.Number
+where uld.ULDTrolleyNumber = #{uldNumber}
+	</select>
+<select id="sqlGetPrebookedDetail"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch"
+		resultMap="fetchMailbagShipmentDetail">
+SELECT 
+    ShpMst.ShipmentNumber ShipmentNumber,
+   ShpHse.Number as Number,
+   fltOpFlt.FlightKey,
+   fltOpFltLeg.DateStd,
+   ShpInv.ShipmentInventory_Id,
+   ShpMst.ShipmentId,
+   AcpHse.Pieces,
+   AcpHse.Weight
+   fltOpFlt.Flight_ID
+FROM   
+Flt_OperativeFlight fltOpFlt
+inner join Flt_OperativeFlight_Legs fltOpFltLeg on fltOpFlt.Flight_ID=fltOpFltLeg.Flight_ID AND fltOpFltLeg.FlightBoardPoint = 'SIN'
+inner join Exp_ShipmentFlightBookingDetail shpFltBkngDtl on shpFltBkngDtl.FlightId = fltOpFlt.Flight_ID and shpFltBkngDtl.BookingStatusCode='UU'
+inner join Exp_ShipmentBooking shpBkng on shpBkng.BookingId=shpFltBkngDtl.BookingId
+inner join Exp_eAcceptanceHouseInformation AcpHse on AcpHse.number = shpBkng.ShipmentNumber
+inner join Exp_eAcceptanceDocumentInformation AcpDoc on AcpDoc.DocumentInformationId=AcpHse.DocumentInformationId
+inner join Shipment_Master ShpMst on ShpMst.ShipmentNumber = AcpDoc.ShipmentNumber and ShpMst.ShipmentDate = AcpDoc.ShipmentDate and ShpMst.ShipmentType = 'MAIL'
+inner join Shipment_HouseInformation ShpHse on ShpMst.ShipmentId = ShpHse.ShipmentId and ShpHse.Number=AcpHse.Number
+inner join Shipment_Inventory ShpInv on ShpInv.Shipment_Id = ShpMst.ShipmentId
+inner join Shipment_InventoryHouse ShpInvHse on ShpInvHse.ShipmentInventoryId = ShpInv.ShipmentInventory_Id and ShpInvHse.ShipmentHouseId = ShpHse.ShipmentHouseId
+where fltOpFlt.Flight_ID = #{flightId}
+</select>
+
+<select id="sqlGetContainerDetails"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch"
+		resultMap="fetchMailbagShipmentDetail">
+SELECT
+ShpMst.ShipmentNumber ShipmentNumber,
+ShpHse.Number as Number,
+fltOpFlt.FlightKey,
+fltOpFltLeg.DateStd,
+ShpInv.ShipmentInventory_Id,
+ShpMst.ShipmentId,
+AcpHse.Pieces,
+AcpHse.Weight
+FROM Exp_eAcceptanceDocumentInformation AcpDoc
+inner join Exp_eAcceptanceHouseInformation AcpHse on AcpDoc.DocumentInformationId=AcpHse.DocumentInformationId
+inner join Shipment_Master ShpMst on ShpMst.ShipmentNumber = AcpDoc.ShipmentNumber and ShpMst.ShipmentDate = AcpDoc.ShipmentDate and ShpMst.ShipmentType = 'MAIL'
+inner join Shipment_HouseInformation ShpHse on ShpMst.ShipmentId = ShpHse.ShipmentId and ShpHse.Number=AcpHse.Number
+inner join Shipment_Inventory ShpInv on ShpInv.Shipment_Id = ShpMst.ShipmentId
+inner join Shipment_InventoryHouse ShpInvHse on ShpInvHse.ShipmentInventoryId = ShpInv.ShipmentInventory_Id and ShpInvHse.ShipmentHouseId = ShpHse.ShipmentHouseId
+left join Exp_ShipmentBooking shpBkng on AcpHse.number = shpBkng.ShipmentNumber
+left join Exp_ShipmentFlightBookingDetail shpFltBkngDtl on shpBkng.BookingId=shpFltBkngDtl.BookingId and shpFltBkngDtl.BookingStatusCode='UU'
+left join Flt_OperativeFlight fltOpFlt on shpFltBkngDtl.FlightId = fltOpFlt.Flight_ID
+left join Flt_OperativeFlight_Legs fltOpFltLeg on fltOpFlt.Flight_ID=fltOpFltLeg.Flight_ID AND fltOpFltLeg.FlightBoardPoint = 'SIN'
+where ISNULL(fltOpFlt.Flight_ID, -1) !=  #{flightId}
+and ShpInv.ShipmentLocation = #{uldNumber}
+</select>
+	<resultMap id="fetchMailFlightDetail"
+		type="com.ngen.cosys.export.buildup.model.BuildUpMailSearch">
+		<id property="flightId" column="flight_id" />
+		<result column="ULDTrolleyNumber" property="uldNumber" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightOffPoint" property="flightOffPoint" />
+		<result column="FlightSegmentId" property="segmentId" />
+		<result column="dlsCompleted" property="dlsCompleted" />
+		<result column="CarrierCode" property="carrierCode" />
+		<collection property="dispatchList" javaType="List" resultMap="fetchMailbagShipmentDetail" />
+	</resultMap>
+
+	<resultMap id="fetchMailbagShipmentDetail" type="com.ngen.cosys.export.buildup.model.ShipmentMailBagModel">
+		<id property="shipmentId" column="ShipmentId" />
+		<id column="ShipmentLocation" property="location" />
+		<result column="ShipmentNumber" property="dispatchSeries" />
+		<result column="Origin" property="originAirport" />
+		<result column="Destination" property="destinationAirport" />
+		<result column="Destination" property="destinationAirport" />
+		<collection property="mailbags" javaType="List" resultMap="fetchMailbagHouseDetail" />
+	</resultMap>
+	
+	<resultMap id="fetchMailbagHouseDetail" type="com.ngen.cosys.export.model.ShipmentHouse">
+		<id property="number" column="Number" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="damage" property="damage" />
+		<result column="ShipmentNumber" property="dispatchSeries" />
+	</resultMap> -->
+
+	<select id="sqlGetMailBagtDetail"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.BuildUpMailSearch"
+		resultMap="fetchMailBagDetail">
+		select
+		Shipment_Master.ShipmentId,
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		Shipment_HouseInformation.Pieces,
+		Shipment_HouseInformation.Weight,
+		Shipment_HouseInformation.Number
+		from
+		Shipment_Master inner join
+		Shipment_HouseInformation on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+		where Shipment_HouseInformation.Number= #{mailBagId}
+	</select>
+
+	 <resultMap id="fetchMailBagDetail"
+		type="com.ngen.cosys.satssginterfaces.mss.model.BuildUpMailSearch">
+		<id column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<collection property="mailBags" javaType="List"
+			ofType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentHouse">
+			<result column="Number" property="number" />
+			<result column="Weight" property="pieces" />
+			<result column="Pieces" property="weight" />
+		</collection>
+	</resultMap> 
+
+	<!-- <select id="sqlCheckMailBag"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch"
+		resultType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch">
+		select Top (1)
+		inv.ShipmentInventory_Id as shipmentInventoryId,
+		inv.Shipment_ID as shipmentId,
+		inv.Pieces as pieces,
+		inv.Weight as weight,
+		houseInfo.Number
+		from
+		Shipment_Inventory inv, Shipment_InventoryHouse house,
+		Shipment_HouseInformation houseInfo where inv.ShipmentInventory_Id = house.ShipmentInventoryId
+		AND houseInfo.ShipmentHouseId = house.ShipmentHouseId And
+		houseInfo.Number = #{mailBagNumber};
+	</select>
+
+	<select id="sqlCheckDlsStatusFlight"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch"
+		resultType="java.lang.Integer">
+		select count(*)
+		from
+		Exp_FlightEvents FltEvent,
+		Flt_OperativeFlight Flight,
+		Flt_OperativeFlight_Legs
+		Flightleg
+		where
+		Flight.Flight_ID = FltEvent.FlightId
+		and
+		Flight.Flight_ID
+		= Flightleg.Flight_ID
+		and
+		Flight.FlightKey =#{flightKey}
+		and Flightleg.FlightBoardPoint=#{tenantId}
+		and
+		CAST(Flightleg.DateSTD as Date) =CAST(#{flightOriginDate} as Date)
+		and
+		DLSCompletedAt is not null
+		and DLSCompletedBy is not null
+
+	</select>
+
+	<update id="updatephotos"
+		parameterType="com.ngen.cosys.export.buildup.model.BuildUpMailSearch">
+		update Com_UploadedDocumentStore
+		set EntityKey = #{uldNumber}
+		where ReferenceId = #{referenceId}
+	</update>
+ -->
+</mapper>
+		

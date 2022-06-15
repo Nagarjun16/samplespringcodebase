@@ -1,0 +1,1094 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentMasterMapper">
+
+	<!--Shipment Master Query START -->
+	<select id="sqlCheckForPartShipment"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Imp_ArrivalManifestShipmentInfo
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			ShipmentDescriptionCode in ('P','D')
+	</select>
+	
+	<select id="sqlCheckForSVCShipment"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Exp_ShipmentBooking
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			ServiceFlag = 1
+	</select>
+	
+	
+	<select id="sqlGetShipmentMaster"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface">
+		select
+			ShipmentId,
+			ManuallyCreated
+		from 
+			Shipment_Master
+		where 
+			ShipmentType = #{shipmentType} and
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	</select>
+
+	<insert id="sqlInsertShipmentMaster"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface"
+		keyColumn="ShipmentId" keyProperty="shipmentId" useGeneratedKeys="true">
+		insert into Shipment_Master
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentType != null">
+				ShipmentType,
+			</if>
+			<if test="shipmentNumber != null">
+				ShipmentNumber,
+			</if>
+			<if test="shipmentdate != null">
+				ShipmentDate,
+			</if>			
+			<if test="svc != null">
+				SVC,
+			</if>
+			<if test="partShipment != null">
+				PartShipment,
+			</if>
+			<if test="origin != null">
+				Origin,
+			</if>
+			<if test="destination != null">
+				Destination,
+			</if>
+			<if test="piece != null">
+				Pieces,
+			</if>
+			<if test="weight != null">
+				Weight,
+			</if>
+			<if test="weightUnitCode != null">
+				WeightUnitCode,
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				NatureOfGoodsDescription,
+			</if>
+			<if test="documentReceivedOn != null">
+				DocumentReceivedOn,
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				DocumentPouchReceivedOn,
+			</if>
+			<if test="manuallyCreated != null">
+				ManuallyCreated,
+			</if>
+			<if test="carrierCode != null">
+				CarrierCode,
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange,
+			</if>
+			<if test="mailCategory != null">
+				MailCategory,
+			</if>
+			<if test="mailSubCategory != null">
+				MailSubCategory,
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear,
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator,
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>			
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentType != null">
+				#{shipmentType},
+			</if>
+			<if test="shipmentNumber != null">
+				#{shipmentNumber},
+			</if>
+			<if test="shipmentdate != null">
+				#{shipmentdate},
+			</if>
+			
+			<if test="svc != null">
+				#{svc},
+			</if>
+			<if test="partShipment != null">
+				#{partShipment},
+			</if>
+			<if test="origin != null">
+				#{origin},
+			</if>
+			<if test="destination != null">
+				#{destination},
+			</if>
+			<if test="piece != null">
+				#{piece},
+			</if>
+			<if test="weight != null">
+				#{weight},
+			</if>
+			<if test="weightUnitCode != null">
+				#{weightUnitCode},
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				#{natureOfGoodsDescription},
+			</if>
+			<if test="documentReceivedOn != null">
+				CURRENT_TIMESTAMP,
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				#{documentPouchReceivedOn},
+			</if>
+			<if test="manuallyCreated != null">
+				#{manuallyCreated},
+			</if>
+			<if test="carrierCode != null">
+				#{carrierCode},
+			</if>
+			<if test="originOfficeExchange != null">
+				#{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				#{mailCategory},
+			</if>
+			<if test="mailSubCategory != null">
+				#{mailSubCategory},
+			</if>
+			<if test="dispatchYear != null">
+				#{dispatchYear},
+			</if>
+			<if test="registered != null">
+				#{registered },
+			</if>
+			<if test="destinationOfficeExchange != null">
+				#{destinationOfficeExchange},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>			
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMaster"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterface">
+		update Shipment_Master
+		<set>			
+			<if test="svc != null">
+				SVC = #{svc},
+			</if>
+			<if test="partShipment != null">
+				PartShipment = #{partShipment},
+			</if>
+			<if test="origin != null">
+				Origin = #{origin},
+			</if>
+			<if test="destination != null">
+				Destination = #{destination},
+			</if>
+			<if test="piece != null">
+				Pieces = #{piece},
+			</if>
+			<if test="weight != null">
+				Weight = #{weight},
+			</if>
+			<if test="weightUnitCode != null">
+				WeightUnitCode = #{weightUnitCode},
+			</if>
+			<if test="natureOfGoodsDescription != null">
+				NatureOfGoodsDescription = #{natureOfGoodsDescription},
+			</if>
+			<if test="documentReceivedOn != null">
+				DocumentReceivedOn = #{documentReceivedOn},
+			</if>
+			<if test="documentPouchReceivedOn != null">
+				DocumentPouchReceivedOn = #{documentPouchReceivedOn},
+			</if>
+			<if test="manuallyCreated != null">
+				ManuallyCreated = #{manuallyCreated},
+			</if>
+			<if test="carrierCode != null">
+				CarrierCode = #{carrierCode},
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange = #{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				MailCategory = #{mailCategory},
+			</if>
+			<if test="mailSubCategory != null">
+				MailSubCategory = #{mailSubCategory},
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear = #{dispatchYear},
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator = #{registered},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange = #{destinationOfficeExchange}
+			</if>
+		</set>
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	</update>
+	<!--Shipment Master Query END -->
+
+	<!--Shipment Master Routing Info Query START -->
+	<select id="sqlGetShipmentMasterRoutingInfo" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceRoutingInfo"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterRoutingId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterRoutingInfo
+		where
+			ShipmentId = #{shipmentId} and
+			FromPoint = #{fromPoint} and 
+			Carrier = #{carrier}
+	</select>
+	
+	<insert id="sqlInsertShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceRoutingInfo"
+		keyColumn="ShipmentMasterRoutingId" keyProperty="shipmentMasterRoutingId" useGeneratedKeys="true">
+		insert into Shipment_MasterRoutingInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="fromPoint != null">
+				FromPoint,
+			</if>
+			<if test="carrier != null">
+				Carrier,
+			</if>
+			<if test="shipmentMasterRoutingId != null">
+				ShipmentMasterRoutingId,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="fromPoint != null">
+				#{fromPoint},
+			</if>
+			<if test="carrier != null">
+				#{carrier},
+			</if>
+			<if test="shipmentMasterRoutingId != null">
+				#{shipmentMasterRoutingId}
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!--Shipment Master Routing Info Query END -->
+
+	<!--Shipment Master SHC Handling Group Query START -->	
+	<select id="sqlGetShipmentMasterShcHandlingGroup"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceShcHandlingGroup" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterSHCHandlGrpId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterSHCHandlingGroup
+		where 
+			ShipmentId = #{shipmentId} and 
+			HandlingGroupId = #{handlingGroupId}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterShcHandlingGroup"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceShcHandlingGroup">
+		insert into Shipment_MasterSHCHandlingGroup
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="handlingGroupId != null">
+				HandlingGroupId,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="handlingGroupId != null">
+				#{handlingGroupId},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!--Shipment Master SHC Handling Group Query END -->
+
+	<!--Shipment Master SHC Query START -->
+	<select id="sqlGetShipmentMasterShc"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceShc" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterSHCId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterSHC
+		where 
+			ShipmentId = #{shipmentId} and 
+			SpecialHandlingCode = #{specialHandlingCode}
+	</select>
+	
+	<insert id="sqlInsertShipmentMasterShc"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceShc"
+		keyColumn="ShipmentMasterSHCId" keyProperty="shipmentMasterSHCId" useGeneratedKeys="true">
+		insert into Shipment_MasterSHC
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="specialHandlingCode != null">
+				SpecialHandlingCode,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="specialHandlingCode != null">
+				#{specialHandlingCode},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!--Shipment Master SHC Query END -->
+
+	<!-- Shipment Other Charge Info Query -->
+	<select id="sqlGetShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceShc" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentOtherChargesId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_OtherChargeInfo
+		where 
+			ShipmentId = #{shipmentId}
+	</select>
+	
+	<insert id="sqlInsertShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentOtherChargeInfoAirmailInterface"
+		keyColumn="ShipmentOtherChargesId" keyProperty="shipmentOtherChargesId" useGeneratedKeys="true">
+		insert into Shipment_OtherChargeInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>		
+			<if test="customsOrigin != null">
+				CustomsOrigin,
+			</if>
+			<if test="chargeCode != null">
+				ChargeCode,
+			</if>
+			<if test="collectBankEndorsementClearanceLetter != null">
+				CollectBankEndorsementClearanceLetter,
+			</if>
+			<if test="currency != null">
+				Currency,
+			</if>
+			<if test="dueFromAirline != null">
+				DueFromAirline,
+			</if>
+			<if test="dueFromAgent != null">
+				DueFromAgent,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="customsOrigin != null">
+				#{customsOrigin},
+			</if>
+			<if test="chargeCode != null">
+				#{chargeCode},
+			</if>
+			<if test="collectBankEndorsementClearanceLetter != null">
+				#{collectBankEndorsementClearanceLetter},
+			</if>
+			<if test="currency != null">
+				#{currency},
+			</if>
+			<if test="dueFromAirline != null">
+				#{dueFromAirline},
+			</if>
+			<if test="dueFromAgent != null">
+				#{dueFromAgent},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentOtherChargeInfoAirmailInterface">
+		update Shipment_OtherChargeInfo
+		<set>
+			<if test="customsOrigin != null">
+				CustomsOrigin = #{customsOrigin},
+			</if>
+			<if test="chargeCode != null">
+				ChargeCode = #{chargeCode},
+			</if>
+			<if test="collectBankEndorsementClearanceLetter != null">
+				CollectBankEndorsementClearanceLetter = #{collectBankEndorsementClearanceLetter},
+			</if>
+			<if test="currency != null">
+				Currency = #{currency},
+			</if>
+			<if test="dueFromAirline != null">
+				DueFromAirline = #{dueFromAirline},
+			</if>
+			<if test="dueFromAgent != null">
+				DueFromAgent = #{dueFromAgent},
+			</if>
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentId = #{shipmentId}
+	</update>
+	<!-- Shipment Other Charge Info QUERY ENDS -->
+
+	<!-- Shipment Master customer address info Mapper Starts -->	
+	<select id="sqlGetShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerAddressInfo" 
+		resultType="java.math.BigInteger">
+		select
+			ShipmentCustomerAddInfoId
+		from 
+			Shipment_MasterCustomerAddressInfo
+		where 
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerAddressInfo"
+		keyColumn="ShipmentCustomerAddInfoId" keyProperty="id" useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerAddressInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentCustomerInfoId != null">
+				ShipmentCustomerInfoId,
+			</if>
+			<if test="streetAddress  != null">
+				StreetAddress,
+			</if>
+			<if test="place != null">
+				Place,
+			</if>
+			<if test="postal != null">
+				Postal,
+			</if>
+			<if test="stateCode != null">
+				StateCode,
+			</if>
+			<if test="countryCode != null">
+				CountryCode,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentCustomerInfoId != null">
+				#{shipmentCustomerInfoId},
+			</if>
+			<if test="streetAddress  != null">
+				#{streetAddress },
+			</if>
+			<if test="place != null">
+				#{place},
+			</if>
+			<if test="postal != null">
+				#{postal},
+			</if>
+			<if test="stateCode != null">
+				#{stateCode},
+			</if>
+			<if test="countryCode != null">
+				 #{countryCode}, 
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerAddressInfo">
+		update Shipment_MasterCustomerAddressInfo
+		<set>
+			<if test="streetAddress  != null">
+				StreetAddress = #{streetAddress },
+			</if>
+			<if test="place != null">
+				Place = #{place},
+			</if>
+			<if test="postal != null">
+				Postal = #{postal},
+			</if>
+			<if test="stateCode != null">
+				StateCode = #{stateCode},
+			</if>
+			<if test="countryCode != null">
+				CountryCode = #{countryCode},
+			</if>
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</update>
+
+
+	<!-- Shipment Master customer address info Mapper End -->
+
+	<!-- Shipment Master customer contact info Mapper Starts -->
+	<select id="sqlGetShipmentMasterCustomerContactInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerContactInfo" 
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentCustomerAddInfoId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_MasterCustomerContactInfo
+		where 
+			ShipmentCustomerAddInfoId = #{shipmentAddressInfoId} and 
+			ContactTypeCode = #{contactTypeCode}
+	</select>
+
+	<insert id="sqlInsertShipmentMasterCustomerContactInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerContactInfo"
+		keyColumn="ShipmentCustomerContInfoId" keyProperty="id" useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerContactInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentAddressInfoId != null">
+				ShipmentCustomerAddInfoId,
+			</if>
+			<if test="contactTypeCode != null">
+				ContactTypeCode,
+			</if>
+			<if test="contactTypeDetail != null">
+				ContactTypeDetail,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentAddressInfoId != null">
+				#{shipmentAddressInfoId},
+			</if>
+			<if test="contactTypeCode != null">
+				#{contactTypeCode},
+			</if>
+			<if test="contactTypeDetail != null">
+				#{contactTypeDetail},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn},
+			</if>
+		</trim>
+	</insert>
+	<!-- Shipment Master customer contact info Mapper End -->
+
+	<!-- Shipment Master customer info Mapper Starts -->	
+	<select id="sqlGetShipmentMasterCustomerInfo" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerInfo"
+		resultType="java.math.BigInteger">
+		select
+			ShipmentCustomerInfoId
+		from 
+			Shipment_MasterCustomerInfo
+		where 
+			ShipmentId = #{shipmentId} and 
+			CustomerType = #{customerType}
+	</select>
+	
+	<insert id="sqlInsertShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerInfo"
+		keyColumn="ShipmentCustomerInfoId" keyProperty="id" useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerInfo
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="customerType != null">
+				CustomerType,
+			</if>
+			<if test="customerCode != null">
+				CustomerCode,
+			</if>
+			<if test="customerName  != null">
+				CustomerName ,
+			</if>
+			<if test="accountNumber != null">
+				AccountNumber,
+			</if>
+			<if test="overseasCustomer != null">
+				OverseasCustomer,
+			</if>
+			<if test="appointedAgent != null">
+				AppointedAgent,
+			</if>
+			<if test="contactEmail != null">
+				ContactEmail,
+			</if>
+			<if test="notifyPartyCode != null">
+				NotifyPartyCode,
+			</if>
+			<if test="notifyPartyName != null">
+				NotifyPartyName,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="customerType != null">
+				#{customerType},
+			</if>
+			<if test="customerCode != null">
+				#{customerCode},
+			</if>
+			<if test="customerName  != null">
+				#{customerName},
+			</if>
+			<if test="accountNumber != null">
+				#{accountNumber},
+			</if>
+			<!-- <if test="overseasCustomer (Y/N) != null"> -->
+			<if test="overseasCustomer != null">
+				#{overseasCustomer},
+			</if>
+			<if test="appointedAgent != null">
+				#{appointedAgent},
+			</if>
+			<if test="contactEmail != null">
+				#{contactEmail},
+			</if>
+			<if test="notifyPartyCode != null">
+				#{notifyPartyCode},
+			</if>
+			<if test="notifyPartyName != null">
+				#{notifyPartyName},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceCustomerInfo">
+		update Shipment_MasterCustomerInfo
+		<set>			
+			<if test="customerCode != null">
+				CustomerCode = #{customerCode},
+			</if>
+			<if test="customerName  != null">
+				"CustomerName " = #{customerName },
+			</if>
+			<if test="accountNumber != null">
+				AccountNumber = #{accountNumber},
+			</if>
+			<if test="overseasCustomer != null">
+				"OverseasCustomer" = #{overseasCustomer},
+			</if>
+			<if test="appointedAgent != null">
+				AppointedAgent = #{appointedAgent},
+			</if>
+			<if test="contactEmail != null">
+				ContactEmail = #{contactEmail},
+			</if>
+			<if test="notifyPartyCode != null">
+				NotifyPartyCode = #{notifyPartyCode},
+			</if>
+			<if test="notifyPartyName != null">
+				NotifyPartyName = #{notifyPartyName},
+			</if>
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentId = #{shipmentId} and 
+			CustomerType = #{customerType}
+	</update>
+	<!-- Shipment Master customer info Mapper End -->
+
+	<!-- Shipment Master handling area Mapper Starts -->	
+	<select id="sqlGetShipmentMasterHandlingArea" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceHandlingArea"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentMasterHandlAreaId) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Shipment_MasterHandlingArea
+		where 
+			ShipmentId = #{shipmentId} and 
+			HandledBy = #{handledBy}
+	</select>
+	<insert id="sqlInsertShipmentMasterHandlingArea"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentMasterAirmailInterfaceHandlingArea"
+		keyColumn="ShipmentMasterHandlAreaId" keyProperty="shipmentMasterHandlAreaId" useGeneratedKeys="true">
+		insert into Shipment_MasterHandlingArea
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="handledBy != null">
+				HandledBy,
+			</if>
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="handledBy != null">
+				#{handledBy},
+			</if>
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<!-- Shipment Master handling area Mapper End -->
+	
+	<!-- Shipment Master House Info Starts -->	
+	<select id="sqlGetShipmentMasterHouseInformation" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentHouseAirmailInterfaceModel"
+		resultType="java.math.BigInteger">
+		select
+			ShipmentHouseId
+		from 
+			Shipment_HouseInformation
+		where 
+			ShipmentId = #{shipmentId} and 
+			Number = #{number} and 
+			ShipmentType = #{type}
+	</select>
+	<insert id="sqlInsertShipmentMasterHouseInformation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentHouseAirmailInterfaceModel"
+		keyColumn="ShipmentHouseId" keyProperty="shipmentHouseId" useGeneratedKeys="true">
+		insert into Shipment_HouseInformation
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				ShipmentId,
+			</if>
+			<if test="type != null">
+				ShipmentType,
+			</if>
+			<if test="number != null">
+				Number,
+			</if>
+			<if test="pieces != null">
+				Pieces,
+			</if>
+			<if test="weight != null">
+				Weight,
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange,
+			</if>
+			<if test="mailCategory != null">
+				MailCategory,
+			</if>
+			<if test="mailSubType != null">
+				MailSubCategory,
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear,
+			</if>
+			<if test="dispatchNumber != null">
+				DispatchNumber,
+			</if>
+			<if test="receptacleNumber != null">
+				ReceptacleNumber,
+			</if>
+			<if test="lastBag != null">
+				LastBagIndicator,
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator,
+			</if>
+			<if test="nextDestination != null">
+				NextDestination,
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange,
+			</if>			
+			<if test="createdBy != null">
+				CreatedUserCode,
+			</if>
+			<if test="createdOn != null">
+				CreatedDateTime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="shipmentId != null">
+				#{shipmentId},
+			</if>
+			<if test="type != null">
+				#{type},
+			</if>
+			<if test="number != null">
+				#{number},
+			</if>
+			<if test="pieces != null">
+				#{pieces},
+			</if>
+			<if test="weight != null">
+				#{weight},
+			</if>
+			<if test="originOfficeExchange != null">
+				#{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				#{mailCategory},
+			</if>
+			<if test="mailSubType != null">
+				#{mailSubType},
+			</if>
+			<if test="dispatchYear != null">
+				#{dispatchYear},
+			</if>
+			<if test="dispatchNumber != null">
+				#{dispatchNumber},
+			</if>
+			<if test="receptacleNumber != null">
+				#{receptacleNumber},
+			</if>
+			<if test="lastBag != null">
+				#{lastBag},
+			</if>
+			<if test="registered != null">
+				#{registered},
+			</if>
+			<if test="nextDestination != null">
+				#{nextDestination},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				#{destinationOfficeExchange},
+			</if>			
+			<if test="createdBy != null">
+				#{createdBy},
+			</if>
+			<if test="createdOn != null">
+				#{createdOn}
+			</if>
+		</trim>
+	</insert>
+	<update id="sqlUpdateShipmentMasterHouseInformation" 
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.InboundBreakdownShipmentHouseAirmailInterfaceModel">
+		update
+			Shipment_HouseInformation
+		<set>
+			<if test="pieces != null">
+				Pieces = Pieces + #{pieces},
+			</if>
+			<if test="weight != null">
+				Weight = Weight + #{weight},
+			</if>
+			<if test="originOfficeExchange != null">
+				OriginOfficeExchange = #{originOfficeExchange},
+			</if>
+			<if test="mailCategory != null">
+				MailCategory = #{mailCategory},
+			</if>
+			<if test="mailSubType != null">
+				MailSubCategory = #{mailSubType},
+			</if>
+			<if test="dispatchYear != null">
+				DispatchYear = #{dispatchYear},
+			</if>
+			<if test="dispatchNumber != null">
+				DispatchNumber = #{dispatchNumber},
+			</if>
+			<if test="receptacleNumber != null">
+				ReceptacleNumber = #{receptacleNumber},
+			</if>
+			<if test="lastBag != null">
+				LastBagIndicator = #{lastBag},
+			</if>
+			<if test="registered != null">
+				RegisteredIndicator = #{registered},
+			</if>
+			<if test="nextDestination != null">
+				NextDestination = #{nextDestination},
+			</if>
+			<if test="destinationOfficeExchange != null">
+				DestinationOfficeExchange = #{destinationOfficeExchange},
+			</if>			
+			<if test="modifiedBy != null">
+				LastUpdatedUserCode = #{modifiedBy},
+			</if>
+			<if test="modifiedOn != null">
+				LastUpdatedDateTime = #{modifiedOn}
+			</if>
+		</set>
+		where 
+			ShipmentId = #{shipmentId} and 
+			Number = #{number} and 
+			ShipmentType = #{type}
+	</update>
+	
+	<update id="sqlUpdateDocumentreceivedon"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ShipmentVerificationAirmailInterfaceModel">
+		update Shipment_Master
+		<set>			
+			<if test="documentReceivedFlag == true">
+				DocumentReceivedOn = GETDATE(),
+			</if>
+			<if test="documentPouchReceivedFlag == true">
+				DocumentPouchReceivedOn = GETDATE(),
+			</if>
+			<if test="documentPouchReceivedFlag == false">
+				DocumentPouchReceivedOn = NULL
+			</if>
+		</set>
+		where 
+		    ShipmentId = #{shipmentId} 
+			
+	</update>
+	<!-- Shipment Master House Info End -->
+
+</mapper>

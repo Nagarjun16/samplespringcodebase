@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="IrregularityMapper">
+
+	<resultMap type="com.ngen.cosys.shipment.model.IrregularitySummary"
+		id="searchIrr">
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="shipmentDate" column="ShipmentDate" />
+		<result property="shipmentType" column="ShipmentType" />
+		<result property="pieces" column="Pieces" />
+		<result property="shipmentId" column="ShipmentId" />
+		<result property="weight" column="Weight" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="natureOfGoods" column="NatureOfGoodsDescription" />
+		<result property="tenantAirport" column="tenantAirport" />
+		<result column="HawbNumber" property="hawbNumber" />
+		<association property="shipmentHouseInfo"
+			select="sqlGetHawbInfoIrr"
+			column="hawbNumber=HawbNumber,shipmentId=ShipmentId"></association>	
+		<collection property="damageDetails" select="sqlGetShipmentIrregularityDamageInfo"
+			ofType="com.ngen.cosys.shipment.model.DamageDetails" javaType="List"
+			column="{shipmentType=ShipmentType, shipmentNumber=ShipmentNumber, shipmentDate=ShipmentDate,hawbNumber=HawbNumber, tenantAirport=tenantAirport}" />
+		<collection property="specialHandlingCodes" column="shc"
+			javaType="List" ofType="java.lang.String">
+			<result property="specialHandlingCodes" column="shc" />
+		</collection>
+	</resultMap>
+
+	<select id="fetchAwbDetails"
+		parameterType="com.ngen.cosys.shipment.model.SearchShipmentIrregularity"
+		resultMap="searchIrr">
+		select
+			ShipmentId,
+			ShipmentNumber,
+			ShipmentDate,
+			ShipmentType,
+			Pieces,
+			Weight,
+			Origin,
+			Destination,
+			NatureOfGoodsDescription,
+			#{hawbNumber} HawbNumber,
+			(select
+				string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+			from
+				Shipment_MasterSHC
+			where
+				Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId) as shc,
+			#{tenantAirport} tenantAirport
+		from
+			Shipment_Master
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate} and
+			ShipmentType = #{shipmentType}
+	</select>
+	
+	<select id="sqlGetHawbInfoIrr" parameterType="com.ngen.cosys.shipment.model.SearchShipmentIrregularity"
+		resultType="com.ngen.cosys.shipment.model.ShipmentHouseInformation">
+		SELECT
+		Origin hwbOrigin,
+		Pieces hwbPieces,
+		Weight hwbWeight,
+		Number hwbNumber,
+		Destination hwbDestination,
+		NatureOfGoodsDescription hwbNatureOfGoods
+		
+	FROM
+		Shipment_HouseInformation
+	WHERE
+		ShipmentId = #{shipmentId}
+	AND
+		Number = #{hawbNumber}
+	</select>
+
+	<select id="sqlGetShipmentIrregularityDamageInfo" parameterType="com.ngen.cosys.shipment.model.IrregularitySummary"
+		resultType="com.ngen.cosys.shipment.model.DamageDetails">
+		select
+			Com_DamageLineItems.DamagedPieces as damagedPieces,
+			Com_DamageLineItems.Occurrence as occurrence,
+			Com_DamageLineItems.Remarks as remarks,
+			Com_DamageLineItems.Severity as severity,
+			Flt_OperativeFlight.FlightKey as flightKey,
+			Flt_OperativeFlight_Legs.DateSTA as flightDate,
+			Com_DamageLineItems.NatureOfDamage as natureOfDamage
+		from
+			Com_DamageInfo inner join
+			Com_DamageLineItems
+				on Com_DamageInfo.DamageInfoId = Com_DamageLineItems.DamageInfoId left join
+			Flt_OperativeFlight
+				on Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID left join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		where
+			Com_DamageInfo.EntityKey = #{shipmentNumber} and
+			Com_DamageInfo.EntityType = #{shipmentType} and
+			Com_DamageInfo.EntityDate = #{shipmentDate} 
+			<if test=" hawbNumber!= null">
+			and Com_DamageInfo.SubEntityKey=#{hawbNumber}
+			</if>
+		order by
+			Flt_OperativeFlight_Legs.DateSTA asc
+	</select>
+
+	<select id="fetchIrregularityList"
+		parameterType="com.ngen.cosys.shipment.model.SearchShipmentIrregularity"
+		resultType="com.ngen.cosys.shipment.model.IrregularityDetail">
+		select 
+			si.TransactionSequenceNo as sequenceNumber, 
+			si.CargoIrregularityCode as irregularityType,
+			si.CargoIrregularityCode as oldirregularityType,
+			si.Pieces as pieces,
+			si.Pieces as oldpieces,
+			si.Weight as weight,
+			si.Weight as oldweight, 
+			si.Flight_ID as flightKey,
+			si.Flight_ID as oldflightId,
+			si.FlightSegmentId as flightSegmentId,
+			si.FlightSegmentId as oldflightSegmentId,
+			opflt.flightKey as oldflightKey,
+			case 
+				when shipment_master.origin in (#{tenantAirport}, #{tenantCity}) then 
+					Flt_OperativeFlight_legs.DateSTD 
+				else
+					Flt_OperativeFlight_legs.DateSTA 
+				end as oldflightDate,
+			case 
+				when shipment_master.origin in (#{tenantAirport}, #{tenantCity}) then 
+					'exp' 
+				else 
+					'imp' 
+				end as impexp,
+			si.IrregularityRemarks as remark, 
+			si.IrregularityRemarks as oldremark,
+			si.CreatedUser_Code as createdBy, 
+			si.Created_DateTime as createdOn,
+			si.LastUpdated_DateTime, 
+			fe.FlightDiscrepncyListSentAt,
+			case 
+				when (isnull(fe.FlightDiscrepncyListSentBy, '')='' and isnull(fe.FlightDiscrepncyListSentAt, '')='' ) then 
+					0
+				when
+				(si.LastUpdated_DateTime is null and si.Created_DateTime>=fe.FlightDiscrepncyListSentAt) then 
+					0
+				when
+					(si.LastUpdated_DateTime is not null and si.LastUpdated_DateTime>=fe.FlightDiscrepncyListSentAt) then 
+					0
+				else 
+					1
+				end as fdlSentFlag
+		from 
+			Shipment_Irregularity si inner join 
+			shipment_master 
+				on si.ShipmentNumber = shipment_master.ShipmentNumber left join 
+			Imp_FlightEvents fe 
+				on fe.FlightId = si.Flight_ID left join 
+			Flt_OperativeFlight opflt 
+				on opflt.Flight_ID = si.Flight_ID left join 
+			Flt_OperativeFlight_legs 
+				on opflt.Flight_ID = Flt_OperativeFlight_legs.Flight_ID and 
+					((Flt_OperativeFlight_legs.FlightBoardPoint = #{tenantAirport} and shipment_master.Origin in (#{tenantAirport}, #{tenantCity})) OR
+						(Flt_OperativeFlight_legs.FlightOffPoint = #{tenantAirport} and
+					shipment_master.Destination in (#{tenantAirport}, #{tenantCity})))
+		WHERE 
+			shipment_master.ShipmentNumber = #{shipmentNumber} and 
+			shipment_master.ShipmentDate = #{shipmentDate}
+			AND HouseNumber is null
+	</select>
+	
+		<select id="fetchIrregularityListHAWB"
+		parameterType="com.ngen.cosys.shipment.model.SearchShipmentIrregularity"
+		resultType="com.ngen.cosys.shipment.model.IrregularityDetail">
+		select 
+			si.TransactionSequenceNo as sequenceNumber, 
+			si.CargoIrregularityCode as irregularityType,
+			si.CargoIrregularityCode as oldirregularityType,
+			si.Pieces as pieces,
+			si.Pieces as oldpieces,
+			si.Weight as weight,
+			si.Weight as oldweight, 
+			si.Flight_ID as flightKey,
+			si.Flight_ID as oldflightId,
+			si.FlightSegmentId as flightSegmentId,
+			si.FlightSegmentId as oldflightSegmentId,
+			opflt.flightKey as oldflightKey,
+			case 
+				when shipment_master.origin in (#{tenantAirport}, #{tenantCity}) then 
+					Flt_OperativeFlight_legs.DateSTD 
+				else
+					Flt_OperativeFlight_legs.DateSTA 
+				end as oldflightDate,
+			case 
+				when shipment_master.origin in (#{tenantAirport}, #{tenantCity}) then 
+					'exp' 
+				else 
+					'imp' 
+				end as impexp,
+			si.IrregularityRemarks as remark, 
+			si.IrregularityRemarks as oldremark,
+			si.CreatedUser_Code as createdBy, 
+			si.Created_DateTime as createdOn,
+			si.LastUpdated_DateTime, 
+			fe.FlightDiscrepncyListSentAt,
+			case 
+				when (isnull(fe.FlightDiscrepncyListSentBy, '')='' and isnull(fe.FlightDiscrepncyListSentAt, '')='' ) then 
+					0
+				when
+				(si.LastUpdated_DateTime is null and si.Created_DateTime>=fe.FlightDiscrepncyListSentAt) then 
+					0
+				when
+					(si.LastUpdated_DateTime is not null and si.LastUpdated_DateTime>=fe.FlightDiscrepncyListSentAt) then 
+					0
+				else 
+					1
+				end as fdlSentFlag
+		from 
+			Shipment_Irregularity si inner join 
+			shipment_master 
+				on si.ShipmentNumber = shipment_master.ShipmentNumber left join 
+			Imp_FlightEvents fe 
+				on fe.FlightId = si.Flight_ID left join 
+			Flt_OperativeFlight opflt 
+				on opflt.Flight_ID = si.Flight_ID left join 
+			Flt_OperativeFlight_legs 
+				on opflt.Flight_ID = Flt_OperativeFlight_legs.Flight_ID and 
+					((Flt_OperativeFlight_legs.FlightBoardPoint = #{tenantAirport} and shipment_master.Origin in (#{tenantAirport}, #{tenantCity})) OR
+						(Flt_OperativeFlight_legs.FlightOffPoint = #{tenantAirport} and
+					shipment_master.Destination in (#{tenantAirport}, #{tenantCity})))
+		WHERE 
+			shipment_master.ShipmentNumber = #{shipmentNumber} and 
+			shipment_master.ShipmentDate = #{shipmentDate}
+			AND HouseNumber=#{hawbNumber}
+	</select>
+   
+    <select id="checkForImpFlightDetails"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.Integer">
+		<![CDATA[
+			SELECT           
+			 count(1)
+			from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs 
+			ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+			where
+			Flt_OperativeFlight.FlightKey=#{flightKey} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date)=cast(#{flightDate} as date) and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and 
+			Flt_OperativeFlight.FlightCancelFlag = 'A' and
+			(isNull(Flt_OperativeFlight_Legs.DateATA, Flt_OperativeFlight_Legs.DateSTA) - ((select cast(ParameterValueChar as numeric) 
+			from App_SystemParameters where ParameterCode='ARRIVALFLIGHT_CHECK')/24)) < DATEADD(HH, 8, GETDATE())
+		]]>
+	</select>
+	
+	 <select id="checkDocumentInfo"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+			select 
+			    top(1)
+			    DocumentReceivedFlag 
+			from 
+			   Imp_ShipmentVerification inner join
+			      shipment_master on  Imp_ShipmentVerification.ShipmentId=shipment_master.ShipmentId
+			   inner join 
+			      Flt_OperativeFlight on Flt_OperativeFlight.Flight_ID=Imp_ShipmentVerification.FlightId
+			   inner join
+				  Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+			 where  
+			   shipment_master.ShipmentNumber = #{shipmentNumber} and 
+			   shipment_master.ShipmentDate= #{shipmentDate} and 
+			   Flt_OperativeFlight.FlightKey=#{flightKey} and
+			   cast(Flt_OperativeFlight_Legs.DateSTA as date)=cast(#{flightDate} as date)
+		]]>
+	</select>
+	
+	<insert id="addIrregularity" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail">
+      <![CDATA[
+         insert into Shipment_Irregularity(
+         	TransactionSequenceNo, 
+         	ShipmentNumber, 
+         	CargoIrregularityCode, 
+         	Pieces, 
+         	Weight, 
+         	IrregularityRemarks, 
+         	Flight_ID,
+         	FlightSegmentId, 
+         	CreatedUser_Code, 
+         	Created_DateTime, 
+         	ShipmentDate,
+         	HouseNumber
+         )values(
+         	isnull((select max(TransactionSequenceNo)+1 from Shipment_Irregularity where ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentDate}),1), 
+         	#{shipmentNumber}, 
+         	#{irregularityType}, 
+         	#{pieces}, 
+         	#{weight}, 
+         	#{remark}, 
+         	#{flightKey},
+         	#{flightSegmentId},
+         	#{createdBy}, 
+         	#{createdOn}, 
+         	#{shipmentDate},
+         	#{hawbNumber}
+         )
+      ]]>
+	</insert>
+	
+
+	<update id="updateShipment" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail">
+      <![CDATA[
+         update Shipment_Irregularity
+         set 
+         	CargoIrregularityCode = #{irregularityType},
+         	Pieces = #{pieces},
+         	Weight = #{weight}, 
+         	Flight_ID = #{flightKey}, 
+         	FlightSegmentId=#{flightSegmentId},      	
+         	IrregularityRemarks = #{remark},
+         	LastUpdatedUser_Code = #{modifiedBy},
+         	LastUpdated_DateTime = #{modifiedOn} 
+         where
+         	TransactionSequenceNo = #{sequenceNumber} and 
+         	ShipmentNumber = #{shipmentNumber} and
+         	ShipmentDate = #{shipmentDate}
+			]]>
+         	<if test=" hawbNumber!= null">
+         	 <![CDATA[ 
+         	 and (HouseNumber=#{hawbNumber})  
+         	 ]]>
+         	 </if>
+
+	</update>
+
+	<delete id="deleteIrregularity" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail">
+     <![CDATA[
+         delete from 
+         	Shipment_Irregularity 
+         where 
+         	TransactionSequenceNo = #{sequenceNumber} and 
+         	ShipmentNumber = #{shipmentNumber} and    	
+         	ShipmentDate = #{shipmentDate}
+         	 ]]>
+         	<if test=" hawbNumber!= null">
+         	 <![CDATA[ 
+         	 and (HouseNumber=#{hawbNumber})  
+         	 ]]>
+         	 </if>
+         	
+	</delete>
+
+	<select id="fetchFlightIdInIrregularity" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.math.BigInteger">
+		select 
+			Flt_OperativeFlight_Legs.Flight_ID 
+		from 
+			Flt_OperativeFlight inner join 
+			Flt_OperativeFlight_Legs 
+				on Flt_OperativeFlight.Flight_ID=Flt_OperativeFlight_Legs.Flight_ID and
+					flt_operativeflight_legs.FlightOffPoint = #{tenantAirport}
+		where 
+			(Flt_OperativeFlight.FlightKey = #{flightKey} OR Flt_OperativeFlight.FlightKey = #{flight_No}) and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date)=cast(#{flightDate} as date)
+	</select>
+
+	<select id="duplicateIrr" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			shipment_irregularity inner join 
+			flt_operativeflight 
+				on shipment_irregularity.Flight_ID = flt_operativeflight.Flight_ID inner join 
+			flt_operativeflight_legs 
+				on flt_operativeflight_legs.Flight_ID = flt_operativeflight.Flight_ID and
+					flt_operativeflight_legs.FlightOffPoint = #{tenantAirport}
+		where 
+			shipment_irregularity.CargoIrregularityCode=#{irregularityType} and 
+			flt_operativeflight.FlightKey=#{flightKey} and 
+			cast(flt_operativeflight_legs.DateSTA as date)=cast(#{flightDate} as date) and 
+			ShipmentNumber=#{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+			<if test=" hawbNumber!= null">
+         	 and (HouseNumber=#{hawbNumber})  
+         	 </if>
+	</select>
+
+
+	<select id="duplicateIrrUp" parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			shipment_irregularity inner join 
+			flt_operativeflight 
+				on shipment_irregularity.Flight_ID = flt_operativeflight.Flight_ID inner join 
+			flt_operativeflight_legs 
+				on flt_operativeflight_legs.Flight_ID = flt_operativeflight.Flight_ID and
+					flt_operativeflight_legs.FlightOffPoint = #{tenantAirport}
+		where 
+			shipment_irregularity.CargoIrregularityCode=#{irregularityType} and
+			flt_operativeflight.FlightKey=#{flightKey} and
+			cast(flt_operativeflight_legs.DateSTA as date)= cast(#{flightDate} as date) and 
+			ShipmentNumber=#{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+			<if test=" hawbNumber!= null">
+         	 and (HouseNumber=#{hawbNumber})  
+         	 </if>
+	</select>
+	
+	<delete id="sqlDeleteIrregularityFromInwardServiceReport"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail">
+		delete from
+			Imp_InwardServiceReportShipmentDiscrepancy
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate} and
+			IrregularityType = #{irregularityType} and
+			exists(
+				select
+					1
+				from
+					Imp_InwardServiceReport inner join
+					Flt_OperativeFlight
+						on Imp_InwardServiceReport.FlightId = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+					Imp_FlightEvents
+						on Flt_OperativeFlight.Flight_ID = Imp_FlightEvents.FlightId
+				where
+					Flt_OperativeFlight.FlightKey = #{flightKey} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date)= cast(#{flightDate} as date)
+					<if test=" hawbNumber!= null">
+         	 and (HouseNumber=#{hawbNumber})  
+         	 </if>
+			)			
+	</delete>
+	
+	<sql id="ShipmentRemarks_Base_Column_List">
+		ShipmentNumber,
+		HousewayBillNumber,
+		ShipmentDate,
+		ShipmentId,
+		RemarkType,
+		Flight_ID,
+		ShipmentRemarks,
+		ShipmentType,
+		CreatedUser_Code,
+		Created_DateTime,
+		LastUpdatedUser_Code,
+		LastUpdated_DateTime
+	</sql>
+	
+	<insert id="sqlInsertIRRShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		insert into Shipment_Remarks(
+		<include refid="ShipmentRemarks_Base_Column_List" />
+		) values(
+		#{shipmentNumber},
+		#{hawbNumber},
+		#{shipmentdate},
+		#{shipmentId},
+		#{remarkType},
+		#{flightId},
+		#{shipmentRemarks},
+		#{shipmentType},
+		#{createdBy},
+		#{createdOn},
+		#{modifiedBy},
+		#{modifiedOn}
+		)
+	</insert>
+	
+	<update id="sqlUpdateIRRShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentRemarksModel">
+		
+		UPDATE
+		  Shipment_Remarks
+		SET ShipmentRemarks    = #{shipmentRemarks}
+		, LastUpdatedUser_Code = #{modifiedBy}
+		, LastUpdated_DateTime = #{modifiedOn}
+		WHERE
+		  ShipmentRemark_Id in
+		  (
+		    SELECT
+		      TOP 1 ShipmentRemark_Id
+		    FROM
+		      Shipment_Remarks
+		    WHERE
+		      ShipmentNumber   = #{shipmentNumber}
+		      AND ShipmentDate = #{shipmentdate}
+		      AND Flight_ID    = #{flightId}
+		      AND RemarkType   = #{remarkType}
+		      AND ShipmentType = #{shipmentType}
+		     <if test=" hawbNumber!= null">
+			AND (HousewayBillNumber=#{hawbNumber})
+			</if>
+		    ORDER BY
+		      Created_DateTime desc
+		  )
+				
+	</update>
+	
+	<select id="checkAcceptanceFlag"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.Boolean">
+			select 
+			     case when count(*) > 0 then 1 else 0 end as accepted
+			from 
+			   Exp_eAcceptanceDocumentInformation 
+			  
+			 where  
+			   ShipmentNumber = #{shipmentNumber} and 
+			   ShipmentDate= #{shipmentDate}
+			   and Status='ACCEPTED'
+	</select>
+	
+	<select id="getFlightSegment"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.String">
+			select concat(FlightBoardPoint, '-', FlightOffPoint) from Flt_OperativeFlight_Segments where FlightSegmentId = #{flightSegmentId}
+	</select>
+	
+	
+	<select id="fetchFlightSTA"
+		parameterType="com.ngen.cosys.shipment.model.IrregularityDetail"
+		resultType="java.lang.String">
+			select FORMAT(DateSTA,'ddMMMyyyy HH:mm') from Flt_OperativeFlight_Segments where FlightSegmentId = #{flightSegmentId}
+	</select>
+	
+	
+		
+			<select id="fetchHouseSHCLISTIrr"  parameterType="com.ngen.cosys.shipment.model.IrregularitySummary"
+  	resultType="java.lang.String">
+  	select SpecialHandlingCode 
+		from Shipment_HouseSHC 
+		where 
+		ShipmentHouseId=(select ShipmentHouseId from Shipment_HouseInformation where ShipmentId=#{shipmentId} and Number=#{hawbNumber})
+  		
+  		
+  		</select>
+
+</mapper>

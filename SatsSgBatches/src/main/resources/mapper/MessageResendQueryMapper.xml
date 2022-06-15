@@ -1,0 +1,1132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MessageResendMapper">
+
+	<sql id="caseTop50">
+		TOP(50)
+	</sql>
+	
+	<sql id="caseTop100">
+		TOP(100)
+	</sql>
+	
+	<sql id="caseTop200">
+		TOP(200)
+	</sql>
+	
+	<sql id="caseTop300">
+		TOP(300)
+	</sql>
+	<sql id="caseTop1000">
+		TOP(1000)
+	</sql>
+	
+	<select id="sqlSelectMessageResendRetryLimit" resultType="java.lang.Integer">
+		<![CDATA[
+			SELECT	CAST(ISNULL(ParameterValueChar,'0') AS NUMERIC)
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = #{code}
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>
+	</select>
+	
+	<select id="sqlSelectDATESTA" parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail" resultType="java.time.LocalDateTime">
+		
+			select Flt_OperativeFlight_Legs.DateSTA from 			
+			Flt_OperativeFlight INNER JOIN Flt_OperativeFlight_Legs
+			ON Flt_OperativeFlight.flight_id=Flt_OperativeFlight_Legs.flight_id
+			and Flt_OperativeFlight_Legs.FlightOffPoint= #{tenantAirport}			
+			where flightkey=#{flightKey} and FlightOriginDate=#{dateSTA}
+	</select>
+	
+	<select id="sqlSelectMessageOutgoingEndPointConfig" 
+			resultType="com.ngen.cosys.message.resend.config.OutgoingInterfaceConfig">
+		<![CDATA[
+			WITH 
+				API_MQ AS
+				(
+					SELECT	ParameterValueChar AS EndPointMQUrl
+					FROM	App_SystemParameters
+					WHERE	ParameterCode = 'API_ESB_CONNECTOR_MQ'
+					AND 	ParameterStatusFlag = 'Y'
+					AND 	StartDate <= GETDATE() 
+					AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				),
+				API_HTTP AS
+				(
+					SELECT	ParameterValueChar AS EndPointHTTPUrl
+					FROM	App_SystemParameters
+					WHERE	ParameterCode = 'API_ESB_CONNECTOR_REST'
+					AND 	ParameterStatusFlag = 'Y'
+					AND 	StartDate <= GETDATE() 
+					AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				)
+			SELECT	API_MQ.EndPointMQUrl AS "connectorMQUrl", 
+					API_HTTP.EndPointHTTPUrl AS "connectorHTTPUrl"
+			FROM	API_MQ, API_HTTP
+		]]>
+	</select>
+	
+	<select id="sqlSelectMessageIncomingEndPointConfig" 
+			resultType="com.ngen.cosys.message.resend.config.IncomingInterfaceConfig">
+		<![CDATA[
+			SELECT 	SystemName AS "systemName",
+					EndPoint AS "endPointUrl",
+					Type AS "medium",
+					MessageType AS "messageType"
+			FROM	Interface_InternalSystemUrl
+		]]>
+	</select>
+	
+	<resultMap id="outgoingMessageErrorLogDetailsMap" 
+				type="com.ngen.cosys.message.resend.model.OutgoingErrorMessageLog">
+		<result column="InterfaceOutgoingMessageLogId" property="outgoingMessageLogId" />
+		<result column="InterfaceOutgoingMessageLogErrorInfoId" property="outgoingErrorMessageLogId" />
+		<result column="ChannelSent" property="medium" />
+		<result column="InterfacingSystem" property="interfacingSystem" />
+		<result column="SenderOriginAddress" property="senderOriginAddress" />
+		<result column="MessageType" property="messageType" />
+		<result column="SubMessageType" property="subMessageType" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="RequestedOn" property="requestedOn" />
+		<result column="SentOn" property="sentOn" />
+		<result column="AcknowledgementReceivedOn" property="acknowledgementReceivedOn" />
+		<result column="Message" property="message" />
+		<result column="VersionNo" property="versionNo" />
+		<result column="SequenceNo" property="sequenceNo" />
+		<result column="Status" property="status" />
+		<result column="ErrorCode" property="errorCode" />
+		<result column="CreatedDateTime" property="createdOn" />
+		<result column="InterfaceOutgoingMessageResendLogId" 
+				property="outgoingResendMessageLog.outgoingResendMessageLogId" />
+		<result column="FailedTime" property="outgoingResendMessageLog.failedTime" />
+		<result column="RetryLimit" property="outgoingResendMessageLog.retryLimit" />
+		<result column="AlertStatus" property="outgoingResendMessageLog.alertStatus" />
+		<result column="NotificationTime" property="outgoingResendMessageLog.notificationTime" />
+		<result column="ResentTime" property="outgoingResendMessageLog.resentTime" />
+	</resultMap>
+	
+	<select id="sqlSelectOutgoingMessageErrorLogDetails" resultMap="outgoingMessageErrorLogDetailsMap">
+		<![CDATA[
+		
+			SELECT	TOP(200)
+					Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId,
+					Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogErrorInfoId,
+					Interface_OutgoingMessageLog.ChannelSent,
+					Interface_OutgoingMessageLog.InterfacingSystem,
+					Interface_OutgoingMessageLog.SenderOriginAddress,
+					Interface_OutgoingMessageLog.MessageType,
+					Interface_OutgoingMessageLog.SubMessageType,
+					Interface_OutgoingMessageLog.CarrierCode,
+					Interface_OutgoingMessageLog.FlightNumber,
+					Interface_OutgoingMessageLog.FlightOriginDate,
+					Interface_OutgoingMessageLog.ShipmentNumber,
+					Interface_OutgoingMessageLog.ShipmentDate,
+					Interface_OutgoingMessageLog.RequestedOn,
+					Interface_OutgoingMessageLog.SentOn,
+					Interface_OutgoingMessageLog.AcknowledgementReceivedOn,
+					Interface_OutgoingMessageLog.Message,
+					Interface_OutgoingMessageLog.VersionNo,
+					Interface_OutgoingMessageLog.SequenceNo,
+					Interface_OutgoingMessageLog.Status,
+					Interface_OutgoingMessageLogErrorInfo.ErrorCode,
+					Interface_OutgoingMessageLogErrorInfo.CreatedDateTime,
+					Interface_OutgoingMessageResendLog.InterfaceOutgoingMessageResendLogId,
+					Interface_OutgoingMessageResendLog.FailedTime,
+					Interface_OutgoingMessageResendLog.RetryLimit,
+					Interface_OutgoingMessageResendLog.AlertStatus,
+					Interface_OutgoingMessageResendLog.NotificationTime,
+					Interface_OutgoingMessageResendLog.ResentTime
+			FROM	Interface_OutgoingMessageLog
+				LEFT JOIN
+					Interface_OutgoingMessageLogErrorInfo
+				ON	Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogId 
+						= Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId
+				LEFT JOIN
+					Interface_OutgoingMessageResendLog
+				ON	Interface_OutgoingMessageResendLog.OutgoingMessageLogErrorInfoId 
+						= Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogErrorInfoId
+				AND	Interface_OutgoingMessageResendLog.OutgoingMessageLogId 
+						= Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogId
+			WHERE	
+			Interface_OutgoingMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, - (cast((select ParameterValueChar from App_SystemParameters where ParameterCode = 'OUTBOUND_MESSAGE_RESEND_INTERVAL') as numeric)), GETDATE()) AND DATEADD(DAY, +7, GETDATE())			 			 
+			AND		Interface_OutgoingMessageLog.Status IN ('ESBERROR','EXCEPTION', 'FAILED', 'FAILURE')			
+			AND		Interface_OutgoingMessageLog.Message IS NOT NULL
+			AND		Interface_OutgoingMessageLog.InterfacingSystem NOT IN ('ALTEAWEB','ICS')
+			ORDER BY Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId ASC
+		]]>
+	</select>
+	
+	<update id="sqlUpdateOutgoingMessageProcessingState" parameterType="java.math.BigInteger">
+		<![CDATA[
+			UPDATE 	Interface_OutgoingMessageLog
+			SET		Status = 'PROCESSING', 
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceOutgoingMessageLogId = #{outgoingMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateOutgoingResentMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.OutgoingErrorMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_OutgoingMessageLog
+			SET		Status = #{status}, 
+		]]>
+		<if test="processed">
+			<![CDATA[ 
+					RequestedOn = GETDATE(), 
+					SentOn = GETDATE(), 
+					AcknowledgementReceivedOn = GETDATE(), 
+			]]>
+		</if>
+		<![CDATA[
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceOutgoingMessageLogId = #{outgoingMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateOutgoingFailedErrorMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.OutgoingErrorMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_OutgoingMessageLogErrorInfo
+			SET		ErrorCode = #{errorCode},
+		]]>
+		<if test="errorMessage != null and errorMessage != ''">
+			<![CDATA[ Message = #{errorMessage}, ]]>
+		</if>
+		<![CDATA[
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceOutgoingMessageLogErrorInfoId = #{outgoingErrorMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateOutgoingResendMessageLogStats" 
+			parameterType="com.ngen.cosys.message.resend.model.OutgoingResendMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_OutgoingMessageResendLog
+			SET		FailedTime = #{failedTime},
+					RetryLimit = #{retryLimit},
+					AlertStatus = #{alertStatus},
+					NotificationTime = #{notificationTime},
+					ResentTime = #{resentTime},
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	OutgoingMessageLogId = #{outgoingMessageLogId}
+			AND		OutgoingMessageLogErrorInfoId = #{outgoingErrorMessageLogId}
+		]]>
+	</update>
+	
+	<insert id="sqlInsertOutgoingResendMessageLogStats" 
+			parameterType="com.ngen.cosys.message.resend.model.OutgoingResendMessageLog" 
+			useGeneratedKeys="true" 
+			keyProperty="outgoingResendMessageLogId" keyColumn="InterfaceOutgoingMessageResendLogId">
+		<![CDATA[
+			INSERT INTO Interface_OutgoingMessageResendLog
+			(
+				OutgoingMessageLogId, OutgoingMessageLogErrorInfoId, 
+				FailedTime, RetryLimit, AlertStatus, NotificationTime, ResentTime,
+				CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+			)
+			VALUES
+			(
+				#{outgoingMessageLogId}, #{outgoingErrorMessageLogId}, 
+				#{failedTime}, #{retryLimit}, #{alertStatus}, #{notificationTime}, #{resentTime},
+				#{createdBy}, GETDATE(), NULL, NULL
+			)
+		]]>
+	</insert>
+	
+	<resultMap id="incomingESBMessageLogDetailsMap" 
+				type="com.ngen.cosys.message.resend.model.IncomingESBMessageLog">
+		<result column="InterfaceIncomingESBMessageLogId" property="incomingESBMessageLogId" />
+		<result column="ChannelReceived" property="medium" />
+		<result column="InterfacingSystem" property="interfacingSystem" />
+		<result column="SenderOriginAddress" property="senderOriginAddress" />
+		<result column="MessageType" property="messageType" />
+		<result column="SubMessageTpe" property="subMessageType" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="AirportCode" property="airportCode" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="ReceivedOn" property="receivedOn" />
+		<result column="Message" property="message" />
+		<result column="VersionNo" property="versionNo" />
+		<result column="SequenceNo" property="sequenceNo" />
+		<result column="Status" property="status" />
+		<result column="CreatedDateTime" property="createdOn" />
+		<result column="ESBSequenceNo" property="messageESBSequenceNo" />
+	</resultMap>
+	
+	<select id="sqlSelectIncomingESBProcessingMessageLog"
+			parameterType="com.ngen.cosys.message.resend.model.IncomingMessageSequence"
+			resultMap="incomingESBMessageLogDetailsMap">
+		<![CDATA[
+			SELECT	
+		]]>
+			<if test="typeFFR or typeASMSSM">
+				<include refid="caseTop50" />
+			</if>
+			<if test="typeFFM">
+				<include refid="caseTop100" />
+			</if>
+			<if test="typeCMD">
+				<include refid="caseTop1000" />
+			</if>
+			<if test="typeFWB or typeFHL">
+				<include refid="caseTop300" />
+
+			</if>
+			<if test="typeASMSSMFFR or typeASMSSMFFMFFR">
+				<include refid="caseTop200" />
+			</if>
+		<![CDATA[
+					Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId,
+					Interface_IncomingESBMessageLog.ChannelReceived,
+					Interface_IncomingESBMessageLog.InterfacingSystem,
+					Interface_IncomingESBMessageLog.SenderOriginAddress,
+					Interface_IncomingESBMessageLog.MessageType,
+					Interface_IncomingESBMessageLog.SubMessageType,
+					Interface_IncomingESBMessageLog.CarrierCode,
+					Interface_IncomingESBMessageLog.FlightNumber,
+					Interface_IncomingESBMessageLog.FlightOriginDate,
+					Interface_IncomingESBMessageLog.AirportCode,
+					Interface_IncomingESBMessageLog.ShipmentNumber,
+					Interface_IncomingESBMessageLog.ShipmentDate,
+					Interface_IncomingESBMessageLog.ReceivedOn,
+					Interface_IncomingESBMessageLog.Message,
+					Interface_IncomingESBMessageLog.VersionNo,
+					Interface_IncomingESBMessageLog.SequenceNo,
+					Interface_IncomingESBMessageLog.MessageContentEndIndicator,
+					Interface_IncomingESBMessageLog.Status,
+					Interface_IncomingESBMessageLog.CreatedDateTime,
+					Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId ESBSequenceNo
+			FROM	Interface_IncomingESBMessageLog
+			WHERE	Interface_IncomingESBMessageLog.InterfacingSystem NOT IN ('MSS_MSTATUS')
+			AND		DATEDIFF(HOUR, Interface_IncomingESBMessageLog.LastUpdatedDateTime, GETDATE()) BETWEEN 2 AND 5
+			AND		Interface_IncomingESBMessageLog.Status = 'PROCESSING'
+		]]>
+		<choose>
+			<when test="typeASMSSM">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM','SSM')
+				]]>
+			</when>
+			<when test="typeCMD">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType = 'CMD'
+				]]>
+			</when>
+			<when test="typeFFM">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FFM'
+				]]>
+			</when>
+			<when test="typeFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FFR'
+				]]>
+			</when>
+			<when test="typeFWB">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FWB'
+				]]>
+			</when>
+			<when test="typeFHL">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FHL'
+				]]>
+			</when>
+			<when test="typeASMSSMFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM','SSM','FFR')
+				]]>
+			</when>
+			<when test="typeASMSSMFFMFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM','SSM','FFM','FFR')
+				]]>
+			</when>
+		</choose>
+		<![CDATA[
+			AND		Interface_IncomingESBMessageLog.ESBSequenceNo IS NOT NULL
+			ORDER BY Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId ASC 
+		]]>
+	</select>
+	
+	<select id="sqlSelectIncomingESBInitiatedMessageLog"
+			parameterType="com.ngen.cosys.message.resend.model.IncomingMessageSequence"
+			resultMap="incomingESBMessageLogDetailsMap">
+		<![CDATA[
+			SELECT	
+		]]>
+			<if test="typeFFM or typeFFR or typeASMSSM">
+				<include refid="caseTop100" />
+			</if>
+			<if test="typeASMSSMFFR or typeASMSSMFFMFFR">
+				<include refid="caseTop200" />
+			</if>
+			<if test="typeCMD">
+				<include refid="caseTop1000" />
+			</if>
+			<if test="typeFWB or typeFHL">
+				<include refid="caseTop300" />
+			</if>
+		<![CDATA[
+					Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId,
+					Interface_IncomingESBMessageLog.ChannelReceived,
+					Interface_IncomingESBMessageLog.InterfacingSystem,
+					Interface_IncomingESBMessageLog.SenderOriginAddress,
+					Interface_IncomingESBMessageLog.MessageType,
+					Interface_IncomingESBMessageLog.SubMessageType,
+					Interface_IncomingESBMessageLog.CarrierCode,
+					Interface_IncomingESBMessageLog.FlightNumber,
+					Interface_IncomingESBMessageLog.FlightOriginDate,
+					Interface_IncomingESBMessageLog.AirportCode,
+					Interface_IncomingESBMessageLog.ShipmentNumber,
+					Interface_IncomingESBMessageLog.ShipmentDate,
+					Interface_IncomingESBMessageLog.ReceivedOn,
+					Interface_IncomingESBMessageLog.Message,
+					Interface_IncomingESBMessageLog.VersionNo,
+					Interface_IncomingESBMessageLog.SequenceNo,
+					Interface_IncomingESBMessageLog.MessageContentEndIndicator,
+					Interface_IncomingESBMessageLog.Status,
+					Interface_IncomingESBMessageLog.CreatedDateTime,
+					Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId ESBSequenceNo
+			FROM	Interface_IncomingESBMessageLog
+			
+			WHERE	Interface_IncomingESBMessageLog.InterfacingSystem NOT IN ('MSS_MSTATUS')
+		]]>
+		<choose>
+			<when test="typeASMSSM">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -12, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM', 'SSM')
+				]]>
+			</when>
+			<when test="typeCMD">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -12, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType = 'CMD'
+				]]>
+			</when>
+			<when test="typeFFM">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -5, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FFM'
+				]]>
+			</when>
+			<when test="typeFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -8, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FFR'
+				]]>
+			</when>
+			<when test="typeFWB">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -8, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FWB'
+				]]>
+			</when>
+			<when test="typeFHL">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -8, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType = 'FHL'
+				]]>
+			</when>
+			<when test="typeASMSSMFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -12, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM','SSM','FFR')
+				]]>
+			</when>
+			<when test="typeASMSSMFFMFFR">
+				<![CDATA[
+					AND	Interface_IncomingESBMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, -12, GETDATE()) AND GETDATE()
+					AND	Interface_IncomingESBMessageLog.MessageType IN ('ASM','SSM','FFM','FFR')
+				]]>
+			</when>
+		</choose>
+		<![CDATA[
+			AND		Interface_IncomingESBMessageLog.ESBSequenceNo IS NOT NULL
+			AND		Interface_IncomingESBMessageLog.Status = 'INITIATED'			
+			ORDER BY Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId ASC 
+		]]>
+	</select>
+	
+	<select id="sqlVerifyShipmentDuplicateReference"
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBMessageLog"
+			resultType="java.math.BigInteger">
+		<![CDATA[
+			SELECT 	InterfaceIncomingESBMessageLogId
+			FROM	Interface_IncomingESBMessageLog
+			WHERE	MessageType = #{messageType}
+			AND		ShipmentNumber = #{shipmentNumber}
+		]]>
+		<choose>
+			<when test="interfacingSystem == 'ARINC'">
+				<![CDATA[ AND InterfacingSystem IN ('EDIFLY','RX','CCN') ]]>
+			</when>
+			<when test="interfacingSystem == 'EDIFLY'">
+				<![CDATA[ AND InterfacingSystem IN ('ARINC','RX','CCN') ]]>
+			</when>
+			<when test="interfacingSystem == 'RX'">
+				<![CDATA[ AND InterfacingSystem IN ('ARINC','EDIFLY','CCN') ]]>
+			</when>
+			<when test="interfacingSystem == 'CCN'">
+				<![CDATA[ AND InterfacingSystem IN ('ARINC','EDIFLY','RX') ]]>
+			</when>
+		</choose>
+		<![CDATA[
+			AND	VersionNo = #{versionNo}
+			AND Status NOT IN ('DUPLICATE','PROCESSED')
+		]]>
+	</select>
+	
+	<update id="sqlUpdateIncomingESBMessageDuplicateReference" parameterType="java.math.BigInteger">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLog
+			SET		Status = 'DUPLICATE', 
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogId = #{incomingESBMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIncomingESBMessageReProcessingState" parameterType="java.math.BigInteger">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLog
+			SET		LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogId = #{incomingESBMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIncomingESBMessageProcessingState" parameterType="java.math.BigInteger">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLog
+			SET		Status = 'PROCESSING', 
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogId = #{incomingESBMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIncomingESBResentSequenceMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLog
+			SET		Status = #{status}, 
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogId = #{incomingESBMessageLogId}
+		]]>
+	</update>
+	
+	<insert id="sqlInsertIncomingESBErrorMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBErrorMessageLog" 
+			useGeneratedKeys="true" 
+			keyProperty="incomingESBErrorMessageLogId" keyColumn="InterfaceIncomingESBMessageLogErrorInfoId">
+		<![CDATA[
+			INSERT INTO Interface_IncomingESBMessageLogErrorInfo
+			(
+				InterfaceIncomingESBMessageLogId, ErrorCode, Message, LineItem,
+				CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+			)
+			VALUES
+			(
+				#{incomingESBMessageLogId}, #{errorCode}, #{errorMessage}, #{lineItem},
+				'BATCH', GETDATE(), NULL, NULL
+			)
+		]]>
+	</insert>
+	
+	<resultMap id="incomingESBMessageErrorLogDetailsMap" 
+				type="com.ngen.cosys.message.resend.model.IncomingESBErrorMessageLog">
+		<result column="InterfaceIncomingESBMessageLogId" property="incomingESBMessageLogId" />
+		<result column="InterfaceIncomingESBMessageLogErrorInfoId" property="incomingESBErrorMessageLogId" />
+		<result column="ChannelReceived" property="medium" />
+		<result column="InterfacingSystem" property="interfacingSystem" />
+		<result column="SenderOriginAddress" property="senderOriginAddress" />
+		<result column="MessageType" property="messageType" />
+		<result column="SubMessageTpe" property="subMessageType" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="ReceivedOn" property="receivedOn" />
+		<result column="Message" property="message" />
+		<result column="VersionNo" property="versionNo" />
+		<result column="SequenceNo" property="sequenceNo" />
+		<result column="Status" property="status" />
+		<result column="ErrorCode" property="errorCode" />
+		<result column="CreatedDateTime" property="createdOn" />
+		<result column="InterfaceIncomingESBMessageResendLogId" 
+				property="incomingESBResendMessageLog.incomingESBResendMessageLogId" />
+		<result column="FailedTime" property="incomingESBResendMessageLog.failedTime" />
+		<result column="RetryLimit" property="incomingESBResendMessageLog.retryLimit" />
+		<result column="AlertStatus" property="incomingESBResendMessageLog.alertStatus" />
+		<result column="NotificationTime" property="incomingESBResendMessageLog.notificationTime" />
+		<result column="ResentTime" property="incomingESBResendMessageLog.resentTime" />
+	</resultMap>
+	
+	<select id="sqlSelectIncomingESBMessageErrorLogDetails" resultMap="incomingESBMessageErrorLogDetailsMap">
+		<![CDATA[
+			SELECT	TOP(500)
+					Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId,
+					Interface_IncomingESBMessageLogErrorInfo.InterfaceIncomingESBMessageLogErrorInfoId,
+					Interface_IncomingESBMessageLog.ChannelReceived,
+					Interface_IncomingESBMessageLog.InterfacingSystem,
+					Interface_IncomingESBMessageLog.SenderOriginAddress,
+					Interface_IncomingESBMessageLog.MessageType,
+					Interface_IncomingESBMessageLog.SubMessageType,
+					Interface_IncomingESBMessageLog.CarrierCode,
+					Interface_IncomingESBMessageLog.FlightNumber,
+					Interface_IncomingESBMessageLog.FlightOriginDate,
+					Interface_IncomingESBMessageLog.ShipmentNumber,
+					Interface_IncomingESBMessageLog.ShipmentDate,
+					Interface_IncomingESBMessageLog.ReceivedOn,
+					Interface_IncomingESBMessageLog.Message,
+					Interface_IncomingESBMessageLog.VersionNo,
+					Interface_IncomingESBMessageLog.SequenceNo,
+					Interface_IncomingESBMessageLog.MessageContentEndIndicator,
+					Interface_IncomingESBMessageLog.Status,
+					Interface_IncomingESBMessageLogErrorInfo.ErrorCode,
+					Interface_IncomingESBMessageLogErrorInfo.CreatedDateTime,
+					Interface_IncomingESBMessageResendLog.InterfaceIncomingESBMessageResendLogId,
+					Interface_IncomingESBMessageResendLog.FailedTime,
+					Interface_IncomingESBMessageResendLog.RetryLimit,
+					Interface_IncomingESBMessageResendLog.AlertStatus,
+					Interface_IncomingESBMessageResendLog.NotificationTime,
+					Interface_IncomingESBMessageResendLog.ResentTime
+			FROM	Interface_IncomingESBMessageLog
+				INNER JOIN
+					Interface_IncomingESBMessageLogErrorInfo
+				ON	Interface_IncomingESBMessageLogErrorInfo.InterfaceIncomingESBMessageLogId 
+						= Interface_IncomingESBMessageLog.InterfaceIncomingESBMessageLogId
+				LEFT JOIN
+					Interface_IncomingESBMessageResendLog
+				ON	Interface_IncomingESBMessageResendLog.IncomingESBMessageLogErrorInfoId
+						= Interface_IncomingESBMessageLogErrorInfo.InterfaceIncomingESBMessageLogErrorInfoId
+				AND	Interface_IncomingESBMessageResendLog.IncomingESBMessageLogId
+						= Interface_IncomingESBMessageLogErrorInfo.InterfaceIncomingESBMessageLogId
+			WHERE	Interface_IncomingESBMessageLog.CreatedDateTime
+						BETWEEN DATEADD(HOUR, -3, GETDATE()) AND GETDATE()
+			AND		Interface_IncomingESBMessageLog.InterfacingSystem NOT IN ('MSS_MSTATUS')
+			AND		Interface_IncomingESBMessageLog.Status IN ('EXCEPTION', 'FAILED')
+			AND		Interface_IncomingESBMessageLogErrorInfo.ErrorCode IN ('EXCEPTION', 'FAILED')
+			AND		Interface_IncomingESBMessageLogErrorInfo.CreatedDateTime 
+						BETWEEN DATEADD(HOUR, -3, GETDATE()) AND GETDATE()
+		]]>
+	</select>
+	
+	<update id="sqlUpdateIncomingESBResentMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBErrorMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLog
+			SET		Status = #{status}, 
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogId = #{incomingESBMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIncomingESBFailedErrorMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBErrorMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageLogErrorInfo
+			SET		ErrorCode = #{errorCode},
+		]]>
+		<if test="errorMessage != null and errorMessage != ''">
+			<![CDATA[ Message = #{errorMessage}, ]]>
+		</if>
+		<![CDATA[
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	InterfaceIncomingESBMessageLogErrorInfoId = #{incomingESBErrorMessageLogId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIncomingESBResendMessageLogStats" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBResendMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingESBMessageResendLog
+			SET		FailedTime = #{failedTime},
+					RetryLimit = #{retryLimit},
+					AlertStatus = #{alertStatus},
+					NotificationTime = #{notificationTime},
+					ResentTime = #{resentTime},
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	IncomingESBMessageLogId = #{incomingESBMessageLogId}
+			AND		IncomingESBMessageLogErrorInfoId = #{incomingESBErrorMessageLogId}
+		]]>
+	</update>
+	
+	<insert id="sqlInsertIncomingESBResendMessageLogStats" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingESBResendMessageLog" 
+			useGeneratedKeys="true" 
+			keyProperty="incomingESBResendMessageLogId" keyColumn="InterfaceIncomingESBMessageResendLogId">
+		<![CDATA[
+			INSERT INTO Interface_IncomingESBMessageResendLog
+			(
+				IncomingESBMessageLogId, IncomingESBMessageLogErrorInfoId, 
+				FailedTime, RetryLimit, AlertStatus, NotificationTime, ResentTime,
+				CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+			)
+			VALUES
+			(
+				#{incomingESBMessageLogId}, #{incomingESBErrorMessageLogId}, 
+				#{failedTime}, #{retryLimit}, #{alertStatus}, #{notificationTime}, #{resentTime},
+				#{createdBy}, GETDATE(), NULL, NULL
+			)
+		]]>
+	</insert>
+	
+	<resultMap id="incomingFFMLogsMap" 
+				type="com.ngen.cosys.message.resend.model.IncomingFFMLog">
+		<id column="IncomingFFMLogId" property="incomingFFMLogId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="AirportCode" property="airportCode" />
+		<result column="NilCargo" property="nilCargo" />
+		<result column="LastPartReceived" property="lastPartReceived" />
+		<result column="AllPartsReceived" property="allPartsReceived" />
+		<result column="MessageProcessedTime" property="messageProcessedTime" />
+		<result column="MessageStatus" property="messageStatus" />
+		<result column="Message" property="message" />
+		<!-- FFM Message Log Details -->
+		<collection property="incomingFFMLogDetails" javaType="List"
+			ofType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail" 
+			select="selectIncomingFFMLogDetails"
+			column="{incomingFFMLogId=IncomingFFMLogId}" />
+	</resultMap>
+	
+	<resultMap id="incomingFFMLogDetailsMap" 
+				type="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail">
+		<id column="IncomingFFMLogDetailId" property="incomingFFMLogDetailId" />
+		<id column="IncomingFFMLogId" property="incomingFFMLogId" />
+		<result column="ESBSequenceNo" property="messageESBSequenceNo" />
+		<result column="Channel" property="channel" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="Segment" property="segment" />
+		<result column="Message" property="message" />
+		<result column="VersionNo" property="versionNo" />
+		<result column="SequenceNo" property="sequenceNo" />
+		<result column="MessageStatus" property="messageStatus" />
+		<result column="MessageOrder" property="messageOrder" />
+	</resultMap>
+	
+	<select id="sqlSelectIncomingFFMLogs" resultMap="incomingFFMLogsMap">
+		<![CDATA[
+			SELECT 	IncomingFFMLogId, FlightKey, DateSTA, AirportCode, 
+					NilCargo, LastPartReceived, AllPartsReceived,
+					MessageProcessedTime, MessageStatus, Message
+			FROM 	Interface_IncomingFFMLog
+			WHERE	MessageStatus = 'HOLD'
+			AND 	CAST(DateSTA AS DATE) BETWEEN DATEADD(DAY, -3, GETDATE()) 
+						AND DATEADD(DAY, +7, GETDATE())
+			ORDER BY DateSTA ASC
+		]]>
+	</select>
+	
+	<select id="sqlSelectIncomingDiscardMessageLog" parameterType="com.ngen.cosys.message.resend.model.RerouteMessageLog" resultType="com.ngen.cosys.message.resend.model.RerouteMessageLog">
+		<![CDATA[
+			SELECT TOP(1000) interfaceIncomingMessageLogId , status, message
+			FROM 	Interface_IncomingMessageLog
+			WHERE	Status = #{messageStatus}
+			AND 	CAST(CreatedDateTime AS DATE) BETWEEN DATEADD(DAY, -1, GETDATE()) 
+						AND DATEADD(DAY, +1, GETDATE())
+			ORDER BY CreatedDateTime ASC
+		]]>
+	</select>
+	
+	<update id="sqlUpdateIncomingMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.RerouteMessageLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingMessageLog
+			SET		Status = #{messageStatus}
+					
+			WHERE	InterfaceIncomingMessageLogId = #{interfaceIncomingMessageLogId}
+		]]>
+	</update>
+	
+	<insert id="insertOutgoingMessageLog" 
+			parameterType="com.ngen.cosys.message.resend.model.OutgoingMessageLog" 
+			useGeneratedKeys="true" 
+			keyProperty="outgoingMessageLogId" keyColumn="InterfaceOutgoingMessageLogId">
+		INSERT INTO Interface_OutgoingMessageLog
+		(
+			ChannelSent, InterfacingSystem, SenderOriginAddress,
+			MessageType, SubMessageType, CarrierCode, FlightNumber, 
+			FlightOriginDate, ShipmentNumber, ShipmentDate, 
+			RequestedOn, SentOn, AcknowledgementReceivedOn,
+			Message, VersionNo, SequenceNo, MessageContentEndIndicator, 
+			Status, CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+		)
+		VALUES
+		(
+			#{medium}, #{interfacingSystem}, #{senderOriginAddress},
+			#{messageType}, #{subMessageType}, #{carrierCode}, #{flightNumber}, 
+			#{flightOriginDate}, #{shipmentNumber}, #{shipmentDate},
+			#{requestedOn}, #{sentOn}, #{acknowledgementReceivedOn}, 
+			#{message}, #{versionNo}, #{sequenceNo}, #{messageContentEndIndicator},
+			#{status}, #{createdBy}, GETDATE(), NULL, NULL
+		)
+	</insert>
+	
+	<select id="selectIncomingFFMLogDetails" resultMap="incomingFFMLogDetailsMap">
+		<![CDATA[
+			SELECT 	IncomingFFMLogDetailId, IncomingFFMLogId, ESBSequenceNo,
+					Channel, FlightKey, DateSTA, Segment,
+					Message, VersionNo, SequenceNo, MessageStatus,
+					MessageOrder = ROW_NUMBER() OVER (PARTITION BY FlightKey, DateSTA, Segment, VersionNo, SequenceNo
+						ORDER BY ESBSequenceNo DESC
+					)
+			FROM 	Interface_IncomingFFMLogDetail
+			WHERE	IncomingFFMLogId = #{incomingFFMLogId}
+			AND		MessageStatus = 'HOLD'
+			ORDER BY ESBSequenceNo
+		]]>
+	</select>
+   
+   <insert id="sqlInsertIncomingFFMLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLog" 
+			useGeneratedKeys="true" 
+			keyProperty="incomingFFMLogId" keyColumn="IncomingFFMLogId">
+		<![CDATA[
+			INSERT INTO Interface_IncomingFFMLog
+			(
+				FlightKey, DateSTA, AirportCode, NilCargo, LastPartReceived, 
+				AllPartsReceived, MessageProcessedTime, MessageStatus, Message,
+				CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+			)
+			VALUES
+			(
+				#{flightKey}, #{dateSTA}, #{airportCode}, #{nilCargo}, #{lastPartReceived}, 
+				#{allPartsReceived}, #{messageProcessedTime}, #{messageStatus}, #{message},
+				'BATCH', GETDATE(), NULL, NULL
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateIncomingFFMLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLog">
+		<![CDATA[
+			UPDATE 	Interface_IncomingFFMLog
+			SET		NilCargo = #{nilCargo},
+					LastPartReceived = #{lastPartReceived},
+					AllPartsReceived = #{allPartsReceived},
+					MessageProcessedTime = #{messageProcessedTime},
+					MessageStatus = #{messageStatus},
+					Message = #{message}, 
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	IncomingFFMLogId = #{incomingFFMLogId}
+		]]>
+	</update>
+	
+	<insert id="sqlInsertIncomingFFMLogDetail" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail" 
+			useGeneratedKeys="true" 
+			keyProperty="incomingFFMLogDetailId" keyColumn="IncomingFFMLogDetailId">
+		<![CDATA[
+			INSERT INTO Interface_IncomingFFMLogDetail
+			(
+				IncomingFFMLogId, ESBSequenceNo, Channel, FlightKey, DateSTA, Segment, 
+				Message, VersionNo, SequenceNo, MessageStatus, 
+				CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+			)
+			VALUES
+			(
+				#{incomingFFMLogId}, #{messageESBSequenceNo}, #{channel}, #{flightKey}, #{dateSTA}, #{segment}, 
+				#{message}, #{versionNo}, #{sequenceNo}, #{messageStatus},
+				'BATCH', GETDATE(), NULL, NULL
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateIncomingFFMLogDetail" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail">
+		<![CDATA[
+			UPDATE 	Interface_IncomingFFMLogDetail
+			SET		MessageStatus = #{messageStatus},
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	IncomingFFMLogDetailId = #{incomingFFMLogDetailId}
+		]]>
+	</update>
+	
+	<delete id="sqldeleteIncomingFFMLogDetail" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail">
+		<![CDATA[
+			delete from 	Interface_IncomingFFMLogDetail			
+			WHERE	IncomingFFMLogDetailId = #{incomingFFMLogDetailId}			
+			
+		]]>
+	</delete>
+	<delete id="sqldeleteIncomingFFMLog" 
+			parameterType="com.ngen.cosys.message.resend.model.IncomingFFMLogDetail">
+		<![CDATA[			
+			delete from 	Interface_IncomingFFMLog			
+			WHERE	IncomingFFMLogId = #{incomingFFMLogId}
+		]]>
+	</delete>
+	
+	<!-- Incoming Messages -->
+	<insert id="sqlInsertIncomingMessagesLog"
+		parameterType="com.ngen.cosys.message.resend.model.CargoMessageInLog"
+		keyColumn="InterfaceIncomingMessageLogId" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO Interface_IncomingMessageLog(
+			ChannelReceived,
+			InterfacingSystem,
+			SenderOriginAddress,
+			MessageType,
+			SubMessageType,
+			CarrierCode,
+			FlightNumber,
+			FlightOriginDate,
+			ShipmentNumber,
+			ShipmentDate,
+			ReceivedOn,
+			Message,
+			VersionNo,
+			SequenceNo,
+			MessageContentEndIndicator,
+			Status,
+			ESBMessageLogId,
+			AirportCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)VALUES(
+			#{channel},
+			#{interfacingSystem},
+			#{senderOriginAddress},
+			#{msgType},
+			#{subMsgType},
+			#{carrCode},
+			#{fltNo},
+			#{fltDate},
+			#{awbNo},
+			#{awbDate},
+			GETDATE(),
+			#{request},
+			#{messageVersion},
+			#{successMsgsSeqNo},
+			#{messageContentEndIndicator},
+			#{status},
+			#{esbMessageLogId},
+			#{airportCode},
+			#{createdUserId},
+			getDate(),
+			#{modifiedUserId},
+			#{modifiedDate}
+		)
+	</insert>
+	
+	
+	<!--  Get Leading Zero Configuration for a Message -->
+	<select 
+		id="sqlGetLeadingZeros" 
+		parameterType="com.ngen.cosys.message.resend.model.MessageLeadingZerosDefinitionModel" 
+		resultType="com.ngen.cosys.message.resend.model.MessageLeadingZerosDefinitionModel">
+		WITH MaxMessageDefinitionForZeros AS
+		(
+			select				
+				MessageDefinitionForZeros.CarrierCode,
+			
+				MessageDefinitionForZeros.MessageType,
+				MessageDefinitionForZeros.FlowType,
+				MessageDefinitionForZeros.ReferenceBy,
+				
+				MessageDefinitionForZeros.ZerosToAppend,
+				MessageDefinitionForZeros.ZerosToRemove,
+				RowNumber
+			from(
+				select
+					ROW_NUMBER() 
+						OVER(ORDER BY 
+								Interface_DefineLeadingZerosForMessage.CarrierCode, 
+								Interface_DefineLeadingZerosForMessage.FlightType, 
+								Interface_DefineLeadingZerosForMessage.MessageType, 
+								Interface_DefineLeadingZerosForMessage.FlowType, 
+								Interface_DefineLeadingZerosForMessage.ReferenceBy) AS RowNumber,
+					case 
+						when (Interface_DefineLeadingZerosForMessage.CarrierCode is null) then
+							#{carrierCode}
+						else
+							Interface_DefineLeadingZerosForMessage.CarrierCode
+						end CarrierCode,
+					
+					case 
+						when(Interface_DefineLeadingZerosForMessage.MessageType is null) then
+							#{messageType}
+						else
+							Interface_DefineLeadingZerosForMessage.MessageType
+					end MessageType,
+					case 
+						when (Interface_DefineLeadingZerosForMessage.FlowType is null) then
+							#{flowType}
+						else
+							Interface_DefineLeadingZerosForMessage.FlowType
+					end FlowType,
+					case 
+						when (Interface_DefineLeadingZerosForMessage.ReferenceBy is null) then
+							#{referenceBy}
+						else
+							Interface_DefineLeadingZerosForMessage.ReferenceBy
+					end ReferenceBy,
+					
+					isnull(Interface_DefineLeadingZerosForMessage.ZerosToAppend,0) ZerosToAppend,
+					isnull(Interface_DefineLeadingZerosForMessage.ZerosToRemove, 0) ZerosToRemove
+				from
+					Interface_DefineLeadingZerosForMessage
+				)MessageDefinitionForZeros
+			where
+		
+				MessageDefinitionForZeros.CarrierCode = #{carrierCode}
+				and 
+				MessageDefinitionForZeros.MessageType = #{messageType}
+				
+				<if test="flowType != null">
+				 and 
+				MessageDefinitionForZeros.FlowType= #{flowType}
+				</if>
+				<if test="referenceBy != null">
+				 and
+				MessageDefinitionForZeros.ReferenceBy= #{referenceBy}
+				</if>
+				
+		)select
+				MaxMessageDefinitionForZeros.CarrierCode,				
+				MaxMessageDefinitionForZeros.MessageType,
+				MaxMessageDefinitionForZeros.FlowType,
+				MaxMessageDefinitionForZeros.ReferenceBy,				
+				MaxMessageDefinitionForZeros.ZerosToAppend,
+				MaxMessageDefinitionForZeros.ZerosToRemove
+			from
+				MaxMessageDefinitionForZeros
+			where  MaxMessageDefinitionForZeros.RowNumber = (select
+			max(MaxMessageDefinitionForZeros.RowNumber) from MaxMessageDefinitionForZeros)	
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		<select id="sqlSelectAisatsOutgoingMessageErrorLogDetails" resultMap="outgoingMessageErrorLogDetailsMap">
+		<![CDATA[
+		
+			SELECT	TOP(200)
+					Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId,
+					Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogErrorInfoId,
+					Interface_OutgoingMessageLog.ChannelSent,
+					Interface_OutgoingMessageLog.InterfacingSystem,
+					Interface_OutgoingMessageLog.SenderOriginAddress,
+					Interface_OutgoingMessageLog.MessageType,
+					Interface_OutgoingMessageLog.SubMessageType,
+					Interface_OutgoingMessageLog.CarrierCode,
+					Interface_OutgoingMessageLog.FlightNumber,
+					Interface_OutgoingMessageLog.FlightOriginDate,
+					Interface_OutgoingMessageLog.ShipmentNumber,
+					Interface_OutgoingMessageLog.ShipmentDate,
+					Interface_OutgoingMessageLog.RequestedOn,
+					Interface_OutgoingMessageLog.SentOn,
+					Interface_OutgoingMessageLog.AcknowledgementReceivedOn,
+					Interface_OutgoingMessageLog.Message,
+					Interface_OutgoingMessageLog.VersionNo,
+					Interface_OutgoingMessageLog.SequenceNo,
+					Interface_OutgoingMessageLog.Status,
+					Interface_OutgoingMessageLogErrorInfo.ErrorCode,
+					Interface_OutgoingMessageLogErrorInfo.CreatedDateTime,
+					Interface_OutgoingMessageResendLog.InterfaceOutgoingMessageResendLogId,
+					Interface_OutgoingMessageResendLog.FailedTime,
+					Interface_OutgoingMessageResendLog.RetryLimit,
+					Interface_OutgoingMessageResendLog.AlertStatus,
+					Interface_OutgoingMessageResendLog.NotificationTime,
+					Interface_OutgoingMessageResendLog.ResentTime
+			FROM	Interface_OutgoingMessageLog
+				LEFT JOIN
+					Interface_OutgoingMessageLogErrorInfo
+				ON	Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogId 
+						= Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId
+				LEFT JOIN
+					Interface_OutgoingMessageResendLog
+				ON	Interface_OutgoingMessageResendLog.OutgoingMessageLogErrorInfoId 
+						= Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogErrorInfoId
+				AND	Interface_OutgoingMessageResendLog.OutgoingMessageLogId 
+						= Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogId
+			WHERE	
+	          Interface_OutgoingMessageLog.CreatedDateTime
+							BETWEEN DATEADD(HOUR, - (cast((select ParameterValueChar from App_SystemParameters where ParameterCode = 'OUTBOUND_MESSAGE_RESEND_INTERVAL') as numeric)), GETDATE()) AND DATEADD(DAY, +7, GETDATE())			 			 
+			AND Interface_OutgoingMessageLog.Status IN ('ESBERROR','EXCEPTION', 'FAILED', 'FAILURE')			
+			AND		Interface_OutgoingMessageLog.Message IS NOT NULL
+			AND		Interface_OutgoingMessageLog.InterfacingSystem  IN ('BIALEDI','BIALICEGATEIN','BIALICEGATEOUT','BIAL','ICEGATE','SAP','SITA','FEDEX','FIDS')
+			
+						and 
+						isnull( 	Interface_OutgoingMessageResendLog.RetryLimit,0)<
+						(select cast(ParameterValueChar as numeric) from App_SystemParameters where ParameterCode='MESSAGE_RESEND_RETRY_LIMIT')
+			
+			ORDER BY Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId ASC
+		]]>
+	</select>
+	
+	
+	
+	
+	
+		<select id="sqlSelectMessageOutgoingEndPointConfigAisatsOutgoing" 
+			resultType="com.ngen.cosys.message.resend.config.IncomingInterfaceConfig">
+		<![CDATA[
+			
+           
+				select
+               SystemName AS "systemName",
+               ConnectorEndPoint AS "endPointUrl",
+               MediaType AS "medium"
+               from
+               Interface_ESBConnectorEndPointMapping
+		]]>
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>

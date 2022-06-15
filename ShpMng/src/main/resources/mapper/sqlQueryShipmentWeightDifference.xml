@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentWeightDifferenceMapper">
+	
+	<select id="sqlGetShipmentMasterWeightDiffrenceWithInventory"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel"
+		resultType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		<![CDATA[
+			select	
+				(Shipment_Master.Weight - InventoryFreightOut.Weight) as differenceWeight,
+				case 
+					when (Shipment_Master.Weight - InventoryFreightOut.Weight) > 0 then
+						1
+					else
+						0
+					end shipmentMasterIsHigher,
+				case 
+					when (InventoryFreightOut.Weight - Shipment_Master.Weight) > 0 then
+						1
+					else
+						0
+					end shipmentInventoryIsHigher
+			from
+				Shipment_Master inner join
+				(
+					select
+						InventoryFreightOut.ShipmentId,
+						sum(InventoryFreightOut.Pieces) Pieces,
+						sum(InventoryFreightOut.Weight) Weight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							sum(Shipment_Inventory.Pieces) Pieces,
+							sum(Shipment_Inventory.Weight) Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = #{shipmentId}
+						group by
+							Shipment_Inventory.Shipment_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							sum(Shipment_FreightOut.Pieces) Pieces,
+							sum(Shipment_FreightOut.Weight) Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = #{shipmentId}
+						group by
+							Shipment_FreightOut.ShipmentId
+						)InventoryFreightOut
+					group by
+						InventoryFreightOut.ShipmentId
+				)InventoryFreightOut
+					on Shipment_Master.ShipmentId = InventoryFreightOut.ShipmentId
+			where
+				Shipment_Master.PartShipment = 0 and
+				Shipment_Master.DeliveredOn is null and 
+				Shipment_Master.Weight <> InventoryFreightOut.Weight and
+				Shipment_Master.Pieces >= InventoryFreightOut.Pieces and	
+				Shipment_Master.Origin not in (#{tenantAirport}, #{tenantCity}) and
+				Shipment_Master.ShipmentId = #{shipmentId}
+	]]>
+	</select>
+	
+	<!-- Increase -->
+	<update id="sqlIncreaseShipmentWeightToInventory"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Shipment_Inventory set 
+			Weight = Weight + #{differenceWeight},
+			LastUpdatedUser_Code = #{createdBy},
+			LastUpdated_DateTime = getDate() 
+		where Shipment_Inventory.ShipmentInventory_Id in (
+			select max(ShipmentInventory_Id) from Shipment_Inventory where Shipment_ID = #{shipmentId})
+	</update>
+	
+	<update id="sqlIncreaseShipmentWeightToVerification"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Imp_ShipmentVerification set 
+			BreakDownWeight = BreakDownWeight + #{differenceWeight},
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = getDate()
+		where ImpShipmentVerificationId in (
+			select max(ImpShipmentVerificationId) from Imp_ShipmentVerification where ShipmentId = #{shipmentId})
+			and exists(
+			   select 1
+			   from shipment_inventory 
+			   where Shipment_Id = #{shipmentId}
+			 )
+	</update>
+	
+	<update id="sqlIncreaseShipmentWeightToBreakDownStorageInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Imp_BreakDownStorageInfo set 
+			Weight = Weight + #{differenceWeight},
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = getDate() 
+		where ImpBreakDownStorageInfoId in (
+			select max(ImpBreakDownStorageInfoId) from Imp_BreakDownStorageInfo where DeliveryOrderNo is null and ImpBreakDownULDTrolleyInfoId in(
+				select max(ImpBreakDownULDTrolleyInfoId) from Imp_BreakDownULDTrolleyInfo where ImpShipmentVerificationId in (
+					select max(ImpShipmentVerificationId) from Imp_ShipmentVerification where ShipmentId = #{shipmentId}
+		)))
+	</update>
+	
+	<!-- Decrease -->
+	<update id="sqlDecreaseShipmentWeightToInventory"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Shipment_Inventory set 
+			Weight = Weight + #{differenceWeight},
+			LastUpdatedUser_Code = #{createdBy},
+			LastUpdated_DateTime = getDate() 
+		where Shipment_Inventory.ShipmentInventory_Id in (
+			select max(ShipmentInventory_Id) from Shipment_Inventory where Shipment_ID = #{shipmentId})
+	</update>
+	
+	<update id="sqlDecreaseShipmentWeightToVerification"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Imp_ShipmentVerification set 
+			BreakDownWeight = BreakDownWeight + #{differenceWeight},
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = getDate() 
+		where ImpShipmentVerificationId in (
+			select max(ImpShipmentVerificationId) from Imp_ShipmentVerification where ShipmentId = #{shipmentId})
+	</update>
+	
+	<update id="sqlDecreaseShipmentWeightToBreakDownStorageInfo"
+		parameterType="com.ngen.cosys.shipment.awb.model.ShipmentWeightDifferenceModel">
+		update Imp_BreakDownStorageInfo set 
+			Weight = Weight + #{differenceWeight},
+			LastUpdatedUserCode = #{createdBy},
+			LastUpdatedDateTime = getDate() 
+		where ImpBreakDownStorageInfoId in (
+			select max(ImpBreakDownStorageInfoId) from Imp_BreakDownStorageInfo where ImpBreakDownULDTrolleyInfoId in(
+				select max(ImpBreakDownULDTrolleyInfoId) from Imp_BreakDownULDTrolleyInfo where ImpShipmentVerificationId in (
+					select max(ImpShipmentVerificationId) from Imp_ShipmentVerification where ShipmentId = #{shipmentId}
+		)))		
+	</update>
+		
+</mapper>   

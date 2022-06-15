@@ -1,0 +1,2829 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HouseModel">
+
+	<!-- Query to check airport belong to china -->
+	<select id="sqlCheckAirportBelongsToChina"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+		With AirportBelongingToChina AS(
+				select 
+					Mst_Airport.AirportCode
+				from 
+					Mst_Airport inner join
+					Mst_City
+						on Mst_Airport.AirportCityCode = Mst_City.CityCode inner join
+					Mst_Country
+						on Mst_Country.CountryCode = Mst_City.CountryCode inner join
+					Mst_CodeAdministration_SubGroupDetails
+						on Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode = Mst_Country.CountryCode and
+					Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode = 'COUNTRY_LIST'
+			), ShipmentBookingDestination AS(
+				select
+					TOP 1 Exp_ShipmentFlightBookingDetail.FlightOffPoint as BookingOffPoint
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+					Exp_FlightEvents
+						on Exp_ShipmentFlightBookingDetail.FlightId = Exp_FlightEvents.FlightId
+				where
+					Exp_ShipmentBooking.ShipmentNumber = #{awbNumber} and
+					Exp_ShipmentBooking.ShipmentDate = #{awbDate} and
+					Exp_ShipmentFlightBookingDetail.BookingStatusCode <> 'XX' and
+					Exp_FlightEvents.FlightCompletedAt is null			
+			)
+			select
+				case 
+					when count(1) > 0 then
+						1
+					else
+						0
+					end result
+			from
+				AirportBelongingToChina
+			where
+				(AirportBelongingToChina.AirportCode  = #{destination}
+					OR AirportBelongingToChina.AirportCode = (select ShipmentBookingDestination.BookingOffPoint from ShipmentBookingDestination))	
+		]]>
+	</select>
+
+	<!-- Maintain House Read Queries -->
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		id="MasterAirWayBillResultMap">
+		<id column="ShipmentFreightHouseListByAWBId" property="id" />
+		<result column="ShipmentFreightHouseListByHAWBId"
+			property="houseId" />
+		<result column="AwbPrefix" property="awbPrefix" />
+		<result column="AwbSuffix" property="awbSuffix" />
+		<result column="AwbNumber" property="awbNumber" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="shc" property="shc" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<result column="totalHWB" property="totalHWB" />
+		<result column="totalPieces" property="totalPieces" />
+		<result column="totalWeight" property="totalWeight" />
+		<result column="hawbNumber" property="hawbNumber" />
+		<collection property="maintainHouseDetailsList"
+			select="sqlGetMasterAWBHouseList"
+			column="id=ShipmentFreightHouseListByAWBId,hawbNumber=hawbNumber" />
+	</resultMap>
+
+	<select id="sqlGetMasterAWBInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultMap="MasterAirWayBillResultMap">
+		select
+			Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId,
+			isnull(Shipment_FreightHouseListByAWB.AwbPrefix, substring(Shipment_master.ShipmentNumber, 0, 3)) AwbPrefix,
+			isnull(Shipment_FreightHouseListByAWB.AwbSuffix, substring(Shipment_master.ShipmentNumber, 3, 8)) AwbSuffix,
+			isnull(Shipment_master.ShipmentNumber, Shipment_FreightHouseListByAWB.AwbNumber) AwbNumber,
+			Shipment_FreightHouseListByAWB.Origin Origin,
+			Shipment_FreightHouseListByAWB.Destination Destination,
+			isnull(Shipment_master.Pieces, Shipment_FreightHouseListByAWB.Pieces) Pieces,
+			isnull(Shipment_master.Weight, Shipment_FreightHouseListByAWB.Weight) Weight,
+			isnull(Shipment_master.WeightUnitCode, Shipment_FreightHouseListByAWB.WeightUnitCode) WeightUnitCode,
+			count(Shipment_FreightHouseListByHAWB.HAWBNumber) as totalHWB,
+			sum(Shipment_FreightHouseListByHAWB.Pieces) as totalPieces,
+			sum(Shipment_FreightHouseListByHAWB.Weight) as totalWeight,
+			(
+				select
+					string_agg(SHCS.SpecialHandlingCode, ' ')
+				from(
+					select
+						distinct
+							Shipment_FreightHouseListByHAWBSHC.SpecialHandlingCode
+					from
+						Shipment_FreightHouseListByHAWBSHC inner join
+						Shipment_FreightHouseListByHAWB
+							on Shipment_FreightHouseListByHAWBSHC.ShipmentFreightHouseListByHAWBId = Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId
+					where
+						Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId
+				)SHCS
+			) as shc,
+			#{hawbNumber} hawbNumber
+		from
+			Shipment_FreightHouseListByAWB left join
+			Shipment_FreightHouseListByHAWB 
+				on Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId left join 
+			Shipment_master
+				on Shipment_FreightHouseListByAWB.AwbNumber = Shipment_master.ShipmentNumber and
+					Shipment_FreightHouseListByAWB.AwbDate = Shipment_master.ShipmentDate
+		where
+			AwbNumber= #{awbNumber}
+		group by
+			Shipment_FreightHouseListByAWB.AwbPrefix,
+			Shipment_FreightHouseListByAWB.AwbSuffix,
+			Shipment_FreightHouseListByAWB.AwbNumber,
+			Shipment_FreightHouseListByAWB.Origin,
+			Shipment_FreightHouseListByAWB.Destination,
+			Shipment_FreightHouseListByAWB.Pieces,
+			Shipment_FreightHouseListByAWB.Weight,
+			Shipment_FreightHouseListByAWB.WeightUnitCode,
+			Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId,
+			Shipment_master.ShipmentNumber,
+			Shipment_master.Origin,
+			Shipment_master.Destination,
+			Shipment_master.Pieces,
+			Shipment_master.Weight,
+			Shipment_master.WeightUnitCode
+		union
+		select
+			Shipment_FreightWayBill.ShipmentFreightWayBillId as id,
+			Shipment_FreightWayBill.AwbPrefix,
+			Shipment_FreightWayBill.AwbSuffix,
+			Shipment_FreightWayBill.AwbNumber,
+			Shipment_FreightWayBill.Origin,
+			Shipment_FreightWayBill.Destination,
+			Shipment_FreightWayBill.Pieces,
+			Shipment_FreightWayBill.Weight,
+			Shipment_FreightWayBill.WeightUnitCode,
+			'0' as totalHWB,
+			Shipment_FreightWayBill.Pieces as totalPieces,
+			Shipment_FreightWayBill.Weight as totalWeight,
+			(
+				select
+					string_agg(SHCS.SpecialHandlingCode, ' ')
+				from(
+					select
+						distinct
+							Shipment_FreightWayBillSHC.SpecialHandlingCode
+					from
+						Shipment_FreightWayBillSHC
+					where
+						Shipment_FreightWayBillSHC.ShipmentFreightWayBillId = Shipment_FreightWayBill.ShipmentFreightWayBillId
+				)SHCS
+			) as shc,
+			#{hawbNumber} hawbNumber
+		from
+			Shipment_FreightWayBill 
+		where
+			Shipment_FreightWayBill.AwbNumber= #{awbNumber} and not exists
+			(
+				select 
+					null
+				from
+					Shipment_FreightHouseListByAWB
+				where
+					Shipment_FreightHouseListByAWB.AwbNumber = Shipment_FreightWayBill.AwbNumber and
+					Shipment_FreightHouseListByAWB.AwbDate = Shipment_FreightWayBill.AwbDate
+			)
+		group by
+			Shipment_FreightWayBill.AwbPrefix,
+			Shipment_FreightWayBill.AwbSuffix,
+			Shipment_FreightWayBill.AwbNumber,
+			Shipment_FreightWayBill.Origin,
+			Shipment_FreightWayBill.Destination,
+			Shipment_FreightWayBill.Pieces,
+			Shipment_FreightWayBill.Weight,
+			Shipment_FreightWayBill.WeightUnitCode,
+			Shipment_FreightWayBill.ShipmentFreightWayBillId
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseModel"
+		id="MasterAWBHouseListResultMap">
+		<id column="ShipmentFreightHouseListByAWBId" property="masterAwbId" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="id" />
+		<result column="HAWBNumber" property="hawbNumber" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="NatureOfGoodsDescription"
+			property="natureOfGoods" />
+		<result column="shipperName" property="shipperName" />
+		<result column="consigneeName" property="consigneeName" />
+		<result column="shcs" property="specialHandlingCode" />
+		<result column="sno" property="sNo" />
+	</resultMap>
+
+	<select id="sqlGetMasterAWBHouseList"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultMap="MasterAWBHouseListResultMap">
+		select
+		ROW_NUMBER() OVER(ORDER BY
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId ASC)
+		AS sno,
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId,
+		Shipment_FreightHouseListByHAWB.HAWBNumber,
+		Shipment_FreightHouseListByHAWB.Origin,
+		Shipment_FreightHouseListByHAWB.Destination,
+		Shipment_FreightHouseListByHAWB.Pieces,
+		Shipment_FreightHouseListByHAWB.Weight,
+		Shipment_FreightHouseListByHAWB.NatureOfGoodsDescription,
+		info1.CustomerName as consigneeName,
+		info2.CustomerName as shipperName,
+		Shipment_FreightHouseListByHAWBSHC.shcs
+		from
+		Shipment_FreightHouseListByHAWB left join
+		(select
+		outerSHC.ShipmentFreightHouseListByHAWBId,
+		substring(
+		(
+		Select '
+		'+innerSHC.SpecialHandlingCode AS [text()]
+		From
+		Shipment_FreightHouseListByHAWBSHC as innerSHC
+		Where
+		innerSHC.ShipmentFreightHouseListByHAWBId =
+		outerSHC.ShipmentFreightHouseListByHAWBId
+		ORDER BY
+		innerSHC.ShipmentFreightHouseListByHAWBId
+		For XML PATH ('')
+		), 2, 1000)
+		as shcs
+		from
+		Shipment_FreightHouseListByHAWBSHC as outerSHC
+		group by
+		outerSHC.ShipmentFreightHouseListByHAWBId
+		)
+		Shipment_FreightHouseListByHAWBSHC on
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId =
+		Shipment_FreightHouseListByHAWBSHC.ShipmentFreightHouseListByHAWBId
+		left join Shipment_FreightHouseListByHAWBCustomerInfo info1 on
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId =
+		info1.ShipmentFreightHouseListByHAWBId and info1.CustomerType='CNE'
+		left join Shipment_FreightHouseListByHAWBCustomerInfo info2 on
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId =
+		info2.ShipmentFreightHouseListByHAWBId and info2.CustomerType='SHP'
+		where
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId =
+		#{id}
+		<if test="hawbNumber != null and hawbNumber !=''">
+			AND Shipment_FreightHouseListByHAWB.HAWBNumber =
+			#{hawbNumber}
+		</if>
+	</select>
+
+
+	<!-- Get the information per house -->
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseModel"
+		id="HouseInformationResultMap">
+		<id column="ShipmentFreightHouseListByAWBId" property="masterAwbId" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="id" />
+		<result column="HAWBNumber" property="hawbNumber" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<result column="SLAC" property="slac" />
+		<result column="NatureOfGoodsDescription"
+			property="natureOfGoods" />
+		<result column="shipperName" property="shipperName" />
+		<result column="consigneeName" property="consigneeName" />
+		<result column="shc" property="specialHandlingCode" />
+		<association property="shipper"
+			select="sqlGetHouseWayBillShipperInfo"
+			column="id=ShipmentFreightHouseListByHAWBId"></association>
+		<association property="consignee"
+			select="sqlGetHouseWayBillConsigneeInfo"
+			column="id=ShipmentFreightHouseListByHAWBId"></association>
+		<association property="otherChargeDeclarations"
+			select="sqlGetHouseWayBillOtherChargeDeclarations"
+			column="id=ShipmentFreightHouseListByHAWBId"></association>
+		<collection property="shc" select="sqlGetShipmentShc"
+			column="id=ShipmentFreightHouseListByHAWBId"></collection>
+		<collection property="descriptionOfGoods"
+			select="sqlGetHouseWayBillDescriptionOfGoods"
+			column="id=ShipmentFreightHouseListByHAWBId"></collection>
+		<collection property="tariffs"
+			select="sqlGetHouseWayBillTariffs"
+			column="id=ShipmentFreightHouseListByHAWBId"></collection>
+		<collection property="oci" select="sqlGetHouseWayBillOci"
+			column="id=ShipmentFreightHouseListByHAWBId"></collection>
+	</resultMap>
+
+	<select id="sqlGetHouseInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseInformationResultMap">
+		select
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId,
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWB.HAWBNumber,
+		Shipment_FreightHouseListByHAWB.Origin,
+		Shipment_FreightHouseListByHAWB.Destination,
+		Shipment_FreightHouseListByHAWB.Pieces,
+		Shipment_FreightHouseListByHAWB.Weight,
+		Shipment_FreightHouseListByHAWB.WeightUnitCode,
+		Shipment_FreightHouseListByHAWB.SLAC,
+		Shipment_FreightHouseListByHAWB.NatureOfGoodsDescription
+		from
+		Shipment_FreightHouseListByHAWB
+		where
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId =
+		#{masterAwbId}
+			<if test="id != null">
+		AND
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId =
+		#{id}
+		</if>
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		id="HouseCustomerInfoResultMap">
+		<id column="ShipmentFHLByHAWBCustomerInfoId" property="id" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="houseId" />
+		<result column="CustomerCode" property="code" />
+		<result column="CustomerName" property="name" />
+		<result column="CustomerType" property="type" />
+		<association property="address"
+			javaType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+			<id column="ShipmentFHLByHAWBCustomerAddressInfoId" property="id" />
+			<id column="ShipmentFHLByHAWBCustomerInfoId"
+				property="houseCustomerId" />
+			<result column="StreetAddress" property="streetAddress" />
+			<result column="CityCode" property="city" />
+			<result column="CountryCode" property="country" />
+			<result column="Place" property="place" />
+			<result column="PostalCode" property="postal" />
+			<result column="StateCode" property="state" />
+			<collection property="contacts"
+				ofType="com.ngen.cosys.shipment.house.model.HouseCustomerContactsModel"
+				javaType="ArrayList">
+				<id column="ShipmentFHLByHAWBCustomerContactInfoId" property="id" />
+				<id column="ShipmentFHLByHAWBCustomerAddressInfoId"
+					property="houseCustomerAddressId" />
+				<result column="ContactTypeCode" property="type" />
+				<result column="ContactTypeDetail" property="detail" />
+			</collection>
+		</association>
+	</resultMap>
+
+	<select id="sqlGetHouseWayBillShipperInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseCustomerInfoResultMap">
+		select
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFHLByHAWBCustomerInfoId,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerCode,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerName,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerType,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.StreetAddress,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.CityCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.CountryCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.PostalCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.Place,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.StateCode,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerContactInfoId,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ContactTypeCode,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ContactTypeDetail
+		from
+		Shipment_FreightHouseListByHAWBCustomerInfo inner join
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		on
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFHLByHAWBCustomerInfoId
+		=
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerInfoId
+		left join
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		on
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId
+		=
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerAddressInfoId
+		where
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerType = 'SHP'
+		and
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+	<select id="sqlGetHouseWayBillConsigneeInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseCustomerInfoResultMap">
+		select
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFHLByHAWBCustomerInfoId,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerCode,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerName,
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerType,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.StreetAddress,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.CityCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.CountryCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.PostalCode,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.Place,
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.StateCode,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerContactInfoId,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ContactTypeCode,
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ContactTypeDetail
+		from
+		Shipment_FreightHouseListByHAWBCustomerInfo inner join
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		on
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFHLByHAWBCustomerInfoId
+		=
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerInfoId
+		left join
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		on
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId
+		=
+		Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerAddressInfoId
+		where
+		Shipment_FreightHouseListByHAWBCustomerInfo.CustomerType = 'CNE'
+		and
+		Shipment_FreightHouseListByHAWBCustomerInfo.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel"
+		id="HouseShcInfoResultMap">
+		<id column="ShipmentFreightHouseListByHAWBSHCId" property="id" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="houseId" />
+		<result column="SpecialHandlingCode" property="code" />
+	</resultMap>
+
+	<select id="sqlGetShipmentShc"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseShcInfoResultMap">
+		select
+		Shipment_FreightHouseListByHAWBSHC.ShipmentFreightHouseListByHAWBSHCId,
+		Shipment_FreightHouseListByHAWBSHC.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBSHC.SpecialHandlingCode
+		from
+		Shipment_FreightHouseListByHAWBSHC
+		where
+		Shipment_FreightHouseListByHAWBSHC.ShipmentFreightHouseListByHAWBId =
+		#{id}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseDescriptionOfGoodsModel"
+		id="HouseDescriptionOfGoodsResultMap">
+		<id column="ShipmentFreightHouseListByHAWBDescriptionOfGoodsId"
+			property="id" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="houseId" />
+		<result column="Content" property="content" />
+	</resultMap>
+
+	<select id="sqlGetHouseWayBillDescriptionOfGoods"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseDescriptionOfGoodsResultMap">
+		select
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods.ShipmentFreightHouseListByHAWBDescriptionOfGoodsId,
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods.Content
+		from
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods
+		where
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseHarmonisedTariffScheduleModel"
+		id="HouseHarmonisedTariffScheduleInfoResultMap">
+		<id column="ShipmentFHLByHAWBHarmonisedTariffScheduleInfoId"
+			property="id" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="houseId" />
+		<result column="HarmonisedCommodityCode" property="code" />
+	</resultMap>
+
+	<select id="sqlGetHouseWayBillTariffs"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseHarmonisedTariffScheduleInfoResultMap">
+		select
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo.ShipmentFHLByHAWBHarmonisedTariffScheduleInfoId,
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo.HarmonisedCommodityCode
+		from
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo
+		where
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseOtherChargeDeclarationModel"
+		id="HouseOtherChargeDeclarationResultMap">
+		<id column="ShipmentFHLByHAWBChargeDeclarationId" property="id" />
+		<id column="ShipmentFreightHouseListByHAWBId" property="houseId" />
+		<result column="CurrencyCode" property="currencyCode" />		
+		<result column="CarriageValue" property="carriageValue" />
+		<result column="InsuranceValue" property="insuranceValue" />
+		<result column="OtherCharge" property="otherCharge" />
+		<result column="PCIndicator" property="pcIndicator" />
+	</resultMap>
+
+	<select id="sqlGetHouseWayBillOtherChargeDeclarations"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseOtherChargeDeclarationResultMap">
+		select
+		Shipment_FreightHouseListByHAWBChargeDeclaration.ShipmentFHLByHAWBChargeDeclarationId,
+		Shipment_FreightHouseListByHAWBChargeDeclaration.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBChargeDeclaration.CarriageValue,
+		Shipment_FreightHouseListByHAWBChargeDeclaration.CurrencyCode,
+		substring(Shipment_FreightHouseListByHAWBChargeDeclaration.DeclaredCharge, 1, 1) PCIndicator,
+		substring(Shipment_FreightHouseListByHAWBChargeDeclaration.DeclaredCharge, 2, 1) OtherCharge,
+		Shipment_FreightHouseListByHAWBChargeDeclaration.InsuranceValue,
+		Shipment_FreightHouseListByHAWBChargeDeclaration.CustomValue
+		from
+		Shipment_FreightHouseListByHAWBChargeDeclaration
+		where
+		Shipment_FreightHouseListByHAWBChargeDeclaration.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseOtherCustomsInformationModel"
+		id="HouseOtherCustomInfoResultMap">
+		<id column="ShipmentFHLByHAWBOtherCustomsInfoId" property="id" />
+		<result column="ShipmentFreightHouseListByHAWBId"
+			property="houseId" />
+		<result column="CountryCode" property="country" />
+		<result column="InformationIdentifier" property="identifier" />
+		<result column="CSRCIIdentifier" property="csrcIdentifier" />
+		<result column="SCSRCInformation" property="scsrcInformation" />
+	</resultMap>
+
+	<select id="sqlGetHouseWayBillOci"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseOtherCustomInfoResultMap">
+		select
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.ShipmentFHLByHAWBOtherCustomsInfoId,
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.CountryCode,
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.InformationIdentifier,
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.CSRCIIdentifier,
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.SCSRCInformation
+		from
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo
+		where
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo.ShipmentFreightHouseListByHAWBId
+		= #{id}
+	</select>
+
+
+
+	<!-- Maintain House CUD queries -->
+	<insert id="sqlInsertHouse"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		keyColumn="ShipmentFreightHouseListByHAWBId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_FreightHouseListByHAWB
+		(
+		ShipmentFreightHouseListByAWBId
+		,HAWBNumber
+		,Origin
+		,Destination
+		,Pieces
+		,Weight
+		,WeightUnitCode
+		,SLAC
+		,NatureOfGoodsDescription
+		,ReceivedManually
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{masterAwbId}
+		,#{hawbNumber}
+		,#{origin}
+		,#{destination}
+		,#{pieces}
+		,#{weight}
+		,#{weightUnitCode}
+		,#{slac}
+		,#{natureOfGoods}
+		,1
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+	<insert id="sqlInsertHouseSpecialHandlingCode"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel"
+		keyColumn="ShipmentFreightHouseListByHAWBSHCId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_FreightHouseListByHAWBSHC
+		(
+		ShipmentFreightHouseListByHAWBId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{code}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+	<insert id="sqlInsertHouseCustomer"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		keyColumn="ShipmentFHLByHAWBCustomerInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBCustomerInfo
+		(
+		ShipmentFreightHouseListByHAWBId
+		,CustomerName
+		,CustomerType
+		,CustomerCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{name}
+		,#{type}
+		,#{code}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertHouseCustomerAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel"
+		keyColumn="ShipmentFHLByHAWBCustomerAddressInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		(
+		ShipmentFHLByHAWBCustomerInfoId
+		,StreetAddress
+		,CountryCode
+		,Place
+		,StateCode
+		,PostalCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseCustomerId}
+		,#{streetAddress}
+		,#{country}
+		,#{place}
+		,#{state}
+		,#{postal}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertHouseCustomerContacts"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerContactsModel"
+		keyColumn="ShipmentFHLByHAWBCustomerContactInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		(
+		ShipmentFHLByHAWBCustomerAddressInfoId
+		,ContactTypeCode
+		,ContactTypeDetail
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseCustomerAddressId}
+		,#{type}
+		,#{detail}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertHouseDescriptionOfGoods"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDescriptionOfGoodsModel">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods
+		(
+		ShipmentFreightHouseListByHAWBId
+		,Content
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{content}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertHouseHarmonisedTariffSchedule"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseHarmonisedTariffScheduleModel">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo
+		(
+		ShipmentFreightHouseListByHAWBId
+		,HarmonisedCommodityCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{code}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertHouseOtherCustomsInformation"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseOtherCustomsInformationModel"
+		keyColumn="ShipmentFHLByHAWBChargeDeclarationId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo
+		(
+		ShipmentFreightHouseListByHAWBId
+		,CountryCode
+		,InformationIdentifier
+		,CSRCIIdentifier
+		,SCSRCInformation
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{country}
+		,#{identifier}
+		,#{csrcIdentifier}
+		,#{scsrcInformation}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+
+	<insert id="sqlInsertforChargedeclaration"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseOtherChargeDeclarationModel"
+		keyColumn="ShipmentFHLByHAWBChargeDeclarationId" keyProperty="id"
+		useGeneratedKeys="true">
+		insert into Shipment_FreightHouseListByHAWBChargeDeclaration(
+			ShipmentFreightHouseListByHAWBId,
+			CurrencyCode,
+			DeclaredCharge,
+			CarriageValue,
+			CustomValue,
+			InsuranceValue,
+			<if test="carriageValue == null">
+				NoCarriageValueDeclared,
+			</if>
+			<if test="customValue == null">
+				NoCustomsValueDeclared,
+			</if>
+			<if test="insuranceValue == null">
+				NoInsuranceValueDeclared,
+			</if>
+			CreatedUserCode,
+			CreatedDateTime
+		)values (
+			#{houseId},
+			#{currencyCode},
+			#{pcIndicator} + #{otherCharge},
+			#{carriageValue},
+			#{customValue},
+			#{insuranceValue},
+			<if test="carriageValue == null">
+				'NVD',
+			</if>
+			<if test="customValue == null">
+				'NCV',
+			</if>
+			<if test="insuranceValue == null">
+				'XXX',
+			</if>
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	<insert id="sqlInsertAWB"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		useGeneratedKeys="true" keyProperty="id"
+		keyColumn="ShipmentFreightHouseListByAWBId">
+		INSERT INTO Shipment_FreightHouseListByAWB
+		(
+		AwbPrefix
+		,AwbSuffix
+		,AwbNumber
+		,AwbDate
+		,Origin
+		,Destination
+		,ShipmentDescriptionCode
+		,Pieces
+		,Weight
+		,WeightUnitCode
+		,CreatedUserCode
+		,CreatedDateTime
+		) VALUES
+		(
+		#{awbPrefix}
+		,#{awbSuffix}
+		,#{awbNumber}
+		,#{awbDate}
+		,#{origin}
+		,#{destination}
+		,'T'
+		,#{pieces}
+		,#{weight}
+		,#{weightUnitCode}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+	
+	<select id="getHAWBCount"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.lang.Integer">
+		select count(1) from Shipment_FreightHouseListByHAWB where 
+		ShipmentFreightHouseListByAWBId= #{masterAwbId} and
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</select>
+	
+	<update id="sqlUpdateHouse"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+	<![CDATA[	
+		update Shipment_FreightHouseListByHAWB
+		set
+			Pieces = #{pieces},
+			Weight = #{weight},
+			WeightUnitCode = #{weightUnitCode},
+			SLAC = #{slac},
+			NatureOfGoodsDescription = #{natureOfGoods},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn},
+			Origin = #{origin},
+			Destination = #{destination}
+		where
+			ShipmentFreightHouseListByAWBId= #{masterAwbId} and
+			ShipmentFreightHouseListByHAWBId = #{id}
+	]]>
+	</update>
+	
+	<update id="sqlUpdateHouseSpecialHandlingCode"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel">
+		UPDATE Shipment_FreightHouseListByHAWBSHC
+		SET
+		SpecialHandlingCode = #{code}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentFreightHouseListByHAWBId= #{houseId} and
+		ShipmentFreightHouseListByHAWBSHCId = #{id}
+	</update>
+	<update id="sqlUpdateHouseCustomer"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel">
+		UPDATE Shipment_FreightHouseListByHAWBCustomerInfo
+		SET
+		CustomerName = #{name}
+		,CustomerType = #{type}
+		,CustomerCode = #{code}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		#{modifiedOn}
+		WHERE
+		ShipmentFHLByHAWBCustomerInfoId =#{id} and
+		ShipmentFreightHouseListByHAWBId= #{houseId}
+
+	</update>
+	<update id="sqlUpdateHouseCustomerAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		UPDATE
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		SET
+		StreetAddress =
+		#{streetAddress}
+		,CountryCode= #{country}
+		,Place=#{place}
+		,StateCode =#{state}
+		,PostalCode = #{postal}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		#{modifiedOn}
+		WHERE
+		ShipmentFHLByHAWBCustomerAddressInfoId = #{id} and
+		ShipmentFHLByHAWBCustomerInfoId = #{houseCustomerId}
+	</update>
+	<update id="sqlUpdateHouseCustomerContacts"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerContactsModel">
+		UPDATE
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		SET
+		ContactTypeCode=#{type}
+		,ContactTypeDetail = #{detail}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		#{modifiedOn}
+		WHERE
+		ShipmentFHLByHAWBCustomerAddressInfoId =
+		#{houseCustomerAddressId} and
+		ShipmentFHLByHAWBCustomerContactInfoId =
+		#{id}
+	</update>
+	<update id="sqlUpdateHouseDescriptionOfGoods"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDescriptionOfGoodsModel">
+		UPDATE Shipment_FreightHouseListByHAWBDescriptionOfGoods
+		SET
+		Content = #{content}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{houseId} and
+		ShipmentFreightHouseListByHAWBDescriptionOfGoodsId = #{id}
+
+	</update>
+	<update id="sqlUpdateHouseHarmonisedTariffSchedule"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseHarmonisedTariffScheduleModel">
+		UPDATE
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo
+		SET
+		HarmonisedCommodityCode =#{code}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{houseId} and
+		ShipmentFHLByHAWBHarmonisedTariffScheduleInfoId = #{id}
+
+	</update>
+	<update id="sqlUpdateHouseOtherCustomsInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseOtherCustomsInformationModel">
+		UPDATE Shipment_FreightHouseListByHAWBOtherCustomsInfo
+		SET
+		CountryCode =#{country}
+		,InformationIdentifier =#{identifier}
+		,CSRCIIdentifier=#{csrcIdentifier}
+		,SCSRCInformation =#{scsrcInformation}
+		,LastUpdatedUserCode
+		=#{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{houseId} and
+		ShipmentFHLByHAWBOtherCustomsInfoId = #{id}
+
+	</update>
+	<update id="sqlUpdateHouseChargeDeclarations"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseOtherChargeDeclarationModel">
+		update Shipment_FreightHouseListByHAWBChargeDeclaration
+		set
+			CurrencyCode =#{currencyCode},
+			DeclaredCharge = #{pcIndicator} + #{otherCharge},
+			CarriageValue = #{carriageValue},
+			CustomValue=#{customValue},
+			InsuranceValue = #{insuranceValue},
+			<choose>
+				<when test="carriageValue == null">
+					NoCarriageValueDeclared = 'NVD',
+				</when>
+				<otherwise>
+					NoCarriageValueDeclared = null,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="customValue == null">
+					NoCustomsValueDeclared = 'NCV',
+				</when>
+				<otherwise>
+					NoCustomsValueDeclared = null,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="insuranceValue == null">
+					NoInsuranceValueDeclared = 'XXX',
+				</when>
+				<otherwise>
+					NoInsuranceValueDeclared = null,
+				</otherwise>
+			</choose>
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentFreightHouseListByHAWBId = #{houseId} and
+			ShipmentFHLByHAWBChargeDeclarationId = #{id}
+	</update>
+
+	<select id="sqlGetShipmentFreightOutHouseAWBId"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		select
+		Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId id,
+		isnull(Shipment_FreightHouseListByHAWB.housePieces,0) + #{pieces}
+		pieces,
+		isnull(Shipment_FreightHouseListByHAWB.houseWeight, 0) +
+		#{weight} weight
+		from
+		Shipment_FreightHouseListByAWB left join
+		(
+		select
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId,
+		sum(Shipment_FreightHouseListByHAWB.Pieces) housePieces,
+		sum(Shipment_FreightHouseListByHAWB.Weight) houseWeight
+		from
+		Shipment_FreightHouseListByHAWB
+		where
+		Shipment_FreightHouseListByHAWB.HAWBNumber != #{hawbNumber}
+		group by
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId
+
+		)Shipment_FreightHouseListByHAWB
+		on
+		Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId =
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId
+		where
+		Shipment_FreightHouseListByAWB.AwbNumber = #{awbNumber} and
+		Shipment_FreightHouseListByAWB.AwbDate = #{awbDate}
+	</select>
+
+	<select id="sqlGetSumHousePieceWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+	<![CDATA[
+		select 
+			sum(Shipment_FreightHouseListByHAWB.Pieces) pieces,
+			sum(Shipment_FreightHouseListByHAWB.Weight) weight
+		from 
+			Shipment_FreightHouseListByHAWB 
+		where 
+			Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId =  #{id} and
+			Shipment_FreightHouseListByHAWB.HAWBNumber <> #{hawbNumber}
+	]]>
+	</select>
+
+	<update id="sqlUpdateMAWBPcWt"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		<![CDATA[
+		update Shipment_FreightHouseListByAWB
+		set
+			Pieces = #{pieces},
+			Weight = #{weight},
+			Origin = #{origin},
+			Destination = #{destination}
+		WHERE
+			ShipmentFreightHouseListByAWBId = #{id} and
+			(Pieces < #{pieces} OR Weight < #{weight})
+		]]> 
+	</update>
+	
+	<update id="sqlUpdateMAWBOriginDestination"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		<![CDATA[
+		update Shipment_FreightHouseListByAWB
+		set
+			Origin = #{origin},
+			Destination = #{destination}
+		WHERE
+			ShipmentFreightHouseListByAWBId = #{id}
+		]]> 
+	</update>	
+
+	<update id="sqlDecreaseMAWBPcWt"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		UPDATE Shipment_FreightHouseListByAWB
+		SET
+		Pieces = Pieces
+		- #{pieces},
+		Weight = Weight - #{weight}
+		WHERE
+		ShipmentFreightHouseListByAWBId=#{id}
+	</update>
+
+
+	<!-- Delete all the house information -->
+	<delete id="sqlDeleteAllHouseShcs"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from Shipment_FreightHouseListByHAWBSHC where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteAllHouseDescriptions"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">		
+		delete from
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteAllHouseTariffs"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteAllHouseOtherCustomInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteAllHouseOtherCharges"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from
+		Shipment_FreightHouseListByHAWBChargeDeclaration where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteAllHouseCustomerAddressContacts"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		DELETE
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		WHERE
+		ShipmentFHLByHAWBCustomerAddressInfoId in
+		(
+		SELECT
+		ShipmentFHLByHAWBCustomerAddressInfoId
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		WHERE
+		ShipmentFHLByHAWBCustomerInfoId in
+		(
+		SELECT
+		ShipmentFHLByHAWBCustomerInfoId
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerInfo
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{id}
+		)
+		)
+	</delete>
+	<delete id="sqlDeleteHouseCustomerAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		DELETE
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo
+		WHERE
+		ShipmentFHLByHAWBCustomerInfoId in
+		(
+		SELECT
+		ShipmentFHLByHAWBCustomerInfoId
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerInfo
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{id}
+		)
+	</delete>
+	<delete id="sqlDeleteHouseCustomer"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		DELETE
+		FROM Shipment_FreightHouseListByHAWBCustomerInfo
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{id}
+		AND
+		ShipmentFHLByHAWBCustomerInfoId in
+		(
+		SELECT
+		ShipmentFHLByHAWBCustomerInfoId
+		FROM
+		Shipment_FreightHouseListByHAWBCustomerInfo
+		WHERE
+		ShipmentFreightHouseListByHAWBId = #{id}
+		)
+	</delete>
+	<delete id="sqlDeleteHouse"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from Shipment_FreightHouseListByHAWB where
+		ShipmentFreightHouseListByHAWBId = #{id}
+	</delete>
+	<delete id="sqlDeleteHouseMAWB"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		delete from Shipment_FreightHouseListByAWB
+		where not
+		exists (select
+		1
+		from
+		Shipment_FreightHouseListByHAWB
+		where
+		ShipmentFreightHouseListByAWBId =
+		Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId)
+		and
+		AwbNumber = #{awbNumber} and AwbDate = #{awbDate}
+	</delete>
+
+	<delete id="sqlDeleteHouseOtherCharges"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		delete
+		FROM
+		Shipment_FreightHouseListByHAWBOtherCustomsInfo
+		WHERE
+		ShipmentFHLByHAWBOtherCustomsInfoId=#{id} and
+		ShipmentFreightHouseListByHAWBId = #{houseId}
+	</delete>
+
+	<delete id="sqlDeleteHouseDescriptionOfGoods"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDescriptionOfGoodsModel">
+		delete
+		from
+		Shipment_FreightHouseListByHAWBDescriptionOfGoods
+		WHERE
+		ShipmentFreightHouseListByHAWBDescriptionOfGoodsId = #{id} and
+		ShipmentFreightHouseListByHAWBId = #{houseId}
+	</delete>
+
+	<delete id="sqlDeleteHouseHarmonisedTariffSchedule"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseHarmonisedTariffScheduleModel">
+		delete
+		from
+		Shipment_FreightHouseListByHAWBHarmonisedTariffScheduleInfo
+		WHERE
+		ShipmentFHLByHAWBHarmonisedTariffScheduleInfoId =#{id} AND
+		ShipmentFreightHouseListByHAWBId=#{houseId}
+	</delete>
+
+	<delete id="sqlDeleteHouseCustomerContacts"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		delete
+		from
+		Shipment_FreightHouseListByHAWBCustomerContactInfo
+		WHERE
+		ShipmentFHLByHAWBCustomerAddressInfoId=#{id}
+	</delete>
+
+	<select id="sqlCheckHAWBExists"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.lang.Boolean">
+		select
+		case when
+		count(Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId)
+		> 0 then
+		1
+		else
+		0
+		end result
+		FROM
+		Shipment_FreightHouseListByAWB inner join
+		Shipment_FreightHouseListByHAWB
+		on
+		Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId =
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId
+		WHERE
+		Shipment_FreightHouseListByAWB.AwbNumber = #{awbNumber} and
+		Shipment_FreightHouseListByAWB.AwbDate = #{awbDate} and
+		Shipment_FreightHouseListByHAWB.HAWBNumber=#{hawbNumber}
+		<if test="id != null">
+			and
+			Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId !=
+			#{id}
+		</if>
+	</select>
+<select id="sqlGetShipperAndConsigneeInfoOfFirstHouse"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseInformationResultMap">
+	select top(1)
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId,
+		Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId,
+		Shipment_FreightHouseListByHAWB.HAWBNumber,
+		Shipment_FreightHouseListByHAWB.Origin,
+		Shipment_FreightHouseListByHAWB.Destination,
+		Shipment_FreightHouseListByHAWB.Pieces,
+		Shipment_FreightHouseListByHAWB.Weight,
+		Shipment_FreightHouseListByHAWB.WeightUnitCode,
+		Shipment_FreightHouseListByHAWB.SLAC,
+		Shipment_FreightHouseListByHAWB.NatureOfGoodsDescription
+		from
+		Shipment_FreightHouseListByHAWB
+		inner join Shipment_FreightHouseListByAWB on Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId=Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId
+		where
+		Shipment_FreightHouseListByAWB.AwbNumber = #{awbNumber}
+		order by 
+		ShipmentFreightHouseListByHAWBId desc
+	</select>
+	
+	<select id="sqlGetFHLShipmentInfoForCharges"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="com.ngen.cosys.shipment.house.model.HouseModel">
+		select
+                     Shipment_Master.ShipmentId as shipmentId,
+                     Customer_Master.Customer_ID as customerId
+              from
+                     Shipment_Master 
+					 inner join Shipment_MasterCustomerInfo
+						on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId
+					 inner join Customer_Master
+						on Shipment_MasterCustomerInfo.CustomerCode = Customer_Master.CustomerCode
+		where
+			Shipment_Master.ShipmentNumber = #{awbNumber} and
+			Shipment_Master.ShipmentDate = #{awbDate} and
+			Shipment_MasterCustomerInfo.CustomerType = 'AGT' and
+			DeRegisterDate is null		
+	</select>
+	
+	
+	<!-- HWB Record -->
+	
+	<resultMap type="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		id="HouseWayBillMasterResult">
+		<id column="ShipmentId" property="id" />
+		<result column="shcs" property="shc" />
+		<result column="Origin" property="origin" />		
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="HawbNumber" property="hawbNumber" />
+		<result column="DeliveredOn" property="deliveredOn" />
+		<result column="Destination" property="destination" />
+		<result column="ShipmentNumber" property="awbNumber" />
+		<result column="HandledByMasterHouse" property="handledByHouse" />
+		<result column="ChargeableWeight" property="chargeableWeight" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoods" />
+		<association property="houseModel"
+			select="sqlGetHawbMastersDetails"
+			column="hawbNumber=HawbNumber,id=ShipmentId"></association>
+	</resultMap>
+	
+	<resultMap id="HouseWayBillMasterResultDetails" 
+	  type="com.ngen.cosys.shipment.house.model.HouseModel">
+		<id column="ShipmentHouseId" property="id" />
+		<id column="ShipmentId" property="masterAwbId" />
+		<result column="Origin" property="origin" />		
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />	
+		<result column="doFlag" property="doFlag" />
+		<result column="poFlag" property="poFlag" />
+		<result column="Number" property="hawbNumber" />
+		<result column="Destination" property="destination" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<result column="ChargeableWeight" property="chargeableWeight" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoods" />
+		<association property="shipper"
+			select="sqlGetHawbMastersDetailsShipper"
+			column="id=ShipmentHouseId" />
+		<association property="consignee"
+			select="sqlGetHawbMastersDetailsConsignee"
+			column="id=ShipmentHouseId"/>
+			
+<association property="houseDimension"
+			select="gethouseDimension"
+			column="{houseId=ShipmentHouseId}"></association>
+		<collection property="shc"
+			select="sqlGetHawbMastersDetailsShc"
+			column="id=ShipmentHouseId" />
+	</resultMap>
+	
+	<resultMap type="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		id="HouseWayBillMasterResultDetailsShipper">
+		<id column="ShipmentHouseId" property="houseId" />
+		<id column="ShipmentHouseCustomerInfoId" property="id" />
+		<result column="CustomerCode" property="code" />
+		<result column="CustomerName" property="name" />
+		<result column="CustomerType" property="type" />
+		<result column="AppointedAgent" property="appointedAgent" />
+		<result column="AppointedAgentCode" property="appointedAgentCode" />
+		<association property="address"
+			select="sqlGetHawbMastersDetailsAddress"
+			column="id=ShipmentHouseCustomerInfoId"></association>
+	</resultMap>
+	
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		id="ConsigneeDetailsResultMap">
+		<id column="ShipmentHouseId" property="houseId" />
+		<id column="ShipmentHouseCustomerInfoId" property="id" />
+		<result column="CustomerName" property="name" />
+		<result column="CustomerType" property="type" />
+		<result column="CustomerCode" property="code" />
+      <result column="CustomerName" property="oldName" />
+		<result column="CustomerCode" property="oldCode" />		
+		<association property="address"
+			select="getConsigneeAddressDetails"
+			column="id=ShipmentHouseCustomerInfoId"></association>
+	</resultMap>
+	
+<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel"
+		id="AddressDetailsResultMap">
+		<id column="ShipmentHouseCustomerAddressInfoId" property="id" />
+		<id column="ShipmentHouseCustomerInfoId" property="houseCustomerId" />
+		<result column="Place" property="place" />
+		<result column="CityCode" property="city" />
+		<result column="StateCode" property="state" />
+		<result column="PostalCode" property="postal" />
+		<result column="CountryCode" property="country" />
+		<collection property="contacts"
+			select="getContactsList"
+			column="id=ShipmentHouseCustomerAddressInfoId" />
+	</resultMap>
+	
+	<select id="getConsigneeAddressDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		resultMap="AddressDetailsResultMap">
+	SELECT 
+		Place,
+		CityCode,
+		StateCode,
+		PostalCode,
+		CountryCode,
+		StreetAddress,
+		ShipmentHouseCustomerInfoId,
+		ShipmentHouseCustomerAddressInfoId
+	 FROM 
+	 	Shipment_HouseCustomerAddressInfo
+	 WHERE
+	 	ShipmentHouseCustomerInfoId = #{id}
+	</select>
+	
+	<select id="getContactsList"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		resultType="com.ngen.cosys.shipment.house.model.HouseCustomerContactsModel">
+	SELECT 
+		ContactTypeCode type,
+		ContactTypeDetail detail,
+		ShipmentHouseCustomerContactInfoId id,
+		ShipmentHouseCustomerAddressInfoId houseCustomerAddressId
+	 FROM 
+	 	Shipment_HouseCustomerContactInfo
+	 WHERE
+	 	ShipmentHouseCustomerAddressInfoId = #{id}
+	</select>
+	
+	
+	<select id="sqlGetHawbMastersDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultMap="HouseWayBillMasterResultDetails">
+	SELECT
+		Origin,
+		Pieces,
+		Weight,
+		Number,
+		ShipmentId,
+		Destination,
+		WeightUnitCode,
+		ShipmentHouseId,
+		ChargeableWeight,
+		NatureOfGoodsDescription,
+		(CASE 
+			WHEN 
+				(SELECT COUNT(ImpDeliveryId) FROM  Imp_Delivery WHERE Imp_Delivery.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+				AND
+					Imp_Delivery.Status IN('COMPLETE', 'COMPLETED' , 'PENDING') ) > 0
+			THEN 
+				1 
+			ELSE 
+				0
+		 END) AS doFlag,
+		(CASE 
+			WHEN 
+				(SELECT COUNT(ImpDeliveryRequestId) FROM  Imp_DeliveryRequest WHERE Imp_DeliveryRequest.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+				AND
+					Imp_DeliveryRequest.Status IN('COMPLETE', 'COMPLETED' , 'PENDING') ) > 0
+			THEN 
+				1 
+			ELSE 
+				0
+		 END) AS poFlag
+	FROM
+		Shipment_HouseInformation
+	WHERE
+		ShipmentId = #{id}
+	AND
+		Number = #{hawbNumber}
+	</select>
+	
+	<select id="sqlGetHawbMastersDetailsShipper"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseWayBillMasterResultDetailsShipper">
+	SELECT
+		CustomerCode,
+		CustomerType,
+		CustomerName,
+		ShipmentHouseId,
+		ShipmentHouseCustomerInfoId
+	FROM
+		Shipment_HouseCustomerInfo
+	WHERE
+		ShipmentHouseId = #{id}
+	AND
+		CustomerType = 'SHP'
+	</select>
+	
+	<select id="sqlGetHawbMastersDetailsConsignee"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseWayBillMasterResultDetailsShipper">
+	SELECT
+		CustomerCode,
+		CustomerType,
+		CustomerName,
+		isnull(AppointedAgent,(select top(1) Customer_ID from Customer_Master where CustomerCode = 'IXX')) as AppointedAgent,
+		(SELECT DISTINCT
+			AGTCM.CustomerCode as code
+		FROM 
+			Customer_AppointedAgent CA
+		INNER JOIN 
+			Customer_Master CACM 
+		ON 
+			CACM.Customer_ID = CA.Customer_ID
+		LEFT JOIN 
+			Customer_Master AGTCM 
+		ON 
+			AGTCM.Customer_ID = CA.AgentCustomer_ID 
+		WHERE 
+			DelegationAgreementType = 'IBR'
+		AND (
+				cast(getDate() AS DATE) BETWEEN CA.EffectiveDate
+					AND isnull(CA.ExpiryDate, '3000-12-31')
+			)
+		AND 
+			CACM.DeRegisterDate IS NULL	
+		AND
+			CA.CustomerAppAgent_ID = AppointedAgent) as AppointedAgentCode,
+		ShipmentHouseId,
+		ShipmentHouseCustomerInfoId
+	FROM
+		Shipment_HouseCustomerInfo
+	WHERE
+		ShipmentHouseId = #{id}
+	AND
+		CustomerType = 'CNE'
+	</select>
+	
+	<select id="sqlGetHawbMastersDetailsAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+	SELECT
+		Place as place
+		,CityCode as city
+		,StateCode as state
+		,PostalCode as postal
+		,CountryCode as country
+		,StreetAddress as streetAddress
+		,ShipmentHouseCustomerAddressInfoId id
+		,ShipmentHouseCustomerInfoId houseId
+	FROM
+		Shipment_HouseCustomerAddressInfo
+	WHERE
+		ShipmentHouseCustomerInfoId = #{id}
+	</select>
+	
+	<select id="sqlGetHawbMastersDetailsShc"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel">
+	SELECT
+		ShipmentHouseSHCId id,
+		ShipmentHouseId houseId,
+		SpecialHandlingCode code
+	FROM
+		Shipment_HouseSHC
+	WHERE
+		ShipmentHouseId = #{id}
+	</select>
+	
+	<select id="sqlGetHawbMasters"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSearch"
+		resultMap="HouseWayBillMasterResult">
+	SELECT
+		ShpMst.Origin,
+		ShpMst.Pieces,
+		ShpMst.Weight,
+		ShpMst.ShipmentId,
+		ShpMst.Destination,
+		ShpMst.ShipmentNumber,
+		ShpMst.HandledByMasterHouse,
+		ShpMst.ChargeableWeight,
+		#{hawbNumber} HawbNumber,
+		ShpMst.NatureOfGoodsDescription,
+		ShpMst.DeliveredOn,
+		(
+          SELECT STRING_AGG(SHC.SpecialHandlingCode,',')
+               FROM
+               (
+                     SELECT DISTINCT Shipment_MasterSHC.SpecialHandlingCode
+                     FROM   Shipment_MasterSHC
+                     WHERE  Shipment_MasterSHC.ShipmentId = ShpMst.ShipmentId
+
+               ) SHC
+
+        ) as shcs
+	FROM
+		Shipment_Master ShpMst
+	WHERE
+		ShpMst.ShipmentNumber = #{awbNumber}
+	AND	
+		ShpMst.ShipmentDate = #{awbDate}
+	</select>
+	
+	<select id="sqlSetHawbMasterValidShc"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel"
+		resultType="java.lang.Boolean">
+		select  
+			iif( count(*) > 0, 1, 0) as data 
+		from 
+			Mst_SpecialHandlingCode 
+		where 
+			SpecialHandlingCode  = #{code}
+	</select>
+	
+	<insert id="sqlInsertHouseSpecialHandlingCodeNew"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel"
+		keyColumn="ShipmentFreightHouseListByHAWBSHCId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseSHC
+		(
+		ShipmentHouseId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(
+		#{houseId}
+		,#{code}
+		,#{createdBy}
+		,#{createdOn}
+		)
+	</insert>
+	
+	<update id="sqlUpdateHouseSpecialHandlingCodeNew"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel">
+		UPDATE 
+			Shipment_HouseSHC
+		SET
+			SpecialHandlingCode = #{code}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseId= #{houseId} and
+			ShipmentHouseSHCId = #{id}
+	</update>
+	
+	<delete id="sqlDeleteHouseSpecialHandlingCodeNew"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel">
+		DELETE
+			FROM
+			Shipment_HouseSHC
+		WHERE
+			SpecialHandlingCode = #{code} 
+		AND
+			ShipmentHouseId= #{houseId} 
+		AND
+			ShipmentHouseSHCId = #{id}
+	</delete>
+	
+	<insert id="insertConsigneeInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		keyColumn="ShipmentHouseCustomerInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseCustomerInfo
+		(
+		CustomerType
+		,CustomerName
+		,CustomerCode
+		,ShipmentHouseId
+		,CreatedUserCode
+		,CreatedDateTime
+		,AppointedAgent
+		)
+		VALUES
+		(
+		'CNE'
+		,#{name}
+		,#{code}
+		,#{houseId}
+		,#{createdBy}
+		,#{createdOn}
+		,#{appointedAgent}
+		)
+	</insert>
+	
+	<insert id="insertShipperAddressInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		keyColumn="ShipmentHouseCustomerInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseCustomerAddressInfo
+			(
+			ShipmentHouseCustomerInfoId
+			,Place
+			,CityCode
+			,StateCode
+			,PostalCode
+			,CountryCode
+			,StreetAddress
+			,CreatedUserCode
+			,CreatedDateTime
+			)
+			VALUES
+			(
+			#{houseCustomerId}
+			,#{place}
+			,#{city}
+			,#{state}
+			,#{postal, jdbcType=NVARCHAR}
+			,#{country}
+			,#{streetAddress}
+			,#{createdBy}
+			,#{createdOn}
+			)
+	</insert>
+	
+	<update id="updateShipperAddressInfoMaster"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		UPDATE 
+			Shipment_HouseCustomerAddressInfo
+		SET
+			Place = #{place}
+			,CityCode = #{city}
+			,StateCode = #{state}
+			,PostalCode = #{postal, jdbcType=NVARCHAR}
+			,CountryCode = #{country}
+			,StreetAddress = #{streetAddress}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = #{id}
+	</update>
+	
+	<update id="updateShipperInfoMaster"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel">
+		UPDATE 
+			Shipment_HouseCustomerInfo
+		SET
+			CustomerName = #{name}
+			,CustomerCode = #{code}
+			,AppointedAgent = #{appointedAgent}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseCustomerInfoId = #{id}
+	</update>
+	
+	<delete id="sqlDeleteHawbMastersContact"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE FROM  
+			Shipment_HouseCustomerContactInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = #{id}
+	</delete>
+	
+	<update id="sqlDeleteHawbMastersConsigneeAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE
+			FROM 
+			Shipment_HouseCustomerAddressInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = #{id}
+	</update>
+	
+	<update id="sqlDeleteHawbMastersConsignee"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE
+			FROM 
+			Shipment_HouseCustomerInfo
+		WHERE
+			ShipmentHouseCustomerInfoId = #{id}
+		AND
+			CustomerType = 'CNE'
+	</update>
+	
+	<insert id="insertShipperInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		keyColumn="ShipmentHouseCustomerInfoId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseCustomerInfo
+		(
+		CustomerType
+		,CustomerName
+		,CustomerCode
+		,ShipmentHouseId
+		,CreatedUserCode
+		,CreatedDateTime
+		,AppointedAgent
+		)
+		VALUES
+		(
+		'SHP'
+		,#{name}
+		,#{code}
+		,#{houseId}
+		,#{createdBy}
+		,#{createdOn}
+		,15843
+		)
+	</insert>
+	
+	<update id="updateConsigneeInfoMaster"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel">
+		UPDATE 
+			Shipment_HouseCustomerInfo
+		SET
+			CustomerName = #{name}
+			,CustomerCode = #{code}
+			,AppointedAgent = #{appointedAgentCode}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseCustomerInfoId = #{id}
+	</update>
+	
+	<update id="sqlDeleteHawbMastersShipperAddress"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE
+			FROM 
+			Shipment_HouseCustomerAddressInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = #{id}
+	</update>
+	
+	<update id="sqlDeleteHawbMastersShipper"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE
+			FROM 
+			Shipment_HouseCustomerInfo
+		WHERE
+			ShipmentHouseCustomerInfoId = #{id}
+		AND
+			CustomerType = 'SHP'
+	</update>
+	
+	<select id="sqlGetHawbPieces"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.math.BigInteger">
+	SELECT IIF ( 
+		SUM(Shipment_HouseInformation.Pieces) > 0, 
+		SUM(Shipment_HouseInformation.Pieces), 0 ) AS Result
+	FROM 
+			Shipment_HouseInformation 
+	WHERE 
+			ShipmentId  = #{masterAwbId}
+			
+	<if test="id != null">
+	AND
+			ShipmentHouseId != #{id}
+	</if>
+	</select>
+	
+	<select id="sqlGetHawbWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.math.BigDecimal">
+	SELECT IIF ( 
+		SUM(Shipment_HouseInformation.Weight) > 0, 
+		SUM(Shipment_HouseInformation.Weight), 0 ) AS Result
+	FROM 
+			Shipment_HouseInformation 
+	WHERE 
+			ShipmentId  = #{masterAwbId}
+			
+	<if test="id != null">
+	AND
+			ShipmentHouseId != #{id}
+			</if>
+	</select>
+	
+	<select id="sqlGetHawbChargeableWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.math.BigDecimal">
+	SELECT IIF ( 
+		SUM(Shipment_HouseInformation.ChargeableWeight) > 0, 
+		SUM(Shipment_HouseInformation.ChargeableWeight), 0 ) AS Result
+	FROM 
+			Shipment_HouseInformation 
+	WHERE 
+			ShipmentId  = #{masterAwbId}
+			
+	<if test="id != null">
+	AND
+			ShipmentHouseId != #{id}
+			</if>
+	</select>
+	
+	<update id="sqlSetHawbMasters"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		UPDATE 
+			Shipment_HouseInformation
+		SET
+			Origin = #{origin}
+			,Pieces = #{pieces}
+			,Weight = #{weight}
+			,Number = #{hawbNumber}
+			,Destination = #{destination}
+			,WeightUnitCode = #{weightUnitCode}
+			,ChargeableWeight = #{chargeableWeight}
+			,NatureOfGoodsDescription = #{natureOfGoods,jdbcType=NVARCHAR}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+			,ManuallyUpdated=1
+		WHERE
+			ShipmentHouseId = #{id} 
+	</update>
+	
+	<!-- Get the hawb information as per each house -->
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseModel"
+		id="ConsigneeShipperDetailsResultMap">
+		 <id column="ShipmentHouseId" property="id" /> 
+		 <association property="consignee"
+			select="getConsigneeDetails"
+			column="id=ShipmentHouseId"></association>
+		<association property="shipper"
+			select="getShipperDetails"
+			column="id=ShipmentHouseId"></association> 
+	</resultMap>
+	
+	<select id="getConsigneeDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="ConsigneeDetailsResultMap">
+	SELECT DISTINCT
+		CustomerName,
+		CustomerType,
+		Shipment_HouseCustomerInfo.CustomerCode,
+		ShipmentHouseId,
+		ShipmentHouseCustomerInfoId,
+		<!-- isnull(AppointedAgent,(select top(1) Customer_ID from Customer_Master where CustomerCode = 'IXX')) as appointedAgent,
+		isnull(cm.CustomerCode, 'IXX') as appointedAgentCode -->
+		AppointedAgent as appointedAgent,
+		cm.CustomerCode as appointedAgentCode
+	FROM 
+		Shipment_HouseCustomerInfo 
+		left join Customer_Master cm on Shipment_HouseCustomerInfo.AppointedAgent = cm.Customer_ID
+	WHERE
+		ShipmentHouseId = #{id}
+	AND
+		CustomerType = 'CNE'
+	</select>
+	
+	<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		id="ShipperDetailsResultMap">
+		<id column="ShipmentHouseId" property="houseId" />
+		<id column="ShipmentHouseCustomerInfoId" property="id" />
+		<result column="CustomerName" property="name" />
+		<result column="CustomerType" property="type" />
+		<result column="CustomerCode" property="code" />
+		<association property="address"
+			select="getShipperAddressDetails"
+			column="id=ShipmentHouseCustomerInfoId"></association>
+	</resultMap>
+	
+	<select id="getShipperDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="ShipperDetailsResultMap">
+	SELECT DISTINCT
+		CustomerName,
+		CustomerType,
+		CustomerCode,
+		ShipmentHouseId,
+		ShipmentHouseCustomerInfoId
+	FROM 
+		Shipment_HouseCustomerInfo
+	WHERE
+		ShipmentHouseId = #{id}
+	AND
+		CustomerType = 'SHP'
+	</select>
+	
+	
+	<!-- hawblist starts here -->
+	
+	<select id="sqlCheckDuplicateRecord"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.lang.Boolean">
+		select  
+			iif( count(*) > 0, 1, 0) as data 
+		from 
+			Shipment_HouseInformation 
+		where 
+			ShipmentId  = #{masterAwbId}
+		and
+			Number = #{hawbNumber}
+	</select>
+	
+	
+	<update id="getUpdateHouseInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		UPDATE 
+			Shipment_HouseInformation
+		SET
+			Origin = #{origin}
+			,Pieces = #{pieces}
+			,Weight = #{weight}
+			,Number = #{hawbNumber}
+		
+			,Destination = #{destination}
+			,WeightUnitCode = #{weightUnitCode}
+			,ChargeableWeight = #{chargeableWeight}
+			,NatureOfGoodsDescription = #{natureOfGoods,jdbcType=NVARCHAR}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+			,ManuallyUpdated=1
+		WHERE
+			ShipmentHouseId = #{houseId} 
+	</update>
+	
+	
+	<insert id="getInsertHouseInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		keyColumn="ShipmentHouseId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseInformation
+		(
+		ShipmentId
+		,Number
+		
+		,Origin
+		,Destination
+		,Pieces
+		,Weight
+		,ChargeableWeight
+		,WeightUnitCode
+		,NatureOfGoodsDescription
+		,CreatedUserCode
+		,CreatedDateTime
+		,ShipmentType
+		,ManuallyUpdated
+		)
+		VALUES
+		(
+		#{masterAwbId}
+		,#{hawbNumber}
+		
+		,#{origin}
+		,#{destination}
+		,#{pieces}
+		,#{weight}
+		,#{chargeableWeight}
+		,#{weightUnitCode}
+		,#{natureOfGoods,jdbcType=NVARCHAR}
+		,#{createdBy}
+		,#{createdOn}
+		,'HAWB'
+		,1
+		)
+	</insert>
+	
+	
+	<!-- consinee -->
+	
+	
+	<select id="getConsigneeShipperDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="ConsigneeShipperDetailsResultMap">
+	SELECT cast(#{id} as decimal) as ShipmentHouseId
+	</select>
+	
+
+	
+		<select id="getShipperAddressDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		resultMap="AddressDetailsResultMap">
+	SELECT 
+		Place,
+		CityCode,
+		StateCode,
+		PostalCode,
+		CountryCode,
+		StreetAddress,
+		ShipmentHouseCustomerInfoId,
+		ShipmentHouseCustomerAddressInfoId
+	 FROM 
+	 	Shipment_HouseCustomerAddressInfo
+	 WHERE
+	 	ShipmentHouseCustomerInfoId = #{id}
+	</select>
+	
+	<update id="updateConsigneeInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel">
+		UPDATE 
+			Shipment_HouseCustomerInfo
+		SET
+			CustomerName = #{name}
+			,CustomerCode = #{code}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+			,AppointedAgent = #{appointedAgent}
+		WHERE
+			ShipmentHouseId = #{houseId}
+		AND
+			CustomerType = 'CNE'
+	</update>
+	<update id="updateConsigneeAddressInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		UPDATE 
+			Shipment_HouseCustomerAddressInfo
+		SET
+			Place = #{place}
+			,CityCode = #{city}
+			,StateCode = #{state}
+			,PostalCode = #{postal, jdbcType=NVARCHAR}
+			,CountryCode = #{country}
+			,StreetAddress = #{streetAddress}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseCustomerInfoId = (Select 
+													ShipmentHouseCustomerInfoId
+												FROM
+													Shipment_HouseCustomerInfo
+												WHERE
+													ShipmentHouseId = #{houseId}
+												AND
+													CustomerType = 'CNE')
+	</update>
+	
+		<update id="updateShipperInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel">
+		UPDATE 
+			Shipment_HouseCustomerInfo
+		SET
+			CustomerName = #{name}
+			,CustomerCode = #{code}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseId = #{houseId}
+		AND
+			CustomerType = 'SHP'
+	</update>
+	
+		<update id="updateShipperAddressInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		UPDATE 
+			Shipment_HouseCustomerAddressInfo
+		SET
+			Place = #{place}
+			,CityCode = #{city}
+			,StateCode = #{state}
+			,PostalCode = #{postal, jdbcType=NVARCHAR}
+			,CountryCode = #{country}
+			,StreetAddress = #{streetAddress}
+			,LastUpdatedUserCode = #{modifiedBy}
+			,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+			ShipmentHouseCustomerInfoId = (Select 
+												ShipmentHouseCustomerInfoId
+											FROM
+												Shipment_HouseCustomerInfo
+											WHERE
+												ShipmentHouseId = #{houseId}
+											AND
+												CustomerType = 'SHP')
+	</update>
+	
+	
+	<!-- delete -->
+		<delete id="sqlDeleteHawbAddressConsigneeData"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE FROM  
+			Shipment_HouseCustomerAddressInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = (
+													SELECT ShipmentHouseCustomerAddressInfoId
+													FROM
+														Shipment_HouseCustomerAddressInfo
+													INNER JOIN
+														Shipment_HouseCustomerInfo
+														ON
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = 
+														Shipment_HouseCustomerAddressInfo.ShipmentHouseCustomerInfoId
+													WHERE
+														Shipment_HouseCustomerInfo.CustomerType = 'CNE'
+													AND
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = #{houseId}
+														)
+	</delete>
+	
+		<delete id="sqlDeleteHawbShipperConsigneeDataShipper"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE 
+		FROM  
+			Shipment_HouseCustomerInfo
+		WHERE
+			ShipmentHouseCustomerInfoId = (
+													SELECT ShipmentHouseCustomerInfoId
+													FROM
+														Shipment_HouseCustomerInfo
+													WHERE
+														CustomerType = 'SHP'
+													AND
+														ShipmentHouseId = #{houseId}
+											)
+	</delete>
+	
+		<delete id="sqlDeleteHawbMastersContactDataShipper"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE FROM  
+			Shipment_HouseCustomerContactInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = (
+													SELECT ShipmentHouseCustomerAddressInfoId
+													FROM
+														Shipment_HouseCustomerAddressInfo
+													INNER JOIN
+														Shipment_HouseCustomerInfo
+														ON
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = 
+														Shipment_HouseCustomerAddressInfo.ShipmentHouseCustomerInfoId
+													WHERE
+														Shipment_HouseCustomerInfo.CustomerType = 'SHP'
+													AND
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = #{houseId}
+														)
+	</delete>
+	
+		<delete id="sqlDeleteHawbAddressShipperData"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE FROM  
+			Shipment_HouseCustomerAddressInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = (
+													SELECT ShipmentHouseCustomerAddressInfoId
+													FROM
+														Shipment_HouseCustomerAddressInfo
+													INNER JOIN
+														Shipment_HouseCustomerInfo
+														ON
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = 
+														Shipment_HouseCustomerAddressInfo.ShipmentHouseCustomerInfoId
+													WHERE
+														Shipment_HouseCustomerInfo.CustomerType = 'SHP'
+													AND
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = #{houseId}
+														)
+	</delete>
+	
+		<delete id="sqlDeleteHawbShipperConsigneeDataConsignee"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE 
+		FROM  
+			Shipment_HouseCustomerInfo
+		WHERE
+			ShipmentHouseCustomerInfoId = (
+													SELECT ShipmentHouseCustomerInfoId
+													FROM
+														Shipment_HouseCustomerInfo
+													WHERE
+														CustomerType = 'CNE'
+													AND
+														ShipmentHouseId = #{houseId}
+											)
+	</delete>
+	
+	<delete id="sqlDeleteHawbMastersContactDataConsignee"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerAddressModel">
+		DELETE FROM  
+			Shipment_HouseCustomerContactInfo
+		WHERE
+			ShipmentHouseCustomerAddressInfoId = (
+													SELECT ShipmentHouseCustomerAddressInfoId
+													FROM
+														Shipment_HouseCustomerAddressInfo
+													INNER JOIN
+														Shipment_HouseCustomerInfo
+														ON
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = 
+														Shipment_HouseCustomerAddressInfo.ShipmentHouseCustomerInfoId
+													WHERE
+														Shipment_HouseCustomerInfo.CustomerType = 'CNE'
+													AND
+														Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = #{houseId}
+														)
+	</delete>
+	
+	
+	
+	<insert id="sqlInsertHouseDimension"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionModel"
+		keyColumn="ShipmentHouseDimensionId" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseDimension
+			(
+			ShipmentHouseId
+			,Pieces
+			,UnitCode
+			,VolumeCode
+			,VolumetricWeight
+			,Volume
+			,CreatedUserCode
+			,CreatedDateTime
+			)
+			VALUES
+			(
+			#{houseId}
+			,#{totalDimpieces}
+			,#{unitCode}
+			,#{volumeUnitCode}
+			,#{volumetricWeight}
+			,#{volumeWeight}
+			,#{createdBy}
+			,#{createdOn}
+			)
+	</insert>
+	
+		<insert id="sqlInsertHouseDimensionDetails"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionDetailsModel"
+
+		useGeneratedKeys="true">
+		INSERT INTO Shipment_HouseDimensionDtls
+			(
+			ShipmentHouseDimensionId
+			,Length
+			,Width
+			,Height
+			,Pieces
+			,Volume
+			
+			,CreatedUserCode
+			,CreatedDateTime
+			)
+			VALUES
+			(
+			#{houseDimensionId}
+			,#{length}
+			,#{width}
+			,#{height}
+			,#{pieces}
+			,#{volume}
+			,#{createdBy}
+			,#{createdOn}
+			)
+	</insert>
+
+	
+	<delete id="sqlDeleteDimensionDtls"
+		parameterType="java.math.BigInteger">
+		DELETE FROM  
+			Shipment_HouseDimensionDtls
+		WHERE
+			ShipmentHouseDimensionDtlsId = #{houseDimensionDtlsId}
+	</delete>
+	
+	
+	<update id="sqlupdateDimensionData"
+			parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionModel">
+		UPDATE Shipment_HouseDimension
+		SET
+		     Pieces=#{totalDimpieces}
+			,UnitCode=#{unitCode}
+			,VolumeCode=#{volumeUnitCode}
+			,VolumetricWeight=#{volumetricWeight}
+			,Volume=#{volumeWeight}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentHouseId= #{houseId} 
+	</update>
+
+	<update id="sqlUpdateVolumetricWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionModel">
+		UPDATE Shipment_HouseDimension
+		SET
+		VolumetricWeight=#{volumetricWeight}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentHouseId= #{houseId} and ShipmentHouseDimensionId= #{houseDimensionId}
+	</update>
+	
+	
+	
+	<select id="sqlFetchHouseDimensionDtlsIds" parameterType="java.math.BigInteger"
+	resultType="java.util.List">
+		Select ShipmentHouseDimensionDtlsId from Shipment_HouseDimensionDtls where ShipmentHouseDimensionId = #{houseDimensionId} 
+		
+	</select>
+
+	
+	<update id="sqlupdateDimensionDtlsData"
+			parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionDetailsModel">
+		UPDATE Shipment_HouseDimensionDtls
+		SET
+		     Length=#{length}
+			,Width=#{width}
+			,Height=#{height}
+			,Pieces=#{pieces}
+			,Volume=#{volume}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentHouseDimensionDtlsId= #{houseDimensionDtlsId} 
+	</update>
+	
+	
+	<delete id = "deleteMasterSHC" parameterType = "com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+	delete from Shipment_MasterSHC where shipmentId  = #{id}
+	</delete>
+	
+	<insert id="updateMasterSHC" parameterType = "com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		insert into Shipment_MasterSHC(
+			ShipmentId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values
+		
+        <foreach collection="shcList" item="element" index="index" open="(" separator="),("  close=")">		
+			#{id},
+			#{element},
+			#{createdBy,jdbcType=NVARCHAR},
+			#{createdOn}
+		
+  </foreach>
+	</insert>
+
+	
+		<select id="getHawbListInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSearch"
+		resultMap="MasterHouseWayBillResultMap">
+		WITH ShipmentMaster_Info AS ( 
+			SELECT 
+				ShpMst.ShipmentNumber, 
+				ShpMst.Origin,	     
+				ShpMst.Pieces, 
+				ShpMst.Weight, 
+				ShpMst.HandledByMasterHouse, 
+				ShpMst.ShipmentId, 
+				ShpMst.Destination,
+			 	SUM(1) as TotalHouse, 
+			 	SUM(ShpHseInf.Pieces) as SumHousePieces,
+				SUM(ShpHseInf.Weight) as SumHouseWeight,
+				SUM(ISNULL(ShpHseInf.ChargeableWeight,ShpHseInf.Weight)) as SumHouseChargeableWeight,
+				ShpMst.ChargeableWeight as ChargeableWeight, 
+				ShpMst.DeliveredOn
+	       FROM 
+	       		Shipment_Master ShpMst
+	       LEFT JOIN 
+	       		Shipment_HouseInformation ShpHseInf 
+	       	ON 
+	       		ShpHseInf.ShipmentId = ShpMst.ShipmentId
+	       WHERE 
+	       		ShpMst.ShipmentNumber = #{awbNumber}
+			AND 
+				ShpMst.ShipmentDate= #{awbDate}
+	       GROUP BY 
+	       		ShpMst.ShipmentId, ShpMst.ShipmentNumber, ShpMst.Origin, ShpMst.Pieces, ShpMst.Weight, ShpMst.HandledByMasterHouse,
+	        	ShpMst.ShipmentId, ShpMst.Destination, ShpMst.ChargeableWeight,	ShpMst.DeliveredOn )
+	SELECT  
+		ShpMst.Origin, 
+		ShpMst.Pieces, 
+		ShpMst.Weight,
+		ShpMst.DeliveredOn,
+		ShpMst.HandledByMasterHouse,
+	    ShpMst.ShipmentId, 
+	    ShpMst.Destination,ShpMst.TotalHouse,
+	   	ShpMst.SumHousePieces,
+        ShpMst.SumHouseWeight,
+        ShpMst.SumHouseChargeableWeight,
+	     ShpMst.ChargeableWeight, 
+	     ShpHse.Number as HouseNumber,
+	     ShpHse.Origin as HouseOrigin, 
+	     ShpHse.Pieces as HousePieces,
+	     ShpHse.Weight as HouseWeight, 
+	     ShpHse.Destination as HouseDestination,
+	     ShpHse.ShipmentHouseId, 
+	     ShpHse.ShipmentType as ShipmentType,
+	     ShpHse.ChargeableWeight as HouseChgWeight,
+	     ShpHse.NatureOfGoodsDescription as HouseNog,
+	     ShpHse.WeightUnitCode as HouseWeightUnitCode,
+	     case when HseCne.CustomerCode is not null 
+	  	 then HseCne.CustomerCode else HseCne.CustomerName end as  HouseConsigneeName ,
+	  	 case when HseShppier.CustomerCode is not null 
+	     then HseShppier.CustomerCode else HseShppier.CustomerName end as  HouseShipperName ,
+	     HseShc.SpecialHandlingCode,
+	     HseShc.ShipmentHouseSHCId,
+		(CASE 
+			WHEN 
+				(SELECT COUNT(ImpDeliveryId) FROM  Imp_Delivery WHERE Imp_Delivery.ShipmentHouseId = ShpHse.ShipmentHouseId
+				AND
+					Imp_Delivery.Status IN('COMPLETE', 'COMPLETED' , 'PENDING')  ) > 0
+			THEN 
+				1 
+			ELSE 
+				0
+		 END) AS doFlag,
+		(CASE 
+			WHEN 
+				(SELECT COUNT(ImpDeliveryRequestId) FROM  Imp_DeliveryRequest WHERE Imp_DeliveryRequest.ShipmentHouseId = ShpHse.ShipmentHouseId
+				AND
+					Imp_DeliveryRequest.Status IN('COMPLETE', 'COMPLETED' , 'PENDING') ) > 0
+			THEN 
+				1 
+			ELSE 
+				0
+		 END) AS poFlag,
+		 (
+		 select 
+								case 
+									when Shipment_MasterCustomerInfo.AppointedAgent is not null then
+										Customer_Master.CustomerCode + ' - ' + Customer_Master.CustomerShortName									
+								end
+							from
+								Shipment_MasterCustomerInfo left join
+								Customer_Master
+									on Shipment_MasterCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+							where
+								Shipment_MasterCustomerInfo.CustomerType = 'CNE' and
+								Shipment_MasterCustomerInfo.ShipmentId =ShpMst.ShipmentId
+		 ) AS appointedAgentCode,
+	(select
+		Top(1) CustomerCode
+	from
+		Customer_Master
+	where
+		Customer_Id = HseCne.AppointedAgent) as HouseAppointedAgent,
+	(select
+		ISNULL(SUM(Pieces),0) 
+	from 
+		Shipment_Inventory 
+	where
+		ShpHse.ShipmentHouseId = Shipment_Inventory.ShipmentHouseId
+		)as	locationPieces
+	FROM
+	ShipmentMaster_Info ShpMst
+	
+	    LEFT JOIN Shipment_HouseInformation ShpHse ON ShpHse.ShipmentId = ShpMst.ShipmentId
+	
+	    LEFT JOIN Shipment_HouseCustomerInfo HseCne ON ShpHse.ShipmentHouseId = HseCne.ShipmentHouseId AND HseCne.CustomerType = 'CNE'
+	
+	    LEFT JOIN Shipment_HouseCustomerInfo HseShppier ON ShpHse.ShipmentHouseId = HseShppier.ShipmentHouseId AND HseShppier.CustomerType = 'SHP'
+	
+	    LEFT JOIN Shipment_HouseSHC HseShc ON ShpHse.ShipmentHouseId = HseShc.ShipmentHouseId
+
+		LEFT JOIN Shipment_Inventory ON ShpHse.ShipmentHouseId = Shipment_Inventory.ShipmentHouseId
+		WHERE 
+	ShpMst.ShipmentNumber = #{awbNumber}
+	<if test="hawbNumber != null and hawbNumber !=''">
+		AND ShpHse.Number = #{hawbNumber}
+	</if>
+	</select>
+	
+		<resultMap type="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		id="MasterHouseWayBillResultMap">
+		<id column="ShipmentId" property="id" />
+		<result column="Origin" property="origin" />		
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="DeliveredOn" property="deliveredOn" />
+		<result column="TotalHouse" property="totalHWB" />		
+		<result column="Destination" property="destination" />
+		<result column="ShipmentNumber" property="awbNumber" />
+		<result column="SumHousePieces" property="totalPieces" />
+		<result column="SumHouseWeight" property="totalWeight" />
+		<result column="HandledByMasterHouse" property="handledByHouse" />
+		<result column="ChargeableWeight" property="chargeableWeight" />
+		<result column="appointedAgentCode" property="appointedAgentCode" />
+		<result column="SumHouseChargeableWeight" property="totalChargeableWeight" />
+		<collection property="shcList" javaType="ArrayList" select="getSHCListInfo" column="id=ShipmentId"></collection>
+		<collection property="maintainHouseDetailsList" javaType="ArrayList" resultMap="HouseWayBillResultMap"></collection>
+	</resultMap>
+	
+		<select id="getSHCListInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseSearch"
+		resultType="java.lang.String">
+		
+		SELECT DISTINCT Shipment_MasterSHC.SpecialHandlingCode
+                     FROM   Shipment_MasterSHC
+                     WHERE  Shipment_MasterSHC.ShipmentId = #{id}
+		
+	</select>
+	
+		<resultMap id="HouseWayBillResultMap" type="com.ngen.cosys.shipment.house.model.HouseModel">
+			<result column="ShipmentHouseId" property="houseId" />
+			<result column="ShipmentId" property="masterAwbId" />
+			<result column="ShipmentType" property="shipmentType" />
+			<result column="HouseOrigin" property="origin" />
+			<result column="poFlag" property="poFlag" />
+			<result column="doFlag" property="doFlag" />
+			<result column="HouseDestination" property="destination" />
+			<result column="HousePieces" property="pieces" />
+			<result column="HouseWeight" property="weight" />
+			<result column="HouseNumber" property="hawbNumber" />
+			<result column="HouseShipperName" property="shipperName" />
+			<result column="HouseConsigneeName" property="consigneeName" />
+			<result column="HouseWeightUnitCode" property="weightUnitCode" />
+			<result column="HouseNog" property="natureOfGoods" />
+			<result column="HouseChgWeight" property="chargeableWeight" />
+			<result column="HouseAppointedAgent" property="appointedAgentHouse" />
+			<result column="locationPieces" property="locationPieces" />
+			<association property="houseDimension"
+			select="gethouseDimension"
+			column="{houseId=ShipmentHouseId}"></association>
+			<collection property="shc" javaType="ArrayList" resultMap="HouseWayBillShcResultMap"></collection>
+			
+	</resultMap>
+	
+	<select id="gethouseDimension"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultMap="HouseDimensionResultMap">
+		SELECT
+		ShipmentHouseDimensionId 
+		 ,Pieces 
+		, UnitCode 
+		, VolumeCode 
+		, VolumetricWeight 
+		, Volume 
+		FROM Shipment_HouseDimension
+		where ShipmentHouseId = #{houseId}
+		
+	</select>
+	
+		<resultMap
+		type="com.ngen.cosys.shipment.house.model.HouseDimensionModel"
+		id="HouseDimensionResultMap">
+		<result column="ShipmentHouseDimensionId" property="houseDimensionId"/>
+		<result column="Pieces" property="totalDimpieces" />
+		<result column="UnitCode" property="unitCode" />
+		<result column="VolumeCode" property="volumeUnitCode" />
+		<result column="VolumetricWeight" property="volumetricWeight" />
+		<result column="Volume" property="volumeWeight" />
+         <collection property="dimensionList" javaType="ArrayList" select="getDimensionList" column="{houseDimensionId=ShipmentHouseDimensionId}"></collection>
+	    </resultMap>
+	
+	<select id="getDimensionList"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionModel"
+		resultType="com.ngen.cosys.shipment.house.model.HouseDimensionDetailsModel">
+		SELECT ShipmentHouseDimensionDtlsId houseDimensionDtlsId
+		,Pieces pieces
+		, Length length
+		, Width width
+		, Height height
+		, Volume volume
+		FROM Shipment_HouseDimensionDtls
+		where ShipmentHouseDimensionId =#{houseDimensionId}
+		
+	</select>
+	
+		<resultMap id="HouseWayBillShcResultMap" type="com.ngen.cosys.shipment.house.model.HouseSpecialHandlingCodeModel">
+			<id column="ShipmentHouseSHCId" property="id"/>
+	  		<result column="SpecialHandlingCode" property="code"/>
+	  		<result column="ShipmentHouseId" property="houseId" />
+	</resultMap>
+	
+	<update id="updateHouseInfoForAWBThroughMAWB"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel">
+		update Shipment_Master 
+		set 
+		    HandledByDOMINT=#{handledByDOMINT} 
+			<if test="handledByMasterHouse != null and handledByMasterHouse !=''">
+			  ,HandledByMasterHouse = #{handledByMasterHouse}
+			</if>
+		where 
+			Shipment_Master.shipmentNumber = #{awbNumber} and
+			Shipment_Master.ShipmentDate = #{awbDate}
+	</update>
+	
+	<select id="sqlValidateAWBDocInvFreightInfo"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+		SELECT
+		       CASE
+		              WHEN SUM(Data.count) > 0
+		                     THEN 1
+		                     ELSE 0
+		       END As Count
+		FROM
+		       (
+                  SELECT
+                             Count(1) Count
+                  FROM
+                             Shipment_Master SM
+                  WHERE
+                             SM.ShipmentType                   = 'AWB'
+                             AND SM.ShipmentNumber             = #{awbNumber}
+							 AND CAST(SM.ShipmentDate AS DATE) = CAST(#{awbDate} AS DATE)
+							 and (SM.DocumentReceivedOn is not null or SM.PhotoCopy is not null)
+                  UNION
+                   
+				  SELECT  
+					  CASE WHEN COUNT(1) = 0 THEN 0
+						   ELSE 1
+					  END
+				  FROM 
+							Shipment_Master SM INNER JOIN 
+							Shipment_Inventory SI ON 
+							SM.ShipmentId = SI.Shipment_ID 
+				  WHERE 
+							SM.ShipmentNumber                 = #{awbNumber}
+							AND CAST(SM.ShipmentDate AS Date) = CAST(#{awbDate} AS DATE)
+				 UNION
+                   
+				 SELECT  
+					 CASE WHEN COUNT(1) = 0 THEN 0
+						  ELSE 1
+						  END
+					 FROM 
+						    Shipment_Master SM INNER JOIN 
+						    Shipment_FreightOut SF ON 
+						    SM.ShipmentId = SF.ShipmentID 
+					 WHERE 
+							SM.ShipmentNumber                 = #{awbNumber}
+							AND CAST(SM.ShipmentDate AS Date) = CAST(#{awbDate} AS DATE)
+
+
+		    )
+		       as Data 
+		   ]]>	
+	</select>
+
+	<select id="sqlVerifyFreightoutExists"
+		parameterType="com.ngen.cosys.shipment.house.model.MasterAirWayBillModel"
+		resultType="java.lang.Boolean">
+		select case when count(1)>0 then 1 else 0 end as flag from
+		Shipment_FreightOut inner join
+		Shipment_HouseInformation on
+		Shipment_FreightOut.shipmentHouseId = Shipment_HouseInformation.shipmentHouseId
+		where Shipment_FreightOut.ShipmentId=#{id}
+		and Shipment_HouseInformation.number= #{hawbNumber}
+	</select>
+
+	<select id="sqlCheckIssuePO/DOissued"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel"
+		resultType="java.lang.Boolean">
+		select case when count(1)>0 then 1 else 0 end as flag
+		from
+		Shipment_inventory inner join
+		Shipment_HouseInformation on
+		Shipment_inventory.shipmentHouseId =
+		Shipment_HouseInformation.shipmentHouseId
+		where
+		Shipment_ID=#{id}
+		and Shipment_HouseInformation.number=
+		#{hawbNumber}
+		and DeliveryRequestOrderNo is not null and
+		DeliveryOrderNo is not null
+	</select>
+
+	<update id="sqlUpdateHouseChargeableWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		UPDATE Shipment_HouseInformation
+		SET ChargeableWeight = #{chargeableWeight},
+			LastUpdatedUserCode = #{modifiedBy},
+      		LastUpdatedDateTime = #{modifiedOn}
+		WHERE ShipmentHouseId =#{houseId}
+	</update>
+	
+	<update id="sqlUpdateAWBChargeableWeight"
+		parameterType="com.ngen.cosys.shipment.house.model.HouseModel">
+		UPDATE Shipment_Master
+		SET ChargeableWeight = #{awbChargeableWeight},
+			LastUpdatedUserCode = #{modifiedBy},
+      		LastUpdatedDateTime = #{modifiedOn}
+		WHERE ShipmentId =#{masterAwbId}
+	</update>
+	
+		<update id="sqlupdateDimension"
+			parameterType="com.ngen.cosys.shipment.house.model.HouseDimensionDetailsModel">
+		UPDATE Shipment_HouseDimension
+		SET
+		     Pieces=Pieces-#{pieces}
+			,VolumetricWeight=VolumetricWeight-#{dimnVolumetricWeight}
+			,Volume=Volume-#{dimensionVolume}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		ShipmentHouseId= #{houseId} 
+	</update>
+	<select id="sqlCheckFlightCompleted" parameterType="BigInteger" resultType="java.lang.Integer">
+	  select case when FirstTimeBreakDownCompletedAt is not null then 1 else 0 
+       end  
+       from Imp_FlightEvents where FlightId= #{flightId}
+     </select>
+     
+     <select id="sqlGetFlightIdByShipmentNumberAndDate" parameterType="Map" resultType="BigInteger">
+	  Select TOP 1 FlightId from Imp_ShipmentVerification where 
+      ShipmentId=ISNULL(#{shipmentId},(Select ShipmentId from Shipment_Master where ShipmentNumber=#{shipmentNumber} and ShipmentDate=CAST(#{shipmentDate} as DATE))) order by CreatedDateTime desc
+     </select>
+     
+     <select id="sqlGetFlightId" parameterType="BigInteger" resultType="BigInteger">
+	  Select TOP 1 FlightId from Imp_ShipmentVerification where ShipmentId=#{shipmentId} order by CreatedDateTime desc
+     </select>
+     
+     <select id="sqlGetMessageType" parameterType="Map" resultType="String">
+     select TOP 1 (CASE WHEN ShipmentId is not NULL THEN 'U' else NULL END) as MessageType
+     from Imp_ShipmentVerification where FlightId=#{flightId} and ShipmentId=#{shipmentId} order by CreatedDateTime desc
+     </select>
+	
+	
+	<select id="checkAppointedAgent" parameterType="java.math.BigInteger"
+			resultType="java.lang.Integer">
+			
+			SELECT count
+           (*)
+          FROM Customer_Types AS ct
+          INNER JOIN Customer_Master AS
+          cm ON ct.Customer_ID = cm.Customer_ID
+          WHERE ct.CustomerTypeCode = 'AGT'
+          and ct.Customer_ID =	#{appointedAgent}	
+			</select>
+	<select id="sqlFetchAppointedAgent" 
+		parameterType="com.ngen.cosys.shipment.house.model.HouseCustomerModel"
+		resultType="java.math.BigInteger">
+		
+		SELECT Customer_ID from Customer_Master 
+		WHERE CustomerCode = 'IXX'
+
+	</select>
+	
+	<select id="sqlFetchClearingAgentName" 
+		parameterType="String"
+		resultType="String">
+		
+		SELECT CustomerShortName from Customer_Master 
+		WHERE CustomerCode = #{agentCode}
+
+	</select>
+	
+	<select id="isInternationalShipment" parameterType="BigInteger" resultType="Integer">
+		select (CASE WHEN HandledByDOMINT='INT' THEN 1 ELSE 0 END) AS isInternationalShipment from Shipment_Master where 
+        ShipmentId=#{shipmentId}
+	</select>
+	
+</mapper>

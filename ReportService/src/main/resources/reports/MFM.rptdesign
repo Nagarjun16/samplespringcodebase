@@ -1,0 +1,3381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="tenantAirportCode" id="1530">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="flightId" id="2719">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="531">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="532">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">AirwayBillNo</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AirwayBillNo</text-property>
+                    <text-property name="heading">AirwayBillNo</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">HouseAirWayBill</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">HouseAirWayBill</text-property>
+                    <text-property name="heading">HouseAirWayBill</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AirportDeparture</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AirportDeparture</text-property>
+                    <text-property name="heading">AirportDeparture</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AirportDestination</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AirportDestination</text-property>
+                    <text-property name="heading">AirportDestination</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipperName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipperName</text-property>
+                    <text-property name="heading">ShipperName</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipperAddress</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipperAddress</text-property>
+                    <text-property name="heading">ShipperAddress</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipperContact</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipperContact</text-property>
+                    <text-property name="heading">ShipperContact</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ConsigneeName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ConsigneeName</text-property>
+                    <text-property name="heading">ConsigneeName</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ConsigneeAddress</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ConsigneeAddress</text-property>
+                    <text-property name="heading">ConsigneeAddress</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ConsigneeContact</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ConsigneeContact</text-property>
+                    <text-property name="heading">ConsigneeContact</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">GoodsDescription</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">GoodsDescription</text-property>
+                    <text-property name="heading">GoodsDescription</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">GoodsPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">GoodsPieces</text-property>
+                    <text-property name="heading">GoodsPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">GoodsGrossWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">GoodsGrossWeight</text-property>
+                    <text-property name="heading">GoodsGrossWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DeclarationType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DeclarationType</text-property>
+                    <text-property name="heading">DeclarationType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">GoodsQgtUnit</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">GoodsQgtUnit</text-property>
+                    <text-property name="heading">GoodsQgtUnit</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <text-property name="heading">ShipmentDate</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">6</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">AirwayBillNo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">HouseAirWayBill</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">AirportDeparture</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">AirportDestination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">ShipperName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">ShipperAddress</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">ShipperContact</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">ConsigneeName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">ConsigneeAddress</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">ConsigneeContact</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">GoodsDescription</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">GoodsPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">GoodsGrossWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">DeclarationType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">GoodsQgtUnit</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">ShipmentDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">AirwayBillNo</property>
+                    <property name="nativeName">AirwayBillNo</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">HouseAirWayBill</property>
+                    <property name="nativeName">HouseAirWayBill</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">AirportDeparture</property>
+                    <property name="nativeName">AirportDeparture</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">AirportDestination</property>
+                    <property name="nativeName">AirportDestination</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">ShipperName</property>
+                    <property name="nativeName">ShipperName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">ShipperAddress</property>
+                    <property name="nativeName">ShipperAddress</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">ShipperContact</property>
+                    <property name="nativeName">ShipperContact</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">ConsigneeName</property>
+                    <property name="nativeName">ConsigneeName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">ConsigneeAddress</property>
+                    <property name="nativeName">ConsigneeAddress</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">ConsigneeContact</property>
+                    <property name="nativeName">ConsigneeContact</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">GoodsDescription</property>
+                    <property name="nativeName">GoodsDescription</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">GoodsPieces</property>
+                    <property name="nativeName">GoodsPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">GoodsGrossWeight</property>
+                    <property name="nativeName">GoodsGrossWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">DeclarationType</property>
+                    <property name="nativeName">DeclarationType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">GoodsQgtUnit</property>
+                    <property name="nativeName">GoodsQgtUnit</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">ShipmentDate</property>
+                    <property name="nativeName">ShipmentDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[
+
+				With ShipmentAWBInfo AS(
+	select
+		Shipment_Master.ShipmentNumber									as AirwayBillNo,
+		case
+			when (select	
+						count(1) 
+					from
+						Shipment_FreightHouseListByAWB
+					where
+						Shipment_FreightHouseListByAWB.AwbNumber = Shipment_Master.ShipmentNumber and
+						Shipment_FreightHouseListByAWB.AwbDate = Shipment_Master.ShipmentDate) >0 then
+				''
+			else
+				'NIL'
+			end															as HouseAirWayBill,
+		?															as AirportDeparture,
+		'MFM'															as AirportDestination,
+		FWBShipperInfo.CustomerName										as ShipperName,
+		FWBShipperAddressInfo.StreetAddress								as ShipperAddress,
+		( SELECT string_agg(ContactDetail.ContactDetail, ' ') 
+		
+		FROM (
+		SELECT DISTINCT ContactDetail 
+		FROM  Shipment_FreightWayBillCustomerContactInfo 
+		WHERE Shipment_FreightWayBillCustomerContactInfo.ShipmentFreightWayBillCustomerContactInfoId=FWBShipperAddressContactInfo.ShipmentFreightWayBillCustomerContactInfoId
+		)
+		ContactDetail
+		)	
+		as ShipperContact,
+		FWBConsigneeInfo.CustomerName									as ConsigneeName,
+		FWBConsigneeAddressInfo.StreetAddress							as ConsigneeAddress,
+		( SELECT string_agg(ContactDetail.ContactDetail, ' ') 
+		
+		FROM (
+		SELECT DISTINCT ContactDetail 
+		FROM  Shipment_FreightWayBillCustomerContactInfo 
+		WHERE Shipment_FreightWayBillCustomerContactInfo.ShipmentFreightWayBillCustomerContactInfoId=FWBConsigneeAddressContactInfo.ShipmentFreightWayBillCustomerContactInfoId
+		)
+		ContactDetail
+		)	
+		as ConsigneeContact,
+		Shipment_Master.NatureOfGoodsDescription						as GoodsDescription,
+		sum(Exp_ManifestShipmentInfo.Piece)		as GoodsPieces,
+		sum(Exp_ManifestShipmentInfo.Weight)			as GoodsGrossWeight,
+		'I'																as DeclarationType,
+		'KG'															as GoodsQgtUnit,
+
+		--Joining fields
+		Shipment_Master.ShipmentDate									as ShipmentDate
+	from
+		Exp_Manifest inner join
+		Exp_ManifestShipmentInfo 
+			on Exp_Manifest.ManifestId = Exp_ManifestShipmentInfo.ManifestId inner join
+		Shipment_Master
+			on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+		Shipment_FreightWayBill
+			on Shipment_Master.ShipmentNumber = Shipment_FreightWayBill.AwbNumber and
+				Shipment_Master.ShipmentDate = Shipment_FreightWayBill.AwbDate inner join
+		--Rate Info
+		Shipment_FreightWayBillRateDescription
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillId inner join
+		--Shipper Info
+		Shipment_FreightWayBillCustomerInfo FWBShipperInfo
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = FWBShipperInfo.ShipmentFreightWayBillId and
+				FWBShipperInfo.CustomerType = 'SHP' inner join
+		Shipment_FreightWayBillCustomerAddressInfo FWBShipperAddressInfo
+			on FWBShipperInfo.ShipmentFreightWayBillCustomerInfoId = FWBShipperAddressInfo.ShipmentFreightWayBillCustomerInfoId  inner join
+		--Consignee Info		
+		Shipment_FreightWayBillCustomerInfo FWBConsigneeInfo
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = FWBConsigneeInfo.ShipmentFreightWayBillId and
+				FWBConsigneeInfo.CustomerType = 'CNE' inner join
+		Shipment_FreightWayBillCustomerAddressInfo FWBConsigneeAddressInfo
+			on FWBConsigneeInfo.ShipmentFreightWayBillCustomerInfoId = FWBConsigneeAddressInfo.ShipmentFreightWayBillCustomerInfoId INNER JOIN
+		Flt_operativeflight_segments on Flt_operativeflight_segments.Flight_ID = Exp_Manifest.FlightId and Flt_operativeflight_segments.FlightSegmentId = Exp_Manifest.FlightSegmentId
+		left join
+		Shipment_FreightWayBillCustomerContactInfo FWBConsigneeAddressContactInfo
+			on FWBConsigneeAddressInfo.ShipmentFreightWayBillCustomerAddressInfoId = FWBConsigneeAddressContactInfo.ShipmentFreightWayBillCustomerAddressInfoId and
+				FWBConsigneeAddressContactInfo.ContactIdentifier = 'TE'
+				left join
+		Shipment_FreightWayBillCustomerContactInfo FWBShipperAddressContactInfo
+			on FWBShipperAddressInfo.ShipmentFreightWayBillCustomerAddressInfoId = FWBShipperAddressContactInfo.ShipmentFreightWayBillCustomerAddressInfoId and
+				FWBShipperAddressContactInfo.ContactIdentifier = 'TE'
+	where
+		Shipment_Master.ShipmentType = 'AWB' and
+		Exp_Manifest.FlightId = ?
+		AND Flt_operativeflight_segments.FlightOffPoint='MFM'
+		 	and Flt_operativeflight_segments.FlightBoardPoint = ?
+	group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		FWBShipperInfo.CustomerName,
+		FWBShipperAddressInfo.StreetAddress,
+		FWBConsigneeInfo.CustomerName,
+		FWBConsigneeAddressInfo.StreetAddress,
+		Shipment_Master.NatureOfGoodsDescription,
+		FWBConsigneeAddressContactInfo.ShipmentFreightWayBillCustomerContactInfoId,
+		FWBShipperAddressContactInfo.ShipmentFreightWayBillCustomerContactInfoId
+), ShipmentHouseInfo AS(
+	select
+		Shipment_Master.ShipmentNumber										as AirwayBillNo,
+		Shipment_FreightHouseListByHAWB.HAWBNumber							as HouseAirWayBill,
+		?																as AirportDeparture,
+		'MFM'																as AirportDestination,
+		HouseShipperInfo.CustomerName										as ShipperName,
+		HouseShipperAddressInfo.StreetAddress								as ShipperAddress,
+		( SELECT string_agg(ContactDetail.ContactTypeDetail, ' ') 
+		
+		FROM (
+		SELECT DISTINCT ContactTypeDetail 
+		FROM  Shipment_FreightHouseListByHAWBCustomerContactInfo 
+		WHERE Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerContactInfoId=HouseShipperAddressContactInfo.ShipmentFHLByHAWBCustomerContactInfoId
+		)
+		ContactDetail
+		)	
+		as ShipperContact,
+		
+		HouseConsigneeInfo.CustomerName										as ConsigneeName,
+		HouseConsigneeAddressInfo.StreetAddress								as ConsigneeAddress,
+			( SELECT string_agg(ContactDetail.ContactTypeDetail, ' ') 
+		
+		FROM (
+		SELECT DISTINCT ContactTypeDetail 
+		FROM  Shipment_FreightHouseListByHAWBCustomerContactInfo 
+		WHERE Shipment_FreightHouseListByHAWBCustomerContactInfo.ShipmentFHLByHAWBCustomerContactInfoId=HouseConsigneeAddressContactInfo.ShipmentFHLByHAWBCustomerContactInfoId
+		)
+		ContactDetail
+		)	
+		as ConsigneeContact,
+		
+		Shipment_FreightHouseListByHAWB.NatureOfGoodsDescription			as GoodsDescription,
+		Shipment_FreightHouseListByHAWB.Pieces								as GoodsPieces,
+		Shipment_FreightHouseListByHAWB.Weight								as GoodsGrossWeight,
+		'I'																	as DeclarationType,
+		'KG'																as GoodsQgtUnit,
+
+		--Joining fields
+		Shipment_Master.ShipmentDate									as ShipmentDate
+	from
+		Exp_Manifest inner join
+		Exp_ManifestShipmentInfo 
+			on Exp_Manifest.ManifestId = Exp_ManifestShipmentInfo.ManifestId inner join
+		Shipment_Master
+			on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+		Shipment_FreightHouseListByAWB
+			on Shipment_Master.ShipmentNumber = Shipment_FreightHouseListByAWB.AwbNumber and
+				Shipment_Master.ShipmentDate = Shipment_FreightHouseListByAWB.AwbDate inner join
+		--House Info
+		Shipment_FreightHouseListByHAWB
+			on Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId inner join
+		--Shipper Info
+		Shipment_FreightHouseListByHAWBCustomerInfo HouseShipperInfo
+			on Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId = HouseShipperInfo.ShipmentFreightHouseListByHAWBId and
+				HouseShipperInfo.CustomerType = 'SHP' inner join
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo HouseShipperAddressInfo
+			on HouseShipperInfo.ShipmentFHLByHAWBCustomerInfoId = HouseShipperAddressInfo.ShipmentFHLByHAWBCustomerInfoId  inner join
+		--Consignee Info		
+		Shipment_FreightHouseListByHAWBCustomerInfo HouseConsigneeInfo
+			on Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByHAWBId = HouseConsigneeInfo.ShipmentFreightHouseListByHAWBId and
+				HouseConsigneeInfo.CustomerType = 'CNE' inner join
+		Shipment_FreightHouseListByHAWBCustomerAddressInfo HouseConsigneeAddressInfo
+			on HouseConsigneeInfo.ShipmentFHLByHAWBCustomerInfoId = HouseConsigneeAddressInfo.ShipmentFHLByHAWBCustomerInfoId 
+			INNER JOIN
+		Flt_operativeflight_segments on Flt_operativeflight_segments.Flight_ID = Exp_Manifest.FlightId and Flt_operativeflight_segments.FlightSegmentId = Exp_Manifest.FlightSegmentId
+			left join
+		Shipment_FreightHouseListByHAWBCustomerContactInfo HouseConsigneeAddressContactInfo
+			on HouseConsigneeAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId = HouseConsigneeAddressContactInfo.ShipmentFHLByHAWBCustomerAddressInfoId and
+				HouseConsigneeAddressContactInfo.ContactTypeCode = 'TE'
+				
+				left join
+		Shipment_FreightHouseListByHAWBCustomerContactInfo HouseShipperAddressContactInfo
+			on HouseShipperAddressInfo.ShipmentFHLByHAWBCustomerAddressInfoId = HouseShipperAddressContactInfo.ShipmentFHLByHAWBCustomerAddressInfoId and
+				HouseShipperAddressContactInfo.ContactTypeCode = 'TE'
+	where
+		Shipment_Master.ShipmentType = 'AWB' and
+		Exp_Manifest.FlightId = ? and
+		Flt_operativeflight_segments.FlightOffPoint='MFM'
+		 	and Flt_operativeflight_segments.FlightBoardPoint = ?
+	group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		HouseShipperInfo.CustomerName,
+		HouseShipperAddressInfo.StreetAddress,
+		HouseConsigneeInfo.CustomerName,
+		HouseConsigneeAddressInfo.StreetAddress,
+		Shipment_FreightHouseListByHAWB.NatureOfGoodsDescription,
+		Shipment_FreightHouseListByHAWB.HAWBNumber,
+		Shipment_FreightHouseListByHAWB.Pieces,
+		Shipment_FreightHouseListByHAWB.Weight,
+		HouseShipperAddressContactInfo.ShipmentFHLByHAWBCustomerContactInfoId,
+		HouseConsigneeAddressContactInfo.ShipmentFHLByHAWBCustomerContactInfoId
+)
+select
+	*
+from(
+	select
+		*
+	from
+		ShipmentAWBInfo
+	union all
+	select
+		*
+	from
+		ShipmentHouseInfo
+)MFMInfo
+order by
+	MFMInfo.AirwayBillNo,
+	MFMInfo.HouseAirWayBill
+
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AirwayBillNo</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AirwayBillNo</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AirwayBillNo</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>HouseAirWayBill</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>12</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>HouseAirWayBill</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>HouseAirWayBill</design:label>
+            <design:formattingHints>
+              <design:displaySize>12</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AirportDeparture</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AirportDeparture</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AirportDeparture</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AirportDestination</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AirportDestination</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AirportDestination</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipperName</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipperName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipperName</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipperAddress</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipperAddress</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipperAddress</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipperContact</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipperContact</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipperContact</design:label>
+            <design:formattingHints>
+              <design:displaySize>8000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ConsigneeName</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ConsigneeName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ConsigneeName</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ConsigneeAddress</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ConsigneeAddress</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ConsigneeAddress</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ConsigneeContact</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ConsigneeContact</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ConsigneeContact</design:label>
+            <design:formattingHints>
+              <design:displaySize>8000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GoodsDescription</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GoodsDescription</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GoodsDescription</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GoodsPieces</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GoodsPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GoodsPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GoodsGrossWeight</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GoodsGrossWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GoodsGrossWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DeclarationType</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DeclarationType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DeclarationType</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GoodsQgtUnit</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GoodsQgtUnit</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GoodsQgtUnit</design:label>
+            <design:formattingHints>
+              <design:displaySize>2</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentDate</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set1" id="554">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">flightnumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flightnumber</text-property>
+                    <text-property name="heading">flightnumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">fltdeparturedate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">fltdeparturedate</text-property>
+                    <text-property name="heading">fltdeparturedate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">departuretime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">departuretime</text-property>
+                    <text-property name="heading">departuretime</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">arrivaldate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">arrivaldate</text-property>
+                    <text-property name="heading">arrivaldate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">arrivaltime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">arrivaltime</text-property>
+                    <text-property name="heading">arrivaltime</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">issuingCarrier</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">issuingCarrier</text-property>
+                    <text-property name="heading">issuingCarrier</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">issuingCarrierAddress</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">issuingCarrierAddress</text-property>
+                    <text-property name="heading">issuingCarrierAddress</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">issuingCarrierContact</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">issuingCarrierContact</text-property>
+                    <text-property name="heading">issuingCarrierContact</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">flightnumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">fltdeparturedate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">departuretime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">arrivaldate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">arrivaltime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">issuingCarrier</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">issuingCarrierAddress</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">issuingCarrierContact</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">flightnumber</property>
+                    <property name="nativeName">flightnumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">fltdeparturedate</property>
+                    <property name="nativeName">fltdeparturedate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">departuretime</property>
+                    <property name="nativeName">departuretime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">arrivaldate</property>
+                    <property name="nativeName">arrivaldate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">arrivaltime</property>
+                    <property name="nativeName">arrivaltime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">issuingCarrier</property>
+                    <property name="nativeName">issuingCarrier</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">issuingCarrierAddress</property>
+                    <property name="nativeName">issuingCarrierAddress</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">issuingCarrierContact</property>
+                    <property name="nativeName">issuingCarrierContact</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[Select  distinct flt_operativeflight.FlightKey as flightnumber,
+upper((FORMAT(CAST(flt_operativeflight_legs.DateSTD   as date), 'yyyyMMdd'))) as fltdeparturedate,
+upper((FORMAT(CAST(flt_operativeflight_legs.DateSTD   as datetime), 'HHmm'))) as departuretime,
+upper((FORMAT(CAST(flt_operativeflight_legs.DateSTA   as date), 'yyyyMMdd'))) as arrivaldate,
+upper((FORMAT(CAST(flt_operativeflight_legs.DateSTA   as datetime), 'HHmm'))) as arrivaltime,
+(select ParameterValueChar from App_SystemParameters where ParameterCode='ISSUING_CARRIER_NAME') as issuingCarrier,
+(select ParameterValueChar from App_SystemParameters where ParameterCode='ISSUING_ADDRESS') as issuingCarrierAddress,
+(select ParameterValueChar from App_SystemParameters where ParameterCode='ISSUING_CONTACT') as issuingCarrierContact
+ from flt_operativeflight 
+inner join flt_operativeflight_legs on flt_operativeflight.Flight_ID = flt_operativeflight_legs.Flight_ID
+
+ where flt_operativeflight_legs.flight_id =?]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flightnumber</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flightnumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flightnumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>fltdeparturedate</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>fltdeparturedate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>fltdeparturedate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>departuretime</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>departuretime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>departuretime</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>arrivaldate</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>arrivaldate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>arrivaldate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>arrivaltime</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>arrivaltime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>arrivaltime</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set2" id="562">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">AirwayBillCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">AirwayBillCount</text-property>
+                    <text-property name="heading">AirwayBillCount</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalGoodsPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalGoodsPieces</text-property>
+                    <text-property name="heading">TotalGoodsPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalGoodsGrossWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalGoodsGrossWeight</text-property>
+                    <text-property name="heading">TotalGoodsGrossWeight</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">AirwayBillCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">TotalGoodsPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">TotalGoodsGrossWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">AirwayBillCount</property>
+                    <property name="nativeName">AirwayBillCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">TotalGoodsPieces</property>
+                    <property name="nativeName">TotalGoodsPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">TotalGoodsGrossWeight</property>
+                    <property name="nativeName">TotalGoodsGrossWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select
+		count(distinct Shipment_Master.ShipmentNumber)  as AirwayBillCount,
+		sum(Exp_ManifestShipmentInfo.Piece)		as TotalGoodsPieces,
+		sum(Exp_ManifestShipmentInfo.Weight)			as TotalGoodsGrossWeight
+			from
+		Exp_Manifest inner join
+		Exp_ManifestShipmentInfo 
+			on Exp_Manifest.ManifestId = Exp_ManifestShipmentInfo.ManifestId inner join
+		Shipment_Master
+			on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId inner join
+		Shipment_FreightWayBill
+			on Shipment_Master.ShipmentNumber = Shipment_FreightWayBill.AwbNumber and
+				Shipment_Master.ShipmentDate = Shipment_FreightWayBill.AwbDate inner join
+		--Rate Info
+		Shipment_FreightWayBillRateDescription
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillId inner join
+		--Shipper Info
+		Shipment_FreightWayBillCustomerInfo FWBShipperInfo
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = FWBShipperInfo.ShipmentFreightWayBillId and
+				FWBShipperInfo.CustomerType = 'SHP' inner join
+		Shipment_FreightWayBillCustomerAddressInfo FWBShipperAddressInfo
+			on FWBShipperInfo.ShipmentFreightWayBillCustomerInfoId = FWBShipperAddressInfo.ShipmentFreightWayBillCustomerInfoId inner join
+		--Consignee Info		
+		Shipment_FreightWayBillCustomerInfo FWBConsigneeInfo
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = FWBConsigneeInfo.ShipmentFreightWayBillId and
+				FWBConsigneeInfo.CustomerType = 'CNE' inner join
+		Shipment_FreightWayBillCustomerAddressInfo FWBConsigneeAddressInfo
+			on FWBConsigneeInfo.ShipmentFreightWayBillCustomerInfoId = FWBConsigneeAddressInfo.ShipmentFreightWayBillCustomerInfoId 
+			INNER JOIN
+		Flt_operativeflight_segments on Flt_operativeflight_segments.Flight_ID = Exp_Manifest.FlightId and Flt_operativeflight_segments.FlightSegmentId = Exp_Manifest.FlightSegmentId
+			
+			left join
+		Shipment_FreightWayBillCustomerContactInfo FWBConsigneeAddressContactInfo
+			on FWBConsigneeAddressInfo.ShipmentFreightWayBillCustomerAddressInfoId = FWBConsigneeAddressContactInfo.ShipmentFreightWayBillCustomerAddressInfoId and
+				FWBConsigneeAddressContactInfo.ContactIdentifier = 'TE'
+
+				left join
+		Shipment_FreightWayBillCustomerContactInfo FWBShipperAddressContactInfo
+			on FWBShipperAddressInfo.ShipmentFreightWayBillCustomerAddressInfoId = FWBShipperAddressContactInfo.ShipmentFreightWayBillCustomerAddressInfoId and
+				FWBShipperAddressContactInfo.ContactIdentifier = 'TE' 
+	where
+		Shipment_Master.ShipmentType = 'AWB' and
+		Exp_Manifest.FlightId = ? AND
+		Flt_operativeflight_segments.FlightOffPoint='MFM' 
+			and Flt_operativeflight_segments.FlightBoardPoint = ?
+		]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AirwayBillCount</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AirwayBillCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AirwayBillCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>TotalGoodsPieces</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>TotalGoodsPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>TotalGoodsPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>TotalGoodsGrossWeight</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>TotalGoodsGrossWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>TotalGoodsGrossWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">custom</property>
+            <property name="height">11in</property>
+            <property name="width">20in</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <label id="4">
+            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+            <property name="fontFamily">"Tahoma"</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1px</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1px</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1px</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1px</property>
+            <text-property name="text">export.air.cargo.manifest</text-property>
+        </label>
+        <label id="5">
+            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+            <property name="fontFamily">"Tahoma"</property>
+            <text-property name="text">event.flightInformation</text-property>
+        </label>
+        <grid id="6">
+            <property name="fontFamily">"Tahoma"</property>
+            <column id="7"/>
+            <column id="8"/>
+            <column id="9"/>
+            <column id="10"/>
+            <column id="11"/>
+            <column id="12"/>
+            <column id="13"/>
+            <column id="14"/>
+            <column id="15"/>
+            <column id="16"/>
+            <column id="17"/>
+            <column id="18"/>
+            <column id="19"/>
+            <column id="20"/>
+            <column id="21"/>
+            <column id="71"/>
+            <row id="22">
+                <cell id="23">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="54">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">exp.manifest</text-property>
+                    </label>
+                </cell>
+                <cell id="24">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="55">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">g.flight</text-property>
+                    </label>
+                </cell>
+                <cell id="25">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="56">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.flightno</text-property>
+                    </label>
+                </cell>
+                <cell id="26">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="57">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.actual.date</text-property>
+                    </label>
+                </cell>
+                <cell id="27">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="58">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.owner</text-property>
+                    </label>
+                </cell>
+                <cell id="28">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="59">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.daparture.date</text-property>
+                    </label>
+                </cell>
+                <cell id="29">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="60">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.daparture.time</text-property>
+                    </label>
+                </cell>
+                <cell id="30">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="61">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.daparture.station</text-property>
+                    </label>
+                </cell>
+                <cell id="31">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="62">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.daparture.country</text-property>
+                    </label>
+                </cell>
+                <cell id="32">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="63">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.arrival.date</text-property>
+                    </label>
+                </cell>
+                <cell id="33">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="64">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.arrival.time</text-property>
+                    </label>
+                </cell>
+                <cell id="34">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="65">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.arrival.station</text-property>
+                    </label>
+                </cell>
+                <cell id="35">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="66">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.arrival.country</text-property>
+                    </label>
+                </cell>
+                <cell id="36">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="67">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.total.pieces</text-property>
+                    </label>
+                </cell>
+                <cell id="37">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="68">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.total.weight</text-property>
+                    </label>
+                </cell>
+                <cell id="69">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="72">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <text-property name="text">export.total.awb</text-property>
+                    </label>
+                </cell>
+            </row>
+            <row id="38">
+                <cell id="39">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                </cell>
+                <cell id="40">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                </cell>
+                <cell id="41">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="555">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">flightnumber</property>
+                                <text-property name="displayName">flightnumber</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["flightnumber"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">flightnumber</property>
+                    </data>
+                </cell>
+                <cell id="42">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="556">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">fltdeparturedate</property>
+                                <text-property name="displayName">fltdeparturedate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["fltdeparturedate"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">fltdeparturedate</property>
+                    </data>
+                </cell>
+                <cell id="43">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="73">
+                        <text-property name="text">TR</text-property>
+                    </label>
+                </cell>
+                <cell id="44">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="557">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">fltdeparturedate</property>
+                                <text-property name="displayName">fltdeparturedate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["fltdeparturedate"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">fltdeparturedate</property>
+                    </data>
+                </cell>
+                <cell id="45">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="558">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">departuretime</property>
+                                <text-property name="displayName">departuretime</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["departuretime"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">departuretime</property>
+                    </data>
+                </cell>
+                <cell id="46">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="2724">
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">AirportDeparture</property>
+                                <text-property name="displayName">AirportDeparture</text-property>
+                                <expression name="expression" type="javascript">if(dataSetRow["AirportDeparture"]!==null){&#13;
+dataSetRow["AirportDeparture"]&#13;
+}else{'SIN'}</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">AirportDeparture</property>
+                    </data>
+                </cell>
+                <cell id="47">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="75">
+                        <text-property name="text">Singapore</text-property>
+                    </label>
+                </cell>
+                <cell id="48">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="559">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">arrivaldate</property>
+                                <text-property name="displayName">arrivaldate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["arrivaldate"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">arrivaldate</property>
+                    </data>
+                </cell>
+                <cell id="49">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="560">
+                        <property name="dataSet">Data Set1</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">arrivaltime</property>
+                                <text-property name="displayName">arrivaltime</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["arrivaltime"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">arrivaltime</property>
+                    </data>
+                </cell>
+                <cell id="50">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="2725">
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">AirportDestination</property>
+                                <text-property name="displayName">AirportDestination</text-property>
+                                <expression name="expression" type="javascript">if(dataSetRow["AirportDestination"]!==null){&#13;
+dataSetRow["AirportDestination"]&#13;
+}else{&#13;
+'MFM'&#13;
+}</expression>
+                                <property name="dataType">string</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">AirportDestination</property>
+                    </data>
+                </cell>
+                <cell id="51">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <label id="77">
+                        <text-property name="text">Macau</text-property>
+                    </label>
+                </cell>
+                <cell id="52">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="563">
+                        <property name="dataSet">Data Set2</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">TotalGoodsPieces</property>
+                                <text-property name="displayName">TotalGoodsPieces</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["TotalGoodsPieces"]</expression>
+                                <property name="dataType">decimal</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">TotalGoodsPieces</property>
+                    </data>
+                </cell>
+                <cell id="53">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="564">
+                        <property name="dataSet">Data Set2</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">TotalGoodsGrossWeight</property>
+                                <text-property name="displayName">TotalGoodsGrossWeight</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["TotalGoodsGrossWeight"]</expression>
+                                <property name="dataType">decimal</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">TotalGoodsGrossWeight</property>
+                    </data>
+                </cell>
+                <cell id="70">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">1px</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">1px</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">1px</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">1px</property>
+                    <data id="565">
+                        <property name="dataSet">Data Set2</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">AirwayBillCount</property>
+                                <text-property name="displayName">AirwayBillCount</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["AirwayBillCount"]</expression>
+                                <property name="dataType">integer</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">AirwayBillCount</property>
+                    </data>
+                </cell>
+            </row>
+        </grid>
+        <label id="78"/>
+        <table id="80">
+            <property name="fontFamily">"@Malgun Gothic"</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">AirwayBillNo</property>
+                    <text-property name="displayName">AirwayBillNo</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AirwayBillNo"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">HouseAirWayBill</property>
+                    <text-property name="displayName">HouseAirWayBill</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HouseAirWayBill"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AirportDeparture</property>
+                    <text-property name="displayName">AirportDeparture</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AirportDeparture"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AirportDestination</property>
+                    <text-property name="displayName">AirportDestination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["AirportDestination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipperName</property>
+                    <text-property name="displayName">ShipperName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipperName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipperAddress</property>
+                    <text-property name="displayName">ShipperAddress</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipperAddress"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipperContact</property>
+                    <text-property name="displayName">ShipperContact</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipperContact"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ConsigneeName</property>
+                    <text-property name="displayName">ConsigneeName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ConsigneeName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ConsigneeAddress</property>
+                    <text-property name="displayName">ConsigneeAddress</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ConsigneeAddress"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ConsigneeContact</property>
+                    <text-property name="displayName">ConsigneeContact</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ConsigneeContact"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">GoodsDescription</property>
+                    <text-property name="displayName">GoodsDescription</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["GoodsDescription"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">GoodsPieces</property>
+                    <text-property name="displayName">GoodsPieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["GoodsPieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">GoodsGrossWeight</property>
+                    <text-property name="displayName">GoodsGrossWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["GoodsGrossWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">DeclarationType</property>
+                    <text-property name="displayName">DeclarationType</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DeclarationType"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">GoodsQgtUnit</property>
+                    <text-property name="displayName">GoodsQgtUnit</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["GoodsQgtUnit"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentDate</property>
+                    <text-property name="displayName">ShipmentDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentDate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+            </list-property>
+            <property name="pageBreakInterval">2147483647</property>
+            <column id="174"/>
+            <column id="175"/>
+            <column id="176">
+                <property name="width">1in</property>
+            </column>
+            <column id="177"/>
+            <column id="178"/>
+            <column id="179"/>
+            <column id="180"/>
+            <column id="181"/>
+            <column id="182"/>
+            <column id="183"/>
+            <column id="184"/>
+            <column id="185"/>
+            <column id="186"/>
+            <column id="187"/>
+            <column id="188"/>
+            <column id="189"/>
+            <column id="190"/>
+            <column id="191"/>
+            <column id="192"/>
+            <column id="193"/>
+            <column id="194"/>
+            <column id="195"/>
+            <column id="196"/>
+            <column id="197"/>
+            <column id="198"/>
+            <column id="199"/>
+            <column id="200"/>
+            <column id="201"/>
+            <column id="202"/>
+            <column id="203"/>
+            <header>
+                <row id="2748">
+                    <cell id="2749">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2750">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2779">
+                        <property name="colSpan">2</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="79">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Tahoma"</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.airwaybill.information</text-property>
+                        </label>
+                    </cell>
+                    <cell id="2753">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2754">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2755">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2756">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2757">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2758">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2759">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2760">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2761">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2762">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2763">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2764">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2765">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2766">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2767">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="2747">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Tahoma"</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">uld.cargo</text-property>
+                        </label>
+                    </cell>
+                    <cell id="2768">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2769">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2770">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2771">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2772">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2773">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2774">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2775">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2776">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2777">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="2778">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                </row>
+                <row id="81">
+                    <cell id="82">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="204">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">exp.manifest</text-property>
+                        </label>
+                    </cell>
+                    <cell id="83">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="205">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.airwaybill</text-property>
+                        </label>
+                    </cell>
+                    <cell id="84">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="206">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.airwaybillno</text-property>
+                        </label>
+                    </cell>
+                    <cell id="85">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="207">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.house.airwaybill</text-property>
+                        </label>
+                    </cell>
+                    <cell id="86">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="208">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.airport.departure</text-property>
+                        </label>
+                    </cell>
+                    <cell id="87">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="209">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.airport.destination</text-property>
+                        </label>
+                    </cell>
+                    <cell id="88">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="210">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.shippername</text-property>
+                        </label>
+                    </cell>
+                    <cell id="89">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="211">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.shipper.adress</text-property>
+                        </label>
+                    </cell>
+                    <cell id="90">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="212">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.shipper.tel</text-property>
+                        </label>
+                    </cell>
+                    <cell id="91">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="213">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.consignee.name</text-property>
+                        </label>
+                    </cell>
+                    <cell id="92">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="214">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.consignee.address</text-property>
+                        </label>
+                    </cell>
+                    <cell id="93">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="215">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.consignee.tel</text-property>
+                        </label>
+                    </cell>
+                    <cell id="94">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="216">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.issuing.carrier.name</text-property>
+                        </label>
+                    </cell>
+                    <cell id="95">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="217">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.issuing.carrier.address</text-property>
+                        </label>
+                    </cell>
+                    <cell id="96">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="218">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.issuing.carrier.tel</text-property>
+                        </label>
+                    </cell>
+                    <cell id="97">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="219">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.goods.description</text-property>
+                        </label>
+                    </cell>
+                    <cell id="98">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="220">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.goods.pieces</text-property>
+                        </label>
+                    </cell>
+                    <cell id="99">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="221">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.goods.gross.weight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="100">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="222">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.declaration.type</text-property>
+                        </label>
+                    </cell>
+                    <cell id="101">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="223">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.final.consignee.name</text-property>
+                        </label>
+                    </cell>
+                    <cell id="102">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="224">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.final.consignee.address</text-property>
+                        </label>
+                    </cell>
+                    <cell id="103">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="225">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.final.consignee.tel</text-property>
+                        </label>
+                    </cell>
+                    <cell id="104">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="226">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gdshs.code</text-property>
+                        </label>
+                    </cell>
+                    <cell id="105">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="227">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.description</text-property>
+                        </label>
+                    </cell>
+                    <cell id="106">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="228">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.qty</text-property>
+                        </label>
+                    </cell>
+                    <cell id="107">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="229">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.qty.unit</text-property>
+                        </label>
+                    </cell>
+                    <cell id="108">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="230">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.wgt</text-property>
+                        </label>
+                    </cell>
+                    <cell id="109">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="231">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.qgt.unit</text-property>
+                        </label>
+                    </cell>
+                    <cell id="110">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="232">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.val</text-property>
+                        </label>
+                    </cell>
+                    <cell id="111">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <label id="233">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">export.gds.val.currency</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="112">
+                    <cell id="113">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="114">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="115">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="533">
+                            <property name="resultSetColumn">AirwayBillNo</property>
+                        </data>
+                    </cell>
+                    <cell id="116">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="534">
+                            <property name="resultSetColumn">HouseAirWayBill</property>
+                        </data>
+                    </cell>
+                    <cell id="117">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="2723">
+                            <property name="resultSetColumn">AirportDeparture</property>
+                        </data>
+                    </cell>
+                    <cell id="118">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="2722">
+                            <property name="resultSetColumn">AirportDestination</property>
+                        </data>
+                    </cell>
+                    <cell id="119">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="535">
+                            <property name="resultSetColumn">ShipperName</property>
+                        </data>
+                    </cell>
+                    <cell id="120">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="537">
+                            <property name="resultSetColumn">ShipperAddress</property>
+                        </data>
+                    </cell>
+                    <cell id="121">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="536">
+                            <property name="resultSetColumn">ShipperContact</property>
+                        </data>
+                    </cell>
+                    <cell id="122">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="538">
+                            <property name="resultSetColumn">ConsigneeName</property>
+                        </data>
+                    </cell>
+                    <cell id="123">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="540">
+                            <property name="resultSetColumn">ConsigneeAddress</property>
+                        </data>
+                    </cell>
+                    <cell id="124">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="539">
+                            <property name="resultSetColumn">ConsigneeContact</property>
+                        </data>
+                    </cell>
+                    <cell id="125">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <grid id="2726">
+                            <property name="dataSet">Data Set1</property>
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">issuingCarrier</property>
+                                    <text-property name="displayName">issuingCarrier</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["issuingCarrier"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <column id="2727"/>
+                            <row id="2728">
+                                <cell id="2729">
+                                    <data id="2738">
+                                        <property name="resultSetColumn">issuingCarrier</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </grid>
+                    </cell>
+                    <cell id="126">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <grid id="2730">
+                            <property name="dataSet">Data Set1</property>
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">issuingCarrierAddress</property>
+                                    <text-property name="displayName">issuingCarrierAddress</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["issuingCarrierAddress"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <column id="2731"/>
+                            <row id="2732">
+                                <cell id="2733">
+                                    <data id="2739">
+                                        <property name="resultSetColumn">issuingCarrierAddress</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </grid>
+                    </cell>
+                    <cell id="127">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <grid id="2734">
+                            <property name="dataSet">Data Set1</property>
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">issuingCarrierContact</property>
+                                    <text-property name="displayName">issuingCarrierContact</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["issuingCarrierContact"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <column id="2735"/>
+                            <row id="2736">
+                                <cell id="2737">
+                                    <data id="2740">
+                                        <property name="resultSetColumn">issuingCarrierContact</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </grid>
+                    </cell>
+                    <cell id="128">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="541">
+                            <property name="resultSetColumn">GoodsDescription</property>
+                        </data>
+                    </cell>
+                    <cell id="129">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="542">
+                            <property name="resultSetColumn">GoodsPieces</property>
+                        </data>
+                    </cell>
+                    <cell id="130">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="543">
+                            <property name="resultSetColumn">GoodsGrossWeight</property>
+                        </data>
+                    </cell>
+                    <cell id="131">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="544">
+                            <property name="resultSetColumn">DeclarationType</property>
+                        </data>
+                    </cell>
+                    <cell id="132">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="545">
+                            <property name="resultSetColumn">ConsigneeName</property>
+                        </data>
+                    </cell>
+                    <cell id="133">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="546">
+                            <property name="resultSetColumn">ConsigneeAddress</property>
+                        </data>
+                    </cell>
+                    <cell id="134">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="547">
+                            <property name="resultSetColumn">ConsigneeContact</property>
+                        </data>
+                    </cell>
+                    <cell id="135">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="136">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="548">
+                            <property name="resultSetColumn">GoodsDescription</property>
+                        </data>
+                    </cell>
+                    <cell id="137">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="549">
+                            <property name="resultSetColumn">GoodsPieces</property>
+                        </data>
+                    </cell>
+                    <cell id="138">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="139">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="550">
+                            <property name="resultSetColumn">GoodsGrossWeight</property>
+                        </data>
+                    </cell>
+                    <cell id="140">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                        <data id="552">
+                            <property name="resultSetColumn">GoodsQgtUnit</property>
+                        </data>
+                    </cell>
+                    <cell id="141">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                    <cell id="142">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">1px</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">1px</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">1px</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">1px</property>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+    <property name="pageVariables">
+        <variable-element name="awbTotal">
+            <expression name="value" type="javascript">0</expression>
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="totalPc">
+            <expression name="value" type="javascript">0</expression>
+            <property name="type">report</property>
+        </variable-element>
+        <variable-element name="totalWt">
+            <expression name="value" type="javascript">0</expression>
+            <property name="type">report</property>
+        </variable-element>
+    </property>
+</report>

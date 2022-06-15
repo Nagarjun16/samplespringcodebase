@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentInventoryMapper">
+
+	<select id="sqlCheckShipmentInventory" 
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel"
+		resultType="java.math.BigInteger" >
+		select 
+	    	ShipmentInventory_Id 
+		from 
+			Shipment_Inventory
+		where 
+			Shipment_ID = #{shipmentId}	
+			<choose>
+			<when test="inventoryId!= null">
+				  and ShipmentInventory_Id = #{inventoryId}  				
+			</when>
+		</choose>		
+			<choose>
+			<when test="shipmentLocation!= null and shipmentLocation!= '' and inventoryId==null">
+				  and ShipmentLocation = #{shipmentLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation!= null and warehouseLocation!= '' and inventoryId==null">
+				  and WarehouseLocation = #{warehouseLocation} 				
+			</when>
+		</choose>
+			and Flight_ID = #{flightId}
+	</select>
+	
+	<insert id="sqlInsertShipmentInventory"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel"
+		keyProperty="inventoryId" keyColumn="ShipmentInventory_Id" useGeneratedKeys="true">
+		insert into Shipment_Inventory(
+			Shipment_ID,			
+			ShipmentLocation,			
+			Pieces,			
+			Weight,			
+			WarehouseLocation,			
+			Flight_ID,		
+			HandlingArea,
+			ReferenceDetails,
+			PartSuffix,
+			CreatedUser_Code,
+			Created_DateTime
+			<if test="shipmentHouseAWBId != null">
+				,ShipmentHouseId
+			</if>
+			<if test="chargeableWeight != null">
+				,ChargebleWeight
+			</if>				
+		)values(
+			#{shipmentId},
+			UPPER(#{shipmentLocation}),
+			#{pieces},
+			#{weight},
+			#{warehouseLocation},
+			#{flightId},
+			#{terminal},
+			#{uldNumber},
+			#{partSuffix},
+			#{createdBy},
+			#{createdOn}
+			<if test="shipmentHouseAWBId != null">
+				,#{shipmentHouseAWBId}
+			</if>
+			<if test="chargeableWeight != null">
+				,#{chargeableWeight}
+			</if>
+		)
+	</insert>
+	
+	<update id="sqlUpdateShipmentInventoryPieceWeight"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		update Shipment_Inventory
+		set
+			Pieces = #{pieces},
+			Weight = #{weight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn},
+			PartSuffix = #{partSuffix},
+			ShipmentLocation = #{shipmentLocation},
+			WarehouseLocation = #{warehouseLocation} 			
+		where 
+			Shipment_ID = #{shipmentId}			
+			<choose>
+			<when test="inventoryId!= null">
+				  and ShipmentInventory_Id = #{inventoryId}  				
+			</when>
+		</choose>		
+			<choose>
+			<when test="shipmentLocation!= null and shipmentLocation!= '' and inventoryId==null">
+				  and ShipmentLocation = #{shipmentLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation!= null and warehouseLocation!= '' and inventoryId==null">
+				  and WarehouseLocation = #{warehouseLocation} 				
+			</when>
+		</choose>
+			and Flight_ID = #{flightId}
+	</update>
+	
+	<update id="sqlUpdateShipmentInventoryBreakDown"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		update Shipment_Inventory
+		set
+			Pieces = #{pieces},
+			Weight = #{weight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn},
+			PartSuffix = #{partSuffix},
+			ShipmentLocation = #{shipmentLocation},
+			WarehouseLocation = #{warehouseLocation}
+			<if test='chargeableWeight != null'>
+			 ,ChargebleWeight = #{chargeableWeight}
+			</if> 			
+		where 
+			Shipment_ID = #{shipmentId}			
+			<choose>
+			<when test="inventoryId!= null">
+				  and ShipmentInventory_Id = #{inventoryId}  				
+			</when>
+		    </choose>		
+			and Flight_ID = #{flightId}
+	</update>
+	
+	<delete id="deleteShipmentinventoryLineItem"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		delete from Shipment_inventory where ShipmentInventory_Id = #{inventoryId} 
+		and DeliveryRequestOrderNo is null and DeliveryOrderNo is null
+	</delete>
+	
+	<delete id="deleteShipmentInventorySHCLineItem"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		delete from Shipment_InventorySHC where ShipmentInventoryId = #{inventoryId}
+	</delete>
+
+	<select id="sqlCheckShipmentInventoryShc" 
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentShcModel"
+		resultType="java.lang.Boolean" >
+		select
+			case when count(ShipmentInventoryShcId) > 0 then 
+	    		1 
+	    	else 0 end result	  
+		from 
+			Shipment_InventorySHC
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId} and
+		 	SpecialHandlingCode = #{specialHandlingCode}
+	</select>
+	
+	<insert id="sqlInsertShipmentInventoryShc"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentShcModel">
+		insert into Shipment_InventorySHC(		
+			ShipmentInventoryId,			
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			#{shipmentInventoryId},
+			#{specialHandlingCode},
+			#{createdBy},
+			#{createdOn},
+			#{modifiedBy},
+			#{modifiedOn}
+		)
+	</insert>
+		
+	<select id="sqlCheckShipmentInventoryHouse" 
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel"
+		resultType="java.lang.Boolean" >
+		select
+			case when count(ShipmentHouseId) > 0 then 
+	    		1 
+	    	else 0 end result	   
+		from 
+			Shipment_InventoryHouse
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId} and 
+			ShipmentHouseId = #{shipmentHouseId}
+	</select>
+	
+	<insert id="sqlInsertShipmentInventoryHouse"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel">
+		insert into Shipment_InventoryHouse(		
+			ShipmentInventoryId,			
+			ShipmentHouseId,			
+			Pieces,			
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentInventoryId},
+			#{shipmentHouseId},
+			#{pieces},
+			#{weight},
+			#{createdBy},
+			#{createdOn}			
+		)
+	</insert>
+	
+	<update id="sqlUpdateShipmentInventoryHousePieceWeight"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentHouseModel">
+		update Shipment_InventoryHouse
+		set
+			Pieces = Pieces + #{pieces},			
+			Weight = Weight + #{weight},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId} and 
+			ShipmentHouseId = #{shipmentHouseId}
+	</update>
+
+</mapper>

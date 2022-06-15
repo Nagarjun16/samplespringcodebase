@@ -1,0 +1,81 @@
+package com.ngen.cosys.icms.util;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookingConstant {
+	
+	 public static final String ICMS_SAVEBOOKING_SERVICE = "API_ICMS_SAVEBOOKING_SERVICE";
+	 public static final String ICMS_SAVEBOOKING = "ICMS_SAVEBOOKING";
+	 public static final String ICMS_VALIDATEBOOKING_SERVICE = "API_ICMS_VALIDATEBOOKING_SERVICE";
+	 public static final String ICMS_VALIDATEBOOKING = "ICMS_VALIDATEBOOKING";
+	 public static final String ICMS_CANCELBOOKING_SERVICE = "API_ICMS_CANCELBOOKING_SERVICE";
+	 public static final String ICMS_CANCELBOOKING = "ICMS_CANCELBOOKING";
+	 public static final String ICMS_ACTION_SERVICE = "API_ICMS_BOOKING_SOAP_ACTION";
+	 public static final String ICMS_ACTION = "ICMS_SOAP_ACTION";
+	 public static final String VALIDATE_MESSAGE_TYPE = "ValidateBooking";
+	 public static final String SAVE_MESSAGE_TYPE = "SaveBookingDetails";
+	 public static final String CANCEL_MESSAGE_TYPE = "CancelShipmentDetails";
+	 public static final String SUB_MESSAGE_TYPE_REQUEST = "Request";
+	 public static final String SUB_MESSAGE_TYPE_RESPONSE = "Response";
+	 public static final String ORIGIN_ADDRESS = "COSYS";
+	 public static final String SATS = "SATS";
+	 public static final String STATUS_SENT = "SENT";
+	 public static final String STATUS_ERROR = "ERROR";
+	 public static final String BASE_CONSTANT_LIKE_PARAM = "ICMS_";
+	 public static final String CONSTANT_FOR_MESSAGE_TYPE = "ICMS_BOOKINGAPI_CONSTANT_MESSAGETYPE";
+	 public static final String CONSTANT_FOR_SOURCESYSTEM = "ICMS_BOOKINGAPI_CONSTANT_SOURCE";
+	 public static final String CONSTANT_FOR_AGENTCODE = "ICMS_BOOKINGAPI_CONSTANT_AGENTCODE";
+	 public static final String CONSTANT_FOR_CUSTOMERCODE = "ICMS_BOOKINGAPI_CONSTANT_CUSTOMERCODE";
+	 public static final String CONSTANT_FOR_COMMODITYCODE = "ICMS_BOOKINGAPI_CONSTANT_COMMODITYCODE";
+	 public static final String CONSTANT_FOR_BOOKINGSOURCE = "ICMS_BOOKINGAPI_CONSTANT_BOOKINGSOURCE";
+	 public static final String CONSTANT_FOR_CURRENCY = "ICMS_BOOKINGAPI_CONSTANT_CURRENCY";
+	 public static final String CONSTANT_FOR_DIMENSION = "ICMS_BOOKINGAPI_CONSTANT_DIMENSION";
+	 public static final String CONSTANT_FOR_DIMENSIONUNIT = "ICMS_BOOKINGAPI_CONSTANT_DIMENSIONUNIT";
+	 public static final String TENANT_SINGAPORE = "SIN";
+	 public static final String CARRIERCODE = "SQ";
+	 public static final String TRANSSHIPMENT = "T";
+	 public static final String EXPORTSHIPMENT = "E";
+	 public static final String IMPORTSHIPMENT = "I";
+	 public static final String SHIPMENT_NUMBER = "shipmentNumber";
+	 public static final String SHIPMENT_DATE = "shipmentDate";
+	 public static final String PART_SUFFIX = "partSuffix";
+	 public static final String PART_FLAG = "partFlag";
+	 public static final String TENANT_AIRPORT = "tenantAirport";
+	 public static final String TENANAT_CITY = "tenantCity";
+	 public static final String XML_DATETIME_FORMAT = "dd-MMM-yyyy HH:mm:ss";
+	 public static final String CREATEDBY ="ICMS";
+	 public static final String CREATEDBY_COSYS ="COSYS";
+	 public static final String BOOKING_STATUS_X = "X";
+	 public static final String FLIGHT_BOOKING_STATUS_R = "R";
+	 public static final String REMARKTYPE = "IBKD";
+	 public static final String HANDLINGREMARKTYPE = "IHDL";
+	 public static final String FLIGHTREMARKTYPE = "IFLT";
+	 public static final String SHIPMENT_TYPE = "AWB";
+	 public static final String FLIGHT_NUMBER = "flightNumber";
+	 public static final String FLIGHT_DATE = "flightDate";
+	 public static final String FLIGHT_STATUS_W = "W";
+	 public static final String FLIGHT_STATUS_C = "C";
+	 public static final int ONE = 1;
+	 public static final int ZERO = 0;
+	 public static final double DOUBLE_ZERO = 0.0;
+	 public static final String VOLUME_UNIT_MC = "MC";
+	 public static final String VOLUME_UNIT_CF = "CF";
+	 public static final String VOLUME_UNIT_CC = "CC";
+	 public static final String VOLUME_UNIT_CI = "CI";
+	 public static final String ICMS_VOLUME_UNIT_B = "B";
+	 public static final String ICMS_VOLUME_UNIT_F = "F";
+	 public static final String ICMS_VOLUME_UNIT_I = "I";
+	 public static final String ICMS_VOLUME_UNIT_C = "C";
+	 public static final String ICMS_DIMENSION_C = "C";
+	 public static final String ICMS_DIMENSION_I = "I";
+	 public static final String DIMENSION_CMT = "CMT";
+	 public static final String DIMENSION_INH = "INH";
+	 public static final String ICMS = "ICMS";
+	 public static final String ORIGIN = "origin";
+	 public static final String DESTINATION = "destination";
+	 public static final String VALIDATE_REQUEST = "validateRequest";
+	 public static final String SAVE_REQUEST = "saveRequest";
+	 public static final String CANCEL_REQUEST = "cancelRequest";
+	
+}

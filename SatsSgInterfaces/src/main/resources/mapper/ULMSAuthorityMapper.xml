@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ngen.cosys.ulms.dao.ULMSAuthorityDao">
+    <select id="checkClientValid" parameterType="com.ngen.cosys.ulms.model.HeaderInfo"
+            resultType="java.lang.Integer">
+        select ISNULL(count(1),0)
+        from Interface_ExternalSystem a
+                 INNER JOIN Interface_ExternalSystemWSChannelConfiguration b
+                            on a.InterfaceExternalSystemId = b.InterfaceExternalSystemId
+        where a.Name = #{clientId}
+          and b.UserName = #{userName}
+          and b.Password = #{userPassword}
+    </select>
+
+</mapper>

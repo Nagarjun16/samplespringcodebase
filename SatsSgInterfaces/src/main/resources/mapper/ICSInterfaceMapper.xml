@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DummyMapper">
+	
+   <update id="updateUldAutoWeight"
+			parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.UldAutoWeightModel">
+			UPDATE Exp_DLSULDTrolley 
+			SET  
+				ICSGrossWeight=#{ULDWeight},
+				LastUpdatedUserCode = 'ICS',
+				LastUpdatedDateTime = getDate()
+			WHERE 
+				ULDTrolleyNumber=#{containerId} and
+				not exists(
+					select
+						null
+					from
+						Exp_DLS inner join
+						Exp_FlightEvents
+							on Exp_DLS.FlightId = Exp_FlightEvents.FlightId
+					where
+						Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId and
+						Exp_FlightEvents.FlightCompletedAt is not null 
+				)
+	</update>
+	
+	<update id="infeedUldfromAirside" 
+	parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.InfeedULDRequestModel">	
+	UPDATE Shipment_Inventory
+	SET 
+	WarehouseLocation = 'ICS'
+	WHERE ShipmentLocation = #{containerId}
+	</update>
+	
+	
+	<resultMap id="fetchUldDataForExport"
+		type="com.ngen.cosys.satssg.interfaces.singpost.model.FetchULDSuccessResponseModel">
+		<result column="outgoingFlightCarrier" property="outgoingFlightCarrier"></result>
+		<result column="outgoingFlightNumber" property="outgoingFlightNumber" />
+		<result column="outgoingFlightDate" property="outgoingFlightDate" />
+		<result column="stdTime" property="stdTime" />
+		<result column="containerId" property="containerId" />
+		<result column="offPoint" property="offPoint" />
+		<result column="uldGrossWeight" property="uldGrossWeight" />
+		<result column="uldTareWeight" property="uldTareWeight" />
+		<result column="uldNetWeight" property="uldNetWeight" />
+		<result column="contentCode" property="contentCode" />
+		<result column="xpsFlag" property="xpsFlag" />
+		<result column="AutoWeighBupHeaderId" property="autoWeighBupHeaderId" />
+		<collection property="dgClassList" 
+			javaType="List"
+			ofType="com.ngen.cosys.satssg.interfaces.singpost.model.ULDAutoweightList"
+			select="sqlGetExpeAcceptanceAutoWeighDG"
+			column="containerId = containerId"/>
+	</resultMap>
+	
+	<select id="fetchULDData" parameterType="Map" 
+	        resultMap="fetchUldDataForExport">
+	    With 
+        uldfltstd as (
+                   SELECT   
+                          Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber AS containerId, max(Flt_OperativeFlight_Legs.DateSTD ) maxfltstd
+                   FROM   Exp_AssignedULDTrolleyToFlight
+                          INNER JOIN Flt_OperativeFlight  ON Exp_AssignedULDTrolleyToFlight.FlightId = Flt_OperativeFlight.Flight_ID
+                          INNER JOIN Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+                          AND Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}  
+                          INNER JOIN Flt_OperativeFlight_Segments ON Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+                          AND Exp_AssignedULDTrolleyToFlight.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+                          INNER JOIN Exp_FlightEvents ON Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightID                          
+                                 WHERE Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{containerId}  and
+                          Exp_FlightEvents.FlightCompletedAt is null  
+                    group by Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber),
+         ULDTrolley AS(
+                    SELECT 
+                        Flt_OperativeFlight.CarrierCode AS outgoingFlightCarrier,
+                        Flt_OperativeFlight.FlightNumber AS outgoingFlightNumber,
+                        Flt_OperativeFlight_Legs.DateSTD AS outgoingFlightDate,
+                        CONVERT(varchar,format(Flt_OperativeFlight_Legs.DateSTD,'HHmm')) as stdTime,
+                        Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber AS containerId,
+                        Flt_OperativeFlight_Segments.FlightOffPoint AS offPoint,
+                        isNull(Exp_AssignedULDTrolleyToFlight.GrossWeight, 0) uldGrossWeight,
+                        isNull(Exp_AssignedULDTrolleyToFlight.TareWeight, 0) uldTareWeight,
+                        (isNull(Exp_AssignedULDTrolleyToFlight.GrossWeight, 0) - isNull(Exp_AssignedULDTrolleyToFlight.TareWeight, 0)) uldNetWeight,
+                        case when Exp_AssignedULDTrolleyToFlight.contentCode='D' then 'D'
+                                                  when Exp_AssignedULDTrolleyToFlight.contentCode='M' then 'M' 
+                                                   else 'C' end trolleyContentCode 
+                        FROM   
+                        Exp_AssignedULDTrolleyToFlight
+                        INNER JOIN Flt_OperativeFlight
+                            ON Exp_AssignedULDTrolleyToFlight.FlightId = Flt_OperativeFlight.Flight_ID
+                        INNER JOIN Flt_OperativeFlight_Legs
+                            ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+                            AND Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} 
+                        INNER JOIN Flt_OperativeFlight_Segments
+                            ON Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+                            AND Exp_AssignedULDTrolleyToFlight.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+                        INNER JOIN
+                            Exp_FlightEvents
+                            ON Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightID
+                                        inner join uldfltstd on uldfltstd.containerId = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+                                                     and uldfltstd.maxfltstd = Flt_OperativeFlight_Legs.DateSTD                     
+                            WHERE Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{containerId}  and
+                            Exp_FlightEvents.FlightCompletedAt is null                                                                       
+                          ),
+        TareWeightFromULDSeries AS (
+							SELECT
+                                max(Uld_UldSeries.UldSeriesTareWeight) UldSeriesTareWeight
+                            FROM
+                                Uld_UldSeries
+                            WHERE 
+                                Uld_UldSeries.UldType = #{uldKey} and
+                                Uld_UldSeries.UldCarrierCode = #{carrierCode}  and
+                                #{uldNumber} between UldSeriesNumberFrom and UldSeriesNumberTo and
+                                getdate() between isnull(Uld_UldSeries.EffectiveStartDate, getdate() - 10) 
+                                and isnull(Uld_UldSeries.EffectiveEndDate, getdate() + 20)
+                          ),
+        LoadedDgShc AS (
+					Select distinct  
+						count(Exp_LoadedShipmentSHCInfo.SpecialHandlingCode) as dgSHC
+					from
+						Exp_AssignedULDTrolleyToFlight
+							INNER JOIN Exp_LoadedShipmentInfo
+						ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+							INNER JOIN Exp_LoadedShipmentSHCInfo
+						on Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId 
+										 INNER JOIN Exp_FlightEvents
+						on Exp_AssignedULDTrolleyToFlight.FlightId = Exp_FlightEvents.FlightId and Exp_FlightEvents.FlightDepartedBy is null
+							INNER JOIN
+						(
+							select Impcode, case when max(DGClassCode)= min(DGClassCode) then max(DGClassCode) else '' end as classCode from Exp_DG_Class_Subrisk group by impcode
+						) uniqueimp on uniqueimp.ImpCode = Exp_LoadedShipmentSHCInfo.SpecialHandlingCode
+					where Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{containerId}),
+       XPSLoaded AS (
+					Select distinct  
+						count(Exp_LoadedShipmentSHCInfo.SpecialHandlingCode) as XPSSHC
+					from
+						Exp_AssignedULDTrolleyToFlight
+							INNER JOIN Exp_LoadedShipmentInfo
+						ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+							INNER JOIN Exp_LoadedShipmentSHCInfo
+						on Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId 
+											INNER JOIN Exp_FlightEvents
+						on Exp_AssignedULDTrolleyToFlight.FlightId = Exp_FlightEvents.FlightId and Exp_FlightEvents.FlightDepartedBy is null
+            
+					where Exp_LoadedShipmentSHCInfo.SpecialHandlingCode='XPS' and  Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{containerId}),
+	TareWeightFromULDCharacteristics AS(
+                        SELECT
+                            max(ULD_UldCharacteristics.UldTareWeightQty) UldTareWeightQty
+                        FROM
+                            ULD_UldCharacteristics
+                        WHERE
+                            ULD_UldCharacteristics.UldType = #{uldKey} and
+                            ULD_UldCharacteristics.UldCarrierCode = #{carrierCode}  and              
+                            ULD_UldCharacteristics.ContourCode = (Select ContourCode from ULDTrolley)       
+                          )
+                          select (select outgoingFlightCarrier from ULDTrolley)outgoingFlightCarrier,
+                          (select outgoingFlightNumber from ULDTrolley)outgoingFlightNumber,
+                          (select outgoingFlightDate from ULDTrolley)outgoingFlightDate,
+                          (select stdTime from ULDTrolley)stdTime,
+                          (select containerId from ULDTrolley)containerId,
+                          (select offPoint from ULDTrolley)offPoint,
+                          (select uldGrossWeight from ULDTrolley)uldGrossWeight,
+                                             (select dgSHC from LoadedDgShc) dgShcCount,
+                                             (select XPSSHC from XPSLoaded) XPSCount,
+                          case when (select dgSHC from LoadedDgShc)>0 then 'D'   
+                                     else (select trolleyContentCode from ULDTrolley) end contentCode,
+                          case when (select XPSSHC from XPSLoaded) >0  then 'Y' ELSE
+                                                                 'N'  END as xpsFlag,
+                          case when (select uldTareWeight from ULDTrolley) is null then 
+                          isnull((select TareWeightFromULDCharacteristics.UldTareWeightQty 
+                                   from TareWeightFromULDCharacteristics),(select TareWeightFromULDSeries.UldSeriesTareWeight 
+                                  from TareWeightFromULDSeries)) else (select uldTareWeight from ULDTrolley) end as uldTareWeight,
+                       case when (COALESCE((select uldNetWeight from ULDTrolley),
+                                  isnull((select uldGrossWeight from ULDTrolley),0)- isnull(                                
+                                        (select TareWeightFromULDCharacteristics.UldTareWeightQty 
+                                   from TareWeightFromULDCharacteristics), (select TareWeightFromULDSeries.UldSeriesTareWeight 
+                                  from TareWeightFromULDSeries)),(select uldTareWeight from ULDTrolley)))>0 then 
+                                                            (COALESCE((select uldNetWeight from ULDTrolley),
+                                  isnull((select uldGrossWeight from ULDTrolley),0)- isnull(                                
+                                        (select TareWeightFromULDCharacteristics.UldTareWeightQty 
+                                   from TareWeightFromULDCharacteristics), (select TareWeightFromULDSeries.UldSeriesTareWeight 
+                                  from TareWeightFromULDSeries)),(select uldTareWeight from ULDTrolley)))
+                                   else 0 end uldNetWeight
+
+                         
+	</select>
+	
+	<select id="sqlGetExpeAcceptanceAutoWeighDG"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.FetchULDDataRequestModel"
+		resultType="com.ngen.cosys.satssg.interfaces.singpost.model.ULDAutoweightList">
+		select distinct
+			Exp_LoadedShipmentSHCInfo.SpecialHandlingCode as shc,
+			uniqueimp.classCode as dgClassCode
+		from
+			Exp_AssignedULDTrolleyToFlight
+				INNER JOIN Exp_LoadedShipmentInfo
+			ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+				INNER JOIN Exp_LoadedShipmentSHCInfo
+			on Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+				inner join Exp_FlightEvents
+			on Exp_AssignedULDTrolleyToFlight.FlightId = Exp_FlightEvents.FlightId and Exp_FlightEvents.FlightDepartedBy is null
+				inner join
+			(
+				select Impcode, case when max(DGClassCode)= min(DGClassCode) then max(DGClassCode) else '' end as classCode from Exp_DG_Class_Subrisk group by impcode
+			) uniqueimp on uniqueimp.ImpCode = Exp_LoadedShipmentSHCInfo.SpecialHandlingCode
+		where Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{containerId}
+	</select>
+	
+	
+
+	<select id="fetchImportULDData" parameterType="com.ngen.cosys.ics.model.PreAnnouncementRequestModel" 
+	resultType="com.ngen.cosys.ics.model.ULD">
+		SELECT TOP (1) ULDNumber AS containerId,
+			format(uld.CreatedDateTime, 'yyyy-MM-dd') AS uldCreateDate,
+			format(uld.LastUpdatedDateTime, 'yyyy-MM-dd') AS uldUpdateDate,
+			'N' AS throughServiceFlag,
+			'N' AS sttFlag,
+			CASE 
+				WHEN (
+						SELECT count(SpecialHandlingCode)
+						FROM Imp_InboundContainersSHC
+						WHERE uld.ImpInboundContainersId = Imp_InboundContainersSHC.ImpInboundContainersId
+							AND Imp_InboundContainersSHC.SpecialHandlingCode = 'PER'
+						) > 0
+					THEN 'Y'
+				ELSE 'N'
+				END shc,
+			'IN' uldStatus,
+			'C' uldContentCode,
+			flt.CarrierCode AS incomingFlightCarrier,
+			flt.FlightNumber AS incomingFlightNumber,
+			format(flt.FlightOriginDate, 'yyyy-MM-dd') AS incomingFlightDate,
+			uld.ICSOutputLocation AS pchsDestination
+		FROM Imp_InboundContainers uld
+		INNER JOIN Flt_OperativeFlight flt ON flt.Flight_ID = uld.IncomingFlightId
+		WHERE uld.ULDNumber = #{containerId}
+	</select>
+	
+	
+	<select id="fetchPrinterIPaddress" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.PrintULDTagRequestModel">
+		
+			select 
+			   IPAddress 
+			from  
+			   Whs_LocationDeviceMapping inner join 
+			   Whs_Location
+			     on Whs_LocationDeviceMapping.WhsLocationId=Whs_Location.WhsLocationId 
+			where 
+		       printertype=#{printertype} and Whs_Location.WhRow=#{workstationId}
+
+	</select>
+	
+	<select id="getPrinterTypeForULD"
+		resultType="java.lang.String">
+	     select ParameterValueChar from App_SystemParameters where parametercode='PRINTER_ULDTAG'
+	</select>
+	
+	<select id="getPrinterTypeForRFID"
+		resultType="java.lang.String">
+	     select ParameterValueChar from App_SystemParameters where parametercode='PRINTER_RFID_ULDTAG'
+	</select>
+	
+	<insert id="sqlInsertUpdateAutoWeightRequest"
+			parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.UldAutoWeightModel">
+	<![CDATA[
+		insert into ULD_ICSDataRequest(
+			ULDKey,
+			ScaleWeight,	
+			InitiatedBy,
+			CreatedUserCode,
+			CreatedDateTime			
+		)values(
+			#{containerId},
+			#{ULDWeight},
+			#{staffLoginId},
+			#{staffLoginId},
+			getDate()
+		)
+	]]>
+	</insert>
+	
+	<!-- Audit Trail -->
+ 	<insert id="sqlInsertUpdateAutoWeightRequestAuditData" 
+ 			parameterType="Map">
+ 	<![CDATA[
+ 		insert into CosysAudit(
+ 			EventDateTime,
+ 			Actor,
+ 			EventName,
+ 			EventAction,
+ 			EntityType,
+ 			EventValue,
+ 			EntityValue
+     	)values(
+     		#{gmtTime},
+           	#{eventActor},
+           	#{eventName},
+           	#{eventAction},
+           	#{entityType},
+           	#{eventValue},
+           	#{entityValue}
+    	)
+ 	]]>	
+	</insert>
+	
+	<insert id="sqlInsertPrintULDTagRequest"
+			parameterType="com.ngen.cosys.satssg.interfaces.singpost.model.PrintULDTagRequestModel"
+			useGeneratedKeys="true" keyColumn="ULDICSDataRequestId" keyProperty="id">
+	<![CDATA[
+		insert into ULD_ICSDataRequest(
+			ULDKey,
+			ScaleWeight,
+			InitiatedBy,
+			CreatedUserCode,
+			CreatedDateTime,
+			FlightKey,
+			FlightDate,
+			XPSFlag,
+			OffPoint,
+			NetWeight,
+			TarWeight,
+			ContentCode
+		) values(
+			#{containerId},
+			#{uldGrossWeight},
+			#{staffLoginId},
+			#{staffLoginId},
+			getdate(),
+			#{outgoingFlightCarrier}+''+#{outgoingFlightNumber},
+			#{outgoingFlightDate},
+			iif(isnull(#{xpsFlag}, 'N') = 'Y', 1, 0),
+			#{offPoint},
+			#{uldNetWeight},
+			#{uldTareWeight},
+			substring(#{contentCode}, 1, 1)
+		)
+	]]>
+	</insert>
+	
+	<insert id="sqlInsertPrintULDTagRequestTag"
+			parameterType="com.ngen.cosys.ics.model.PrintULDTagList">
+	<![CDATA[
+		insert into ULD_ICSDataRequestTag(
+			ULDICSDataRequestId,
+			DgClassCode,
+			SHC,
+			CreatedUserCode,
+			CreatedDateTime
+		) values(
+			#{id},
+			#{dgClassCode},
+			#{shc},
+			#{staffLoginId},
+			getdate()		
+		)
+	]]>
+	</insert>
+	
+	<insert id="sqlInsertPrintULDTagRequestSubTag"
+			parameterType="com.ngen.cosys.ics.model.PrintULDTagSubList" >
+	<![CDATA[
+		insert into ULD_ICSDataRequestSubTag(
+			ULDICSDataRequestId,
+			DgSubClassCode,
+			SHC,
+			CreatedUserCode,
+			CreatedDateTime
+		) values(
+			#{id},
+			#{subRiskId},
+			#{shc},
+			#{staffLoginId},
+			getdate()	
+		)
+	]]>
+	</insert>
+	
+	<insert id="insertAutoWeighDetailsICS" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.ics.model.AutoWeigh"
+		keyProperty="autoWeighBupHeaderId" keyColumn="AutoWeighBupHeaderId">
+		INSERT INTO Exp_eAcceptanceAutoWeigh(
+			AcceptanceBy,
+			ULDNumber,
+			CarrierCode,
+			FlightId,
+			GrossWeight,
+			XPSShipment,
+			DGShipment,
+			TagRemarks,
+			CreatedUserCode,
+			CreatedDateTime,
+			FlightSegmentId,
+			Cargo,
+			Mail,
+			Courier,
+			BUPInd,
+			HandlingArea,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			ULDTagPrintedOn,
+			ContourCode
+		)VALUES(
+			'ICS',
+			#{uldNumber},
+			#{carrierCode},
+			(SELECT 
+				Top 1
+				Flt_OperativeFlight.Flight_ID 
+			FROM 
+				Flt_OperativeFlight inner join
+				Flt_OperativeFlight_Segments
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+			WHERE 
+				Flt_OperativeFlight.FlightKey = #{flightKey} and 
+				CAST(Flt_OperativeFlight_Segments.DateSTD as Date) = CAST(#{date} as Date)
+				and Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} 
+				and Flt_OperativeFlight_Segments.FlightOffPoint = #{offPoint}
+                order by FlightSegmentOrder
+			),
+			#{grossWeight},
+			#{xpsShipment},
+			#{dgShipment},
+			#{tagRemarks},
+			#{createdBy},
+			GETDATE(),
+			(SELECT 
+				Top 1
+				Flt_OperativeFlight_Segments.FlightSegmentId
+			FROM 
+				Flt_OperativeFlight inner join
+				Flt_OperativeFlight_Segments
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+			WHERE 
+				Flt_OperativeFlight.FlightKey = #{flightKey} and 
+				CAST(Flt_OperativeFlight_Segments.DateSTD as Date) = CAST(#{date} as Date)
+				and Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport}
+				and Flt_OperativeFlight_Segments.FlightOffPoint = #{offPoint}
+                order by FlightSegmentOrder
+			),
+			#{cargo},
+			#{mail},
+			#{courier},
+			#{bupIndicator},
+			'T5',
+			#{createdBy},
+			GETDATE(),
+			GETDATE(),
+			( select
+                top 1 contourcode
+              from
+               Uld_UldCharacteristics
+	          where
+	            UldCarrierCode IN (RIGHT(#{uldNumber}, 2),RIGHT(#{uldNumber},3)) AND
+	            UldType = LEFT(#{uldNumber}, 3)
+            )
+		)
+	</insert>
+	
+	<insert id="insertAutoWeighDGICS" parameterType="com.ngen.cosys.ics.model.AutoWeighDG">
+		INSERT INTO Exp_eAcceptanceAutoWeighDG(
+			AutoWeighBupHeaderId,
+			ClassCode,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)VALUES(
+			#{autoWeighBupHeaderId},
+			#{classCode},
+			#{specialHandlingCode},
+			#{createdBy},
+			GETDATE()
+		)
+	</insert>
+	
+	
+	<select id = "getLoadedULDUTPShcICS"  parameterType="java.lang.String" resultType="java.lang.String">
+		
+		   WITH SHCRECORDS AS
+		     (
+		       select
+		         specialHandlingCode
+		       from
+		         (
+		           select distinct
+		             Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+		           , Mst_AssociateSHCByHandlingGroup.SHCPrioirity
+		           from
+		             Exp_AssignedULDTrolleyToFlight
+		             INNER JOIN
+		               Exp_LoadedShipmentInfo
+		               ON
+		                 Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+		             LEFT JOIN
+		               Exp_LoadedShipmentSHCInfo loadedShcInfo
+		               on
+		                 loadedShcInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+		             inner join
+		               Exp_FlightEvents
+		               on
+		                 Exp_AssignedULDTrolleyToFlight.FlightId     = Exp_FlightEvents.FlightId
+		                 and Exp_FlightEvents.FlightDepartedBy is null
+		             LEFT JOIN
+		               Mst_AssociateSHCByHandlingGroup
+		               ON
+		                 Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode = loadedShcInfo.SpecialHandlingCode
+		             LEFT JOIN
+		               Mst_SHCHandlingGroup
+		               on
+		                 Mst_SHCHandlingGroup.MstSHCHandlingGroupID =Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+		           where
+		             Exp_LoadedShipmentInfo.AssUldTrolleyId              =Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+		             and Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{uldNumber}
+		             AND Mst_SHCHandlingGroup.SHCHandlingGroupCode       = 'UTP'
+		         )
+		         t
+		       ORDER BY
+		         SHCPrioirity OFFSET 0 ROWS
+		     )
+		   select
+		     string_agg(specialHandlingCode, ',')
+		   from
+		     SHCRecords
+	</select>
+	
+</mapper>

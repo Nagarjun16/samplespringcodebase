@@ -1,0 +1,573 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="carrierCode" id="271">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="257">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCUAT</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="258">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">carrierCode</property>
+                    <property name="alias">carrierCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">carrierCode</text-property>
+                    <text-property name="heading">carrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">lowStockLimit</property>
+                    <property name="alias">lowStockLimit</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">lowStockLimit</text-property>
+                    <text-property name="heading">lowStockLimit</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">unusedCount</property>
+                    <property name="alias">unusedCount</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">unusedCount</text-property>
+                    <text-property name="heading">unusedCount</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">carrierCode</property>
+                    <property name="paramName">carrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">carrierCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">lowStockLimit</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">unusedCount</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">carrierCode</property>
+                    <property name="nativeName">carrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">lowStockLimit</property>
+                    <property name="nativeName">lowStockLimit</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">unusedCount</property>
+                    <property name="nativeName">unusedCount</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select 
+	carrierCode,
+	MAX(lowStockLimit) lowStockLimit,
+	SUM(unusedCount) unusedCount
+from
+	(SELECT SHDR.AWBStockId AS awbStockId, SHDR.CarrierCode AS carrierCode, SHDR.StockId AS stockId,
+			SHDR.StockCategoryCode AS stockCategoryCode, SHDR.LowStockLimit AS lowStockLimit,
+			SUBSTRING(SHDR.FirstAWBNumber, 1, 3) AS awbPrefix,
+			SUBSTRING(SHDR.FirstAWBNumber, 4, LEN(SHDR.FirstAWBNumber)) AS awbSuffix,
+               
+			SUBSTRING((SELECT MIN(AWBNumber) FROM Com_AWBStockDetails
+			WHERE AWBStockId = SHDR.AWBStockId AND Reserved = 0 AND
+								Issued = 0 AND Deleted = 0 AND Processing is NULL AND Cancelled is NULL AND Booked is NULL AND
+								Printed is NULL AND RePrinted is NULL AND Duplicated is NULL
+			), 4, LEN(SHDR.FirstAWBNumber))
+			AS nextAWBNumber,
+			SUBSTRING((SELECT MAX(AWBNumber) FROM Com_AWBStockDetails
+			WHERE AWBStockId = SHDR.AWBStockId AND Reserved = 0 AND
+								Issued = 0 AND Deleted = 0 AND Processing is NULL AND Cancelled is NULL AND Booked is NULL AND
+								Printed is NULL AND RePrinted is NULL AND Duplicated is NULL
+			), 4, LEN(SHDR.FirstAWBNumber))
+			AS lastAWBNumber,
+                          
+			(SELECT CASE WHEN COUNT(Reserved) IS NULL THEN 0
+			ELSE COUNT(Reserved) END RESCNT 
+			FROM Com_AWBStockDetails 
+			WHERE AWBStockId = SHDR.AWBStockId
+			AND Reserved = 1) AS Reserved,
+			(SELECT CASE WHEN COUNT(Issued) IS NULL THEN 0
+			ELSE COUNT(Issued) END ISSCNT 
+			FROM Com_AWBStockDetails 
+			WHERE AWBStockId = SHDR.AWBStockId
+			AND Issued = 1) AS Issued,
+			(SELECT CASE WHEN COUNT(Deleted) IS NULL THEN 0
+			ELSE COUNT(Deleted) END DELCNT 
+			FROM Com_AWBStockDetails 
+			WHERE AWBStockId = SHDR.AWBStockId
+			AND Deleted = 1) AS Deleted,
+			(SELECT COUNT(*) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId)  - 
+			(
+								SELECT COUNT(Reserved) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId AND (Reserved = 1 OR
+								Issued = 1 OR Deleted = 1 OR Processing = 1 OR Cancelled = 1 OR Booked = 1 OR
+								Printed = 1 OR RePrinted = 1 OR Duplicated = 1) 
+							) AS unusedCount, 
+			(SELECT COUNT(*) FROM Com_AWBStockDetails WHERE AWBStockId = SHDR.AWBStockId) As Total
+             FROM   Com_AWBStock SHDR) A
+where carrierCode = ? and A.unusedCount <= A.lowStockLimit  
+      group by     
+		carrierCode]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>awbStockId</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>awbStockId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>awbStockId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>carrierCode</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>carrierCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>carrierCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>stockId</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>6</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>stockId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>stockId</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>stockCategoryCode</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>stockCategoryCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>stockCategoryCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>lowStockLimit</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>5</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>lowStockLimit</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>lowStockLimit</design:label>
+            <design:formattingHints>
+              <design:displaySize>7</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>awbPrefix</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>awbPrefix</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>awbPrefix</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>awbSuffix</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>awbSuffix</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>awbSuffix</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>nextAWBNumber</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>nextAWBNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>nextAWBNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>lastAWBNumber</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>lastAWBNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>lastAWBNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Reserved</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Reserved</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Reserved</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Issued</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Issued</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Issued</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Deleted</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Deleted</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Deleted</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>unusedCount</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>unusedCount</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>unusedCount</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Total</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Total</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Total</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <label id="4">
+            <property name="textAlign">left</property>
+            <text-property name="text">THE FOLLOWING CARRIERS HAS LESS THAN EQUAL TO THEIR LOW STOCK LIMIT</text-property>
+        </label>
+        <label id="270"/>
+        <table id="5">
+            <property name="textAlign">center</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">carrierCode</property>
+                    <text-property name="displayName">carrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["carrierCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">lowStockLimit</property>
+                    <text-property name="displayName">lowStockLimit</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["lowStockLimit"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">unusedCount</property>
+                    <text-property name="displayName">unusedCount</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["unusedCount"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <property name="pageBreakInterval">0</property>
+            <column id="21"/>
+            <column id="22"/>
+            <column id="23"/>
+            <column id="24"/>
+            <header>
+                <row id="6">
+                    <property name="fontFamily">sans-serif</property>
+                    <cell id="7">
+                        <label id="25">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Carrier</text-property>
+                        </label>
+                    </cell>
+                    <cell id="8">
+                        <label id="26">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Total Unused</text-property>
+                        </label>
+                    </cell>
+                    <cell id="9">
+                        <label id="27">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Low Stock Limit</text-property>
+                        </label>
+                    </cell>
+                    <cell id="10"/>
+                </row>
+            </header>
+            <detail>
+                <row id="11">
+                    <cell id="12">
+                        <data id="259">
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">carrierCode</property>
+                        </data>
+                    </cell>
+                    <cell id="13">
+                        <data id="260">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">unusedCount</property>
+                        </data>
+                    </cell>
+                    <cell id="14">
+                        <data id="261">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">lowStockLimit</property>
+                        </data>
+                    </cell>
+                    <cell id="15"/>
+                </row>
+            </detail>
+            <footer>
+                <row id="16">
+                    <cell id="17"/>
+                    <cell id="18"/>
+                    <cell id="19"/>
+                    <cell id="20"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

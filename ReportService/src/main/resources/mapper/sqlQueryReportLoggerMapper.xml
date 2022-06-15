@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ReportLoggerMapper">
+	
+	<insert id="sqlInsertReportLog" 
+			parameterType="com.ngen.cosys.report.logger.model.ReportPayload" 
+			useGeneratedKeys="true" 
+			keyProperty="reportServiceLogId" keyColumn="ReportServiceLogId">
+		INSERT INTO Interface_ReportServiceLog
+		(
+			ReportName, ReportFormat, ReportParams, 
+			PrinterQueueName, PrinterType, LandscapeFlag, 
+			ReportStatus, FailedReason, 
+			CreatedUserCode, CreatedDateTime, LastUpdatedUserCode, LastUpdatedDateTime
+		)
+		VALUES
+		(
+			#{reportName}, #{reportFormat}, #{reportParams}, 
+			#{printerQueueName}, #{printerType}, #{landscapeFlag}, 
+			#{reportStatus}, #{failedReason},
+			#{createdBy}, GETDATE(), NULL, NULL
+		)
+	</insert>
+	
+	<update id="sqlUpdateReportLog" 
+			parameterType="com.ngen.cosys.report.logger.model.ReportPayload">
+		UPDATE 	Interface_ReportServiceLog
+		SET		ReportStatus = #{reportStatus}, 
+				FailedReason = #{failedReason},
+				LastUpdatedUserCode = #{modifiedBy}, 
+				LastUpdatedDateTime = GETDATE()
+		WHERE	ReportServiceLogId = #{reportServiceLogId}
+	</update>
+	
+</mapper>

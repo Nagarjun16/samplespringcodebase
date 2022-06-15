@@ -1,0 +1,1539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="SyncCustomsSubmissionMapper">
+
+	<resultMap type="com.ngen.cosys.impbd.events.payload.InboundShipmentInfoModel" 
+		id="InboundShipmentInfoModelResultMap">
+		<id column="CustomerCode" property="customerCode"/>
+		<id column="CustomerName" property="customerName"/>
+		<result column="EmailAddresses" property="emailAddresses"/>
+		<collection 
+			property="shipments"
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.events.payload.InboundShipmentInfoModel">
+			<result column="ShipmentId" property="shipmentId" />
+			<result column="ShipmentNumber" property="shipmentNumber"/>
+			<result column="ShipmentDate" property="shipmentDate"/>
+			<result column="Origin" property="origin"/>
+			<result column="Destination" property="destination"/>
+			<result column="ShipmentPieces" property="shipmentPieces"/>
+			<result column="ShipmentWeight" property="shipmentWeight"/>
+			<result column="DocumentReceived" property="documentReceived"/>
+			<result column="Pieces" property="pieces"/>
+			<result column="Weight" property="weight"/>
+			<result column="Number" property="houseNumber"/>
+			<result column="HousePieces" property="housePieces"/>
+			<result column="HouseWeight" property="houseWeight"/>
+			<result column="Terminal" property="terminal"/>
+			<result column="ConsigneeName" property="consigneeName"/>		
+		</collection>
+	</resultMap>
+	
+	<!-- Get EAWB shipments -->
+	<select id="sqlGetInboundEAWShipments"
+		parameterType="com.ngen.cosys.impbd.events.payload.EAWShipmentsEvent"
+		resultMap="InboundShipmentInfoModelResultMap">
+		<![CDATA[
+		select
+			EAWCustomerShipmentInfo.ShipmentId,
+			EAWCustomerShipmentInfo.ShipmentNumber,
+			EAWCustomerShipmentInfo.ShipmentDate,
+			EAWCustomerShipmentInfo.Origin,
+			EAWCustomerShipmentInfo.Destination,
+			EAWCustomerShipmentInfo.Pieces as ShipmentPieces,
+			EAWCustomerShipmentInfo.Weight as ShipmentWeight,
+			EAWCustomerShipmentInfo.DocumentReceived,
+			EAWCustomerShipmentInfo.InventoryPieces as Pieces,
+			EAWCustomerShipmentInfo.InventoryWeight as Weight,
+			null Number,
+			null as HousePieces,
+			null as HouseWeight,
+			EAWCustomerShipmentInfo.CustomerCode,
+			EAWCustomerShipmentInfo.CustomerName,
+			EAWCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI'
+				
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = EAWCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = EAWCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId 
+					and Shipment_Master.HandledByMasterHouse='M' inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Flight_ID = #{flightId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.FlightId = #{flightId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+			where	
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode = 'EAW'
+				)
+		)EAWCustomerShipmentInfo inner join
+			Customer_Master
+				on EAWCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		where
+			exists(select
+				1
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI' 
+			)
+	union all
+		select
+				EAWCustomerShipmentInfo.ShipmentId,
+				EAWCustomerShipmentInfo.ShipmentNumber,
+				EAWCustomerShipmentInfo.ShipmentDate,
+				EAWCustomerShipmentInfo.Origin,
+				EAWCustomerShipmentInfo.Destination,
+				EAWCustomerShipmentInfo.Pieces as ShipmentPieces,
+				EAWCustomerShipmentInfo.Weight as ShipmentWeight,
+				EAWCustomerShipmentInfo.DocumentReceived,
+				EAWCustomerShipmentInfo.InventoryPieces as Pieces,
+				EAWCustomerShipmentInfo.InventoryWeight as Weight,
+				EAWCustomerShipmentInfo.Number,
+				EAWCustomerShipmentInfo.housePieces as HousePieces,
+				EAWCustomerShipmentInfo.houseWeight as HouseWeight,
+				EAWCustomerShipmentInfo.CustomerCode,
+				EAWCustomerShipmentInfo.CustomerName,
+				EAWCustomerShipmentInfo.ConsigneeName,
+				(select
+					string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI'
+					
+				)EmailAddresses,
+				(
+					select
+						string_agg(ShipmentHandlingArea.HandlingArea, '/')
+					from(select
+							distinct HandlingArea
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = EAWCustomerShipmentInfo.ShipmentId
+						union
+						select
+							distinct HandlingArea
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = EAWCustomerShipmentInfo.ShipmentId
+					)ShipmentHandlingArea
+				) as Terminal
+			from(
+				select
+					Shipment_Master.ShipmentId,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_HouseInformation.Number,
+					Shipment_HouseInformation.Pieces housePieces,
+					Shipment_HouseInformation.Weight houseWeight,
+					Shipment_HouseCustomerInfo.CustomerName as ConsigneeName,
+					case
+						when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+								Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+							1
+						else
+							0
+						end DocumentReceived,
+					InventoryFreightInfo.InventoryPieces,
+					InventoryFreightInfo.InventoryWeight,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_HouseCustomerInfo.CustomerCode
+						else
+							AppointedAgentInfo.CustomerCode 
+						end CustomerCode,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_HouseCustomerInfo.CustomerName
+						else
+							AppointedAgentInfo.CustomerShortName 
+						end CustomerName
+				from
+					Imp_ShipmentVerification inner join
+					Shipment_Master
+						on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId 
+						and Shipment_Master.HandledByMasterHouse='H' inner join
+					Shipment_HouseInformation
+						on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId inner join
+					(
+						select
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId,
+							sum(InventoryFreightInfo.Pieces) InventoryPieces,
+							sum(InventoryFreightInfo.Weight) InventoryWeight
+						from(
+							select
+								Shipment_Inventory.Shipment_ID as ShipmentId,
+								Shipment_Inventory.Flight_ID as FlightId,
+								sum(Shipment_Inventory.Pieces) as Pieces,
+								sum(Shipment_Inventory.Weight) as Weight
+							from
+								Shipment_Inventory
+							where
+								Shipment_Inventory.Flight_ID = #{flightId}
+							group by
+								Shipment_Inventory.Shipment_ID,
+								Shipment_Inventory.Flight_ID
+							union all
+							select
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.FlightId,
+								sum(Shipment_FreightOut.Pieces) as Pieces,
+								sum(Shipment_FreightOut.Weight) as Weight
+							from
+								Shipment_FreightOut
+							where
+								Shipment_FreightOut.FlightId = #{flightId}
+							group by
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.FlightId				
+						)InventoryFreightInfo
+						group by
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId
+					)InventoryFreightInfo
+						on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+							Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+					Shipment_HouseCustomerInfo
+						on Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId and
+							Shipment_HouseCustomerInfo.CustomerType = 'CNE' left join
+					Customer_Master	AppointedAgentInfo
+						on Shipment_HouseCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+				where	
+					Imp_ShipmentVerification.FlightId = #{flightId} and
+					(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+					Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+					(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+					InventoryFreightInfo.InventoryPieces > 0 and
+					exists(
+						select
+							1
+						from
+							Shipment_MasterSHC
+						where
+							Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+							Shipment_MasterSHC.SpecialHandlingCode = 'EAW'
+					)
+			)EAWCustomerShipmentInfo inner join
+				Customer_Master
+					on EAWCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+						Customer_Master.DeRegisterDate is null
+			where
+				exists(select
+					1
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI' 
+			)
+		]]>
+	</select>
+		
+	<!-- Get EAP shipments -->
+	<select id="sqlGetInboundEAPShipments"
+		parameterType="com.ngen.cosys.impbd.events.payload.EAPShipmentsEvent"
+		resultMap="InboundShipmentInfoModelResultMap">
+		<![CDATA[
+		select
+			EAPCustomerShipmentInfo.ShipmentId,
+			EAPCustomerShipmentInfo.ShipmentNumber,
+			EAPCustomerShipmentInfo.ShipmentDate,
+			EAPCustomerShipmentInfo.Origin,
+			EAPCustomerShipmentInfo.Destination,
+			EAPCustomerShipmentInfo.Pieces as ShipmentPieces,
+			EAPCustomerShipmentInfo.Weight as ShipmentWeight,
+			EAPCustomerShipmentInfo.DocumentReceived,
+			EAPCustomerShipmentInfo.InventoryPieces as Pieces,
+			EAPCustomerShipmentInfo.InventoryWeight as Weight,
+			null Number,
+			null as HousePieces,
+			null as HouseWeight,
+			EAPCustomerShipmentInfo.CustomerCode,
+			EAPCustomerShipmentInfo.CustomerName,
+			EAPCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI'
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = EAPCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = EAPCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId 
+					and Shipment_Master.HandledByMasterHouse='M' inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Flight_ID = #{flightId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.FlightId = #{flightId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+			where	
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode = 'EAP'
+				)
+		)EAPCustomerShipmentInfo inner join
+			Customer_Master
+				on EAPCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		where
+			exists(select
+				1
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI' 
+			)
+	union all
+		select
+				EAPCustomerShipmentInfo.ShipmentId,
+				EAPCustomerShipmentInfo.ShipmentNumber,
+				EAPCustomerShipmentInfo.ShipmentDate,
+				EAPCustomerShipmentInfo.Origin,
+				EAPCustomerShipmentInfo.Destination,
+				EAPCustomerShipmentInfo.Pieces as ShipmentPieces,
+				EAPCustomerShipmentInfo.Weight as ShipmentWeight,
+				EAPCustomerShipmentInfo.DocumentReceived,
+				EAPCustomerShipmentInfo.InventoryPieces as Pieces,
+				EAPCustomerShipmentInfo.InventoryWeight as Weight,
+				EAPCustomerShipmentInfo.Number,
+				EAPCustomerShipmentInfo.housePieces as HousePieces,
+				EAPCustomerShipmentInfo.houseWeight as HouseWeight,
+				EAPCustomerShipmentInfo.CustomerCode,
+				EAPCustomerShipmentInfo.CustomerName,
+				EAPCustomerShipmentInfo.ConsigneeName,
+				(select
+					string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI'
+					
+				)EmailAddresses,
+				(
+					select
+						string_agg(ShipmentHandlingArea.HandlingArea, '/')
+					from(select
+							distinct HandlingArea
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = EAPCustomerShipmentInfo.ShipmentId
+						union
+						select
+							distinct HandlingArea
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = EAPCustomerShipmentInfo.ShipmentId
+					)ShipmentHandlingArea
+				) as Terminal
+			from(
+				select
+					Shipment_Master.ShipmentId,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_HouseInformation.Number,
+					Shipment_HouseInformation.Pieces housePieces,
+					Shipment_HouseInformation.Weight houseWeight,
+					Shipment_HouseCustomerInfo.CustomerName as ConsigneeName,
+					case
+						when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+								Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+							1
+						else
+							0
+						end DocumentReceived,
+					InventoryFreightInfo.InventoryPieces,
+					InventoryFreightInfo.InventoryWeight,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_HouseCustomerInfo.CustomerCode
+						else
+							AppointedAgentInfo.CustomerCode 
+						end CustomerCode,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_HouseCustomerInfo.CustomerName
+						else
+							AppointedAgentInfo.CustomerShortName 
+						end CustomerName
+				from
+					Imp_ShipmentVerification inner join
+					Shipment_Master
+						on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+					Shipment_HouseInformation
+						on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId inner join
+					(
+						select
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId,
+							sum(InventoryFreightInfo.Pieces) InventoryPieces,
+							sum(InventoryFreightInfo.Weight) InventoryWeight
+						from(
+							select
+								Shipment_Inventory.Shipment_ID as ShipmentId,
+								Shipment_Inventory.Flight_ID as FlightId,
+								sum(Shipment_Inventory.Pieces) as Pieces,
+								sum(Shipment_Inventory.Weight) as Weight
+							from
+								Shipment_Inventory
+							where
+								Shipment_Inventory.Flight_ID = #{flightId}
+							group by
+								Shipment_Inventory.Shipment_ID,
+								Shipment_Inventory.Flight_ID
+							union all
+							select
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.FlightId,
+								sum(Shipment_FreightOut.Pieces) as Pieces,
+								sum(Shipment_FreightOut.Weight) as Weight
+							from
+								Shipment_FreightOut
+							where
+								Shipment_FreightOut.FlightId = #{flightId}
+							group by
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.FlightId				
+						)InventoryFreightInfo
+						group by
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId
+					)InventoryFreightInfo
+						on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+							Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+					Shipment_HouseCustomerInfo
+						on Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId and
+							Shipment_HouseCustomerInfo.CustomerType = 'CNE' left join
+					Customer_Master	AppointedAgentInfo
+						on Shipment_HouseCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+				where	
+					Imp_ShipmentVerification.FlightId = #{flightId} and
+					(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+					Shipment_Master.Destination IN  ( #{tenantAirport}, #{tenantCity}) and
+					(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+					InventoryFreightInfo.InventoryPieces > 0 and
+					exists(
+						select
+							1
+						from
+							Shipment_MasterSHC
+						where
+							Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+							Shipment_MasterSHC.SpecialHandlingCode = 'EAP'
+					)
+			)EAPCustomerShipmentInfo inner join
+				Customer_Master
+					on EAPCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+						Customer_Master.DeRegisterDate is null
+			where
+				exists(select
+					1
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI' 
+				)
+		]]>
+	</select>
+	
+	<!-- Get General shipments -->
+	<select id="sqlGetInboundGeneralShipments"
+		parameterType="com.ngen.cosys.impbd.events.payload.GeneralShipmentsEvent"
+		resultMap="InboundShipmentInfoModelResultMap">
+		<![CDATA[
+		select
+			GeneralCustomerShipmentInfo.ShipmentId,
+			GeneralCustomerShipmentInfo.ShipmentNumber,
+			null Number,
+			GeneralCustomerShipmentInfo.ShipmentDate,
+			GeneralCustomerShipmentInfo.Origin,
+			GeneralCustomerShipmentInfo.Destination,
+			GeneralCustomerShipmentInfo.Pieces as ShipmentPieces,
+			GeneralCustomerShipmentInfo.Weight as ShipmentWeight,
+			null as HousePieces,
+			null as HouseWeight,
+			GeneralCustomerShipmentInfo.DocumentReceived,
+			GeneralCustomerShipmentInfo.InventoryPieces as Pieces,
+			GeneralCustomerShipmentInfo.InventoryWeight as Weight,
+			GeneralCustomerShipmentInfo.CustomerCode,
+			GeneralCustomerShipmentInfo.CustomerName,
+			GeneralCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI' 
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = GeneralCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = GeneralCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId 
+					and Shipment_Master.HandledByMasterHouse='M' inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Flight_ID = #{flightId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.FlightId = #{flightId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID
+			where	
+				Imp_ShipmentVerification.FlightId = #{flightId} and
+				(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				not exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode in ('EAP', 'EAW')
+				)
+		)GeneralCustomerShipmentInfo inner join
+			Customer_Master
+				on GeneralCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		where
+			exists(select
+				1
+			from
+				Customer_Notification inner join
+				Customer_NotificationDtl
+					on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+			where
+				Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+				Customer_Notification.NotificationTypeCode = 'EMI' 
+			)
+	union all
+		select
+				GeneralCustomerShipmentInfo.ShipmentId,
+				GeneralCustomerShipmentInfo.ShipmentNumber,
+				GeneralCustomerShipmentInfo.Number,
+				GeneralCustomerShipmentInfo.ShipmentDate,
+				GeneralCustomerShipmentInfo.Origin,
+				GeneralCustomerShipmentInfo.Destination,
+				GeneralCustomerShipmentInfo.Pieces as ShipmentPieces,
+				GeneralCustomerShipmentInfo.Weight as ShipmentWeight,
+				GeneralCustomerShipmentInfo.housePieces as HousePieces,
+				GeneralCustomerShipmentInfo.houseWeight as HouseWeight,
+				GeneralCustomerShipmentInfo.DocumentReceived,
+				GeneralCustomerShipmentInfo.InventoryPieces as Pieces,
+				GeneralCustomerShipmentInfo.InventoryWeight as Weight,
+				GeneralCustomerShipmentInfo.CustomerCode,
+				GeneralCustomerShipmentInfo.CustomerName,
+				GeneralCustomerShipmentInfo.ConsigneeName,
+				(select
+					string_agg(Customer_NotificationDtl.NotificationTypeDetail, ',') as EmailAddresses
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI' 
+				)EmailAddresses,
+				(
+					select
+						string_agg(ShipmentHandlingArea.HandlingArea, '/')
+					from(select
+							distinct HandlingArea
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = GeneralCustomerShipmentInfo.ShipmentId
+						union
+						select
+							distinct HandlingArea
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = GeneralCustomerShipmentInfo.ShipmentId
+					)ShipmentHandlingArea
+				) as Terminal
+			from(
+				select
+					Shipment_Master.ShipmentId,
+					Shipment_Master.ShipmentNumber,
+					Shipment_HouseInformation.Number,
+					Shipment_HouseInformation.Pieces housePieces,
+					Shipment_HouseInformation.Weight houseWeight,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+					case
+						when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+								Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+							1
+						else
+							0
+						end DocumentReceived,
+					InventoryFreightInfo.InventoryPieces,
+					InventoryFreightInfo.InventoryWeight,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_MasterCustomerInfo.CustomerCode
+						else
+							AppointedAgentInfo.CustomerCode 
+						end CustomerCode,
+					case 
+						when (AppointedAgentInfo.CustomerCode = 'IXX') then
+							Shipment_MasterCustomerInfo.CustomerName
+						else
+							AppointedAgentInfo.CustomerShortName 
+						end CustomerName
+				from
+					Imp_ShipmentVerification inner join
+					Shipment_Master
+						on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId 
+						and Shipment_Master.HandledByMasterHouse='H' inner join
+					Shipment_HouseInformation
+						on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId inner join
+					(
+						select
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId,
+							InventoryFreightInfo.ShipmentHouseId,
+							sum(InventoryFreightInfo.Pieces) InventoryPieces,
+							sum(InventoryFreightInfo.Weight) InventoryWeight
+						from(
+							select
+								Shipment_Inventory.Shipment_ID as ShipmentId,
+								Shipment_Inventory.ShipmentHouseId,
+								Shipment_Inventory.Flight_ID as FlightId,
+								sum(Shipment_Inventory.Pieces) as Pieces,
+								sum(Shipment_Inventory.Weight) as Weight
+							from
+								Shipment_Inventory
+							where
+								Shipment_Inventory.Flight_ID = #{flightId}
+							group by
+								Shipment_Inventory.Shipment_ID,
+								Shipment_Inventory.Flight_ID,
+								Shipment_Inventory.ShipmentHouseId
+							union all
+							select
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.ShipmentHouseId,
+								Shipment_FreightOut.FlightId,
+								sum(Shipment_FreightOut.Pieces) as Pieces,
+								sum(Shipment_FreightOut.Weight) as Weight
+							from
+								Shipment_FreightOut
+							where
+								Shipment_FreightOut.FlightId = #{flightId}
+							group by
+								Shipment_FreightOut.ShipmentId,
+								Shipment_FreightOut.FlightId,
+								Shipment_FreightOut.ShipmentHouseId
+						)InventoryFreightInfo
+						group by
+							InventoryFreightInfo.FlightId,
+							InventoryFreightInfo.ShipmentId,
+							InventoryFreightInfo.ShipmentHouseId
+					)InventoryFreightInfo
+						on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+							Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId and
+							Shipment_HouseInformation.ShipmentHouseId = InventoryFreightInfo.ShipmentHouseId inner join
+					Shipment_MasterCustomerInfo
+						on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+							Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+					Customer_Master	AppointedAgentInfo
+						on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+				where	
+					Imp_ShipmentVerification.FlightId = #{flightId} and
+					(Imp_ShipmentVerification.NOA is null OR Imp_ShipmentVerification.NOA = 0) and
+					Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+					(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and
+					InventoryFreightInfo.InventoryPieces > 0 and
+					not exists(
+						select
+							1
+						from
+							Shipment_MasterSHC
+						where
+							Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+							Shipment_MasterSHC.SpecialHandlingCode in ('EAP', 'EAW')
+					)
+			)GeneralCustomerShipmentInfo inner join
+				Customer_Master
+					on GeneralCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+						Customer_Master.DeRegisterDate is null
+			where
+				exists(select
+					1
+				from
+					Customer_Notification inner join
+					Customer_NotificationDtl
+						on Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+				where
+					Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+					Customer_Notification.NotificationTypeCode = 'EMI' 
+				)
+		]]>
+	</select>
+	
+	<!-- IVRS -->
+	<resultMap type="com.ngen.cosys.impbd.awb.notification.model.AwbNotificationShipment" 
+		id="awbNotificationShipmentResultMap">
+		<id column="CustomerCode" property="customerCode"/>
+		<id column="CustomerName" property="customerName"/>
+		<result column="EmailAddresses" property="emailAddresses"/>
+		<collection 
+			property="shipments"
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.awb.notification.model.AwbNotificationShipment">
+			<id column="ShipmentId" property="shipmentId" />
+			<result column="ShipmentNumber" property="shipmentNumber"/>
+			<result column="ShipmentDate" property="shipmentDate"/>
+			<result column="Origin" property="origin"/>
+			<result column="Destination" property="destination"/>
+			<result column="ShipmentPieces" property="shipmentPieces"/>
+			<result column="ShipmentWeight" property="shipmentWeight"/>
+			<result column="DocumentReceived" property="documentReceived"/>
+			<result column="Pieces" property="pieces"/>
+			<result column="Weight" property="weight"/>
+			<result column="Terminal" property="terminal"/>
+			<result column="ConsigneeName" property="consigneeName"/>		
+		</collection>
+	</resultMap>
+	
+	<!-- Get IVRS General shipments -->
+	<select id="sqlGetIVRSInboundGeneralShipments"
+		parameterType="com.ngen.cosys.impbd.notification.ShipmentNotificationDetail"
+		resultMap="awbNotificationShipmentResultMap">
+		<![CDATA[
+		select
+			GeneralCustomerShipmentInfo.ShipmentId,
+			GeneralCustomerShipmentInfo.ShipmentNumber,
+			GeneralCustomerShipmentInfo.ShipmentDate,
+			GeneralCustomerShipmentInfo.Origin,
+			GeneralCustomerShipmentInfo.Destination,
+			GeneralCustomerShipmentInfo.Pieces as ShipmentPieces,
+			GeneralCustomerShipmentInfo.Weight as ShipmentWeight,
+			GeneralCustomerShipmentInfo.DocumentReceived,
+			GeneralCustomerShipmentInfo.InventoryPieces as Pieces,
+			GeneralCustomerShipmentInfo.InventoryWeight as Weight,
+			GeneralCustomerShipmentInfo.CustomerCode,
+			GeneralCustomerShipmentInfo.CustomerName,
+			GeneralCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(IVRS_NotificationContactInfo.ContactTypeDetail, ',') as EmailAddresses
+			from
+				IVRS_NotificationContactInfo
+			where
+				IVRS_NotificationContactInfo.ShipmentId = #{shipmentId} and
+				ContactTypeCode = 'EM'
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = GeneralCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = GeneralCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = #{shipmentId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = #{shipmentId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+			where	
+				Imp_ShipmentVerification.ShipmentId = #{shipmentId} and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				not exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode in ('EAP', 'EAW')
+				)
+		)GeneralCustomerShipmentInfo inner join
+			Customer_Master
+				on GeneralCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		]]>
+	</select>
+	
+	<!-- Get IVRS EAWB shipments -->
+	<select id="sqlGetIVRSInboundEAWShipments"
+		parameterType="com.ngen.cosys.impbd.notification.ShipmentNotificationDetail"
+		resultMap="awbNotificationShipmentResultMap">
+		<![CDATA[
+		select
+			EAWCustomerShipmentInfo.ShipmentId,
+			EAWCustomerShipmentInfo.ShipmentNumber,
+			EAWCustomerShipmentInfo.ShipmentDate,
+			EAWCustomerShipmentInfo.Origin,
+			EAWCustomerShipmentInfo.Destination,
+			EAWCustomerShipmentInfo.Pieces as ShipmentPieces,
+			EAWCustomerShipmentInfo.Weight as ShipmentWeight,
+			EAWCustomerShipmentInfo.DocumentReceived,
+			EAWCustomerShipmentInfo.InventoryPieces as Pieces,
+			EAWCustomerShipmentInfo.InventoryWeight as Weight,
+			EAWCustomerShipmentInfo.CustomerCode,
+			EAWCustomerShipmentInfo.CustomerName,
+			EAWCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(IVRS_NotificationContactInfo.ContactTypeDetail, ',') as EmailAddresses
+			from
+				IVRS_NotificationContactInfo
+			where
+				IVRS_NotificationContactInfo.ShipmentId = #{shipmentId} and
+				ContactTypeCode = 'EM'
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = EAWCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = EAWCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = #{shipmentId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = #{shipmentId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+			where	
+				Imp_ShipmentVerification.ShipmentId = #{shipmentId} and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode = 'EAW'
+				)
+		)EAWCustomerShipmentInfo inner join
+			Customer_Master
+				on EAWCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		]]>
+	</select>
+		
+	<!-- Get IVRS EAP shipments -->
+	<select id="sqlGetIVRSInboundEAPShipments"
+		parameterType="com.ngen.cosys.impbd.notification.ShipmentNotificationDetail"
+		resultMap="awbNotificationShipmentResultMap">
+		<![CDATA[
+		select
+			EAPCustomerShipmentInfo.ShipmentId,
+			EAPCustomerShipmentInfo.ShipmentNumber,
+			EAPCustomerShipmentInfo.ShipmentDate,
+			EAPCustomerShipmentInfo.Origin,
+			EAPCustomerShipmentInfo.Destination,
+			EAPCustomerShipmentInfo.Pieces as ShipmentPieces,
+			EAPCustomerShipmentInfo.Weight as ShipmentWeight,
+			EAPCustomerShipmentInfo.DocumentReceived,
+			EAPCustomerShipmentInfo.InventoryPieces as Pieces,
+			EAPCustomerShipmentInfo.InventoryWeight as Weight,
+			EAPCustomerShipmentInfo.CustomerCode,
+			EAPCustomerShipmentInfo.CustomerName,
+			EAPCustomerShipmentInfo.ConsigneeName,
+			(select
+				string_agg(IVRS_NotificationContactInfo.ContactTypeDetail, ',') as EmailAddresses
+			from
+				IVRS_NotificationContactInfo
+			where
+				IVRS_NotificationContactInfo.ShipmentId = #{shipmentId} and
+				ContactTypeCode = 'EM'
+			)EmailAddresses,
+			(
+				select
+					string_agg(ShipmentHandlingArea.HandlingArea, '/')
+				from(select
+						distinct HandlingArea
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = EAPCustomerShipmentInfo.ShipmentId
+					union
+					select
+						distinct HandlingArea
+					from
+						Shipment_FreightOut
+					where
+						Shipment_FreightOut.ShipmentId = EAPCustomerShipmentInfo.ShipmentId
+				)ShipmentHandlingArea
+			) as Terminal
+		from(
+			select
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				Shipment_MasterCustomerInfo.CustomerName as ConsigneeName,
+				case
+					when (Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR
+							Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) then
+						1
+					else
+						0
+					end DocumentReceived,
+				InventoryFreightInfo.InventoryPieces,
+				InventoryFreightInfo.InventoryWeight,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerCode
+					else
+						AppointedAgentInfo.CustomerCode 
+					end CustomerCode,
+				case 
+					when (AppointedAgentInfo.CustomerCode = 'IXX') then
+						Shipment_MasterCustomerInfo.CustomerName
+					else
+						AppointedAgentInfo.CustomerShortName 
+					end CustomerName
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+				(
+					select
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId,
+						sum(InventoryFreightInfo.Pieces) InventoryPieces,
+						sum(InventoryFreightInfo.Weight) InventoryWeight
+					from(
+						select
+							Shipment_Inventory.Shipment_ID as ShipmentId,
+							Shipment_Inventory.Flight_ID as FlightId,
+							sum(Shipment_Inventory.Pieces) as Pieces,
+							sum(Shipment_Inventory.Weight) as Weight
+						from
+							Shipment_Inventory
+						where
+							Shipment_Inventory.Shipment_ID = #{shipmentId}
+						group by
+							Shipment_Inventory.Shipment_ID,
+							Shipment_Inventory.Flight_ID
+						union all
+						select
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId,
+							sum(Shipment_FreightOut.Pieces) as Pieces,
+							sum(Shipment_FreightOut.Weight) as Weight
+						from
+							Shipment_FreightOut
+						where
+							Shipment_FreightOut.ShipmentId = #{shipmentId}
+						group by
+							Shipment_FreightOut.ShipmentId,
+							Shipment_FreightOut.FlightId				
+					)InventoryFreightInfo
+					group by
+						InventoryFreightInfo.FlightId,
+						InventoryFreightInfo.ShipmentId
+				)InventoryFreightInfo
+					on Imp_ShipmentVerification.FlightId = InventoryFreightInfo.FlightId and
+						Imp_ShipmentVerification.ShipmentId = InventoryFreightInfo.ShipmentId inner join
+				Shipment_MasterCustomerInfo
+					on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId and
+						Shipment_MasterCustomerInfo.CustomerType = 'CNE' left join
+				Customer_Master	AppointedAgentInfo
+					on Shipment_MasterCustomerInfo.AppointedAgent = AppointedAgentInfo.Customer_ID	
+			where	
+				Imp_ShipmentVerification.ShipmentId = #{shipmentId} and
+				Shipment_Master.Destination IN ( #{tenantAirport}, #{tenantCity}) and
+				(Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.DocumentPouchReceivedFlag = 1 or Imp_ShipmentVerification.PhotoCopyAwbFlag= 1) and
+				InventoryFreightInfo.InventoryPieces > 0 and
+				exists(
+					select
+						1
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+						Shipment_MasterSHC.SpecialHandlingCode = 'EAP'
+				)
+		)EAPCustomerShipmentInfo inner join
+			Customer_Master
+				on EAPCustomerShipmentInfo.CustomerCode = Customer_Master.CustomerCode and
+					Customer_Master.DeRegisterDate is null
+		]]>
+	</select>
+	
+	<!-- Get EAP shipments -->
+	<select id="sqlGetInboundCustomsShipments"
+		parameterType="com.ngen.cosys.impbd.events.payload.SingaporeCustomsDataSyncEvent"
+		resultType="com.ngen.cosys.impbd.events.payload.InboundShipmentInfoModel">
+		<![CDATA[
+			select
+				Shipment_Master.ShipmentId as shipmentId,
+				Shipment_Master.ShipmentNumber as shipmentNumber,
+				Shipment_Master.ShipmentDate as shipmentDate,
+				Shipment_Master.Destination as destination,
+				Shipment_Master.Origin as origin
+			from
+				Imp_ShipmentVerification inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId	
+			where	
+				Imp_ShipmentVerification.FlightId = #{flightId}
+		]]>
+	</select>
+	
+	<update id="sqlUpdateNOASentStatus"
+		parameterType="com.ngen.cosys.impbd.events.payload.InboundShipmentInfoModel">
+          update Imp_ShipmentVerification
+             set
+                    NOA = 1,
+                    LastUpdatedUserCode = #{createdBy},
+                    LastUpdatedDateTime = getdate()
+             where
+                    FlightId = #{flightId} and
+                    ShipmentId = #{shipmentId} and
+                    exists(
+                                 SELECT 
+                                       1
+                                 FROM   
+                                        Event_OutboundServiceMessageReferenceLog INNER JOIN
+                                        Event_OutboundServiceMessageLog
+                                              ON     Event_OutboundServiceMessageLog.OutboundServiceMessageLogId = Event_OutboundServiceMessageReferenceLog.OutboundServiceMessageLogId
+                                 WHERE  
+                                 Event_OutboundServiceMessageReferenceLog.MessageReferenceNumber = #{shipmentNumber}
+                                       AND           Event_OutboundServiceMessageLog.MessageType = 'EMAIL'
+                                       AND           Event_OutboundServiceMessageLog.MessageSubject IN ('SHIPMENT ARRIVAL NOTICE - [DO NOT REPLY]','SHIPMENT ARRIVAL NOTICE - E-FREIGHT SHIPMENT - [DO NOT REPLY]','SHIPMENT ARRIVAL NOTICE - E-AWB SHIPMENT - [DO NOT REPLY]')
+                                       AND           Event_OutboundServiceMessageLog.MessageStatus IN ('INITIATED','SENT'))
+		
+	</update>
+	
+
+	
+	
+	  <select id="fetchEmails" parameterType="java.lang.String" resultType="java.lang.String">
+	select  Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress
+		   ,Interface_MessageDefinitionByCustomer.CarrierCode
+	from
+		    Interface_MessageDefinitionByCustomer inner join 
+		    Interface_MessageDefinitionByCustomerCommunication on
+			Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId=Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId  INNER JOIN
+			Interface_MessageDefinitionByCustomerCommunicationAddress ON 
+			Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId = Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId
+	where 
+			Interface_MessageDefinitionByCustomerCommunication.CommunicationType = 'ISR' 
+			and Interface_MessageDefinitionByCustomer.CarrierCode = #{carrierCode}
+ </select>
+ 
+   <select id="fetchCarrier" parameterType="java.math.BigInteger" resultType="com.ngen.cosys.impbd.events.payload.InwardReportEvent">
+		select carrierCode from flt_operativeflight where flight_id=#{flightId}
+ </select>
+	
+</mapper>

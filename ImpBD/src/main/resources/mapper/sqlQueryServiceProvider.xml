@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ServiceProviderMapper">
+
+	<insert id="createServiceProvider"
+		parameterType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel"
+		useGeneratedKeys="true" keyColumn="ServiceProviderId" keyProperty="serviceProviderId">
+		INSERT INTO Imp_ServiceProvider (
+		TerminalId,
+		Carrier,
+		FlightKey,
+		FlightType,
+		EffectiveDateFrom,
+		EffectiveDateTo,
+		Reason,
+		ContractorId,
+		CreatedUserCode,
+		CreatedDateTime,
+		LDWaiveApplicable,
+		LDWaiveApplicablelimit,
+		ServiceProviderType,
+		BodyType,
+		STDFrom,
+		STDTo,
+		STAFrom,
+		STATo
+		)
+		VALUES (
+		#{terminalId, jdbcType = INTEGER},
+		#{carrier, jdbcType = VARCHAR},
+		#{flightKey, jdbcType = VARCHAR},
+		#{flightType, jdbcType = VARCHAR},
+		#{effectiveDateFrom, jdbcType =
+		TIMESTAMP},
+		#{effectiveDateTo, jdbcType = TIMESTAMP},
+		#{reason, jdbcType
+		= VARCHAR},
+		#{customerId, jdbcType = INTEGER},
+		#{createdBy},
+		CURRENT_TIMESTAMP,
+		#{lDWaiveApplicable},
+		#{lDWaiveApplicablelimit},
+		#{serviceProviderType},
+		#{bodyType},
+		#{stdFrom , jdbcType = TIME},
+		#{stdTo , jdbcType = TIME},
+		#{staFrom , jdbcType = TIME},
+		#{staTo , jdbcType = TIME}
+		)
+	</insert>
+	<update id="updateServiceProvider"
+		parameterType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		UPDATE Imp_ServiceProvider
+		SET TerminalId =
+		#{terminalId},
+		FlightKey = #{flightKey},
+		FlightDate = #{flightDate},
+		FlightType = #{flightType},
+		EffectiveDateFrom = #{effectiveDateFrom},
+		EffectiveDateTo = #{effectiveDateTo},
+		Carrier = #{carrier},
+		ContractorId = #{customerId},
+		reason = #{reason},
+		LDWaiveApplicable =	#{lDWaiveApplicable},
+		LDWaiveApplicablelimit = #{lDWaiveApplicablelimit},
+		ServiceProviderType = #{serviceProviderType},
+		BodyType = #{bodyType},
+		STDFrom = #{stdFrom , jdbcType = TIME},
+		STDTo = #{stdTo , jdbcType = TIME},
+		STAFrom = #{staFrom , jdbcType = TIME},
+		STATo = #{staTo , jdbcType = TIME}
+		WHERE ServiceProviderId =
+		#{serviceProviderId}
+	</update>
+	<delete id="deleteServiceProvider"
+		parameterType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		delete from Imp_ServiceProvider
+		where
+		ServiceProviderId =
+		#{serviceProviderId}
+	</delete>
+
+	<select id="getServiceProviderInfo"
+		parameterType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel"
+		resultMap="displayServiceProviderResultMap">
+		SELECT SUBSTRING(flightKey, PATINDEX('%[0-9]%', flightKey),
+		LEN(flightKey)) as FlightKey
+		,cm.Customer_ID
+		,cm.CustomerCode
+		,cm.customerShortName
+		,sp.Carrier
+		,sp.TerminalId
+
+		,sp.FlightDate
+		,sp.FlightType
+		,sp.EffectiveDateFrom
+		,sp.EffectiveDateTo
+		,sp.Reason
+		,sp.ContractorId
+		,tl.TerminalCode
+		,sp.ServiceProviderId
+		,sp.LDWaiveApplicable
+		,sp.LDWaiveApplicablelimit
+		,sp.ServiceProviderType
+		,sp.BodyType
+		,sp.STDFrom
+		,sp.STDTo
+		,sp.STAFrom
+		,sp.STATo
+		from
+		Imp_ServiceProvider sp
+		INNER join Whs_Terminal tl on
+		sp.TerminalId
+		=
+		tl.WhsTerminalId
+		INNER JOIN Customer_Master cm
+		on cm.Customer_ID =
+		sp.ContractorId
+		<!-- where cm.CustomerCode = #{serviceCode} AND cm.CustomerShortName = 
+			#{customerShortName} -->
+		<where>
+			1 = 1
+			<if test="serviceCode!= null and serviceCode!= ''">
+				AND cm.CustomerCode = #{serviceCode}
+			</if>
+			<!-- <if test="customerShortName!= null and customerShortName!= ''">
+				AND cm.CustomerShortName = #{customerShortName}
+			</if> -->
+			<if test="serviceProviderType!= null and serviceProviderType!= ''">
+				AND sp.ServiceProviderType = #{serviceProviderType}
+			</if>
+			<if test="carrier != null and carrier != ''">
+				AND sp.Carrier = #{carrier}
+			</if>
+		</where>
+		<!-- where cm.CustomerCode = #{serviceCode} -->
+		order by
+			sp.Carrier,
+			sp.FlightKey
+	</select>
+	<resultMap id="displayServiceProviderResultMap"
+		type="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		<id column="ServiceProviderId" property="serviceProviderId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="Carrier" property="carrier" />
+		<result column="TerminalId" property="terminalId" />
+		<result column="FlightType" property="flightType" />
+		<result column="EffectiveDateFrom" property="effectiveDateFrom" />
+		<result column="EffectiveDateTo" property="effectiveDateTo" />
+		<result column="Reason" property="reason" />
+		<result column="ContractorId" property="code" />
+		<result column="TerminalCode" property="terminalCode" />
+		<result column="Customer_ID" property="customerId" />
+		<result column="CustomerCode" property="customerCode" />
+		<result column="CustomerShortName" property="customerShortName" />
+		<result column="LDWaiveApplicable" property="lDWaiveApplicable" />
+		<result column="LDWaiveApplicablelimit" property="lDWaiveApplicablelimit" />
+		<result column="ServiceProviderType" property="serviceProviderType" />
+		<result column="BodyType" property="bodyType" />
+		<result column="STDFrom" property="stdFrom" />
+		<result column="STDTo" property="stdTo" />
+		<result column="STAFrom" property="staFrom" />
+		<result column="STATo" property="staTo" />
+		<!-- <collection property="manageMail" javaType="List" ofType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderCommunication"> 
+			<id property="serviceProviderComId" column="ServiceProviderComId"/> <result 
+			column="ServiceProviderId" property="serviceProviderId"/> <result column="CommunicationAddress" 
+			property="communicationType"/> </collection> -->
+	</resultMap>
+
+	<select id="sqlTerminalID" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		SELECT WhsTerminalId as terminalId FROM Whs_Terminal WHERE
+		TerminalCode=#{terminalCode}
+	</select>
+
+	<select id="sqlTerminalIDList" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		SELECT WhsTerminalId as terminalId FROM Whs_Terminal WHERE
+		TerminalCode=#{terminalCode}
+	</select>
+
+	<select id="sqlCustomerId" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		SELECT Customer_ID as customerId,CustomerCode as
+		customerCode,
+		CustomerShortName as customerShortName from
+		Customer_Master where
+		CustomerCode=#{customerCode}
+		AND CustomerShortName
+		= #{customerShortName}
+	</select>
+
+	<select id="sqlCustomerIdList" parameterType="java.lang.String"
+		resultType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		SELECT Customer_ID as customerId,CustomerCode as
+		customerCode,
+		CustomerShortName as customerShortName from
+		Customer_Master where
+		CustomerCode=#{customerCode} AND
+		CustomerShortName =#{customerShortName}
+	</select>
+
+	<select id="sqlEditService"
+		resultType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel">
+		SELECT (sp.Carrier + sp.FlightKey)as flightKeyType
+		,cm.Customer_ID
+		,cm.CustomerCode
+		,cm.CustomerShortName
+		,sp.TerminalId
+		,sp.Carrier
+		,sp.FlightKey
+		,CURRENT_TIMESTAMP AS FlightDate
+		,sp.FlightType
+		,sp.EffectiveDateFrom
+		,sp.EffectiveDateTo
+		,sp.Reason
+		,sp.ContractorId
+		,tl.TerminalCode
+		,tl.WhsTerminalId
+		,sp.LDWaiveApplicable
+		,sp.LDWaiveApplicablelimit
+		,sp.ServiceProviderId
+		,sp.ServiceProviderType
+		,sp.BodyType
+		,sp.STDFrom
+		,sp.STDTo
+		,sp.STAFrom
+		,sp.STATo
+		from
+		Imp_ServiceProvider sp
+		left
+		join Whs_Terminal
+		tl on
+		sp.TerminalId =
+		tl.WhsTerminalId
+		left JOIN
+		Customer_Master cm
+		on
+		cm.Customer_ID =
+		sp.ContractorId
+		where
+		sp.ServiceProviderId =
+		#{serviceProviderId}
+	</select>
+
+	<select id="sqlServiceId"
+		parameterType="com.ngen.cosys.impbd.service.provider.model.ServiceProviderModel"
+		resultType="java.lang.Integer">
+		select count(*) from Imp_ServiceProvider where
+		ServiceProviderId = #{serviceProviderId}
+	</select>
+
+</mapper>

@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ChangeOfAwbOrHawb">
+
+	<select id="checkShipmentOrigin"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_Master where (Origin not
+		in(#{tenantAirport}, #{tenantCity}) OR (Origin not in(#{tenantAirport}, #{tenantCity}) AND
+		destination not in (#{tenantAirport}, #{tenantCity}))) and
+		shipmentNumber = #{shipmentNumber}
+		and
+		shipmentDate
+		= #{shipmentDate}
+	</select>
+
+	<select id="checkNewShipmentNumberAlreadyExists"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="java.lang.Integer">
+		select count(1) from shipment_master
+		where shipmentNumber = #{newShipmentNumber}
+	</select>
+
+	<update id="updateShipmentMasterRecord"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if ((select count(*) from Shipment_Master where 
+		shipmentNumber = #{shipmentNumber}
+		and shipmentDate
+		=
+		#{shipmentDate})>0)
+		update Shipment_Master set shipmentNumber
+		=#{newShipmentNumber} where
+		shipmentNumber = #{shipmentNumber}
+		and
+		shipmentDate
+		= #{shipmentDate}
+	</update>
+
+	<update id="updateArrivalManifest"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Imp_ArrivalManifestShipmentInfo
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Imp_ArrivalManifestShipmentInfo set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updateBreakdownHandlingInformation"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Imp_BreakDownHandlingInformation
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Imp_BreakDownHandlingInformation set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updateInwardServiceReportShipmentDiscrepancy"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Imp_BreakDownHandlingInformation
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Imp_BreakDownHandlingInformation set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+
+	<update id="updateAgentDeliveryPlanningWorksheetShipments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Imp_AgentDeliveryPlanningWorksheetShipments
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Imp_AgentDeliveryPlanningWorksheetShipments set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+	<!-- <update id="updateValIncomingShipmentRequestAdvice" parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"> 
+		if((select count(*) from Val_IncomingShipmentRequestAdvice where shipmentNumber 
+		= #{shipmentNumber} and shipmentDate = #{shipmentDate})> 0) update Val_IncomingShipmentRequestAdvice 
+		set shipmentNumber = #{newShipmentNumber} where shipmentNumber = #{shipmentNumber} 
+		and shipmentDate = #{shipmentDate} </update> -->
+
+	<update id="updateVehiclePermitAuthorization"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Mst_VehiclePermitAuthorization
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Mst_VehiclePermitAuthorization set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updateEquipmentRequestShipments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Equipment_Request_Shipments
+		where shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})> 0)
+		update
+		Equipment_Request_Shipments set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updateShipmentIrregularity"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Shipment_Irregularity
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Shipment_Irregularity set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<update id="updateShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Shipment_Remarks
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Shipment_Remarks set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+
+	<update id="updateTranshipmentTransferManifestByAWBInfo"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Transhipment_TransferManifestByAWBInfo
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Transhipment_TransferManifestByAWBInfo set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<update id="updateTranshipmentTTWAConnectingFlightShipment"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Transhipment_TTWAConnectingFlightShipment
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Transhipment_TTWAConnectingFlightShipment set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<update id="updateAgtSIDHeader"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Agt_SIDHeader
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Agt_SIDHeader set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+
+	<update id="updateAgtInboundPreBookingShipments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Agt_InboundPreBookingShipments
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Agt_InboundPreBookingShipments set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<update id="updateTranshipmentThroughTransitWorkingListShipment"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Transhipment_TransferManifestByAWBInfo
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Transhipment_TransferManifestByAWBInfo set
+		shipmentNumber =
+		#{newShipmentNumber}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and
+		shipmentDate =
+		#{shipmentDate}
+	</update>
+
+
+	<update id="updateShipmentFreightWayBill"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Shipment_FreightWayBill
+		where
+		AwbNumber =
+		#{shipmentNumber} and AwbDate =
+		#{shipmentDate})>
+		0)
+		update
+		Shipment_FreightWayBill set
+		AwbNumber =
+		#{newShipmentNumber}
+		where
+		AwbNumber =
+		#{shipmentNumber} and
+		AwbDate =
+		#{shipmentDate}
+	</update>
+
+	<select id="checkHAWBExists"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+
+		select
+		#{hawbNumber} as hawbNumber,
+		#{newHawbNumber} as newHawbNumber
+		,#{shipmentNumber} as
+		shipmentNumber
+		,#{shipmentDate} as shipmentDate
+		,hawb.ShipmentFreightHouseListByHAWBId from
+		Shipment_FreightHouseListByHAWB hawb
+		inner join
+		Shipment_FreightHouseListByAWB awb on
+		hawb.ShipmentFreightHouseListByAWBId =
+		awb.ShipmentFreightHouseListByAWBId
+		where awb.awbNumber =
+		#{shipmentNumber} and awb.awbDate = #{shipmentDate} and
+		hawb.HAWBNumber = #{hawbNumber}
+
+	</select>
+
+	<update id="updateHawbNumber"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		update Shipment_FreightHouseListByHAWB set HAWBNumber =
+		#{newHawbNumber} where
+		ShipmentFreightHouseListByHAWBId =
+		#{shipmentFreightHouseListByHAWBId}
+	</update>
+	
+	
+	<update id="updateDgDeclaration" parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+	
+	if((select count(*) from
+		Exp_DG_ShipperDeclaration
+		where
+		ShipmentNumber =
+		#{shipmentNumber})>
+		0)
+		update
+		Exp_DG_ShipperDeclaration set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber}
+	
+	</update>
+	
+		<update id="updateAgentAcceptancePlanningShipments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_AgentAcceptancePlanningShipments
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_AgentAcceptancePlanningShipments set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+	<update id="updateExpeAcceptanceDocumentInformation"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_eAcceptanceDocumentInformation
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_eAcceptanceDocumentInformation set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+		<update id="updateExpShipmentBooking"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_ShipmentBooking
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_ShipmentBooking set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+	<update id="updateExpBookingDelta"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_BookingDelta
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_BookingDelta set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+	<update id="updateAgtPrelodgeExportDocuments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Agt_PrelodgeExportDocuments
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Agt_PrelodgeExportDocuments set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+		<update id="updateExpWorkingListSnapshotShipmentDetails"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_WorkingListSnapshotShipmentDetails
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_WorkingListSnapshotShipmentDetails set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+	<update id="updateExpeAcceptanceAutoWeighShipment"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_eAcceptanceAutoWeighShipment
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_eAcceptanceAutoWeighShipment set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+	
+	<update id="updateShipmentCheckListStatus"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Shipment_CheckListStatus
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Shipment_CheckListStatus set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<update id="updateMstBlackListedShipments"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Mst_BlackListedShipments
+		where
+		ShipmentNumber =
+		#{shipmentNumber} ) > 0)
+		update
+		Mst_BlackListedShipments set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber}
+	</update>
+	
+	<update id="updateExpOutwardServiceReportShipmentDiscrepancy"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(*) from
+		Exp_OutwardServiceReportShipmentDiscrepancy
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>
+		0)
+		update
+		Exp_OutwardServiceReportShipmentDiscrepancy set
+		ShipmentNumber =
+		#{newShipmentNumber}
+		where
+		ShipmentNumber =
+		#{shipmentNumber} and
+		ShipmentDate =
+		#{shipmentDate}
+	</update>
+
+	<insert id="insertChangedAwbNumberHistory"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(ShipmentNumber) from
+		Shipment_ShipmentNumberChangeLog
+		where ShipmentNumber =
+		#{shipmentNumber} and ShipmentDate =
+		#{shipmentDate})>0)
+
+
+		UPDATE
+		Shipment_ShipmentNumberChangeLog
+		SET NewShipmentNumber =
+		#{newShipmentNumber},
+		LastUpdatedUserCode = #{modifiedBy},
+		LastUpdatedDateTime = #{modifiedOn}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate = #{shipmentDate}
+
+		else
+
+		INSERT INTO
+		Shipment_ShipmentNumberChangeLog
+		(ShipmentNumber  
+		,ShipmentDate
+		,NewShipmentNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentNumber}
+		,#{shipmentDate}
+		,#{newShipmentNumber}
+		,#{createdBy}
+		,#{createdOn})
+
+	</insert>
+	<insert id="insertChangedHawbNumberHistory"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		if((select count(ShipmentHouseNumber) from
+		Shipment_ShipmentNumberChangeLog where shipmentNumber =
+		#{shipmentNumber} and shipmentDate = #{shipmentDate} and
+		ShipmentHouseNumber = #{hawbNumber})>0)
+
+
+		UPDATE
+		Shipment_ShipmentNumberChangeLog
+		SET NewShipmentHouseNumber =
+		#{newHawbNumber},
+		LastUpdatedUserCode = #{modifiedBy},
+		LastUpdatedDateTime = #{modifiedOn}
+		where
+		shipmentNumber =
+		#{shipmentNumber} and shipmentDate = #{shipmentDate} and
+		ShipmentHouseNumber = #{hawbNumber}
+
+		else
+
+		INSERT INTO
+		Shipment_ShipmentNumberChangeLog
+		(ShipmentNumber  
+		,ShipmentDate
+		,ShipmentHouseNumber
+		,NewShipmentHouseNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentNumber}
+		,#{shipmentDate}
+		,#{hawbNumber}
+		,#{newHawbNumber}
+		,#{createdBy}
+		,#{createdOn})
+	</insert>
+
+<insert id="insertChangeAWBRemark"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		Insert into Shipment_Remarks(
+	ShipmentNumber,
+	ShipmentDate,
+		RemarkType,
+	ShipmentRemarks,
+	CreatedUser_Code,
+	Created_DateTime,
+	ShipmentType
+		)
+	values(#{newShipmentNumber},
+	#{shipmentDate},
+			'CAW',
+		#{shipmentRemark},
+		#{createdBy},
+		#{createdOn},
+		'AWB')
+	</insert>
+	<insert id="insertChangeHAWBRemark"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+		Insert into Shipment_Remarks(
+	ShipmentNumber,
+	ShipmentDate,
+		RemarkType,
+	ShipmentRemarks,
+	CreatedUser_Code,
+	Created_DateTime,
+	ShipmentType
+		)
+	values(#{shipmentNumber},
+	#{shipmentDate},
+			'CHW',
+		#{shipmentRemark},
+		#{createdBy},
+		#{createdOn},
+		'AWB')
+	</insert>
+	<select id="getReasonHAWB"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="java.lang.String">
+		select Description from Mst_Reason where ReasonId=#{reasonOfChangeHawb} and Purpose='CHANGEOFHAWB'
+		</select>
+		<select id="getReason"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="java.lang.String">
+		select Description from Mst_Reason where ReasonId=#{reasonOfChangeAwb} and Purpose='CHANGEOFAWB'
+		</select>
+		
+		<select id="checkHWBExistsHandledByHouse"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb"
+		resultType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+
+		
+		select
+		#{hawbNumber} as hawbNumber,
+		#{newHawbNumber} as newHawbNumber
+		,#{shipmentNumber} as shipmentNumber
+		,#{shipmentDate} as shipmentDate
+        ,hawb.ShipmentHouseId from
+		Shipment_HouseInformation hawb
+		inner join
+		Shipment_master awb on
+		hawb.ShipmentId=
+		awb.ShipmentId
+		where awb.ShipmentNumber=#{shipmentNumber}
+		and awb.ShipmentDate =#{shipmentDate} and
+		hawb.Number =#{hawbNumber}
+	</select>
+		
+		
+		<update id="updateHwbNumberHandledByHouse"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+	    update Shipment_HouseInformation set Number=#{newHawbNumber}
+		where ShipmentHouseId =#{shipmentHouseId}
+	    </update>
+		
+			
+				<update id="sqlUpdateHwbShipmentIrregularity"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+				update Shipment_Irregularity set HouseNumber=#{newHawbNumber}
+		where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentDate} and HouseNumber=#{hawbNumber}
+		</update>
+		
+		
+		<update id="sqlUpdateHWBShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+			update Shipment_Remarks set HousewayBillNumber=#{newHawbNumber}
+		where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentDate} and HousewayBillNumber=#{hawbNumber}
+		</update>
+		
+		<update id="sqlUpdateHWBComDamageInfo"
+		parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb">
+				update Com_DamageInfo set SubEntityKey=#{newHawbNumber}
+		where EntityKey=#{shipmentNumber} and EntityDate=#{shipmentDate} and SubEntityKey=#{hawbNumber}
+		</update>
+		
+		<select id="sqlCheckAnyPaidChargeForAWB" parameterType="com.ngen.cosys.shipment.changeofawb.model.ChangeOfAwbHawb" resultType="java.lang.Boolean">
+		select
+		       case
+		              when COUNT(*)>0
+		                     then 1
+		                     else 0
+		       end
+		from
+		       Billing_ChargeEntryBillPaid
+		       inner join
+		              Billing_ChargeEntry
+		              on
+		                     Billing_ChargeEntryBillPaid.ChargeEntryId = Billing_ChargeEntry.ChargeEntryId
+		where
+		       Billing_ChargeEntry.ShipmentServiceReferenceId =
+		       (
+		              select
+		                     shipmentID
+		              from
+		                     Shipment_Master
+		              where
+		                     ShipmentNumber   = #{shipmentNumber}
+		                     and ShipmentDate = #{shipmentDate}
+		       )
+		       <if test="hawbNumber != null">
+		      and ShipmentHouseId =
+			   (
+			          select
+			                 ShipmentHouseId
+			          from
+			                 Shipment_HouseInformation
+			          where
+			                 Number         = #{hawbNumber}
+			                 and ShipmentId =
+			                 (
+			                        select
+			                               shipmentID
+			                        from
+			                               Shipment_Master
+			                        where
+			                               ShipmentNumber   = #{shipmentNumber}
+			                               and ShipmentDate = #{shipmentDate}
+			                 )
+			   )
+		       </if>
+	</select>
+
+</mapper>

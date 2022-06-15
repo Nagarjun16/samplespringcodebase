@@ -1,0 +1,977 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="FromDate" id="77">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="ToDate" id="78">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="4">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysprodsqldb1server.database.windows.net;databaseName=NGCPROD;ApplicationIntent=ReadOnly</property>
+            <property name="odaUser">SatsProdReadonlyUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">TmdjRGJSZWFkJTQ1Ng==</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="65">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <text-property name="heading">FlightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Flight</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Flight</text-property>
+                    <text-property name="heading">Flight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Manifest_WGT</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Manifest_WGT</text-property>
+                    <text-property name="heading">Manifest_WGT</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">BUP</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">BUP</text-property>
+                    <text-property name="heading">BUP</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">PER</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">PER</text-property>
+                    <text-property name="heading">PER</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">BUPPER</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">BUPPER</text-property>
+                    <text-property name="heading">BUPPER</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DGR</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">DGR</text-property>
+                    <text-property name="heading">DGR</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">GEN</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">GEN</text-property>
+                    <text-property name="heading">GEN</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Billing_Total</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Billing_Total</text-property>
+                    <text-property name="heading">Billing_Total</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Variance Kg</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Variance Kg</text-property>
+                    <text-property name="heading">Variance Kg</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Variance %</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">Variance %</text-property>
+                    <text-property name="heading">Variance %</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">FromDate</property>
+                    <property name="paramName">FromDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ToDate</property>
+                    <property name="paramName">ToDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">Flight</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">Manifest_WGT</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">BUP</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">PER</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">BUPPER</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">DGR</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">GEN</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">Billing_Total</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">Variance Kg</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">Variance %</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">Flight</property>
+                    <property name="nativeName">Flight</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">Manifest_WGT</property>
+                    <property name="nativeName">Manifest_WGT</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">BUP</property>
+                    <property name="nativeName">BUP</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">PER</property>
+                    <property name="nativeName">PER</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">BUPPER</property>
+                    <property name="nativeName">BUPPER</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">DGR</property>
+                    <property name="nativeName">DGR</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">GEN</property>
+                    <property name="nativeName">GEN</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">Billing_Total</property>
+                    <property name="nativeName">Billing_Total</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">Variance Kg</property>
+                    <property name="nativeName">Variance Kg</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">Variance %</property>
+                    <property name="nativeName">Variance %</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[-------------------------------------------
+--Export
+--Daily Tonnage Verification Report
+--Flight level
+--------------------------------------------	
+WITH 
+Flight AS (
+	SELECT leg.flight_id FlightId, Flt.CarrierCode, Flt.FlightNumber, 
+	       Flt.FlightKey, UPPER(Format(Cast(Leg.DateStd As Date),'dd MMM yyyy')) FlightDate
+    FROM   flt_operativeflight Flt 
+    INNER JOIN flt_operativeflight_legs leg ON leg.flight_id = Flt.flight_id 
+    WHERE  Leg.flightboardpoint = 'SIN' 
+    AND    ( ( Flt.carriercode IN ( 'MU', 'CK' ) AND Cast(Leg.datestd AS DATE) >= '11-DEC-2018' ) 
+			   OR ( Flt.carriercode IN ( 'VJ', 'PN', 'RX' ) AND Cast(Leg.datestd AS DATE) >= '27-DEC-2018' ) 
+			   OR ( Flt.carriercode IN ( 'TG', 'BR', 'FJ', 'LO' ) AND Cast(Leg.datestd AS DATE) >= '03-JAN-2019' ) 
+			   OR ( Flt.carriercode IN ( 'BG', 'SL', 'OD', 'JT', 'ID', 'HU', 'GX', '5J', '3U' ) 
+					AND Cast(Leg.datestd AS DATE) >= '26-FEB-2019' ) 
+			   OR ( Flt.carriercode IN ( 'CZ', 'CV', 'LX', 'MF', 'NS', 'OZ', 'QZ', 'Z2', 'ZH', 'FD', 'AK', 'CA', 'JL', 'HO' ) 
+					AND Cast (Leg.datestd AS DATE) >= '19-MAR-2019' ) 
+			   OR ( Flt.carriercode IN ( 'AI', '7L', '9W', 'PR', 'IX', 'BI', 'EY', 'ET', 'BS', 'SV', 'BL', 'HY' ) 
+					AND Cast (Leg.datestd AS DATE) >= '27-MAR-2019' ) 
+			   OR ( Flt.carriercode = '3K' AND Cast (Leg.datestd AS DATE) BETWEEN '27-MAR-2019' AND '28-MAR-2019' ) 
+			   OR ( Flt.carriercode IN ( 'PX', 'VN' ) AND Cast (Leg.datestd AS DATE) BETWEEN '27-MAR-2019' AND '14-APR-2019' ) 
+			   OR ( Flt.carriercode = 'UA' AND Cast(Leg.datestd AS DATE) >= '30-APR-2019' ) 
+			   OR ( Flt.carriercode = 'TK'  AND Cast(Leg.datestd AS DATE) >= '09-MAY-2019' ) 
+			   OR ( Flt.carriercode IN ( 'NH', 'NQ' ) AND Cast(Leg.datestd AS DATE) >= '15-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'CX' AND Cast(Leg.datestd AS DATE) >= '21-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'KE' AND Cast(Leg.datestd AS DATE) >= '28-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'VN' AND Cast(Leg.datestd AS DATE) >= '04-JUN-2019' ) 
+			   OR ( Flt.carriercode = '3K' AND Cast(Leg.datestd AS DATE) >= '11-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'KZ' AND Cast(Leg.datestd AS DATE) >= '12-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'FX' AND Cast(Leg.datestd AS DATE) >= '18-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'RU' AND Cast(Leg.datestd AS DATE) >= '25-JUN-2019' ) 
+			   OR ( Flt.carriercode IN ( 'TH', 'N7' ) AND Cast(Leg.datestd AS DATE) >= '02-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'LH' AND Cast(Leg.datestd AS DATE) >= '11-JUL-2019' ) 
+			   OR ( Flt.carriercode = '8K' AND Cast(Leg.datestd AS DATE) >= '16-JUL-2019' ) 
+			   OR ( Flt.carriercode = '3S' AND Cast(Leg.datestd AS DATE) >= '19-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'JQ' AND Cast(Leg.datestd AS DATE) >= '29-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'QF' AND Cast(Leg.datestd AS DATE) >= '29-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'PX' AND Cast(Leg.datestd AS DATE) >= '27-AUG-2019' ) 
+			   OR ( Flt.FlightKey   = 'SQ0279' AND Cast(Leg.datestd AS DATE) >= '02-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'MI0922' AND Cast(Leg.datestd AS DATE) >= '10-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0182' AND Cast(Leg.datestd AS DATE) >= '13-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0656' AND Cast(Leg.datestd AS DATE) >= '17-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0478' AND Cast(Leg.DATESTD AS DATE) >= '27-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0482' AND Cast(Leg.DATESTD AS DATE) >= '27-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7344' AND Cast(Leg.DATESTD AS DATE) >= '29-SEP-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0446' AND Cast(Leg.DATESTD AS DATE) >= '01-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0448' AND Cast(Leg.DATESTD AS DATE) >= '02-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0530' AND Cast(Leg.DATESTD AS DATE) >= '03-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ4281' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ4283' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7298' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7290' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7294' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0265' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0245' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0255' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0235' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0297' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0207' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0217' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7286' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0237' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0227' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0247' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0024' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0018' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0215' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0223' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0225' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0213' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0016' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0008' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0241' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0288' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0211' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0231' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7296' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ0221' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0012' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'TR0002' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7292' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )
+			   OR ( Flt.FlightKey   = 'SQ7298' AND Cast(Leg.DATESTD AS DATE) >= '08-OCT-2019' )	
+			    OR ( Flt.FlightKey   = 'MI0801' AND Cast(Leg.DATESTD AS DATE) >= '15-OCT-2019' )	
+			    OR ( Flt.FlightKey   = 'MI0803' AND Cast(Leg.DATESTD AS DATE) >= '15-OCT-2019' )	
+			    OR ( Flt.FlightKey   = 'MI0811' AND Cast(Leg.DATESTD AS DATE) >= '15-OCT-2019' )	
+			    OR ( Flt.FlightKey   = 'MI0813' AND Cast(Leg.DATESTD AS DATE) >= '15-OCT-2019' )	
+			    OR ( Flt.FlightKey   = 'TR0006' AND Cast(Leg.DATESTD AS DATE) >= '15-OCT-2019' )	
+				OR ( Flt.FlightKey   = 'MI0320' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0322' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0324' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0326' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0328' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0340' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'MI0342' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ0106' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ0116' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ0118' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ3336' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ3341' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'SQ3375' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'TR0452' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'TR0456' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'TR0464' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'TR0466' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )
+				OR ( Flt.FlightKey   = 'TR0468' AND Cast(Leg.DATESTD AS DATE) >= '30-OCT-2019' )				
+			)		
+), 
+Manifest AS (Select Man.FlightId, Sum(Shp.Weight) Weight
+			   From Exp_ManifestShipmentInfo Shp
+			  Inner Join Exp_Manifest Man On Man.ManifestId = Shp.ManifestId
+			  Group By Man.FlightId
+), 
+FrtOut AS (Select FOut.FlightId, 
+                  Sum(BUP) BUP, Sum(PER) PER, Sum(BUPPER) BUPPER, Sum(DGR) DGR, Sum(GEN) GEN
+			From (Select Shp.FlightId, Shp.ShipmentId, Shp.AssignedUldTrolley, 
+							Sum(Case When (IsNull(BUP,0) > 0 And IsNull(DGR,0) = 0 And IsNUll(PER,0) = 0)
+									 Then Shp.Weight Else 0 End) BUP,				  
+							Sum(Case When ((IsNUll(PER,0) > 0 And IsNull(BUP,0) = 0 And IsNull(DGR,0) = 0)
+									   Or (IsNUll(PER,0) > 0 And IsNull(BUP,0) = 0 And IsNull(DGR,0) > 0)
+									   Or (IsNUll(PER,0) > 0 And IsNull(BUP,0) > 0 And IsNull(DGR,0) > 0)) 
+									 Then Shp.Weight Else 0 End) PER,	
+							Sum(Case When (IsNull(BUP,0) > 0 And IsNull(PER,0) > 0 And IsNUll(DGR,0) = 0)
+									 Then Shp.Weight Else 0 End) BUPPER, 
+							Sum(Case When ((IsNull(DGR,0) > 0 And IsNUll(PER,0) = 0 And IsNull(BUP,0) = 0) 
+									   OR (IsNull(DGR,0) > 0 And IsNUll(PER,0) = 0 And IsNull(BUP,0) > 0)) 
+									 Then Shp.Weight Else 0 End) DGR, 						 
+							Sum(Case When  (IsNull(BUP,0) = 0 And IsNull(DGR,0) = 0 And IsNUll(PER,0) = 0 )  
+									 Then Shp.Weight Else 0 End) GEN	
+				  From Shipment_freightout Shp
+					Inner Join (Select FlightId, ShipmentId
+								From Shipment_freightout F
+								EXCEPT		  
+								Select F.FlightId, F.ShipmentId
+								From Shipment_Master A
+								Inner Join Transhipment_TransferManifestByAWBInfo T 
+										On T.ShipmentNumber = A.ShipmentNumber
+									   And T.ShipmentDate   = A.ShipmentDate  
+								Inner Join Shipment_FreightOut F 
+										On F.ShipmentId = A.ShipmentId
+									   And F.FlightId = T.InboundFlightId
+								Where Not Exists (Select 1
+													From Exp_ManifestShipmentInfo MShp
+													Inner Join Exp_Manifest Man 
+													        On Man.ManifestId = MShp.ManifestId
+													Where Man.FlightId   = F.FlightId
+													And   MShp.ShipmentId = F.ShipmentId)
+							   ) FOut	
+							On FOut.FlightId = Shp.FlightId
+						   And FOut.ShipmentId = Shp.ShipmentId
+				  Inner Join Shipment_master sm On sm.ShipmentId = Shp.ShipmentId
+				  Left Join (Select FlightId, ShipmentId, AssignedUldTrolley, String_agg(specialhandlingcode, '/') specialhandlingcode,
+									Sum(CASE WHEN specialhandlingcode IN ('BUP') 
+									         THEN 1 ELSE 0 END) BUP,
+									Sum(CASE WHEN specialhandlingcode IN ('EAT','FRI','FRO','LHO','PEF',
+																		  'PEM','PEP','PER','PES','PHC',
+																		  'PIL') 
+											 THEN 1 ELSE 0 END) PER, 					
+									Sum(CASE WHEN specialhandlingcode IN ('DGD','DGR','RBI','RBM','RCL',
+																		  'RCM','RCX','REQ','REX','RFG',
+																		  'RFL','RFS','RFW','RGX','RIS',
+																		  'RLI','RLM','RMD','RNG','ROP',
+																		  'ROX','RPB','RPG','RRE','RRW',
+																		  'RRY','RSB','RSC','RXB','RXC',
+																		  'RXD','RXE','RXG','RXS') 
+											 THEN 1 ELSE 0 END) DGR
+							 From (Select ShipmentFreightOutId, specialhandlingcode
+									From shipment_Freightoutshc 
+									Group by ShipmentFreightOutId, specialhandlingcode
+								   ) shc
+							Inner Join shipment_Freightout FOut On FOut.ShipmentFreightOutId = Shc.ShipmentFreightOutId
+							Group By FlightId, ShipmentId, AssignedUldTrolley
+						   ) Shc On Shc.FlightId = Shp.FlightId
+							        And Shc.ShipmentId = Shp.ShipmentId
+									And Shc.AssignedUldTrolley = Shp.AssignedUldTrolley
+					Where sm.shipmenttype != 'MAIL' 
+					And sm.Destination != 'SIN'	
+					And Shp.Weight     > 0
+				    Group By Shp.FlightId, Shp.ShipmentId, Shp.AssignedUldTrolley
+				  ) FOut			  
+			Group By FOut.FlightId
+)
+SELECT Flt.FlightDate, Flt.FlightKey Flight, 
+       Manifest_WGT, BUP, PER, BUPPER, DGR, GEN,
+	   Billing_Total, (Billing_Total - Manifest_WGT) "Variance Kg", 
+	   ((Billing_Total - Manifest_WGT) / Manifest_WGT) "Variance %"
+  FROM (Select IsNull(Man.FlightID,FrtOut.FlightID) FlightID,
+               Man.Weight Manifest_WGT, BUP, PER, BUPPER, DGR, GEN,
+			   (IsNull(BUP,0)+IsNull(PER,0)+IsNull(BUPPER,0)+IsNull(DGR,0)+IsNull(GEN,0)) Billing_Total
+	    From Manifest Man
+	    Full Outer Join FrtOut ON FrtOut.FlightId = Man.FlightId) Ton
+Inner Join Flight Flt On Flt.FlightId = Ton.FlightId		
+And Cast(Flt.FlightDate As Date) Between ? And ? 
+Order by 1, 2]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightDate</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>91</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Flight</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Flight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Flight</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Manifest_WGT</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Manifest_WGT</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Manifest_WGT</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>BUP</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>BUP</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>BUP</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>PER</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>PER</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>PER</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>BUPPER</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>BUPPER</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>BUPPER</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DGR</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DGR</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DGR</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GEN</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GEN</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GEN</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Billing_Total</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Billing_Total</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Billing_Total</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Variance Kg</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Variance Kg</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Variance Kg</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Variance %</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>6</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Variance %</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Variance %</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <grid id="142">
+            <column id="143"/>
+            <row id="144">
+                <cell id="145">
+                    <label id="146">
+                        <property name="fontFamily">"Courier New"</property>
+                        <property name="fontWeight">bold</property>
+                        <property name="textAlign">left</property>
+                        <text-property name="text">                                   EXPORT DAILY TONNAGE VERIFICATION(FLIGHT)</text-property>
+                    </label>
+                </cell>
+            </row>
+        </grid>
+        <table id="6">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Flight</property>
+                    <text-property name="displayName">Flight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Flight"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Manifest_WGT</property>
+                    <text-property name="displayName">Manifest_WGT</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Manifest_WGT"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">BUP</property>
+                    <text-property name="displayName">BUP</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["BUP"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">PER</property>
+                    <text-property name="displayName">PER</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PER"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">BUPPER</property>
+                    <text-property name="displayName">BUPPER</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["BUPPER"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">DGR</property>
+                    <text-property name="displayName">DGR</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DGR"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">GEN</property>
+                    <text-property name="displayName">GEN</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["GEN"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">Billing_Total</property>
+                    <text-property name="displayName">Billing_Total</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Billing_Total"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">Variance Kg</property>
+                    <text-property name="displayName">Variance Kg</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Variance Kg"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">Variance %</property>
+                    <text-property name="displayName">Variance %</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Variance %"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+            </list-property>
+            <property name="pageBreakInterval">0</property>
+            <column id="43"/>
+            <column id="44"/>
+            <column id="45"/>
+            <column id="46"/>
+            <column id="47"/>
+            <column id="48"/>
+            <column id="49"/>
+            <column id="50"/>
+            <column id="51"/>
+            <column id="52"/>
+            <column id="53"/>
+            <header>
+                <row id="7">
+                    <cell id="8">
+                        <label id="54">
+                            <text-property name="text">Flight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="9">
+                        <label id="55">
+                            <text-property name="text">Flight Date</text-property>
+                        </label>
+                    </cell>
+                    <cell id="10">
+                        <label id="56">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Manifest Weight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="11">
+                        <label id="57">
+                            <text-property name="text">BUP</text-property>
+                        </label>
+                    </cell>
+                    <cell id="12">
+                        <label id="58">
+                            <text-property name="text">PER</text-property>
+                        </label>
+                    </cell>
+                    <cell id="13">
+                        <label id="59">
+                            <text-property name="text">BUPPER</text-property>
+                        </label>
+                    </cell>
+                    <cell id="14">
+                        <label id="60">
+                            <text-property name="text">DGR</text-property>
+                        </label>
+                    </cell>
+                    <cell id="15">
+                        <label id="61">
+                            <text-property name="text">GEN</text-property>
+                        </label>
+                    </cell>
+                    <cell id="16">
+                        <label id="62">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Total Billing</text-property>
+                        </label>
+                    </cell>
+                    <cell id="17">
+                        <label id="63">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Varience KG</text-property>
+                        </label>
+                    </cell>
+                    <cell id="18">
+                        <label id="64">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Varience %</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="19">
+                    <cell id="20">
+                        <data id="72">
+                            <property name="resultSetColumn">Flight</property>
+                        </data>
+                    </cell>
+                    <cell id="21">
+                        <data id="73">
+                            <property name="resultSetColumn">FlightDate</property>
+                        </data>
+                    </cell>
+                    <cell id="22">
+                        <data id="74">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">Manifest_WGT</property>
+                        </data>
+                    </cell>
+                    <cell id="23">
+                        <data id="67">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">BUP</property>
+                        </data>
+                    </cell>
+                    <cell id="24">
+                        <data id="68">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">PER</property>
+                        </data>
+                    </cell>
+                    <cell id="25">
+                        <data id="69">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">BUPPER</property>
+                        </data>
+                    </cell>
+                    <cell id="26">
+                        <data id="70">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">DGR</property>
+                        </data>
+                    </cell>
+                    <cell id="27">
+                        <data id="71">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">GEN</property>
+                        </data>
+                    </cell>
+                    <cell id="28">
+                        <data id="66">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">Billing_Total</property>
+                        </data>
+                    </cell>
+                    <cell id="29">
+                        <data id="75">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">Variance Kg</property>
+                        </data>
+                    </cell>
+                    <cell id="30">
+                        <data id="76">
+                            <property name="textAlign">right</property>
+                            <property name="resultSetColumn">Variance %</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="31">
+                    <cell id="32"/>
+                    <cell id="33"/>
+                    <cell id="34"/>
+                    <cell id="35"/>
+                    <cell id="36"/>
+                    <cell id="37"/>
+                    <cell id="38"/>
+                    <cell id="39"/>
+                    <cell id="40"/>
+                    <cell id="41"/>
+                    <cell id="42"/>
+                </row>
+            </footer>
+        </table>
+        <label id="141"/>
+    </body>
+</report>

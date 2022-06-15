@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FreightWayBillMapper">
+	
+	<resultMap id="ShipmentFreightWayBillResultMap" 
+		type="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+		<result property="shipmentNumber" column="AwbNumber" />
+		<result property="shipmentdate" column="AwbDate" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="piece" column="Pieces" />
+		<result property="weight" column="Weight" />
+		<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="carrierCode" column="CarrierCode" />
+		<result property="shipmentType" column="shipmentType" />		
+		<collection property="remarks" javaType="List"
+			ofType="com.ngen.cosys.impbd.shipment.remarks.model.ShipmentRemarksModel"
+			select="sqlGetShipmentFreightWayBillSSROSIInfo"
+			column="{shipmentNumber=AwbNumber,shipmentdate=AwbDate}" />			
+	</resultMap>
+	
+	<select id="sqlGetShipmentFreightWayBill" 
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultMap="ShipmentFreightWayBillResultMap">
+		 select
+			AwbNumber,
+			AwbDate,
+			Origin,
+			Destination,
+			Pieces,
+			Weight,
+			WeightUnitCode,
+			NatureOfGoodsDescription,
+			Mst_CarrierPrefix.CarrierCode,
+			'AWB' shipmentType
+		from
+			Shipment_FreightWayBill left join
+			Mst_CarrierPrefix
+				on Shipment_FreightWayBill.AwbPrefix = Mst_CarrierPrefix.AwbPrefix
+		where
+			Shipment_FreightWayBill.AwbNumber = #{shipmentNumber} and 
+			cast(Shipment_FreightWayBill.AwbDate as date) = cast(#{shipmentdate} as date) 
+	</select>
+			
+	<!-- Remarks -->
+	<resultMap id="ShipmentFreightWayBillSSROSIResultMap" 
+		type="com.ngen.cosys.impbd.shipment.remarks.model.ShipmentRemarksModel">				
+		<result property="remarkType" column="ServiceRequestType" />
+		<result property="shipmentRemarks" column="ServiceRequestcontent" />
+	</resultMap>
+	
+	<select id="sqlGetShipmentFreightWayBillSSROSIInfo" 
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultMap="ShipmentFreightWayBillSSROSIResultMap">
+		select 
+			ServiceRequestType, 
+			ServiceRequestcontent
+		from 
+			Shipment_FreightWayBill inner join Shipment_FreightWayBillSSROSIInfo 
+			on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillSSROSIInfo.ShipmentFreightWayBillId
+		where
+			AwbNumber = #{shipmentNumber} and 
+			cast(AwbDate as date) = cast(#{shipmentdate} as date)		
+	</select>
+		
+</mapper>

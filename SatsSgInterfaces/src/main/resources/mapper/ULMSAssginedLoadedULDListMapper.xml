@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ngen.cosys.ulms.dao.ULMSAssignedLoadedULDListDao">
+    <select id="getFlightInfo" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        SELECT top 1
+        a.flight_id as flightId,
+        a.carrierCode,
+        a.flightNumber as flightNumberOnly,
+        a.flightKey as flightNumber,
+        FORMAT(a.flightOriginDate,'yyyyMMdd') as flightDate,
+        a.flightOriginDate,
+        a.ParkingBayArrivalAircraft as arrivalBay,
+        a.ParkingBayDepAircraft as departureBay,
+        FORMAT(b.DateSTA,'yyyyMMddTHHmm') AS dateSta,
+        FORMAT(b.DateSTD,'yyyyMMddTHHmm') AS dateStd,
+        b.AircraftRegCode,
+        a.flightCancelFlag as flightCancelFlag,
+        isnull(a.flightStatus,'XXX') as operativeFlightStatus,
+        <choose>
+               <when test="importExportFlag == 'E'.toString()">
+                   (select top 1 iif(flightDepartedBy is not null,'DEP','XXX')
+                   from Exp_FlightEvents
+                   where flightId = a.flight_id) as flightStatus,
+               </when>
+               <otherwise>
+                   (select top 1 iif(BreakDownCompletedAt is not null,'COM','XXX')
+                      from Imp_FlightEvents
+                     where flightId = a.flight_id) as flightStatus,
+               </otherwise>
+        </choose>
+        #{importExportFlag} as importExportFlag
+        FROM
+        Flt_OperativeFlight a INNER JOIN Flt_OperativeFlight_Legs b ON a.Flight_ID = b.Flight_ID
+        WHERE a.FlightKey = #{flightNumber}
+        <if test="importExportFlag == 'E'.toString()">
+            AND b.FlightBoardPoint = 'SIN'
+            AND CAST(b.DateSTD AS DATE) = CAST (#{flightDate} AS DATE)
+        </if>
+        <if test="importExportFlag == 'I'.toString()">
+            AND b.FlightOffPoint = 'SIN'
+            AND CAST(b.DateSTA AS DATE) = CAST (#{flightDate} AS DATE)
+        </if>
+    </select>
+
+    <select id="getULMSExportAssignedULDList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULD">
+        SELECT b.ULDTrolleyNumber as uldNumber,
+               (case when b.transferType in ('TT', 'TTH', 'TTT') then 1 else 0 end)  as throughTrasitFlag
+        FROM Exp_DLS a
+                 INNER JOIN Exp_DLSULDTrolley b ON a.DLSId = b.DLSId
+                 INNER JOIN Uld_UldMaster c ON b.ULDTrolleyNumber = c.UldKey AND c.uldKey not like 'BULK%'
+        WHERE a.flightId = #{flightId}
+          AND b.ULDTrolleyNumber is not null
+    </select>
+
+
+    <select id="getULMSImportAssignedULDList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULD">
+        SELECT DISTINCT c.ULDNumber                                                          as uldNumber,
+                        (case when d.TransferType in ('TT', 'TTH', 'TTT') then 1 else 0 end) as throughTrasitFlag
+        FROM Imp_ContainerPalletMessageByFlight a
+                 INNER JOIN Imp_ContainerPalletMessageBySegment b
+                            ON a.ImpContainerPalletMessageByFlightId = b.ImpContainerPalletMessageByFlightId
+                 INNER JOIN Imp_ContainerPalletMessageULD c
+                            ON b.ImpContainerPalletMessageBySegmentId = c.ImpContainerPalletMessageBySegmentId
+                 LEFT JOIN Imp_InboundContainers d ON d.IncomingFlightId = a.flightId and d.ULDNumber = c.ULDNumber
+        WHERE a.FlightId = #{flightId}
+          AND c.ULDNumber IS NOT NULL
+          AND c.ULDNumber <![CDATA[<>]]> 'SIN'
+        union
+        SELECT DISTINCT c.ULDNumber                                                          as uldNumber,
+                        (case when d.TransferType in ('TT', 'TTH', 'TTT') then 1 else 0 end) as throughTrasitFlag
+        FROM Imp_FreightFlightManifestByFlight a
+                 INNER JOIN Imp_FreightFlightManifestBySegment b
+                            on a.ImpFreightFlightManifestByFlightId = b.ImpFreightFlightManifestByFlightId
+                            AND b.MessageCopy=(select max(MessageCopy) from Imp_FreightFlightManifestBySegment
+                                               where ImpFreightFlightManifestByFlightId = a.ImpFreightFlightManifestByFlightId)
+                 INNER JOIN Imp_FreightFlightManifestULD c
+                            on b.ImpFreightFlightManifestBySegmentId = c.ImpFreightFlightManifestBySegmentId
+                 LEFT JOIN Imp_InboundContainers d ON d.IncomingFlightId = a.flightId and d.ULDNumber = c.ULDNumber
+        where a.FlightId = #{flightId}
+          AND c.ULDNumber is not null
+          AND c.ULDNumber <![CDATA[<>]]> 'SIN'
+    </select>
+
+    <select id="getExportChangedFlight" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        select top 1
+            a.FlightId as flightId, #{uldNumber} as uldNumber,
+               c.flightKey                            as flightNumber,
+               format(c.flightOriginDate, 'yyyyMMdd') as flightDate,
+               format(d.dateSTD, 'yyyyMMddTHHmm')     as dateStd,
+               isnull(d.AircraftRegCode, '')          as aircraftRegCode,
+               isnull(c.ParkingBayDepAircraft, '')    as departureBay,
+               'C'                                       changeType,
+               #{importExportFlag}                    as importExportFlag
+        from exp_dls a
+                 INNER JOIN Flt_OperativeFlight c on a.flightId = c.Flight_Id
+                 INNER JOIN Flt_OperativeFlight_Legs d on c.flight_id = d.flight_id and d.FlightBoardPoint = 'SIN'
+        where flightid = #{newFlightId}
+    </select>
+
+    <select id="getExportDeleteUldList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        select DISTINCT a.FlightId AS flightId,
+        b.uldKey AS uldNumber,
+        b.parkingBayArrivalAircraft as throughTransitFlag,
+        c.flightKey AS flightNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(d.dateSTD,'yyyyMMddTHHmm') AS dateStd,
+        d.AircraftRegCode AS aircraftRegCode,
+        c.ParkingBayDepAircraft AS departureBay,
+        isnull((select top 1 ia.flightid
+        from exp_dls ia INNER JOIN Exp_DLSULDTrolley ib on ia.dlsid = ib.dlsid
+                                                          and ib.uldtrolleyNumber = b.ULDKey
+                                                          and ia.flightId <![CDATA[<>]]> a.flightId
+        INNER JOIN Flt_OperativeFlight ic on ia.flightid = ic.flight_id
+        and ISNULL(ic.flightstatus,'XXX')<![CDATA[<>]]>'DEP'
+        and NOT EXISTS(SELECT 1
+                         FROM Exp_FlightEvents
+                        WHERE flightid= ia.flightId
+                          AND flightDepartedBy IS NOT NULL
+                          AND flightDepartedBy <![CDATA[<>]]>'')),0) AS newFlightId,
+        'E' as importExportFlag
+        from exp_dls a INNER JOIN interface_ULMSAssignedLoadedULDListLog b on a.flightid = b.flightId
+        and not exists(select null from Exp_DLSULDTrolley where dlsid = a.dlsid and uldtrolleyNumber = b.ULDKey)
+        INNER JOIN Flt_OperativeFlight c on a.flightid = c.flight_id and ISNULL(c.flightstatus,'XXX')<![CDATA[<>]]>'DEP'
+        INNER JOIN Flt_OperativeFlight_Legs d on d.Flight_ID = c.flight_id and d.FlightBoardPoint = 'SIN'
+        WHERE b.LastUpdated_DateTime BETWEEN #{startDate} AND #{endDate}
+        AND b.importExportFlag = 'E'
+        AND b.changeType <![CDATA[<>]]> 'D'
+        AND b.uldKey <![CDATA[<>]]> 'X'
+        AND b.version = 1
+        AND NOT EXISTS (SELECT 1
+                          FROM Exp_FlightEvents
+                         WHERE flightid= a.flightId
+                           AND flightDepartedBy IS NOT NULL
+                           AND flightDepartedBy <![CDATA[<>]]>'')
+        <if test="flightId != null">
+            AND a.flightId = #{flightId}
+        </if>
+        UNION ALL
+        select DISTINCT a.FlightId AS flightId,
+        b.uldKey AS uldNumber,
+        iif(isnull(e.TransferType,'')='',0,1) as throughTransitFlag,
+        c.flightKey AS flightNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(d.dateSTD,'yyyyMMddTHHmm') AS dateStd,
+        d.AircraftRegCode AS aircraftRegCode,
+        c.ParkingBayDepAircraft AS departureBay,
+        a.flightId AS newFlightId,
+        'E' as importExportFlag
+        from exp_dls a INNER JOIN interface_ULMSAssignedLoadedULDListLog b on a.flightid = b.flightId
+        INNER JOIN Exp_DLSULDTrolley E ON e.dlsid = a.dlsid and e.uldtrolleyNumber = b.ULDKey and
+                   iif(isnull(e.TransferType,'') = '','0','1')<![CDATA[<>]]>b.parkingBayArrivalAircraft
+        INNER JOIN Flt_OperativeFlight c on a.flightid = c.flight_id and ISNULL(c.flightstatus,'XXX')<![CDATA[<>]]>'DEP'
+        INNER JOIN Flt_OperativeFlight_Legs d on d.Flight_ID = c.flight_id and d.FlightBoardPoint = 'SIN'
+        WHERE b.LastUpdated_DateTime BETWEEN #{startDate} AND #{endDate}
+        AND b.importExportFlag = 'E'
+        AND b.changeType <![CDATA[<>]]> 'D'
+        AND b.uldKey <![CDATA[<>]]> 'X'
+        AND b.version = 1
+        AND NOT EXISTS (SELECT 1
+        FROM Exp_FlightEvents
+        WHERE flightid= a.flightId
+        AND flightDepartedBy IS NOT NULL
+        AND flightDepartedBy <![CDATA[<>]]>'')
+        <if test="flightId != null">
+            AND a.flightId = #{flightId}
+        </if>
+        UNION ALL
+        SELECT distinct
+        a.Flight_Id AS flightId,
+        'X' AS uldNumber,
+        '0' AS throughTransitFlag,
+        a.flightKey AS flightNumber,
+        format(a.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(b.dateSTD,'yyyyMMddTHHmm') AS dateStd,
+        b.AircraftRegCode AS aircraftRegCode,
+        a.ParkingBayDepAircraft AS departureBay,
+        a.Flight_ID AS newFlightId,
+        'E' as importExportFlag
+        FROM
+        Flt_OperativeFlight a
+        INNER JOIN Flt_OperativeFlight_Legs b ON a.Flight_ID = b.Flight_ID
+        AND ISNULL(a.flightStatus,'XXX') <![CDATA[<>]]>'DEP' and b.flightBoardPoint = 'SIN'
+        INNER JOIN interface_ULMSAssignedLoadedULDListLog c ON c.flightId = b.Flight_ID
+        AND b.flightBoardPoint = 'SIN' AND c.uldKey = 'X' AND c.importExportFlag='E' AND c.version = 1
+        where ((isnull(a.LastUpdated_DateTime,a.Created_DateTime) between #{startDate} AND #{endDate}
+        OR isnull(b.LastUpdated_DateTime,b.Created_DateTime) between #{startDate} AND #{endDate}))
+        and (ISNULL(a.ParkingBayDepAircraft,'') <![CDATA[<>]]> ISNULL(c.ParkingBayDepAircraft,'')
+        OR ISNULL(FORMAT(b.dateStd,'yyyyMMddTHHmm'),'') <![CDATA[<>]]> ISNULL(c.dateStd,'')
+        OR ISNULL(b.AircraftRegCode,'') <![CDATA[<>]]> ISNULL(c.AircraftRegCode,''))
+        AND NOT EXISTS (SELECT 1
+                          FROM Exp_FlightEvents
+                         WHERE flightid= a.flight_Id
+                           AND flightDepartedBy IS NOT NULL
+                           AND flightDepartedBy <![CDATA[<>]]>'')
+        <if test="flightId != null">
+            AND a.flight_Id = #{flightId}
+        </if>
+    </select>
+
+    <select id="getExportAddedUldList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        SELECT DISTINCT a.FlightId AS flightId,
+        b.uldTrolleyNumber AS uldNumber,
+        iif(isnull(b.TransferType,'')='',0,1) as throughTransitFlag,
+        c.flightKey AS flightNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(d.dateSTD,'yyyyMMddTHHmm') AS dateStd,
+        isnull(d.AircraftRegCode,'') AS aircraftRegCode,
+        isnull(c.ParkingBayDepAircraft,'') AS departureBay,
+        0 AS newFlightId,
+        'E' as importExportFlag
+        FROM Exp_DLS a
+        INNER JOIN Exp_DLSULDTrolley b ON a.dlsid = b.DLSId
+        INNER JOIN Uld_UldMaster m ON b.ULDTrolleyNumber = m.uldkey AND m.uldKey not like 'BULK%'
+        INNER JOIN Flt_OperativeFlight c ON a.flightid = c.flight_id
+        AND (c.flightStatus IS NULL OR c.flightstatus <![CDATA[<>]]> 'DEP')
+        INNER JOIN Flt_OperativeFlight_Legs d ON c.flight_id = d.flight_id AND d.FlightBoardPoint = 'SIN'
+        INNER JOIN interface_ULMSAssignedLoadedULDListLog e on a.flightId = e.flightId and e.version = 1
+        WHERE isnull(b.LastUpdatedDateTime,b.createdDateTime) BETWEEN #{startDate} AND #{endDate}
+        <if test="flightId != null">
+            AND a.flightId = #{flightId}
+        </if>
+        AND NOT EXISTS(
+        SELECT 1
+        FROM interface_ULMSAssignedLoadedULDListLog
+        WHERE FlightId = a.flightid
+        AND uldkey = b.ULDTrolleyNumber
+        AND importExportFlag = 'E'
+        AND changeType <![CDATA[<>]]>'D'
+        AND version = 1)
+        AND NOT EXISTS (SELECT 1
+                          FROM Exp_FlightEvents
+                         WHERE flightid= a.flightId
+                           AND flightDepartedBy IS NOT NULL
+                           AND flightDepartedBy <![CDATA[<>]]>'')
+    </select>
+
+    <select id="getImportDeleteUldList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        SELECT DISTINCT a.FlightId AS flightId,
+        a.uldKey AS uldNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        c.flightKey AS flightNumber,
+        format(d.dateSTA,'yyyyMMddTHHmm') AS dateSta,
+        d.AircraftRegCode AS aircraftRegCode,
+        c.ParkingBayArrivalAircraft AS arrivalBay,
+        0 AS newFlightId,
+        'I' as importExportFlag
+        FROM interface_ULMSAssignedLoadedULDListLog a
+        INNER JOIN Flt_OperativeFlight c ON a.flightId = c.Flight_ID
+        LEFT JOIN Imp_flightEvents e ON a.flightId = e.flightId AND isnull(e.BreakDownCompletedBy,'')=''
+        INNER JOIN Flt_OperativeFlight_Legs d ON c.Flight_ID = d.Flight_ID
+        AND d.FlightOffPoint = 'SIN'
+        WHERE a.LastUpdated_DateTime BETWEEN #{startDate} AND #{endDate}
+        AND a.importExportFlag = 'I'
+        AND a.changeType <![CDATA[<>]]>'D'
+        AND a.uldKey <![CDATA[<>]]>'X'
+        AND a.version = 1
+        <if test="flightId != null">
+            AND a.flightId = #{flightId}
+        </if>
+        AND NOT EXISTS(SELECT 1
+                         FROM imp_flightEvents
+                        WHERE flightId = a.flightId and BreakDownCompletedAt is not null)
+        AND NOT EXISTS(
+        SELECT 1
+        FROM Imp_ContainerPalletMessageByFlight m
+        INNER JOIN Imp_ContainerPalletMessageBySegment n
+                ON m.ImpContainerPalletMessageByFlightId = n.ImpContainerPalletMessageByFlightId
+        INNER JOIN Imp_ContainerPalletMessageULD o ON n.ImpContainerPalletMessageBySegmentId =
+        o.ImpContainerPalletMessageBySegmentId
+        WHERE m.flightId = a.flightId
+          AND o.uldNumber = a.ULDKey
+        )
+        AND NOT EXISTS(
+        SELECT 1
+        FROM Imp_FreightFlightManifestByFlight m1
+        INNER JOIN Imp_FreightFlightManifestBySegment n1
+                ON m1.ImpFreightFlightManifestByFlightId = n1.ImpFreightFlightManifestByFlightId
+               AND n1.MessageCopy=(select max(MessageCopy) from Imp_FreightFlightManifestBySegment
+             where ImpFreightFlightManifestByFlightId = m1.ImpFreightFlightManifestByFlightId)
+        INNER JOIN Imp_FreightFlightManifestULD o1 ON n1.ImpFreightFlightManifestBySegmentId =
+        o1.ImpFreightFlightManifestBySegmentId
+        WHERE m1.flightId = a.flightId
+          AND o1.uldNumber = a.ULDKey
+        )
+        UNION ALL
+        SELECT distinct
+        a.Flight_Id AS flightId,
+        'X' AS uldNumber,
+        a.flightKey AS flightNumber,
+        format(a.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(b.dateSTD,'yyyyMMddTHHmm') AS dateSta,
+        b.AircraftRegCode AS aircraftRegCode,
+        a.ParkingBayDepAircraft AS departureBay,
+        a.Flight_ID AS newFlightId,
+        'I' as importExportFlag
+        FROM
+        Flt_OperativeFlight a
+        INNER JOIN Flt_OperativeFlight_Legs b ON a.Flight_ID = b.Flight_ID and b.FlightOffPoint = 'SIN'
+        LEFT JOIN Imp_flightEvents e ON a.flight_Id = e.flightId AND isnull(e.BreakDownCompletedBy,'')=''
+        INNER JOIN interface_ULMSAssignedLoadedULDListLog c ON c.flightId = b.Flight_ID
+        AND b.flightOffPoint = 'SIN' AND c.uldKey = 'X' AND c.importExportFlag='I' AND c.version = 1
+        where ((isnull(a.LastUpdated_DateTime,a.Created_DateTime) between #{startDate} AND #{endDate}
+        OR isnull(b.LastUpdated_DateTime,b.Created_DateTime) between #{startDate} AND #{endDate}))
+        and (ISNULL(a.ParkingBayArrivalAircraft,'') <![CDATA[<>]]> ISNULL(c.parkingBayArrivalAircraft,'')
+        OR ISNULL(FORMAT(b.dateSta,'yyyyMMddTHHmm'),'') <![CDATA[<>]]> ISNULL(c.dateSta,'')
+        OR ISNULL(b.AircraftRegCode,'') <![CDATA[<>]]> ISNULL(c.AircraftRegCode,''))
+        <if test="flightId != null">
+            AND a.flight_Id = #{flightId}
+        </if>
+        AND NOT EXISTS(SELECT 1
+        FROM imp_flightEvents
+        WHERE flightId = a.flight_Id and BreakDownCompletedAt is not null)
+    </select>
+
+    <select id="getImportAddedUldList" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        SELECT distinct m.FlightId AS flightId,
+        o.uldNumber AS uldNumber,
+        c.flightKey AS flightNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(d.dateSTA,'yyyyMMddTHHmm') AS dateSta,
+        d.AircraftRegCode AS aircraftRegCode,
+        c.ParkingBayArrivalAircraft AS arrivalBay,
+        0 AS newFlightId,
+        'I' as importExportFlag
+        FROM Imp_ContainerPalletMessageByFlight m
+        INNER JOIN Imp_ContainerPalletMessageBySegment n
+        ON m.ImpContainerPalletMessageByFlightId = n.ImpContainerPalletMessageByFlightId
+        INNER JOIN Imp_ContainerPalletMessageULD o
+        ON n.ImpContainerPalletMessageBySegmentId = o.ImpContainerPalletMessageBySegmentId
+        AND (o.uldNumber is not null and o.uldNumber<![CDATA[<>]]>'' and o.uldNumber<![CDATA[<>]]>'SIN')
+        INNER JOIN Flt_OperativeFlight c ON m.flightid = c.flight_Id
+        INNER JOIN Flt_OperativeFlight_Legs d ON c.flight_id = d.flight_id and d.FlightOffPoint = 'SIN'
+        WHERE o.CreatedDateTime between #{startDate} and #{endDate}
+        AND EXISTS(
+        SELECT 1
+        FROM interface_ULMSAssignedLoadedULDListLog
+        WHERE flightId = m.FlightId
+        AND version = 1
+        )
+        AND NOT EXISTS(SELECT 1
+                         FROM imp_flightEvents
+                        WHERE flightId = m.flightId and BreakDownCompletedAt is not null)
+        AND NOT EXISTS(
+        SELECT 1
+        FROM interface_ULMSAssignedLoadedULDListLog
+        WHERE FlightId = m.FlightId
+        AND uldKey = o.ULDNumber
+        AND version = 1
+        AND changeType <![CDATA[<>]]>'D'
+        )
+        <if test="flightId != null">
+            AND m.flightId = #{flightId}
+        </if>
+        union
+        SELECT distinct FlightId AS flightId,
+        o.uldNumber AS uldNumber,
+        c.flightKey AS flightNumber,
+        format(c.flightOriginDate,'yyyyMMdd') as flightDate,
+        format(d.dateSTA,'yyyyMMddTHHmm') AS dateSta,
+        d.AircraftRegCode AS aircraftRegCode,
+        c.ParkingBayArrivalAircraft AS arrivalBay,
+        0 AS flightId,
+        'I' as importExportFlag
+        FROM Imp_FreightFlightManifestByFlight m
+        INNER JOIN Imp_FreightFlightManifestBySegment n
+                ON m.ImpFreightFlightManifestByFlightId = n.ImpFreightFlightManifestByFlightId
+               AND n.MessageCopy=(select max(MessageCopy) from Imp_FreightFlightManifestBySegment
+                                   where ImpFreightFlightManifestByFlightId = m.ImpFreightFlightManifestByFlightId)
+        INNER JOIN Imp_FreightFlightManifestULD o ON n.ImpFreightFlightManifestBySegmentId =
+        o.ImpFreightFlightManifestBySegmentId AND (o.uldNumber is not null and
+        o.uldNumber<![CDATA[<>]]>'' and
+        o.uldNumber<![CDATA[<>]]>'SIN')
+        INNER JOIN Flt_OperativeFlight c ON m.flightid = c.flight_Id
+        INNER JOIN Flt_OperativeFlight_Legs d ON c.flight_id = d.flight_id and d.FlightOffPoint = 'SIN'
+        WHERE o.CreatedDateTime between #{startDate} and #{endDate}
+        AND EXISTS(
+        SELECT 1
+        FROM interface_ULMSAssignedLoadedULDListLog
+        WHERE flightId = m.FlightId
+        AND version = 1
+        )
+        AND NOT EXISTS(SELECT 1
+        FROM imp_flightEvents
+        WHERE flightId = m.flightId and BreakDownCompletedAt is not null)
+        AND NOT EXISTS(
+        SELECT 1
+        FROM interface_ULMSAssignedLoadedULDListLog
+        WHERE FlightId = m.FlightId
+        AND uldKey = o.ULDNumber
+        AND version = 1
+        AND changeType <![CDATA[<>]]>'D'
+        )
+        <if test="flightId != null">
+            AND m.flightId = #{flightId}
+        </if>
+    </select>
+
+    <select id="getAdministrationSubGroupDetailCode" resultType="java.lang.Long">
+        select C.Attribute1
+        from Mst_CodeAdministration_Group a
+                 INNER JOIN Mst_CodeAdministration_SubGroup b on a.AdministrationGroupCode = b.AdministrationGroupCode
+                 INNER JOIN Mst_CodeAdministration_SubGroupDetails c
+                            on b.AdministrationSubGroupCode = c.AdministrationSubGroupCode
+        where a.AdministrationGroupCode = 'ULMS_Interface'
+          AND B.AdministrationSubGroupCode = #{subGroupCode}
+          AND C.AdministrationSubGroupDetailCode = 'Hours'
+    </select>
+
+    <select id="getUlmsInterfaceLogCount" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="java.lang.Long">
+        select count(1)
+        from interface_ULMSAssignedLoadedULDListLog
+        where flightId = #{flightId}
+          and importExportFlag = #{importExportFlag}
+          and uldKey = #{uldNumber}
+          and version = 1
+    </select>
+
+    <select id="getUlmsInterfaceLogCountForFlight" parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail"
+            resultType="java.lang.Long">
+        select count(1)
+        from interface_ULMSAssignedLoadedULDListLog
+        where flightId = #{flightId}
+          and importExportFlag = #{importExportFlag}
+          and version = 1
+    </select>
+
+    <update id="updateULDAssociatedPD"
+            parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        update interface_ULMSAssignedLoadedULDListLog
+        set AssociatedPD         = #{associatedPd},
+            LastUpdatedUser_Code = #{modifiedBy},
+            LastUpdated_DateTime = GETDATE()
+        where flightId = #{flightId}
+          and importExportFlag = #{importExportFlag}
+          and uldKey = #{uldNumber}
+          and version = 1
+    </update>
+
+    <update id="updateULDChangeType"
+            parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        update interface_ULMSAssignedLoadedULDListLog
+        set changeType                = #{changeType},
+            dateStd              = iif(#{changeType}='D',dateStd, #{dateStd}),
+            dateSta              = iif(#{changeType}='D',dateSta, #{dateSta}),
+            aircraftRegCode      = iif(#{changeType}='D',aircraftRegCode, #{aircraftRegCode}),
+            parkingBayArrivalAircraft =iif(#{changeType}='D',parkingBayArrivalAircraft, #{arrivalBay}),
+            parkingBayDepAircraft = iif(#{changeType}='D',parkingBayDepAircraft, #{departureBay}),
+            LastUpdatedUser_Code      ='INTERFACE',
+            LastUpdated_DateTime      =GETDATE()
+        where flightId = #{flightId}
+          and importExportFlag = #{importExportFlag}
+          and uldKey = #{uldNumber}
+          and version = 1
+    </update>
+
+    <update id="updateUlMSInterfaceDetailVersion"
+            parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        update interface_ULMSAssignedLoadedULDListLog
+        set version = version + 1
+        where flightId = #{flightId}
+          and importExportFlag = #{importExportFlag}
+          <if test="uldNumber != null and uldNumber !=''">
+            and uldKey = #{uldNumber}
+          </if>
+    </update>
+
+    <insert id="insertUlMSInterfaceDetail"
+            parameterType="com.ngen.cosys.ulms.model.ULMSInterfaceDetail">
+        INSERT INTO interface_ULMSAssignedLoadedULDListLog (flightId,
+                                                            importExportFlag,
+                                                            changeType,
+                                                            ULDKey,
+                                                            AssociatedPD,
+                                                            version,
+                                                            dateStd,
+                                                            dateSta,
+                                                            aircraftRegCode,
+                                                            parkingBayArrivalAircraft,
+                                                            parkingBayDepAircraft,
+                                                            CreatedUser_Code,
+                                                            Created_DateTime,
+                                                            LastUpdatedUser_Code,
+                                                            LastUpdated_DateTime)
+        VALUES (#{flightId},
+                #{importExportFlag},
+                #{changeType},
+                #{uldNumber},
+                NULL,
+                '1',
+                #{dateStd},
+                #{dateSta},
+                #{aircraftRegCode},
+                #{arrivalBay},
+                #{departureBay},
+                #{createdBy},
+                getDate(),
+                #{createdBy},
+                getDate())
+    </insert>
+
+    <select id="getAppErrorMessage4ULMS" resultType="String">
+        select ErrorCodeDescription
+        from App_ErrorMessage
+        where ErrorCode = #{errorCode}
+          and ApplicationLabelLocaleValue = #{local}
+    </select>
+</mapper>

@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MssmessagesMapper">
+	<select id="getPreannouncementMessageData"
+	 parameterType="com.ngen.cosys.satssginterfaces.mss.model.RequestPreannouncementUldMessagesModel"
+	 resultType="com.ngen.cosys.satssginterfaces.mss.model.PreannouncementUldMessagesModel">
+	 SELECT 
+	 	REPLACE(STR(PreAnnUldBT.ImpInboundContainersId,8),' ','0') as transactionSequenceNumber,
+	 	UldMas.UldType as uldType, 
+	 	UldMas.UldNumber as uldNumber,
+	 	UldMas.UldCarrierCode as uldCarrier,
+	 	PreAnnUldBT.Destination as containerDestination,
+	 	(CASE WHEN (PreAnnUldBT.TransferType IS NULL OR PreAnnUldBT.TransferType = '') then 'N' else 'Y' end) as shortTransitIndicator,
+     	InFlt.CarrierCode as inCarrier,
+     	InFlt.FlightNumber as inFlightNumber,
+     	FORMAT(ISNULL(Inleg.DateATA,Inleg.DateSTA), 'yyyyMMdd') as inFlightDate,
+     	ISNULL(OutFlt.CarrierCode,'') as indicativeOutgoingCarrierForContainer,
+     	ISNULL(OutFlt.FlightNumber,'') as indicativeOutgoingFlightNumberForContainer,
+     	ISNULL(FORMAT(ISNULL(Outleg.DateATD,Outleg.DateSTA), 'yyyyMMdd'),'') as indicativeOutgoingFlightDateForContainer
+     FROM 
+     	Imp_InboundContainers PreAnnUldBT
+     INNER JOIN ULD_UldMaster UldMas ON PreAnnUldBT.ULDNumber = UldMas.UldKey
+     LEFT OUTER JOIN Flt_OperativeFlight InFlt ON PreAnnUldBT.IncomingFlightId = InFlt.Flight_ID 
+     LEFT OUTER JOIN Flt_OperativeFlight_Legs Inleg ON InFlt.Flight_ID = Inleg.Flight_ID and Inleg.FlightOffPoint = #{tenantAirport}
+     LEFT OUTER JOIN Flt_OperativeFlight OutFlt ON PreAnnUldBT.ConnectingFlightId = OutFlt.Flight_ID 
+     LEFT OUTER JOIN Flt_OperativeFlight_Legs Outleg ON OutFlt.Flight_ID = Outleg.Flight_ID and Outleg.FlightBoardPoint = #{tenantAirport}
+     WHERE InFlt.FlightKey=#{flightKey} AND CAST(Inleg.DateSTA as date) = CAST(#{date} as date) 
+	</select>
+	
+	<update id="updateOutgoingMessageTableStatus" parameterType="java.math.BigInteger">
+		UPDATE Interface_OutgoingMessageLog 
+	   	SET Status = 'ERROR' 
+	   	WHERE InterfaceOutgoingMessageLogId = #{id}
+	</update>
+	
+	<select id="selectRequestPreannouncementULDModelInfo" parameterType="java.math.BigInteger"
+			resultType="com.ngen.cosys.satssginterfaces.mss.model.RequestPreannouncementUldMessagesModel">
+		SELECT 	DISTINCT Flt_OperativeFlight.FlightKey AS "flightKey",
+				CONVERT(DATE, Flt_OperativeFlight_Legs.DateSTA) AS "date"
+		FROM	Flt_OperativeFlight
+			INNER JOIN
+				Flt_OperativeFlight_Legs
+			ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID 
+		WHERE 	Flt_OperativeFlight.Flight_ID = #{flightId}
+	</select>
+	
+	 <select id="selectMailBagDataForTGFMMBSI" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+	 resultType="com.ngen.cosys.satssginterfaces.mss.model.ResponseMssMailBagMovement"
+	 >
+		<!-- WITH
+		IncFltDtl as(SELECT ImpShpVer.ShipmentId, ImpBrkDwnHse.HouseNumber,
+		Flt.Flight_ID , Flt.FlightKey, Legs.DateSTA
+		FROM Imp_ShipmentVerification ImpShpVer
+		INNER JOIN Imp_BreakDownULDTrolleyInfo ImpBrkDwnUld ON ImpShpVer.ImpShipmentVerificationId = ImpBrkDwnUld.ImpShipmentVerificationId
+		LEFT JOIN Imp_BreakDownStorageInfo ImpBrkDwnLoc ON ImpBrkDwnUld.ImpBreakDownULDTrolleyInfoId = ImpBrkDwnLoc.ImpBreakDownULDTrolleyInfoId
+		LEFT JOIN Imp_BreakDownHouseInfo ImpBrkDwnHse ON ImpBrkDwnLoc.ImpBreakDownStorageInfoId = ImpBrkDwnHse.ImpBreakDownStorageInfoId
+		INNER JOIN Flt_OperativeFlight Flt on Flt.Flight_Id = ImpShpVer.FlightId
+		INNER JOIN Flt_OperativeFlight_Legs Legs on Flt.Flight_ID = Legs.Flight_ID and Legs.FlightOffPoint = 'SIN'),
+		ScreenDtl as (select max(Created_DateTime) Created_DateTime,HousewayBillNumber Number from Exp_Screening group by HousewayBillNumber),
+		
+		ManfFltDtl as(select Flt.Flight_ID FlightId, Flt.FlightKey, Segs.DateSTD, Segs.FlightBoardPoint, Segs.FlightOffPoint,
+		ManShp.ShipmentId, ManHse.Number, ManUld.ULDNumber, ManHse.ManifestShipmentHouseInfoId
+		FROM Exp_Manifest Man
+		INNER JOIN Exp_ManifestULDInfo ManUld on Man.ManifestId = ManUld.ManifestId
+		INNER JOIN Exp_ManifestShipmentInfo ManShp on ManShp.ManifestUldInfoId = ManUld.ManifestUldInfoId
+		INNER JOIN Exp_ManifestShipmentHouseInfo ManHse on ManHse.ManifestShipmentInfoId = ManShp.ManifestShipmentInfoId
+		INNER JOIN Flt_OperativeFlight Flt on Man.FlightId = Flt.Flight_ID
+		INNER JOIN Flt_OperativeFlight_Segments Segs on Flt.Flight_ID = Segs.Flight_ID and Segs.FlightSegmentId = Man.FlightSegmentId),
+		
+		ShpInventory as (SELECT ShpInv.Shipment_Id,HseInv.ShipmentHouseId,HseInv.ShipmentInventoryHouseId,ShpInv.ShipmentInventory_Id, ShpInv.ShipmentLocation,
+		ShpInv.WarehouseLocation
+		FROM Shipment_Inventory ShpInv
+		LEFT JOIN Shipment_InventoryHouse HseInv ON HseInv.ShipmentInventoryId = ShpInv.ShipmentInventory_Id)
+		
+		SELECT ShpMst.ShipmentId as shipmentId, ShpMst.ShipmentNumber as shipmentNumber, ShpMst.Origin as origin, ShpMst.Destination as destination,
+		ShpMst.OriginOfficeExchange as originOfficeExchange,ShpMst.DestinationOfficeExchange as destinationOfficeExchange,ShpMst.CarrierCode carrier,ShpHse.Pieces as pieces,ShpHse.Weight as weight,
+		ShpHse.ShipmentHouseId as shipmentHouseId,ShpHse.Number as mailBagId,ShpHse.DispatchNumber as dispatchNo,ShpHse.NextDestination as nextDestination,
+		ShpHse.ReceptacleNumber as receptacleNumber,ShpInventory.ShipmentInventoryHouseId as shipmentInventoryHouseId,ShpInventory.ShipmentInventory_Id as shipmentInventoryId,ShpInventory.ShipmentLocation as shipmentLocation,
+		ShpInventory.WarehouseLocation as wareHouseLocation,IncFltDtl.Flight_ID as incomingFlightId,IncFltDtl.FlightKey as incomingFlightKey,
+		IncFltDtl.DateSTA as incomingFlightDate, ISNULL(ShpMst.CarrierCode,AcpDoc.CarrierCode) outgoingFlightCarrier,
+		ManfFltDtl.FlightId manifestedFltId, ManfFltDtl.FlightBoardPoint as flightBoardPoint,
+		ManfFltDtl.FlightOffPoint as flightOffPoint, ManfFltDtl.FlightKey manifestedFlightKey,
+		ManfFltDtl.DateSTD manifestedFlightDate,ManfFltDtl.ULDNumber manifestULD,ManfFltDtl.ManifestShipmentHouseInfoId as manifestShipmentHouseInfoId,
+		loadedShipInfo.LoadedShipmentInfoId as loadedShipmentInfoId,loadedShipInfo.AssUldTrolleyId as assUldTrolleyId,
+		loadedShipInfo.Pieces as loadedShipmentPieces, loadedShipInfo.Weight as loadedShipmentWeight,
+		loadedshphouse.LoadedShipmentHouseInfoId as loadedShipmentHouseInfoId,
+		CASE WHEN Dmg.DamageInfoId IS NULL THEN 0 ELSE 1 END AS damaged,
+		CASE WHEN upper(Scrn.SCStatus) = 'Ok' THEN 1 ELSE 0 END AS xRayResultFlag,
+		'SIN' tenantId,
+		ISNULL(ShpMst.LastUpdatedUserCode, ShpMst.CreatedUserCode) createdBy,
+		HseRmk.shipmentRemarks as mailBagRemarks
+		FROM Shipment_Master ShpMst
+		INNER JOIN Shipment_HouseInformation ShpHse ON ShpMst.ShipmentId = ShpHse.ShipmentId
+		LEFT JOIN ShpInventory ON ShpInventory.Shipment_Id = ShpMst.ShipmentId AND ShpInventory.ShipmentHouseId = ShpHse.ShipmentHouseId
+		LEFT JOIN IncFltDtl ON IncFltDtl.ShipmentId = ShpMst.ShipmentId AND IncFltDtl.HouseNumber = ShpHse.Number
+		LEFT JOIN ManfFltDtl ON ManfFltDtl.Number = ShpHse.Number
+		LEFT JOIN ScreenDtl ON ScreenDtl.Number = ShpHse.Number
+		LEFT JOIN Exp_eAcceptanceDocumentInformation AcpDoc ON AcpDoc.ShipmentNumber = ShpMst.ShipmentNumber AND AcpDoc.ShipmentDate = ShpMst.ShipmentDate
+		LEFT JOIN Exp_eAcceptanceHouseInformation AcpHse ON AcpDoc.DocumentInformationId=AcpHse.DocumentInformationId AND AcpHse.Number = ShpHse.Number
+		LEFT JOIN Exp_Screening Scrn ON ScreenDtl.Number = Scrn.HousewayBillNumber AND Scrn.Created_DateTime= ScreenDtl.Created_DateTime
+		LEFT JOIN Com_DamageInfo Dmg ON Dmg.ReferenceId = ShpHse.Number
+		LEFT JOIN Shipment_Remarks HseRmk ON HseRmk.HousewayBillNumber = ShpHse.Number
+		LEFT JOIN Exp_AssignedULDTrolleyToFlight assUldTrolley ON assUldTrolley.ULDTrolleyNumber = ManfFltDtl.ULDNumber
+		LEFT JOIN Exp_LoadedShipmentInfo loadedShipInfo ON loadedShipInfo.AssUldTrolleyId = assUldTrolley.AssUldTrolleyId AND loadedShipInfo.ShipmentId = ShpMst.ShipmentId
+		LEFT JOIN Exp_LoadedShipmentHouseInfo loadedshphouse On loadedShipInfo.LoadedShipmentInfoId = loadedshphouse.LoadedShipmentInfoId 
+		where ShpMst.ShipmentType ='MAIL'
+		and ShpHse.Number = #{mailBagId} -->
+		WITH
+		IncFltDtl as(SELECT ImpShpVer.ShipmentId, ImpBrkDwnHse.HouseNumber,
+		Flt.Flight_ID , Flt.FlightKey, Legs.DateSTA
+		FROM Imp_ShipmentVerification ImpShpVer
+		INNER JOIN Imp_BreakDownULDTrolleyInfo ImpBrkDwnUld ON ImpShpVer.ImpShipmentVerificationId = ImpBrkDwnUld.ImpShipmentVerificationId
+		LEFT JOIN Imp_BreakDownStorageInfo ImpBrkDwnLoc ON ImpBrkDwnUld.ImpBreakDownULDTrolleyInfoId = ImpBrkDwnLoc.ImpBreakDownULDTrolleyInfoId
+		LEFT JOIN Imp_BreakDownHouseInfo ImpBrkDwnHse ON ImpBrkDwnLoc.ImpBreakDownStorageInfoId = ImpBrkDwnHse.ImpBreakDownStorageInfoId
+		INNER JOIN Flt_OperativeFlight Flt on Flt.Flight_Id = ImpShpVer.FlightId
+		INNER JOIN Flt_OperativeFlight_Legs Legs on Flt.Flight_ID = Legs.Flight_ID and Legs.FlightOffPoint = #{tenantAirport}),
+		ScreenDtl as (select max(Created_DateTime) Created_DateTime,HousewayBillNumber Number from Exp_Screening group by HousewayBillNumber),
+		
+		ManfFltDtl as(select Flt.Flight_ID FlightId, Flt.FlightKey, Segs.DateSTD, Segs.FlightBoardPoint, Segs.FlightOffPoint,
+		ManShp.ShipmentId, ManHse.Number, ManUld.ULDNumber, ManHse.ManifestShipmentHouseInfoId
+		FROM Exp_Manifest Man
+		INNER JOIN Exp_ManifestULDInfo ManUld on Man.ManifestId = ManUld.ManifestId
+		INNER JOIN Exp_ManifestShipmentInfo ManShp on ManShp.ManifestUldInfoId = ManUld.ManifestUldInfoId
+		INNER JOIN Exp_ManifestShipmentHouseInfo ManHse on ManHse.ManifestShipmentInfoId = ManShp.ManifestShipmentInfoId
+		INNER JOIN Flt_OperativeFlight Flt on Man.FlightId = Flt.Flight_ID
+		INNER JOIN Flt_OperativeFlight_Segments Segs on Flt.Flight_ID = Segs.Flight_ID and Segs.FlightSegmentId = Man.FlightSegmentId),
+
+		loadedShipInfo as (Select Exp_LoadedShipmentHouseInfo.Number, Exp_LoadedShipmentHouseInfo.LoadedShipmentHouseInfoId,
+		Exp_LoadedShipmentHouseInfo.Pieces loadedHousePieces, Exp_LoadedShipmentHouseInfo.Weight loadedHouseWeight,
+		Exp_LoadedShipmentInfo.LoadedShipmentInfoId, Exp_LoadedShipmentInfo.AssUldTrolleyId ,
+		Exp_LoadedShipmentInfo.Pieces, Exp_LoadedShipmentInfo.Weight , Exp_LoadedShipmentInfo.ShipmentId
+		from Exp_LoadedShipmentHouseInfo  INNER JOIN Exp_LoadedShipmentInfo
+		ON  Exp_LoadedShipmentHouseInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+		INNER JOIN Exp_AssignedULDTrolleyToFlight ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId 
+		INNER JOIN Shipment_Master ON Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId 
+		Where Exp_LoadedShipmentHouseInfo.Number = #{mailBagId}),
+		
+		ShpInventory as (SELECT ShpInv.Shipment_Id,HseInv.ShipmentHouseId,HseInv.ShipmentInventoryHouseId,ShpInv.ShipmentInventory_Id, ShpInv.ShipmentLocation,
+		ShpInv.WarehouseLocation
+		FROM Shipment_Inventory ShpInv
+		LEFT JOIN Shipment_InventoryHouse HseInv ON HseInv.ShipmentInventoryId = ShpInv.ShipmentInventory_Id)
+		
+		SELECT distinct ShpMst.ShipmentId as shipmentId, ShpMst.ShipmentNumber as shipmentNumber, ShpMst.Origin as origin, ShpMst.Destination as destination,
+		ShpMst.OriginOfficeExchange as originOfficeExchange,ShpMst.DestinationOfficeExchange as destinationOfficeExchange,ShpMst.CarrierCode carrier,ShpHse.Pieces as pieces,ShpHse.Weight as weight,
+		ShpHse.ShipmentHouseId as shipmentHouseId,ShpHse.Number as mailBagId,ShpHse.DispatchNumber as dispatchNo,ShpHse.NextDestination as nextDestination,
+		ShpHse.ReceptacleNumber as receptacleNumber,ShpInventory.ShipmentInventoryHouseId as shipmentInventoryHouseId,ShpInventory.ShipmentInventory_Id as shipmentInventoryId,ShpInventory.ShipmentLocation as shipmentLocation,
+		ShpInventory.WarehouseLocation as wareHouseLocation,IncFltDtl.Flight_ID as incomingFlightId,IncFltDtl.FlightKey as incomingFlightKey,
+		IncFltDtl.DateSTA as incomingFlightDate, ISNULL(ShpMst.CarrierCode,AcpDoc.CarrierCode) outgoingFlightCarrier,
+		ManfFltDtl.FlightId manifestedFltId, ManfFltDtl.FlightBoardPoint as flightBoardPoint,
+		ManfFltDtl.FlightOffPoint as flightOffPoint, ManfFltDtl.FlightKey manifestedFlightKey,
+		ManfFltDtl.DateSTD manifestedFlightDate,ManfFltDtl.ULDNumber manifestULD,ManfFltDtl.ManifestShipmentHouseInfoId as manifestShipmentHouseInfoId,
+		loadedShipInfo.LoadedShipmentInfoId as loadedShipmentInfoId,loadedShipInfo.AssUldTrolleyId as assUldTrolleyId,
+		loadedShipInfo.Pieces as loadedShipmentPieces, loadedShipInfo.Weight as loadedShipmentWeight,
+		loadedShipInfo.LoadedShipmentHouseInfoId as loadedShipmentHouseInfoId,
+		loadedShipInfo.loadedHousePieces, loadedShipInfo.loadedHouseWeight,
+		CASE WHEN Dmg.DamageInfoId IS NULL THEN 0 ELSE 1 END AS damaged,
+		CASE WHEN upper(Scrn.SCStatus) = 'Ok' THEN 1 ELSE 0 END AS xRayResultFlag,
+		#{tenantAirport} tenantId,
+		ISNULL(ShpMst.LastUpdatedUserCode, ShpMst.CreatedUserCode) createdBy,
+		HseRmk.shipmentRemarks as mailBagRemarks
+		FROM Shipment_Master ShpMst
+		INNER JOIN Shipment_HouseInformation ShpHse ON ShpMst.ShipmentId = ShpHse.ShipmentId
+		LEFT JOIN ShpInventory ON ShpInventory.Shipment_Id = ShpMst.ShipmentId AND ShpInventory.ShipmentHouseId = ShpHse.ShipmentHouseId
+		LEFT JOIN loadedShipInfo ON ShpMst.ShipmentId = loadedShipInfo.ShipmentId AND ShpHse.Number = loadedShipInfo.Number
+		LEFT JOIN IncFltDtl ON IncFltDtl.ShipmentId = ShpMst.ShipmentId AND IncFltDtl.HouseNumber = ShpHse.Number
+		LEFT JOIN ManfFltDtl ON ManfFltDtl.Number = ShpHse.Number AND ManfFltDtl.ShipmentId = ShpHse.ShipmentId
+		LEFT JOIN ScreenDtl ON ScreenDtl.Number = ShpHse.Number
+		LEFT JOIN Exp_eAcceptanceDocumentInformation AcpDoc ON AcpDoc.ShipmentNumber = ShpMst.ShipmentNumber AND AcpDoc.ShipmentDate = ShpMst.ShipmentDate
+		LEFT JOIN Exp_eAcceptanceHouseInformation AcpHse ON AcpDoc.DocumentInformationId=AcpHse.DocumentInformationId AND AcpHse.Number = ShpHse.Number
+		LEFT JOIN Exp_Screening Scrn ON ScreenDtl.Number = Scrn.HousewayBillNumber AND Scrn.Created_DateTime= ScreenDtl.Created_DateTime
+		LEFT JOIN Com_DamageInfo Dmg ON Dmg.ReferenceId = ShpHse.Number
+		LEFT JOIN Shipment_Remarks HseRmk ON HseRmk.HousewayBillNumber = ShpHse.Number
+		LEFT JOIN Exp_AssignedULDTrolleyToFlight assUldTrolley ON assUldTrolley.ULDTrolleyNumber = ManfFltDtl.ULDNumber
+		where ShpMst.ShipmentType ='MAIL'
+		and ShpHse.Number = #{mailBagId}
+	</select> 
+	
+	
+	<select id="getImportFlightIdForMSS" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger">
+	SELECT a.Flight_ID FROM Flt_OperativeFlight a INNER JOIN Flt_OperativeFlight_legs b ON a.Flight_ID = b.Flight_ID
+    WHERE a.FlightKey = #{incomingFlightKey} AND CAST(b.DateSTA AS DATE) = CAST(#{incomimngFlightDate} AS DATE) AND b.FlightOffPoint = #{tenantAirport}
+	</select>
+	
+	<select id="getExportFlightIdForMSS" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger">
+	SELECT a.Flight_ID FROM Flt_OperativeFlight a INNER JOIN Flt_OperativeFlight_legs b ON a.Flight_ID = b.Flight_ID
+    WHERE a.FlightKey = #{manifestedFlightKey} AND CAST(b.DateSTD AS DATE) = CAST(#{outgoingFlightDate} AS DATE) AND b.FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<update id="updateLyingListShipmentMaster" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+		UPDATE Shipment_Master  
+	   	SET CarrierCode = #{outgoingCarrier}
+	   	WHERE ShipmentId = #{shipmentId}
+	</update>
+	
+	<select id="sqlGetAssignedFLightSegment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger"> 
+	select FlightSegmentId from Exp_AssignedULDTrolleyToFlight WHERE ULDTrolleyNumber = #{uldKey} AND FlightId = #{manifestedFltId}
+	</select>
+	
+	
+	<select id="getFLightSegmentForExportFlight"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger">
+	<!-- select TOP(1) FlightSegmentId from Flt_OperativeFlight_Segments where Flight_ID = #{manifestedFltId} -->
+	select  FlightSegmentId from Flt_OperativeFlight_Segments where Flight_ID = #{manifestedFltId} and FlightOffPoint=#{uldDestination} AND FlightBoardPoint=#{tenantAirport}
+	</select>
+	
+	<select id="getExpFLightEventsInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" >
+		select 
+		case 
+		when  DLSCompletedAt is not null then 1
+		else 0 end dlsCompleted,
+		case 
+		when FlightDepartedOn is not null then 1
+		else 0 end departed
+		 from Exp_FlightEvents where FlightId = #{manifestedFltId}
+	</select>
+	
+	<select id="checkDataInUldMaster"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"  resultType="java.lang.Integer">
+	select count(1) from Uld_UldMaster where UldKey = #{containerlocation}
+	</select>
+	
+	<select id="getFlightBoardPointsForCheckDestination" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"  resultType="java.lang.String">
+	<!-- SELECT FlightBoardPoint FROM Flt_OperativeFlight INNER JOIN Flt_OperativeFlight_Segments ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID WHERE Flt_OperativeFlight.Flight_ID = #{manifestedFltId} -->
+	select seg.FlightOffPoint
+		from Flt_operativeflight flt
+		inner join Flt_OperativeFlight_Segments Seg on Flt.Flight_ID = Seg.Flight_ID
+		where Flt.Flight_ID = #{manifestedFltId}
+		and FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	
+	<select id="getPiecesWeightOfInventory"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.ExportMailBagManifest">
+	select ISNULL(SUM(Pieces),0) as pieces, ISNULL(SUM(Weight),0) as weight
+	from shipment_inventory
+	where ISNULL(CONVERT(varchar,shipmentlocation),'') =
+	ISNULL(CONVERT(varchar,#{shipmentLocation}),'')
+	and ISNULL(CONVERT(varchar,WarehouseLocation),'') =
+	ISNULL(CONVERT(varchar,#{warehouseLocation}),'') AND Shipment_ID= #{shipmentId}
+	</select>
+	
+	<select id="checkManifestedIdexistance" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestSegment" resultType="java.lang.Integer">
+	select COUNT(*) from Exp_Manifest WHERE FlightSegmentId = #{segmentId} AND VersionNo = #{versionNo} AND Type = #{type}
+	</select>
+	
+	<update id="removePrevHouseInventorySHCs" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	DELETE FROM  Shipment_InventorySHC WHERE ShipmentInventoryId = #{shipmentInventoryId}
+	</update>
+	
+	<update id="updatePrevShipmentInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	Update Shipment_Inventory SET Pieces = Pieces - #{pieces}, Weight = Weight - #{weight} WHERE ShipmentInventory_Id = #{shipmentInventoryId} 
+	<!-- AND Shipment_ID = #{} -->
+	</update>
+	
+	<update id="removePrevHouseInventry" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	DELETE From Shipment_InventoryHouse WHERE ShipmentInventoryHouseId = #{shipmentInventoryHouseId} 
+	<!-- AND ShipmentInventoryId = #{shipmentInventoryId} AND ShipmentHouseId = #{shipmentHouseId} -->
+	</update>
+	
+	<delete id="removeUnusedPrevShipmentInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	<![CDATA[ DELETE Shipment_Inventory WHERE Pieces < 1  AND ShipmentInventory_Id = #{shipmentInventoryId} ]]>
+	</delete>
+	
+	<update id="updateShipmentInventory"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	Update Shipment_Inventory SET Pieces = Pieces + #{pieces}, Weight = Weight + #{weight} WHERE ShipmentLocation = #{shipmentLocation} AND WarehouseLocation = #{warehouseLocation}
+	</update>
+	
+	<insert id="insertShipmentInventoryForMss" useGeneratedKeys="true" 
+	parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+	keyProperty="shipmentInventoryId" keyColumn="ShipmentInventory_Id">
+	INSERT INTO Shipment_Inventory
+           (Shipment_ID
+           ,ShipmentLocation
+           ,Pieces
+           ,Weight
+           ,WarehouseLocation
+           ,Flight_ID
+           ,AssignedUldTrolley
+           ,CreatedUser_Code
+           ,Created_DateTime
+           )
+     VALUES
+           (
+           #{shipmentId}
+           ,#{shipmentLocation}
+           ,#{pieces}
+           ,#{weight}
+           ,#{warehouseLocation}
+           ,#{incomingFlightId}
+           ,#{uldKey}
+           ,#{createdBy}
+           ,#{createdOn})
+	</insert>
+	
+	<insert id="insertHouseInventoryForMss"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+	INSERT INTO Shipment_InventoryHouse
+           (ShipmentInventoryId
+           ,ShipmentHouseId
+           ,Pieces
+           ,Weight
+           ,CreatedUserCode
+           ,CreatedDateTime)
+     VALUES
+           (#{shipmentInventoryId}
+           ,#{shipmentHouseId}
+           ,#{pieces}
+           ,#{weight}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+	</insert>
+	
+	<select id="getShipmentIdForExportAccptMail" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger">
+	   select ShipmentId from Shipment_Master where ShipmentNumber=#{shipmentNumber} and ShipmentDate = #{shipmentDate}
+	</select>
+	
+	<select id="getStoreLocationType" parameterType="java.lang.String" resultType="java.lang.String">
+		select MovableLocationType from Uld_UldMaster where UldKey = #{storeLocation}
+	</select>
+	
+	<!-- <select id="getLoadedShipmentHousePiecesAndWeight" parameterType="" resultType="">
+	select Exp_LoadedShipmentInfo.Pieces as loadedHousePiece, Exp_LoadedShipmentInfo.Weight as loadedHouseWeight
+	  from Exp_LoadedShipmentInfo 
+	  inner join Shipment_Master on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+	  inner join Shipment_HouseInformation on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+	  Where Shipment_HouseInformation.Number = #{mailBagNumber} and LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select> -->
+	
+	<select id="getConnectingUrls" resultType="java.lang.String">
+	select ParameterValueChar from App_SystemParameters where ParameterCode = 'BILLING_INTERFACE_API_SERVER'
+	</select>
+	
+	<update id="updateStoreLocationOfShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+       Update Shipment_Inventory SET 
+       <if test="uldKey !=null and uldKey != ''">
+       ShipmentLocation=#{uldKey},
+       </if>
+       <if test="warehouseLocation !=null and warehouseLocation != ''">
+       WarehouseLocation= #{warehouseLocation},
+       </if>
+       LastUpdatedUser_Code = #{createdBy},
+       LastUpdated_DateTime = getDate()
+       <!-- <if test="uldTrolleyNo != null"> -->
+         WHERE Shipment_ID= #{shipmentId}
+         AND AssignedUldTrolley IS NULL
+    </update>
+    
+    <insert id="insertStoreLocationOfShipment" useGeneratedKeys="true"  parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" keyProperty="shipmentInventoryId" keyColumn="ShipmentInventory_Id">
+    
+   INSERT INTO Shipment_Inventory
+		(Shipment_ID
+		,ShipmentLocation
+		,Pieces
+		,Weight
+		,WarehouseLocation
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(#{shipmentId}
+		,#{uldNumber}
+		,#{piecesNo}
+		,#{weight}
+		,#{warehouseLocation}
+		,'MSS'
+		,getDate())
+    </insert>
+    
+    <insert id="insertHouseInventoryStoreLocationOfShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+    INSERT INTO Shipment_InventoryHouse
+    		(ShipmentInventoryId
+           ,ShipmentHouseId
+           ,Pieces
+           ,Weight
+           ,CreatedUserCode
+           ,CreatedDateTime)
+     VALUES
+           (#{shipmentInventoryId}
+           ,#{shipmentHouseId}
+           ,#{pieces}
+           ,#{weight}
+           ,#{createdBy}
+           ,#{createdOn}
+           )
+    </insert>
+    
+    <select id="getShipmentIdForMBMovement" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.math.BigInteger">
+     select Shipment_Master.ShipmentId shipmentId from Shipment_Master Inner Join Shipment_HouseInformation On Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+	Where Shipment_Master.ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentDate} and  Shipment_HouseInformation.Number=#{mailBagId} 
+    
+    </select>
+	
+	<select id="getUldConfigInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="com.ngen.cosys.satssginterfaces.mss.model.ULDIInformationDetails">
+	Select top 1
+		contourcode heightCode, UldTareWeightQty tareWeight from
+		Uld_UldCharacteristics where
+		UldCarrierCode = #{uldCarrier}
+		AND
+		UldType = #{uldType}
+	</select>
+	
+	<select id="getFlightOffPointForManifestedFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="java.lang.String">
+		SELECT Flt_OperativeFlight_Legs.FlightOffPoint flightOffPoint FROM
+        Flt_OperativeFlight inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID 
+        WHERE Flt_OperativeFlight.Flight_Id = #{manifestedFltId} AND Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantAirport}
+		</select>
+		
+		<select id="getFlightSegmentIdForManifestedFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="java.math.BigInteger">
+		Select FlightSegmentId from Flt_OperativeFlight_Segments Where Flight_Id=#{manifestedFltId} and FlightBoardPoint= #{tenantAirport} and FlightOffPoint=#{flightOffPoint}
+		</select>
+		
+		<select id="checkforMailbagNumberAssignment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_ShipmentBooking shpbooking
+		inner join Exp_ShipmentFlightBookingDetail shpbookingdetail
+		on shpbooking.BookingId = shpbookingdetail.BookingId
+		where shpbooking.ShipmentNumber = #{mailBagId} and (shpbookingdetail.BookingStatusCode = 'SS' OR shpbookingdetail.BookingStatusCode = 'UU')
+	    </select>
+	    
+	    <select id="getBookingId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+		resultType="java.math.BigInteger">
+		select BookingId from Exp_ShipmentBooking where ShipmentNumber=#{mailBagId} and ShipmentDate=#{shipmentDate}
+		</select>
+		
+		<update id="updateMailBagBooking" 
+              parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+             UPDATE
+                    Exp_ShipmentBooking
+              SET
+                     Origin= #{origin}
+                     ,Destination = #{destination}
+                     ,GrossWeight = #{weight}
+                     ,LastUpdatedUserCode = #{modifiedBy}
+                     ,LastUpdatedDateTime = GETDATE()   
+              where
+              ShipmentNumber = #{mailBagId} and
+              ShipmentDate = #{shipmentDate}
+       </update>
+       
+       <update id="updateBagBookingDetails" 
+             parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+              UPDATE
+                     Exp_ShipmentFlightBookingDetail
+              SET
+                     FlightOffPoint = #{flightOffPoint}
+                     ,BookingWeight = #{weight}
+                     ,FlightId = #{flightId}
+              where
+              BookingId = #{bookingId}
+       </update>
+		
+		<insert id="insertMailBagBooking" useGeneratedKeys="true"
+              parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" 
+              keyProperty="bookingId" keyColumn="BookingId">
+              INSERT INTO Exp_ShipmentBooking
+                     (ShipmentNumber
+                     ,Origin
+                     ,Destination
+                     ,Pieces
+                     ,GrossWeight
+                     ,WeightUnitCode
+                     ,VolumeUnitCode
+                     ,Manual
+                     ,CreatedUserCode
+                     ,CreatedDateTime
+                     ,ShipmentDate)
+              VALUES
+                     (#{mailBagId}
+                     ,#{origin}
+                     ,#{destination}
+                     ,#{pieces}
+                     ,#{weight}
+                     ,'K'
+                     ,'MC'
+                     ,0
+                     ,#{createdBy}
+                     ,GETDATE()
+                     ,#{shipmentDate}
+                     )
+       </insert>
+       
+       <insert id="insertBagBookingDetails" useGeneratedKeys="true"
+              parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement"
+              keyProperty="flightBookingId" keyColumn="FlightBookingId">
+              INSERT INTO Exp_ShipmentFlightBookingDetail
+                     (BookingId
+                     ,FlightId
+                     ,FlightBoardPoint
+                     ,FlightOffPoint
+                     ,FlightSegmentId
+                     ,BookingPieces
+                     ,BookingWeight
+                     ,BookingStatusCode
+                     ,CreatedUserCode
+                     ,CreatedDateTime)
+              VALUES
+                     (#{bookingId}
+                     ,#{flightId}
+                     ,#{tenantAirport}
+                     ,#{flightOffPoint}
+                     ,#{segmentId}
+                     ,#{pieces}
+                     ,#{weight}
+                     ,'SS'
+                     ,#{createdBy}
+                     ,GETDATE()
+                     )
+       </insert>
+       
+       <insert id="insertBagBookingDetailsSHC"
+              parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">           
+		              INSERT INTO Exp_ShipmentFlightBookingDetailSHC
+		           (FlightBookingId
+		           ,SpecialHandlingCode
+		           ,CreatedUserCode
+		           ,CreatedDateTime)
+		     VALUES
+		           (#{flightBookingId}
+		           ,'MAL'
+                   ,#{createdBy}
+                   ,GETDATE()
+		           )
+         </insert>
+         
+         <select id="checkForScreening" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.lang.Integer">
+		 select count(1) as count from Exp_Screening where FlightId = #{flightId} AND ShipmentId =#{shipmentId} And ShipmentNumber=#{shipmentNumber} And HouseNumber=#{mailBagId} 
+		</select>
+		
+		<insert id="insertXRAYData" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement">
+			Insert Into Exp_screening
+			(ShipmentId,
+			FlightId,
+			ScreenedMethod,
+			CarrierCode,
+			CreatedUser_Code,Created_DateTime,HousewayBillNumber,ShipmentDate,HouseNumber,ShipmentNumber)Values(
+			#{shipmentId},
+			#{flightId},
+			#{xRayStatus},
+			#{carrier},
+			#{createdBy},
+			GETDATE(),
+			#{mailBagId},
+			#{shipmentDate},
+			#{mailBagId},
+			#{shipmentNumber})
+		</insert>
+		
+		<update id="UpdateXRAYData" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" >
+			update Exp_Screening set ScreenedMethod=#{xRayStatus}
+			where FlightId=#{flightId} and ShipmentId =#{shipmentId} And ShipmentNumber=#{shipmentNumber} And HouseNumber=#{mailBagId} 
+		</update>
+		
+		<select id="getContentCodeOfUld" parameterType="java.lang.String" resultType="java.lang.String">
+		select ContentCode from uld_uldmaster where UldKey = #{containerlocation}
+		</select>
+		
+		<select id="getCustIdForAgent" parameterType="java.lang.String" resultType="java.math.BigInteger">
+	        select
+				CST_MST.Customer_ID
+			from Customer_Types CST_TYP
+			INNER JOIN Customer_Master CST_MST ON CST_TYP.Customer_ID = CST_MST.Customer_ID
+			INNER JOIN Billing_CustomerInfo info on CST_MST.Customer_ID= info.CustomerId and info.PaymentType='credit'
+			where CST_TYP.CustomerTypeCode = 'PA' and DeRegisterDate is null and CST_MST.CustomerCode = #{CustomerCode}
+    	</select>
+    	
+    	<select id="getULDAndFLightEventsInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" 
+    		resultType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" >
+			SELECT 
+				a.FlightId manifestedFltId, 
+				flt.flightKey manifestedFlightKey,
+				leg.DateSTD manifestedFlightDate,
+				FlightSegmentId manifestedFltSegmentId, 
+				u.UldKey uldKey, 
+				u.ContentCode contentCode, 
+				IIF(e.DLSCompletedAt is not null, 1, 0) dlsCompleted, 
+				IIF(e.MailManifestCompletedAt is not null, 1, 0) mailManifestCompleted
+			FROM Uld_UldMaster u
+				Join Exp_AssignedULDTrolleyToFlight a on u.UldKey = a.ULDTrolleyNumber
+				Join Flt_OperativeFlight flt on flt.Flight_ID = a.FlightId
+				Join Flt_OperativeFlight_Legs leg on leg.Flight_ID = flt.Flight_Id
+				Join Exp_FlightEvents e on e.FlightId = flt.Flight_Id
+			WHERE u.uldkey = #{uldKey} and leg.FlightBoardPoint = #{tenantAirport} and e.FlightCompletedAt is null
+		</select>
+		
+		<select id="checkIsMailBagAccepted" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" 
+    		resultType="java.lang.Integer" >
+			SELECT 1 
+			FROM Exp_eAcceptanceHouseInformation ehouse
+				JOIN Exp_eacceptancedocumentinformation edoc on edoc.DocumentInformationId = ehouse.DocumentInformationId
+				JOIN Exp_eAcceptanceServiceInformation eserv on eserv.ServiceInformationId = edoc.ServiceInformationId
+				JOIN Shipment_HouseInformation house on house.Number = ehouse.Number
+				JOIN Shipment_Master sm on sm.shipmentId = house.ShipmentId
+			WHERE sm.ShipmentNumber = #{shipmentNumber} and sm.ShipmentDate = #{shipmentDate} 
+				and ehouse.Number = #{mailBagId}
+			
+			UNION
+			
+			SELECT 1
+			FROM Exp_OuthouseAcceptanceHouseInformation outHouse
+				JOIN Shipment_HouseInformation house on house.Number = outHouse.Number
+				JOIN Shipment_Master sm on sm.shipmentId = house.ShipmentId
+			WHERE sm.ShipmentNumber = #{shipmentNumber} and sm.ShipmentDate = #{shipmentDate} 
+				and outHouse.Number = #{mailBagId}
+		</select>
+		
+		<select id="checkIsMailBagLoaded" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" 
+    		resultType="java.lang.Integer" >
+			SELECT 1
+			FROM Exp_OuthouseAcceptanceHouseInformation outHouse
+				JOIN Shipment_HouseInformation house on house.Number = outHouse.Number
+				JOIN Shipment_Master sm on sm.shipmentId = house.ShipmentId
+			WHERE sm.ShipmentNumber = #{shipmentNumber} and sm.ShipmentDate = #{shipmentDate} 
+				and outHouse.Number = #{mailBagId}
+		</select>
+		
+		<select id="getULDAndFLightManifestInfo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" 
+    		resultType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" >
+			SELECT 
+				a.assUldTrolleyId,
+				--a.FlightId manifestedFltId, 
+				--flt.flightKey manifestedFlightKey,
+				--leg.DateSTD manifestedFlightDate,
+				--a.FlightSegmentId manifestedFltSegmentId, 
+				leg.flightBoardPoint,
+				leg.flightOffPoint,
+				loadShip.shipmentId,
+				loadShip.loadedShipmentInfoId,
+				loadHouseInfo.pieces loadedHousePieces,
+				loadHouseInfo.weight loadedHouseWeight,
+				loadShip.pieces,
+				loadShip.weight,
+				--u.UldKey uldKey, 
+				--u.ContentCode contentCode, 
+					(SELECT TOP 1 manShipHouse.ManifestShipmentHouseInfoId 
+					 FROM Exp_ManifestShipmentInfo manShip 
+					Join Exp_ManifestShipmentHouseInfo manShipHouse on manShipHouse.ManifestShipmentInfoId = manShip.ManifestShipmentInfoId
+					 WHERE manShipHouse.Number = loadHouseInfo.Number and manShip.shipmentId = loadShip.shipmentId
+					 ORDER BY manShipHouse.CreatedDateTime desc) manifestShipmentHouseInfoId,
+				IIF(e.DLSCompletedAt is not null, 1, 0) dlsCompleted, 
+				IIF(e.MailManifestCompletedAt is not null, 1, 0) mailManifestCompleted
+			FROM 
+				Uld_UldMaster u
+				Join Exp_AssignedULDTrolleyToFlight a on u.UldKey = a.ULDTrolleyNumber
+				Join Exp_LoadedShipmentInfo loadShip on loadShip.AssUldTrolleyId = a.AssUldTrolleyId
+				Join Exp_LoadedShipmentHouseInfo loadHouseInfo on loadHouseInfo.LoadedShipmentInfoId = loadShip.LoadedShipmentInfoId
+				Join Flt_OperativeFlight flt on flt.Flight_ID = a.FlightId
+				Join Flt_OperativeFlight_Legs leg on leg.Flight_ID = flt.Flight_Id
+				--Join Flt_OperativeFlight_Segments seg on seg.Flight_ID = flt.Flight_Id
+				Join Exp_FlightEvents e on e.FlightId = flt.Flight_Id
+			WHERE u.uldkey = #{uldKey}
+			and loadHouseInfo.Number = #{mailBagId}
+			and leg.FlightBoardPoint = #{tenantAirport} 
+			and e.FlightCompletedAt is null
+		</select>
+		
+		<select id="sqlGetMssIncomingIsActiveOrNot" resultType="java.lang.Boolean">
+		select 
+			case when ParameterValueChar = 'D' then 0 else 1 end
+		from 
+			App_SystemParameters 
+		where 
+			ParameterCode = 'MSS_ENABLE_DISABLE'
+		</select>
+</mapper>

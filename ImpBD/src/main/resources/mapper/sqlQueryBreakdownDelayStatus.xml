@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BreakDownDelayMapper">
+ 
+	<select id="sqlGetDelayFlightInfo"
+		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch"
+		resultType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryModel">
+		WITH ManifestShipmentWeightInfo AS(
+			select
+				Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight_Legs.DateSTA,
+				sum(Imp_Arrivalmanifestshipmentinfo.Weight)/1000 ManifestedWeight
+			from
+				Flt_OperativeFlight inner join
+				Flt_OperativeFlight_Legs 
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+					Imp_FlightEvents on Imp_FlightEvents.Flightid = Flt_OperativeFlight.Flight_ID left join 
+				Imp_ArrivalManifestByFlight 
+					on Flt_OperativeFlight_Legs.Flight_ID=Imp_ArrivalManifestByFlight.FlightId and
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}  left join
+				Imp_ArrivalManifestBySegment 
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId left join
+				Imp_ArrivalManifestULD 
+					on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId left join 
+				Imp_Arrivalmanifestshipmentinfo 
+					on Imp_Arrivalmanifestshipmentinfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId 
+			where
+				Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			 	<if test = "fromDate != null and toDate !=null">
+	     			and ((flt_OperativeFlight_Legs.DateSTA BETWEEN #{fromDate}  and #{toDate}) OR              
+	              		(flt_OperativeFlight_Legs.DateETA BETWEEN #{fromDate}  and #{toDate}) OR 
+	              		(flt_OperativeFlight_Legs.DateATA BETWEEN #{fromDate} and #{toDate} )) 
+	  			</if>
+	            <if test = "carrierGroup != null and carrierGroup!=''">
+	  				and Flt_OperativeFlight.CarrierCode in (
+						select 
+							Mst_AssociateCarrierWithGroup.CarrierCode 
+						from 
+		       				Mst_CarrierGroup inner join
+		      			 	Mst_AssociateCarrierWithGroup
+		              			on Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+						where
+		      			 	Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup})
+	      		</if> 
+	  			  
+	  			<if test = "flightNumber != null and flightNumber !=''">
+	     			and Flt_OperativeFlight.FlightKey = #{flightNumber}
+	     		</if>
+	     		
+	     		<if test = "flightDate != null">
+	     			and	cast( Flt_OperativeFlight_Legs.DateSTA as date) = #{flightDate}
+	  			</if>
+	  			    
+			    <if test = "flightClosed == 'NO' and flightNumber !=''">
+			    	and Imp_FlightEvents.FightClosedAt is null
+			    </if>
+	  			    
+	  			<if test = "flightClosed == 'YES' and flightNumber !=''">
+	  				and Imp_FlightEvents.FightClosedAt is  not null
+	  			</if>		
+			group by
+				Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight_Legs.DateSTA
+		),<![CDATA[
+		DelayInfo AS(
+		 select 
+			Flt_OperativeFlight.Flight_ID as flightId,
+			case when 
+				(Flt_OperativeFlight.FlightType ='P') then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='PASSENGERFLIGHT') 
+				when (Flt_OperativeFlight.FlightType ='C' and ManifestedWeight > 40) then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTgt40') 
+				when (Flt_OperativeFlight.FlightType ='C' and ManifestedWeight <= 40) then 
+					(select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTlt40')
+					else 0 
+			end stp,
+			isnull(DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, Imp_FlightEvents.FlightCompletedAt), 0), Imp_FlightEvents.FlightCompletedAt),DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, GETDATE()), 0), GETDATE())) as fct,
+			isnull(DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, Flt_OperativeFlight_Legs.DateATA), 0), Flt_OperativeFlight_Legs.DateATA),0) as atat
+			from 
+			Imp_FlightEvents inner join 
+			Flt_OperativeFlight
+				on Imp_FlightEvents.Flightid = Flt_OperativeFlight.Flight_ID inner join 
+			Flt_OperativeFlight_Legs 
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join 
+			Mst_OperativeFlight_ServiceTypes 
+				on  Flt_OperativeFlight.FlightServiceType = Mst_OperativeFlight_ServiceTypes.FlightServiceType inner join
+			Imp_BreakDownSummary
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_BreakDownSummary.FlightId left join
+			ManifestShipmentWeightInfo
+				on Flt_OperativeFlight.FlightKey = ManifestShipmentWeightInfo.FlightKey and
+					Flt_OperativeFlight_Legs.DateSTA = ManifestShipmentWeightInfo.DateSTA							
+		where 
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}	 
+		
+		)]]>
+		select 		
+			Flt_OperativeFlight.Flight_ID as flightId,
+			Flt_OperativeFlight.FlightKey as flightNumber,
+			CAST(Flt_OperativeFlight_Legs.DateSTA as Date) as flightDate,              
+			Flt_OperativeFlight_Legs.DateSTA as sta,
+			Flt_OperativeFlight_Legs.DateATA as ata,
+			CAST(Imp_FlightEvents.FirstULDTowedAt as Time) as firstUldTowInTime,
+			CAST(Imp_FlightEvents.LastULDTowedAt as Time) as lastUldTowInTime,
+			Imp_FlightEvents.FirstTimeBreakdownCompletedAt breakdownCompletionDataTime,
+			Imp_FlightEvents.FlightCompletedAt flightCompletionDataTime,
+			case when
+				(Imp_FlightEvents.FightClosedAt is not null) then
+				1
+			else
+				0
+			end flightClosedFlag,			
+			Imp_BreakDownSummary.LiquIdatedDamagesWaived ldWaive,
+			Imp_BreakDownSummary.LiquIdatedDamageApplicable ldApplicable,
+			Imp_BreakDownSummary.ApprovedLDWaiveApprovedBy approvedByDM,
+			Imp_BreakDownSummary.ApprovedLDWaiveApprovedOn approvedDM,
+			Imp_BreakDownSummary.ApprovedLDApplicableApprovedOn approvedCO,
+			DelayInfo.fct,
+			DelayInfo.stp,
+			DelayInfo.atat,
+			<![CDATA[
+			case when CAST((DelayInfo.fct+DelayInfo.atat-DelayInfo.stp) as INT) <=0 then 0 else CAST((DelayInfo.fct+DelayInfo.atat-DelayInfo.stp) as INT) end delayInMinutes
+		]]>from 
+			Imp_FlightEvents inner join 
+			Flt_OperativeFlight
+				on Imp_FlightEvents.Flightid = Flt_OperativeFlight.Flight_ID inner join 
+			Flt_OperativeFlight_Legs 
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join 
+			Mst_OperativeFlight_ServiceTypes 
+				on  Flt_OperativeFlight.FlightServiceType = Mst_OperativeFlight_ServiceTypes.FlightServiceType left join
+			Imp_BreakDownSummary
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_BreakDownSummary.FlightId left join
+			ManifestShipmentWeightInfo
+				on Flt_OperativeFlight.FlightKey = ManifestShipmentWeightInfo.FlightKey and
+					Flt_OperativeFlight_Legs.DateSTA = ManifestShipmentWeightInfo.DateSTA left join
+					DelayInfo on DelayInfo.flightId=Flt_OperativeFlight.Flight_ID							
+		where 
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		 	<if test = "fromDate != null and toDate !=null">
+     			and ((flt_OperativeFlight_Legs.DateSTA BETWEEN #{fromDate}  and #{toDate}) OR              
+              		(flt_OperativeFlight_Legs.DateETA BETWEEN #{fromDate}  and #{toDate}) OR 
+              		(flt_OperativeFlight_Legs.DateATA BETWEEN #{fromDate} and #{toDate} )) 
+  			</if>
+            <if test = "carrierGroup != null and carrierGroup!=''">
+  				and Flt_OperativeFlight.CarrierCode in (
+					select 
+						Mst_AssociateCarrierWithGroup.CarrierCode 
+					from 
+	       				Mst_CarrierGroup inner join
+	      			 	Mst_AssociateCarrierWithGroup
+	              			on Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+					where
+	      			 	Mst_CarrierGroup.CarrierGroupCode = #{carrierGroup})
+      		</if> 
+  			  
+  			<if test = "flightNumber != null and flightNumber !=''">
+     			and Flt_OperativeFlight.FlightKey = #{flightNumber}
+     		</if>
+     		
+     		<if test = "flightDate != null">
+     			and	cast( Flt_OperativeFlight_Legs.DateSTA as date) = #{flightDate}
+  			</if>
+  			    
+		    <if test = "flightClosed == 'NO'">
+		    	and Imp_FlightEvents.FightClosedAt is null
+		    </if>
+		    
+		    <if test = "flightClosed == 'YES'">
+  			     and imp_FlightEvents.FightClosedAt is  not null
+  			</if>
+		order by 
+		    Flt_OperativeFlight_Legs.DateSTA
+			
+	</select>
+  	
+  	<update id="sqlCloseFlight"
+		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch">
+		update Imp_FlightEvents
+		set      
+			FirstTimeFlightClosedBy = #{modifiedBy},
+			FirstTimeFightClosedAt = #{modifiedOn},
+	        FightClosedAt = #{modifiedOn},
+	        FlightClosedBy = #{modifiedBy},
+	        LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+	    where 
+	    	FlightId =#{flightId}
+  	</update>
+	
+	<update id="sqlReopenFlight" 
+		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch">
+	    update Imp_FlightEvents
+	    set	   		
+	        FightClosedAt = null,
+	        FlightClosedBy =null,
+	        LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+	    where 
+	    	FlightId =#{flightId}
+  	</update>
+  	
+  	<select id="sqlCheckInboundULDFinalized"
+  		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch"
+  		resultType="java.lang.Boolean">
+  		select
+			case when (count(1)) > 1 then
+				1
+			else	
+				0
+			end result
+		from
+			Imp_FlightEvents
+		where
+			Imp_FlightEvents.FlightId = #{flightId} and
+			Imp_FlightEvents.InboundULDListFinalizedAt is not null
+  	</select>
+  	
+  	<select id="sqlCheckInboundRampCheckInComplete"
+  		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch"
+  		resultType="java.lang.Boolean">
+  		select
+			case when (count(1)) > 1 then
+				1
+			else	
+				0
+			end result
+		from
+			Imp_FlightEvents
+		where
+			Imp_FlightEvents.FlightId = #{flightId} and
+			Imp_FlightEvents.RampCheckInCompletedAt is not null
+  	</select>
+  	
+  	<select id="sqlCheckInboundFlightComplete"
+  		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch"
+  		resultType="java.lang.Boolean">
+  		select
+			case when (count(1)) > 1 then
+				1
+			else	
+				0
+			end result
+		from
+			Imp_FlightEvents
+		where
+			Imp_FlightEvents.FlightId = #{flightId} and
+			Imp_FlightEvents.FlightCompletedAt is not null
+  	</select>
+  	
+  	<select id="sqlFetchFlightTonnageDetails"
+  		parameterType="com.ngen.cosys.impbd.delaystatus.model.DelayStatusSearch"
+  		resultType="com.ngen.cosys.impbd.delaystatus.model.FlightTonnageDifference">
+  		SELECT TOP(1) 
+  		   t1.ManifestWeight, 
+  		   t2.BreakDownWeight,(t2.BreakDownWeight-t1.ManifestWeight) as TonnageDifference,
+  		   t3.Flightkey,CAST(t3.DateSTA as Date) as flightDate
+        FROM 
+		    (select
+							sum(Imp_ArrivalManifestShipmentInfo.Weight) as ManifestWeight,
+							Imp_ArrivalManifestByFlight.Flightid
+							from
+							Imp_ArrivalManifestByFlight inner join   
+							Imp_ArrivalManifestBySegment 
+									on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+							Imp_ArrivalManifestULD 
+									on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join 
+							Imp_ArrivalManifestShipmentInfo
+									on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+									inner join Shipment_Master on Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and 
+									Shipment_Master.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+									inner join Imp_ShipmentVerification on Shipment_Master.Shipmentid = Imp_ShipmentVerification.Shipmentid inner join 
+									Imp_BreakdownULDTrolleyinfo on Imp_BreakdownULDTrolleyinfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+									where
+									Imp_ArrivalManifestByFlight.Flightid =#{flightId} 
+									Group by
+									Imp_ArrivalManifestByFlight.Flightid ) t1
+				LEFT JOIN
+				    (select
+											sum(BreakDownWeight) as BreakdownWeight,Imp_ShipmentVerification.Flightid  from Imp_ShipmentVerification where Flightid =#{flightId}
+											Group by
+											Imp_ShipmentVerification.Flightid) t2
+				ON (t1.Flightid =t2.Flightid )
+				LEFT JOIN
+				(select Flightkey,Flt_OperativeFlight_Legs.DateSTA,Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join
+										Flt_OperativeFlight_Legs 
+											on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID where Flt_OperativeFlight.Flight_ID = #{flightId})t3 ON (t2.Flightid =t3.Flight_ID )
+  	</select>
+  	
+  	<select id="sqlFetchFlightCompleteAdminEmail"  		
+  		resultType="com.ngen.cosys.impbd.summary.model.Email">
+  		select Email AS toAddress from Event_GroupMemberList join Event_Group
+		on Event_Group.EventGroupId = Event_GroupMemberList.EventGroupId
+		where Name = 'close_flight'
+  	</select>
+  	
+</mapper>

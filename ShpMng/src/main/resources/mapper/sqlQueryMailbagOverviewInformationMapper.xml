@@ -1,0 +1,1304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MailbagOverviewInfoMapper">
+
+	<select id="sqlGetMailbagInfoMobile"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagSearchReq"
+		resultMap="MailbagInfoResultMap">
+      SELECT
+         shipment_master.shipmentid,
+         shipment_master.shipmentnumber,
+         shipment_master.originofficeexchange,
+         shipment_master.destinationofficeexchange,
+         shipment_houseinformation.Pieces,
+         shipment_houseinformation.Weight,
+         shipment_houseinformation.shipmenthouseid,
+         h.OutHouseInformationId,
+         shipment_houseinformation.number,
+         shipment_houseinformation.dispatchnumber,
+         shipment_houseinformation.nextdestination,
+         shipment_houseinformation.receptaclenumber,
+         invinfo.shipmentinventory_id,
+         IIF(h.OutHouseInformationId IS NULL, invinfo.shipmentlocation, h.ShipmentLocation) ShipmentLocation,
+         IIF(h.OutHouseInformationId IS NULL, invinfo.warehouselocation, h.WarehouseLocation) WarehouseLocation,
+         invinfo.flight_id,
+         IncomingFlightInfo.flight_id incomingFlightId,
+         IncomingFlightInfo.flightkey incomingFlightKey,
+         IncomingFlightInfo.datesta incomingFlightDate,
+         BookingFlightInfo.flightkey bookedFlight,
+         BookingFlightInfo.datestd bookedFlightDate,
+         MailManifestInfo.flightkey manifestedFlight,
+         MailManifestInfo.datestd manifestedFlightDate,
+         MailManifestInfo.uldnumber manifestULD,
+         ShipmentRemarks.shipmentremarks AS DNRemarks,
+         HseRmks.shipmentremarks AS MailbagRemarks,
+         MailDamageInfo.damaged,
+         CASE
+         WHEN ( IncomingFlightInfo.importshipmentstatus IS NOT NULL
+              )
+         THEN
+         IncomingFlightInfo.importshipmentstatus
+         WHEN ( BookingFlightInfo.exportshipmentstatus IS NOT NULL
+              )
+         THEN
+         BookingFlightInfo.exportshipmentstatus
+         END ShipmentStatus,
+         CASE
+         WHEN(
+         SELECT
+         COUNT(1)
+         FROM
+         exp_screening 
+         WHERE
+         housewaybillnumber = shipment_houseinformation.number AND UPPER(ScreenedMethod) = '03') > 0 THEN
+        'PASS'
+         WHEN(
+         SELECT
+         COUNT(1)
+         FROM
+         exp_screening
+         WHERE
+             housewaybillnumber = shipment_houseinformation.number AND UPPER(ScreenedMethod) = '04') > 0 THEN  'FAIL'
+              WHEN(
+          SELECT 
+              COUNT(1)
+          FROM
+        exp_screening
+          WHERE
+             housewaybillnumber = shipment_houseinformation.number AND UPPER(ScreenedMethod) IN ('02','01')) > 0 THEN
+             'PENDING'
+              ELSE
+              NULL
+              END xRayResultFlag FROM shipment_master INNER JOIN mst_carrier ON shipment_master.carriercode = mst_carrier.carriercode INNER JOIN shipment_houseinformation ON shipment_master.shipmentid = shipment_houseinformation.shipmentid LEFT JOIN
+           (
+          SELECT
+              Shipment_Inventory.ShipmentInventory_Id,
+              Shipment_Inventory.ShipmentLocation ,
+              Shipment_Inventory.WareHouseLocation ,
+              Shipment_Inventory.Flight_Id ,
+           Shipment_InventoryHouse.ShipmentHouseId
+              FROM
+           Shipment_Inventory
+          INNER JOIN
+           Shipment_InventoryHouse
+              ON
+           Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId
+          INNER JOIN
+           Shipment_HouseInformation
+              ON
+           Shipment_InventoryHouse.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+            WHERE
+           Shipment_HouseInformation.Number =#{mailbagNumber}
+              AND Shipment_HouseInformation.ShipmentId = #{shipmentId} ) invinfo
+              ON shipment_houseinformation.shipmenthouseid = invinfo.ShipmentHouseId LEFT JOIN
+          (
+            select
+          Imp_ShipmentVerification.ShipmentId,
+          Imp_BreakDownHouseInfo.HouseNumber,
+          Flt_OperativeFlight.Flight_ID,
+          Flt_OperativeFlight.FlightKey,
+          Flt_OperativeFlight_Legs.DateSTA,
+          CASE
+              WHEN (Imp_FlightEvents.MailBreakDownCompletedAt IS NOT NULL ) THEN 'BreakDown Completed'
+              WHEN ( imp_flightevents.MailDocumentVerificationCompletedAt IS NOT NULL ) THEN 'Document Verified'
+              END ImportShipmentStatus
+              from
+           Imp_ShipmentVerification inner join
+           Imp_BreakDownULDTrolleyInfo
+              on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+           Imp_BreakDownStorageInfo
+              on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join
+           Imp_BreakDownHouseInfo
+              on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownHouseInfo.ImpBreakDownStorageInfoId inner join
+           Flt_OperativeFlight
+              on Flt_OperativeFlight.Flight_Id = Imp_ShipmentVerification.FlightId inner join
+           Flt_OperativeFlight_Legs
+              on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+              Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+           Imp_FlightEvents
+              on Imp_FlightEvents.FlightID = Flt_OperativeFlight.Flight_ID )IncomingFlightInfo
+              ON IncomingFlightInfo.ShipmentId = shipment_master.ShipmentId and
+           IncomingFlightInfo.HouseNumber = shipment_houseinformation.Number LEFT JOIN
+                          (
+              SELECT exp_shipmentbooking.shipmentnumber, 
+                         flt_operativeflight.flight_id, 
+                         flt_operativeflight.flightkey, 
+                         flt_operativeflight_legs.datestd, 
+                         CASE 
+                           WHEN ( exp_flightevents.flightdepartedon IS NOT NULL 
+                                ) THEN 
+                           'Departed' 
+                           WHEN ( exp_flightevents.flightcompletedat IS NOT NULL 
+                                ) THEN 
+                           'Flight               Completed' 
+                           WHEN ( exp_flightevents.manifestcompletedat IS NOT 
+                                  NULL ) 
+              THEN 
+                           'Manifested' 
+                           WHEN ( exp_flightevents.buildupcompletedat IS NOT 
+                                  NULL ) 
+              THEN 
+                           'Buildup Completed' 
+                         END ExportShipmentStatus 
+                  FROM   exp_shipmentbooking 
+                         INNER JOIN exp_shipmentflightbookingdetail 
+                                 ON exp_shipmentbooking.bookingid = 
+                                    exp_shipmentflightbookingdetail.bookingid 
+                         INNER JOIN flt_operativeflight 
+                                 ON exp_shipmentflightbookingdetail.flightid = 
+                                    flt_operativeflight.flight_id 
+                         INNER JOIN flt_operativeflight_legs 
+                                 ON flt_operativeflight.flight_id = 
+                                    flt_operativeflight_legs.flight_id 
+                                    AND 
+                         flt_operativeflight_legs.flightboardpoint = 
+                         #{tenantAirport}   
+                         INNER JOIN exp_flightevents 
+                                 ON flt_operativeflight.flight_id = 
+                                    exp_flightevents.flightid 
+                  WHERE  exp_shipmentflightbookingdetail.bookingstatuscode = 
+                         'UU') 
+              BookingFlightInfo 
+              ON BookingFlightInfo.shipmentnumber = 
+                 shipment_houseinformation.number 
+       LEFT JOIN(SELECT exp_manifestshipmenthouseinfo.number, 
+                        exp_manifestuldinfo.uldnumber, 
+                        flt_operativeflight.flight_id, 
+                        flt_operativeflight.flightkey, 
+                        flt_operativeflight_legs.datestd 
+                 FROM   exp_manifest 
+                        INNER JOIN flt_operativeflight 
+                                ON exp_manifest.flightid = 
+                                   flt_operativeflight.flight_id 
+                        INNER JOIN flt_operativeflight_legs 
+                                ON flt_operativeflight.flight_id = 
+                                   flt_operativeflight_legs.flight_id 
+                                   AND flt_operativeflight_legs.flightboardpoint = #{tenantAirport}  
+                        INNER JOIN exp_manifestuldinfo 
+                                ON exp_manifest.manifestid = 
+                                   exp_manifestuldinfo.manifestid 
+                        INNER JOIN exp_manifestshipmentinfo 
+                                ON exp_manifestuldinfo.manifestuldinfoid = 
+                                   exp_manifestshipmentinfo.manifestuldinfoid 
+                        INNER JOIN exp_manifestshipmenthouseinfo 
+                                ON 
+                        exp_manifestshipmentinfo.manifestshipmentinfoid = 
+                        exp_manifestshipmenthouseinfo.manifestshipmentinfoid 
+              )MailManifestInfo 
+              ON MailManifestInfo.number = shipment_houseinformation.number 
+       LEFT JOIN(
+          
+          SELECT outerRemarks.shipmentnumber, 
+                        outerRemarks.shipmentdate, 
+                        outerRemarks.shipmentid,
+                                         '' AS  shipmentRemarks 
+                 FROM   shipment_remarks AS outerRemarks 
+                 WHERE  outerRemarks.shipmentremarks IS NOT NULL 
+                 GROUP  BY outerRemarks.shipmentnumber, 
+                           outerRemarks.shipmentdate, 
+                           outerRemarks.shipmentid
+              
+              )ShipmentRemarks 
+              ON ( shipment_master.shipmentnumber =  ShipmentRemarks.shipmentnumber AND shipment_master.shipmentdate = ShipmentRemarks.shipmentdate ) 
+                        OR ( shipment_master.shipmentid = ShipmentRemarks.shipmentid AND ShipmentRemarks.shipmentremarks IS NOT NULL  ) 
+
+       LEFT JOIN shipment_remarks HseRmks 
+              ON HseRmks.housewaybillnumber = shipment_houseinformation.number 
+       LEFT JOIN (SELECT CASE 
+                           WHEN ( Count(1) > 0 ) THEN 1 
+                           ELSE 0 
+                         END Damaged, 
+                         com_damageinfo.referenceid 
+                  FROM   com_damageinfo 
+                         INNER JOIN com_damagelineitems 
+                                 ON com_damageinfo.damageinfoid = 
+                                    com_damagelineitems.damageinfoid 
+                  GROUP  BY com_damageinfo.referenceid)MailDamageInfo 
+              ON shipment_houseinformation.number = MailDamageInfo.referenceid 
+
+              left join exp_outhouseacceptancehouseinformation h on h.number = shipment_houseinformation.number 
+				WHERE  shipment_master.shipmenttype = 'MAIL' 
+                 
+		<choose>
+			<when test="mailbagNumber != null and mailbagNumber != ''">
+				AND Shipment_HouseInformation.Number =
+				#{mailbagNumber} AND Shipment_Master.ShipmentId = #{shipmentId}
+			</when>
+			<otherwise>
+				<if test="dispatchSeries != null and dispatchSeries != ''">
+					AND Shipment_Master.ShipmentNumber = #{dispatchSeries}
+				</if>
+				<if test="dispatchNumber != null and dispatchNumber != ''">
+					AND Shipment_HouseInformation.DispatchNumber =
+					#{dispatchNumber}
+				</if>
+				<if test="origin != null and origin != ''">
+					AND Shipment_Master.Origin = #{origin}
+				</if>
+				<if test="destination != null and destination != ''">
+					AND Shipment_Master.Destination = #{destination}
+				</if>
+				<if test="fromDate != null">
+					AND CAST(Shipment_HouseInformation.CreatedDateTime AS
+					DATE) >=
+					#{fromDate}
+				</if>
+				<if test="toDate != null">
+					AND CAST(Shipment_HouseInformation.CreatedDateTime AS
+					DATE) &#60;=
+					#{toDate}
+				</if>
+				<if test="uldtrolley != null and uldtrolley != ''">
+					AND (Shipment_Inventory.ShipmentLocation=#{uldtrolley}
+					OR
+					MailManifestInfo.ULDNumber = #{uldtrolley})
+				</if>
+				<if test="xrayresult != null">
+					<choose>
+						<when test="xrayresult == 'Pass'">
+							AND exists(
+							select
+							1
+							from
+							Exp_Screening
+							where
+							HousewayBillNumber = Shipment_HouseInformation.Number and
+							upper(SCStatus) = 'Ok'
+							)
+						</when>
+						<when test="xrayresult == 'Fail'">
+							AND exists(
+							select
+							1
+							from
+							Exp_Screening
+							where
+							HousewayBillNumber = Shipment_HouseInformation.Number and
+							upper(SCStatus) not in ('Ok')
+							)
+						</when>
+					</choose>
+				</if>
+			</otherwise>
+		</choose>
+	</select>
+	
+	
+	<select id="getMalBagDamageLineItemDetails"
+	parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagSearchReq"
+	resultType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewSummary">
+	select Com_DamageLineItems.Severity as severity,
+	Com_DamageLineItems.NatureOfDamage as natureOfDamage
+	from
+	Com_DamageLineItems where
+	EntityKey=#{mailbagNumber}
+</select>
+
+
+	<select id="getMailEmbargoDetails"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagSearchReq"
+		resultType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewSummary">
+		select Airmail_EmbargoFailure.ShipmentId from Airmail_EmbargoFailure  where
+		ShipmentId=#{shipmentId} and ShipmentHouseId=#{shipmentHouseID}
+	</select>
+
+	<select id="sqlGetMailbagInfo"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagSearchReq"
+		resultMap="MailbagInfoResultMap">
+	<![CDATA[
+		declare @MailBagOverviewInfo table(
+			ShipmentId numeric,
+			CarrierCode varchar(30),
+			ShipmentNumber varchar(30),
+			ShipmentDate datetime,
+			Origin varchar(3),
+			Destination	varchar(3),
+			OriginOfficeExchange varchar(6),
+			DestinationOfficeExchange varchar(6),
+			ShpPieces numeric,
+			ShpWeight numeric(13, 8),
+			Pieces numeric,
+			Weight numeric(13, 8),
+			ShipmentHouseId	numeric,
+			Number varchar(35),
+			DispatchNumber varchar(4),
+			NextDestination	varchar(3),
+			ReceptacleNumber varchar(3),
+			DeliveredOn	datetime
+		)
+		
+		--store the mail bag overview info in this table
+		;insert into @MailBagOverviewInfo
+		select 
+			Shipment_Master.ShipmentId, 
+			Shipment_Master.CarrierCode,
+			Shipment_Master.ShipmentNumber, 
+			Shipment_Master.ShipmentDate,
+			Shipment_Master.Origin,
+			Shipment_Master.Destination,
+			Shipment_Master.OriginOfficeExchange,
+			Shipment_Master.DestinationOfficeExchange,
+			Shipment_Master.pieces as ShpPieces,
+			Shipment_Master.weight as ShpWeight, 
+			Shipment_HouseInformation.Pieces,
+			Shipment_HouseInformation.Weight,
+			Shipment_HouseInformation.ShipmentHouseId,
+			Shipment_HouseInformation.Number,
+			Shipment_HouseInformation.DispatchNumber,
+			Shipment_HouseInformation.NextDestination,
+			Shipment_HouseInformation.ReceptacleNumber,
+			Shipment_HouseInformation.DeliveredOn
+		from   
+			Shipment_Master inner join 
+			Shipment_HouseInformation
+				on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId 
+		where 
+			Shipment_Master.ShipmentType ='MAIL'
+	]]>		
+		<if test="dispatchSeries != null and dispatchSeries != ''">
+			and Shipment_Master.ShipmentNumber = #{dispatchSeries}
+		</if>
+		<if test="dispatchNumber != null and dispatchNumber != ''">
+			and Shipment_HouseInformation.DispatchNumber = #{dispatchNumber}
+		</if>
+		<if test="origin != null and origin != ''">
+			and Shipment_Master.Origin = #{origin}
+		</if>
+		<if test="destination != null and destination != ''">
+			and Shipment_Master.Destination = #{destination}
+		</if>
+		<if test="fromDate != null">
+		<![CDATA[
+			and cast(convert(datetime,SWITCHOFFSET(converT(datetimeoffset,Shipment_HouseInformation.CreatedDateTime),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) as date) >= cast(#{fromDate} as date)
+		]]>
+		</if>
+		<if test="toDate != null">
+		<![CDATA[
+			and cast(convert(datetime,SWITCHOFFSET(converT(datetimeoffset,Shipment_HouseInformation.CreatedDateTime),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) as date) <= cast(#{toDate} as date)
+		]]>
+		</if>
+		<!-- ULD can be either ShipmentLocation or Manifested Container -->
+		<if test="uldtrolley != null and uldtrolley != ''">
+			and (exists (select 
+							null 
+						from 
+							Shipment_Inventory inner join 
+							Shipment_InventoryHouse  
+								on Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId
+						where
+							Shipment_Inventory.ShipmentLocation = #{uldtrolley} and
+							Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId and
+							Shipment_InventoryHouse.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+					   ) or 
+				 exists (select
+				 			null
+				 		from
+				 			Exp_Manifest inner join 
+							Exp_ManifestULDInfo  
+								on	Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join 
+							Exp_ManifestShipmentInfo 
+								on Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join 
+							Exp_ManifestShipmentHouseInfo  
+								on Exp_ManifestShipmentInfo.ManifestShipmentInfoId = Exp_ManifestShipmentHouseInfo.ManifestShipmentInfoId
+				 		where	
+				 			Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId and
+							Exp_ManifestShipmentHouseInfo.Number = Shipment_HouseInformation.Number and
+				 			Exp_ManifestULDInfo.ULDNumber = #{uldtrolley}
+				 	   )		   
+				)
+		</if>
+		<if test="mailbagNumber != null and mailbagNumber != ''">
+			and Shipment_HouseInformation.Number = #{mailbagNumber} 
+		</if>
+		<if test="xrayresult != '' and xrayresult != null">
+			<choose>
+				<when test="xrayresult == 'Pass'">
+					and exists(
+					select null from Exp_Screening
+					where (isnull(Exp_Screening.HouseNumber, Exp_Screening.HousewayBillNumber) = Shipment_HouseInformation.Number) and ScreenedMethod = '03')
+				</when>
+				<when test="xrayresult == 'Fail'">
+					and exists(
+					select null from Exp_Screening
+					where (isnull(Exp_Screening.HouseNumber, Exp_Screening.HousewayBillNumber) = Shipment_HouseInformation.Number) and ScreenedMethod = '04')
+				</when>
+				<when test="xrayresult == 'Pending'">
+					and exists(
+					select null from Exp_Screening
+					where (isnull(Exp_Screening.HouseNumber, Exp_Screening.HousewayBillNumber) = Shipment_HouseInformation.Number) and (ScreenedMethod = '01' OR ScreenedMethod = '02'))
+				</when>
+			</choose>
+		</if>
+		;
+	<![CDATA[
+		with IncFltDtl as(
+			select 
+				Imp_ShipmentVerification.ShipmentId, 
+				Imp_BreakDownHouseInfo.HouseNumber,
+				Flt_OperativeFlight.Flight_ID FlightId, 
+				Flt_OperativeFlight.FlightKey, 
+				Flt_OperativeFlight_Legs.DateSTA,
+				Imp_FlightEvents.MailBreakDownCompletedAt,
+				Imp_FlightEvents.MailDocumentVerificationCompletedAt
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Imp_ShipmentVerification  
+					on MailBagOverviewInfo.ShipmentId = Imp_ShipmentVerification.ShipmentId inner join 
+				Imp_BreakDownULDTrolleyInfo  
+					on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join 
+				Imp_BreakDownStorageInfo 
+					on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join 
+				Imp_BreakDownHouseInfo  
+					on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownHouseInfo.ImpBreakDownStorageInfoId and
+						MailBagOverviewInfo.Number = Imp_BreakDownHouseInfo.HouseNumber inner join 
+				Flt_OperativeFlight  
+					on Flt_OperativeFlight.Flight_Id = Imp_ShipmentVerification.FlightId inner join 
+				Flt_OperativeFlight_Legs  
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and 
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join 
+				Imp_FlightEvents 
+					on Imp_FlightEvents.FlightID = Flt_OperativeFlight.Flight_ID
+		), ScreenDtl as (
+			select 
+				max(Created_DateTime)
+				Created_DateTime,
+				HousewayBillNumber Number 
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Exp_Screening
+					on MailBagOverviewInfo.Number = Exp_Screening.HousewayBillNumber
+			group by 
+				HousewayBillNumber
+		), BookFltDtl as (
+			select 
+				Exp_ShipmentBooking.ShipmentNumber Number, 
+				Exp_ShipmentFlightBookingDetail.FlightId,
+				Flt_OperativeFlight.FlightKey, 
+				Flt_OperativeFlight_Legs.DateSTD
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Exp_ShipmentBooking 
+					on MailBagOverviewInfo.Number = Exp_ShipmentBooking.ShipmentNumber inner join 
+				Exp_ShipmentFlightBookingDetail  
+					on Exp_ShipmentBooking.BookingId=Exp_ShipmentFlightBookingDetail.BookingId and 
+						(Exp_ShipmentFlightBookingDetail.BookingStatusCode = 'UU' OR Exp_ShipmentFlightBookingDetail.BookingStatusCode = 'SS') inner join 
+				Flt_OperativeFlight  
+					on Flt_OperativeFlight.Flight_ID = Exp_ShipmentFlightBookingDetail.FlightId inner join 
+				Flt_OperativeFlight_Legs  
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and 
+						Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		), ManfFltDtl as(
+			select 
+				Flt_OperativeFlight.Flight_ID FlightId, 
+				Flt_OperativeFlight.FlightKey, 
+				Flt_OperativeFlight_Segments.DateSTD,
+				Flt_OperativeFlight_Segments.FlightBoardPoint, 
+				Flt_OperativeFlight_Segments.FlightOffPoint,
+				Exp_FlightEvents.ManifestCompletedAt, 
+				Exp_FlightEvents.BuildupCompletedAt,
+				Exp_FlightEvents.FlightDepartedOn, 
+				Exp_FlightEvents.FlightCompletedAt,
+				Exp_ManifestShipmentInfo.ShipmentId, 
+				Exp_ManifestShipmentHouseInfo.Number, 
+				Exp_ManifestULDInfo.ULDNumber
+			from 
+				Exp_Manifest inner join 
+				Exp_ManifestULDInfo  
+					on	Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join 
+				Exp_ManifestShipmentInfo 
+					on Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join 
+				Exp_ManifestShipmentHouseInfo  
+					on Exp_ManifestShipmentInfo.ManifestShipmentInfoId = Exp_ManifestShipmentHouseInfo.ManifestShipmentInfoId inner join 
+				Flt_OperativeFlight  
+					on Exp_Manifest.FlightId = Flt_OperativeFlight.Flight_ID inner join 
+				Flt_OperativeFlight_Segments 
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and 
+					Exp_Manifest.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join 
+				Exp_FlightEvents 
+					on Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightID
+			where
+				exists(
+					select
+						null
+					from
+						@MailBagOverviewInfo MailBagOverviewInfo
+					where
+						MailBagOverviewInfo.Number = Exp_ManifestShipmentHouseInfo.Number
+				)
+		), ShpInventory as (	
+			select
+				Shipment_Inventory.Shipment_Id,
+				Shipment_Inventory.ShipmentInventory_Id,
+				Shipment_Inventory.ShipmentLocation,
+				Shipment_Inventory.WarehouseLocation,
+				Shipment_InventoryHouse.ShipmentHouseId
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Shipment_Inventory 
+					on MailBagOverviewInfo.ShipmentId = Shipment_Inventory.Shipment_ID inner join 
+				Shipment_InventoryHouse  
+					on MailBagOverviewInfo.ShipmentHouseId = Shipment_InventoryHouse.ShipmentHouseId and
+						Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId
+		), DNRemarks as (
+			select
+				Shipment_Remarks.ShipmentId,
+				(select string_agg(value,',') from (SELECT distinct value FROM STRING_SPLIT(STRING_AGG(Shipment_Remarks.ShipmentRemarks, ','), ',')) t) ShipmentRemarks
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Shipment_Remarks 
+					on MailBagOverviewInfo.ShipmentId = Shipment_Remarks.ShipmentId and 
+						Shipment_Remarks.HousewayBillNumber is null
+			group by
+				Shipment_Remarks.ShipmentId
+		), MailbagRemarks as ( 
+			select
+				Shipment_Remarks.HousewayBillNumber,
+				Shipment_Remarks.ShipmentRemarks
+			from 
+				@MailBagOverviewInfo MailBagOverviewInfo inner join	
+				Shipment_Remarks 
+					on MailBagOverviewInfo.Number = Shipment_Remarks.HousewayBillNumber
+		), LoadedShipmentInfo as (
+			select
+				Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId,
+				Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber,
+				MailBagOverviewInfo.ShipmentNumber,
+				MailBagOverviewInfo.ShipmentId,
+				MailBagOverviewInfo.Number,
+				Exp_LoadedShipmentInfo.Pieces,
+				Exp_LoadedShipmentInfo.Weight,
+				Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+			from	
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Exp_LoadedShipmentInfo
+					on MailBagOverviewInfo.ShipmentId = Exp_LoadedShipmentInfo.ShipmentId inner join
+				Exp_AssignedULDTrolleyToFlight 
+					on Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+		), AcceptanceInfo as (
+			select
+				MailBagOverviewInfo.ShipmentNumber,
+				MailBagOverviewInfo.ShipmentDate,
+				AcpHse.CreatedDateTime,
+				AcpHse.Returned,
+				AcpHse.CreatedUserCode,
+				AcpDoc.Weight,
+				AcpHse.Number
+			from
+				@MailBagOverviewInfo MailBagOverviewInfo inner join
+				Exp_eAcceptanceDocumentInformation AcpDoc 
+					on MailBagOverviewInfo.ShipmentNumber = AcpDoc.ShipmentNumber and 
+						MailBagOverviewInfo.ShipmentDate = AcpDoc.ShipmentDate inner join 
+				Exp_eAcceptanceHouseInformation AcpHse 
+					on AcpDoc.DocumentInformationId = AcpHse.DocumentInformationId and
+						MailBagOverviewInfo.Number = AcpHse.Number
+		)
+		
+		select 
+			MailBagOverviewInfo.ShipmentId, 
+			MailBagOverviewInfo.ShipmentNumber, 
+			MailBagOverviewInfo.Origin,
+			MailBagOverviewInfo.Destination,
+			MailBagOverviewInfo.OriginOfficeExchange,
+			MailBagOverviewInfo.DestinationOfficeExchange,
+			MailBagOverviewInfo.ShpPieces as shpPieces,
+			MailBagOverviewInfo.ShpPieces as shpWeight, 
+			MailBagOverviewInfo.Pieces,
+			MailBagOverviewInfo.Weight,
+			MailBagOverviewInfo.ShipmentHouseId,
+			MailBagOverviewInfo.Number,
+			MailBagOverviewInfo.DispatchNumber,
+			MailBagOverviewInfo.NextDestination,
+			MailBagOverviewInfo.ReceptacleNumber,
+			outHse.OutHouseInformationId, 
+			ShpInventory.ShipmentInventory_Id,
+			IIF(outHse.OutHouseInformationId is null, ShpInventory.shipmentlocation, outHse.ShipmentLocation) ShipmentLocation, 
+			IIF(outHse.OutHouseInformationId is null, ShpInventory.warehouselocation, outHse.WarehouseLocation) WarehouseLocation,
+		 	IncFltDtl.FlightID as IncomingFlightId,
+			IncFltDtl.FlightKey as IncomingFlightKey,
+			IncFltDtl.DateSTA as IncomingFlightDate,
+			BookFltDtl.FlightKey bookedFlight,
+			BookFltDtl.DateSTD bookedFlightDate,
+			ManfFltDtl.FlightId manifestedFltId,
+			ManfFltDtl.FlightBoardPoint,
+			ManfFltDtl.FlightOffPoint, 
+			IIF(ManfFltDtl.FlightKey is null,MailBagOverviewInfo.CarrierCode ,ManfFltDtl.FlightKey ) manifestedFlight,
+			ManfFltDtl.DateSTD manifestedFlightDate,
+			ManfFltDtl.ULDNumber manifestULD,
+			LoadedShipmentInfo.LoadedShipmentInfoId as LoadedShipmentInfoId,
+			LoadedShipmentInfo.AssUldTrolleyId as AssUldTrolleyId,
+			LoadedShipmentInfo.Pieces as LoadedShipmentPieces, 
+			LoadedShipmentInfo.Weight as LoadedShipmentWeight,
+			AcpHse.Weight as mssWeight,
+			case 
+				when(select count(1) from Exp_Screening where housewaybillnumber = MailBagOverviewInfo.Number and upper(ScreenedMethod) = '03') > 0 then 'PASS' 
+				when(select count(1) from Exp_Screening where housewaybillnumber = MailBagOverviewInfo.Number and upper(ScreenedMethod) = '04') > 0 then 'FAIL' 
+		        when(select count(1) from Exp_Screening where housewaybillnumber = MailBagOverviewInfo.Number and upper(ScreenedMethod) IN ('02','01')) > 0 then 'PENDING' 
+				else null end xRayResultFlag,
+			MstRmk.shipmentRemarks DNRemarks, 
+			HseRmk.shipmentRemarks as MailbagRemarks,
+			case
+				when ManfFltDtl.FlightDepartedOn IS NOT NULL then 'DEPARTED'
+				when ManfFltDtl.ManifestCompletedAt IS NOT NULL then 'MANIFESTED'
+				when outHse.CreatedDateTime IS NOT NULL and isnull(outHse.HandOverFlag, 0) = 1 THEN 'HANDED OVER'
+				when (AcpHse.CreatedDateTime IS NOT NULL and isnull(AcpHse.Returned,0) = 0 ) OR (outHse.CreatedDateTime IS NOT NULL AND isnull(outHse.Returned, 0) = 0 ) then 'ACCEPTED'
+				when (AcpHse.Returned = 1 OR outHse.Returned = 1) then 'RETURNED'
+				when (MailBagOverviewInfo.DeliveredOn IS NOT NULL OR outHse.Deliverd IS NOT NULL) then 'DELIVERED'
+				when IncFltDtl.MailBreakDownCompletedAt IS NOT NULL AND IncFltDtl.MailDocumentVerificationCompletedAt IS NOT NULL then
+				'BREAKDOWN COMPLETE AND DOCUMENT RECEIVED'
+				when IncFltDtl.MailBreakDownCompletedAt IS NOT NULL then 'BREAKDOWN COMPLETE'
+				when IncFltDtl.MailDocumentVerificationCompletedAt IS NOT NULL then 'DOCUMENT RECIVED'
+				end as STATUS,
+			case 
+				when (AcpHse.CreatedDateTime IS NOT NULL AND (AcpHse.Returned = 0 OR AcpHse.Returned IS NULL)) then AcpHse.CreatedUserCode
+				when (outHse.CreatedDateTime IS NOT NULL AND (outHse.Returned = 0 OR outHse.Returned IS NULL)) then outHse.CreatedUserCode
+				end AS acceptedBy,
+			case
+				when Airmail_EmbargoFailure.Embargo IS NOT NULL then 'YES' else 'NO' end as embargoFlag,
+				Shipment_MasterCustomerInfo.CustomerCode
+		from   
+			@MailBagOverviewInfo MailBagOverviewInfo left join 
+			ShpInventory 
+				on MailBagOverviewInfo.ShipmentId = ShpInventory.Shipment_Id and
+					MailBagOverviewInfo.ShipmentHouseId = ShpInventory.ShipmentHouseId left join 
+			IncFltDtl 
+				on MailBagOverviewInfo.ShipmentId = IncFltDtl.ShipmentId and
+					MailBagOverviewInfo.Number = IncFltDtl.HouseNumber left join 
+			BookFltDtl 
+				on MailBagOverviewInfo.Number = BookFltDtl.Number left join 
+			ManfFltDtl 
+				on MailBagOverviewInfo.Number = ManfFltDtl.Number left join
+			ScreenDtl 
+				on MailBagOverviewInfo.Number = ScreenDtl.Number left join 
+			AcceptanceInfo AcpHse 
+				on MailBagOverviewInfo.ShipmentNumber = AcpHse.ShipmentNumber and 
+					MailBagOverviewInfo.ShipmentDate = AcpHse.ShipmentDate and
+					MailBagOverviewInfo.Number = AcpHse.Number left join 
+			Exp_OuthouseAcceptanceHouseInformation outHse 
+				on MailBagOverviewInfo.Number = outHse.Number left join 
+			DNRemarks MstRmk 
+				on MailBagOverviewInfo.ShipmentId = MstRmk.ShipmentId left join 
+			MailbagRemarks HseRmk 
+				on MailBagOverviewInfo.Number = HseRmk.HousewayBillNumber left join 
+			LoadedShipmentInfo 
+				on ManfFltDtl.ULDNumber = LoadedShipmentInfo.ULDTrolleyNumber and
+					MailBagOverviewInfo.ShipmentId = LoadedShipmentInfo.ShipmentId and
+					MailBagOverviewInfo.Number = LoadedShipmentInfo.Number  left join
+			Airmail_EmbargoFailure
+				on MailBagOverviewInfo.ShipmentId = Airmail_EmbargoFailure.ShipmentId and
+					MailBagOverviewInfo.ShipmentHouseId = Airmail_EmbargoFailure.ShipmentHouseId left join
+			Shipment_MasterCustomerInfo
+				on Shipment_MasterCustomerInfo.shipmentId = MailBagOverviewInfo.shipmentId
+		order by 
+			MailBagOverviewInfo.ShipmentNumber, MailBagOverviewInfo.ReceptacleNumber
+		option (maxdop 1)
+	]]>	
+	</select>
+
+
+	<resultMap id="MailbagInfoResultMap"
+		type="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewSummary">
+		<id column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentNumber" property="dns"></result>
+		<result column="OriginOfficeExchange" property="originOE"></result>
+		<result column="DestinationOfficeExchange" property="destinationOE"></result>
+		<result column="NextDestination" property="nextDestination"></result>
+		<result column="shpPieces" property="shpPieces"></result>
+		<result column="shpWeight" property="shpWeight"></result>
+		<result column="DispatchNumber" property="dispatchNumber"></result>
+		<result column="DNRemarks" property="remarks"></result>
+		<result column="STATUS" property="status"></result>
+        <result column="acceptedBy" property="acceptedBy"/>
+		<collection property="mailbagDetails" javaType="List"
+			ofType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+			<id column="ShipmentInventory_Id" property="inventoryId" />
+			<id column="ShipmentHouseId" property="shipmentHouseId" />
+			<id column="OutHouseInformationId" property="outHouseInformationId" /> 
+			<result column="Flight_ID" property="inventoryFlightId" />
+			<result column="incomingFlightId" property="incomingFlightId" />
+			<result column="ShipmentId" property="shipmentId" />
+			<result column="pieces" property="pieces"></result>
+		    <result column="weight" property="weight"></result>
+			<result column="ReceptacleNumber" property="rsn"></result>
+			<result column="ShipmentLocation" property="storeLocation"></result>
+			<result column="WarehouseLocation" property="warehouseLocation"></result>
+			<result column="incomingFlightKey" property="incomingFlightKey"></result>
+			<result column="incomingFlightDate" property="incomingFlightDate"></result>
+			<result column="bookedFlight" property="bookedFlight"></result>
+			<result column="bookedFlightDate" property="bookedFlightDate"></result>
+			<result column="manifestedFlight" property="manifestedFlight"></result>
+			<result column="manifestedFlightDate" property="manifestedFlightDate"></result>
+			<result column="Number" property="mailBagNumber"></result>
+			<result column="manifestULD" property="manifestedUldTrolley"></result>
+			<result column="MailbagRemarks" property="dsnRemark"></result>
+			<result column="Damaged" property="damaged"></result>
+			<result column="xrayResultFlag" property="xrayResultFlag"></result>
+			<result column="mssWeight" property="mssWeight"></result>
+			<result column="NextDestination" property="nextDestination"></result>
+			<result column="embargoFlag" property="embargoFlag"/>
+			<result column="CustomerCode" property="agentCode"/>
+		</collection>
+	</resultMap>
+	
+	<resultMap type="com.ngen.cosys.mailbag.overview.information.model.AllStatusOfMailBag" 
+				id="AllStatusMailBagResultMap">
+  		<result column="breakdowndoneBy" property="breakdowndoneBy"/>
+		<result column="breakdowndoneOn" property="breakdowndoneOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="acceptedBy" property="acceptedBy"/>
+		<result column="acceptedOn" property="acceptedOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="transferredBy" property="transferredBy" />
+		<result column="transferredOn" property="transferredOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="locationassignedBy" property="locationassignedBy"/>
+		<result column="locationassignedOn" property="locationassignedOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="bookingdoneBy" property="bookingdoneBy"/>
+		<result column="bookingdoneOn" property="bookingdoneOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="loadedBy" property="loadedBy"/>
+		<result column="loadedOn" property="loadedOn"  javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="manifestBy" property="manifestBy"/>
+		<result column="manifestOn" property="manifestOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="offloadedBy" property="offloadedBy"/>
+		<result column="offloadedOn" property="offloadedOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="dNataHandoverBy" property="dNataHandoverBy"/>
+	    <result column="dNataHandoverOn" property="dNataHandoverOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	    <result column="deliveredBy" property="deliveredBy"/>
+	    <result column="deliveredOn" property="deliveredOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	     <result column="returnedBy" property="returnedBy"/>
+	    <result column="returnedOn" property="returnedOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	    <result column="returnReason" property="returnReason"/>
+	</resultMap>
+
+
+	<update id="updateLocation"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewSummary">
+		update
+		Shipment_Inventory set
+		ShipmentLocation=#{storeLocation},
+		WarehouseLocation=#{warehouseLocation}
+		where
+		ShipmentInventory_Id=#{inventoryId}
+	</update>
+
+	<!-- insert MailbagXray -->
+	<update id="updateMailbagXray"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update
+		Exp_Screening set
+		ScreenedMethod=#{screenedMethod}
+		,LastUpdatedUser_Code=#{modifiedBy}
+		,LastUpdated_DateTime=getDate()
+		where
+		ShipmentId=#{shipmentId}
+	</update>
+
+	<!-- insert MailbagXray -->
+	<insert id="createMailbagXray"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		insert into
+		Exp_Screening
+		(ShipmentId
+		,ScreenedMethod
+		,HousewayBillNumber
+		,CreatedUser_Code
+		,Created_DateTime
+		,LastUpdatedUser_Code
+		,LastUpdated_DateTime
+		)
+		values
+		(
+		#{shipmentId}
+		,#{screenedMethod}
+		,#{mailBagNumber}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,getDate()
+		)
+	</insert>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	<!-- insert update MailDamage -->
+	<insert id="createMailDamage"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		insert into
+		Com_DamageInfo
+		(ReferenceId
+		,Content
+		,EntityType
+		,EntityKey
+		,CreatedUser_Code
+		,Created_DateTime
+		,LastUpdatedUser_Code
+		,LastUpdated_DateTime
+		)
+		values
+		(
+		#{mailBagNumber}
+		,'MAIL'
+		,'MBN'
+		,#{mailBagNumber}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,getDate()
+		)
+	</insert>
+	<!-- update MailDamage -->
+	<update id="updateMailDamage"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update
+		Com_DamageInfo set
+		ReferenceId=#{mailBagNumber}
+		,Content='MAIL'
+		,EntityType='MBN'
+		,EntityKey=#{mailBagNumber}
+		,LastUpdatedUser_Code=#{modifiedBy}
+		,LastUpdated_DateTime=getDate()
+		where
+		EntityKey=#{mailBagNumber}
+	</update>
+
+
+	<select id="checkMailBagExist"
+	parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail"
+	resultType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	select
+	Com_DamageInfo.EntityKey as mailBagNumber,
+	Com_DamageInfo.DamageInfoId as DamageInfoId
+	from Com_DamageInfo
+	where EntityKey=#{mailBagNumber}
+    </select>
+
+	<delete id="deleteMailBagDamage"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		delete from Com_DamageInfo where EntityKey=#{mailBagNumber}
+	</delete>
+	
+	
+	<insert id="createMailBagDamageLineItems"
+	
+	parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	
+	 insert into Com_DamageLineItems
+	 (
+	  DamageInfoId
+	 ,NatureOfDamage
+	 ,DamagedPieces
+	 ,Severity
+	 ,CreatedUser_Code
+	 ,Created_DateTime
+	 ,LastUpdatedUser_Code
+	 ,LastUpdated_DateTime
+	 ,EntityType
+	 ,EntityKey
+	 ,Remarks)
+	  values 
+	  (
+	  #{DamageInfoId}
+	  ,#{natureOfDamage}
+	  ,1
+	  ,#{severity}
+	  ,#{createdBy}
+	  ,getDate()
+	  ,#{modifiedBy}
+	  ,getDate()
+	  ,'MBN'
+	  ,#{mailBagNumber}
+	  ,#{dsnRemark})
+	</insert>
+	
+	<update id="updateMailBagDamageLineItems"
+	 parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	 update Com_DamageLineItems
+	 set
+	 NatureOfDamage=#{natureOfDamage}
+	,Severity=#{severity}
+	,Remarks=#{dsnRemark}
+	,LastUpdatedUser_Code=#{modifiedBy}
+	,LastUpdated_DateTime=getDate()
+	where
+	EntityKey=#{mailBagNumber}
+    </update>
+
+	<delete id="deleteMailBagDamageLineItems">
+      delete from Com_DamageLineItems where
+		EntityKey=#{mailBagNumber}
+	</delete>
+	
+	
+	
+
+	<!-- insert location -->
+	<update id="updateLocationRecord"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update
+		Shipment_Inventory set
+		ShipmentLocation=#{storeLocation},
+		WarehouseLocation=#{warehouseLocation}
+		where
+		ShipmentInventory_Id=#{inventoryId}
+	</update>
+
+	<update id="updateOutHouseLocation"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update exp_outhouseacceptancehouseinformation set ShipmentLocation = #{storeLocation}, WarehouseLocation = #{warehouseLocation}
+		where OutHouseInformationId = #{outHouseInformationId}
+	</update>
+
+	<!-- embargo update -->
+	<update id="updateEmbargoRecord"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update
+		Airmail_EmbargoFailure set
+		ShipmentId=#{shipmentId},
+		ShipmentHouseId=#{shipmentHouseId},
+		Embargo=1,
+		Bypass=#{warehouseLocation},
+		BypassReason=#{warehouseLocation}
+		where
+		ShipmentInventory_Id=#{inventoryId}
+	</update>
+
+
+	<!-- embargo insert -->
+	<insert id="createEmbargoRecord"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		insert into
+		Airmail_EmbargoFailure
+		(ShipmentId
+		,ShipmentHouseId
+		,Embargo
+		,Bypass
+		,BypassReason
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		)
+		values
+		(
+		#{shipmentId}
+		,#{shipmentHouseId}
+		,1
+		,'0'
+		,#{shipmentId}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,getDate()
+		)
+	</insert>
+	
+	
+	<select id="checkForEmabrgoMobile"
+	parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail"
+	resultType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	select Airmail_EmbargoFailure.Embargo  as emabrgo
+	from Airmail_EmbargoFailure where 
+	ShipmentId=#{shipmentId} and
+		ShipmentHouseId=#{shipmentHouseId}
+	</select>
+	
+	<delete id="deleteEmabargoRecord" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	delete from Airmail_EmbargoFailure
+	where
+	ShipmentId=#{shipmentId}
+</delete>
+	
+	<!-- getCarrierCodeForAMailBag -->
+	<select id="getCarrierCodeForAMailBag" parameterType="java.math.BigInteger" resultType = "java.lang.String">
+	select carriercode from Shipment_Master where shipmentid = #{shipmentid}
+	</select>
+	
+	<select id="getNewInventoryId" 
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail"
+		resultType="java.math.BigInteger" >
+		select 
+	    	ShipmentInventory_Id 
+		from 
+			Shipment_Inventory
+		where 
+			Shipment_ID = #{shipmentId}  
+		<choose>
+			<when test="storeLocation != null and storeLocation != ''">
+				  and ShipmentLocation = #{storeLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation != null and warehouseLocation != ''">
+				  and WarehouseLocation = #{warehouseLocation} 				
+			</when>
+		</choose> 
+		<choose>
+			<when test="inventoryFlightId != null and inventoryFlightId != ''">
+				  and Flight_ID = #{inventoryFlightId} 				
+			</when>
+		</choose>
+			
+	</select>
+	
+	<select id="getPrevInventoryId" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail"
+	resultType="java.math.BigInteger">
+	 select 
+	    	ShipmentInventory_Id 
+		from 
+			Shipment_Inventory
+		where 
+			Shipment_ID = #{shipmentId}  
+		<choose>
+			<when test="existingShipmentLocation != null and existingShipmentLocation!= ''">
+				 and ShipmentLocation=#{existingShipmentLocation}			
+			</when>
+		</choose>
+		<choose>
+			<when test="existingWarehouseLocation != null and existingWarehouseLocation!= ''">
+				  and WarehouseLocation = #{existingWarehouseLocation} 				
+			</when>
+		</choose>
+			and Flight_ID=#{inventoryFlightId}
+	</select>
+	
+	<update id="deductExistingInvPiecesWeight" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	update Shipment_Inventory
+		set
+			Pieces = Pieces - #{pieces},
+			Weight = Weight - #{weight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn}
+		where Shipment_ID = #{shipmentId}  
+			<choose>
+			<when test="existingShipmentLocation != null and existingShipmentLocation != ''">
+				  and ShipmentLocation = #{existingShipmentLocation}  				
+			</when>
+		</choose>
+		<choose>
+			<when test="existingWarehouseLocation != null and existingWarehouseLocation != ''">
+				  and WarehouseLocation = #{existingWarehouseLocation} 				
+			</when>
+		</choose> 
+			and ShipmentInventory_Id = #{inventoryId}
+	</update>
+	
+	<delete id="deleteExistingHouse" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		delete Shipment_InventoryHouse
+			where ShipmentInventoryId=#{inventoryId}
+			AND ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	
+	<select id="fetchExistingInventoryPiecesWeight" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail" resultType="java.math.BigInteger">
+	select Pieces from Shipment_Inventory where Shipment_ID = #{shipmentId}
+		and ShipmentInventory_Id=#{inventoryId}
+	</select>
+	
+	<delete  id="removeInventorySHC" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+     DELETE FROM  Shipment_InventorySHC WHERE ShipmentInventoryId = #{inventoryId}  
+     </delete>
+     
+     <delete id="removeInventory" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+     <![CDATA[ DELETE Shipment_Inventory WHERE Pieces < 1  AND ShipmentInventory_Id=#{inventoryId} ]]>
+     </delete>
+     
+     <insert id="createNewInventory"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail"
+		keyProperty="inventoryId" keyColumn="ShipmentInventory_Id" useGeneratedKeys="true">
+		insert into Shipment_Inventory(
+			Shipment_ID,			
+			ShipmentLocation,			
+			Pieces,			
+			Weight,			
+			WarehouseLocation,			
+			Flight_ID,		
+			HandlingArea,
+			CreatedUser_Code,
+			Created_DateTime				
+		)values(
+			#{shipmentId},
+			#{storeLocation},
+			#{pieces},
+			#{weight},
+			#{warehouseLocation},
+			#{inventoryFlightId},
+			#{terminal}, <!-- Hard coded later need to change it to actuals -->
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<insert id="createNewHouseInventory"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		insert into Shipment_InventoryHouse(		
+			ShipmentInventoryId,			
+			ShipmentHouseId,			
+			Pieces,			
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{inventoryId},
+			#{shipmentHouseId},
+			#{pieces},
+			#{weight},
+			#{createdBy},
+			#{createdOn}			
+		)
+	</insert>
+	
+	<update id="addNewInventoryPiecesWeight"
+		parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+		update Shipment_Inventory
+		set Pieces = Pieces + #{pieces},
+			Weight = Weight + #{weight},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = #{modifiedOn}
+		where Shipment_ID = #{shipmentId}
+		and ShipmentInventory_Id=#{inventoryId}
+	</update>
+	
+	<select id="getStatusDetailOfMailBag" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail" resultMap="AllStatusMailBagResultMap">
+		with  
+		loadedData as (Select shipment_master.shipmentid,shipment_houseinformation.Number,exp_loadedshipmenthouseinfo.CreatedUserCode, exp_loadedshipmenthouseinfo.CreatedDateTime from exp_loadedshipmentinfo inner join shipment_master on shipment_master.shipmentid = exp_loadedshipmentinfo.shipmentid
+			inner join shipment_houseinformation on shipment_master.shipmentid = shipment_houseinformation.shipmentid
+			inner join exp_loadedshipmenthouseinfo on exp_loadedshipmentinfo.LoadedShipmentInfoId = exp_loadedshipmenthouseinfo.LoadedShipmentInfoId 
+			and  exp_loadedshipmenthouseinfo.Number = shipment_houseinformation.Number
+			where shipment_master.shipmentid=#{shipmentId} and shipment_houseinformation.Number=#{mailBagNumber}),
+		
+		manifestedData as ( Select shipment_master.shipmentid,shipment_houseinformation.Number, exp_manifestshipmenthouseinfo.CreatedUserCode, exp_manifestshipmenthouseinfo.CreatedDateTime from exp_manifestshipmentinfo Inner Join Shipment_Master  on shipment_master.ShipmentId = exp_manifestshipmentinfo.ShipmentId
+			inner join shipment_houseinformation on shipment_master.shipmentid = shipment_houseinformation.shipmentid
+			inner join exp_manifestshipmenthouseinfo on exp_manifestshipmentinfo.ManifestShipmentInfoId = exp_manifestshipmenthouseinfo.ManifestShipmentInfoId
+			and exp_manifestshipmenthouseinfo.Number = shipment_houseinformation.Number Where shipment_master.shipmentid=#{shipmentId} and shipment_houseinformation.Number=#{mailBagNumber}),
+		
+		offloadedData as (select shipment_master.shipmentid,shipment_houseinformation.Number, Exp_OffloadShipmentHouseInfo.CreatedUser_Code , Exp_OffloadShipmentHouseInfo.Created_DateTime from Exp_OffloadShipmentInfo inner join Shipment_Master on shipment_master.ShipmentId = Exp_OffloadShipmentInfo.ShipmentId
+			inner join shipment_houseinformation on shipment_master.shipmentid = shipment_houseinformation.shipmentid
+			inner join Exp_OffloadShipmentHouseInfo on Exp_OffloadShipmentInfo.ExpOffloadShipmentInfoId = Exp_OffloadShipmentHouseInfo.ExpOffloadShipmentInfoId and
+			Exp_OffloadShipmentHouseInfo.Number = shipment_houseinformation.Number Where shipment_master.shipmentid=#{shipmentId} and shipment_houseinformation.Number=#{mailBagNumber}),
+		
+		inventoryInfo as (Select shipment_inventory.Shipment_ID, shipment_inventory.CreatedUser_Code, shipment_inventory.Created_DateTime 
+			from shipment_inventory 
+			inner join shipment_inventoryhouse on shipment_inventory.ShipmentInventory_Id = shipment_inventoryhouse.ShipmentInventoryId),
+			
+		returnedData as (Select shipment_master.shipmentid, Exp_eAcceptanceHouseInformation.ReturnedDateTime,Exp_eAcceptanceHouseInformation.LastUpdatedUserCode,Mst_Reason.Description
+           from shipment_houseinformation
+           inner join shipment_master on shipment_master.shipmentid = shipment_houseinformation.shipmentid
+           inner join Exp_eAcceptanceHouseInformation on shipment_houseinformation.Number = Exp_eAcceptanceHouseInformation.Number
+           left join Mst_Reason on Mst_Reason.ReasonId = Exp_eAcceptanceHouseInformation.ReasonId
+           where shipment_master.shipmentid=#{shipmentId} and shipment_houseinformation.Number=#{mailBagNumber} )
+		
+
+		select  
+			top 1 shipment_master.ShipmentId, shipment_houseinformation.Number,
+			case when imp_shipmentverification.ShipmentId is not null then shipment_houseinformation.CreatedUserCode else null end as breakdowndoneBy, 
+			case when imp_shipmentverification.ShipmentId is not null then shipment_houseinformation.CreatedDateTime else null end as breakdowndoneOn,
+			isnull(Exp_eAcceptanceHouseInformation.createdusercode, Exp_OuthouseAcceptanceHouseInformation.CreatedUserCode) as acceptedBy,
+			isnull(Exp_eAcceptanceHouseInformation.createdDateTime, Exp_OuthouseAcceptanceHouseInformation.CreatedDateTime) as acceptedOn,
+			IIF(Exp_OuthouseAcceptanceHouseInformation.Deliverd is null, '', Exp_OuthouseAcceptanceHouseInformation.LastUpdatedUserCode) dNataHandoverBy,
+			IIF(Exp_OuthouseAcceptanceHouseInformation.Deliverd is null, null, Exp_OuthouseAcceptanceHouseInformation.HandOverDateTime) dNataHandoverOn,
+			Transhipment_TransferManifestByAWBInfo.CreatedUserCode as transferredBy,
+			Transhipment_TransferManifestByAWBInfo.CreatedDateTime as transferredOn,
+			inventoryInfo.CreatedUser_Code as locationassignedBy,
+			inventoryInfo.Created_DateTime as locationassignedOn,
+			Exp_ShipmentBooking.CreatedUserCode as bookingdoneBy,
+			Exp_ShipmentBooking.CreatedDateTime as bookingdoneOn,
+			loadedData.CreatedUserCode as loadedBy,
+			loadedData.CreatedDateTime as loadedOn,
+			manifestedData.CreatedUserCode as manifestBy,
+			manifestedData.CreatedDateTime as manifestOn,
+			offloadedData.CreatedUser_Code as offloadedBy,
+			offloadedData.Created_DateTime as offloadedOn,
+			shipment_houseinformation.LastUpdatedUserCode deliveredBy,
+			shipment_houseinformation.DeliveredOn deliveredOn,
+		    returnedData.LastUpdatedUserCode as returnedBy,
+			returnedData.ReturnedDateTime as returnedOn,
+			returnedData.Description as returnReason
+		from shipment_Master
+		left join imp_shipmentverification on shipment_master.shipmentid = imp_shipmentverification.ShipmentId
+		left join shipment_houseinformation on shipment_master.shipmentid = shipment_houseinformation.shipmentid
+		left join Exp_eAcceptanceDocumentInformation on shipment_master.shipmentnumber = Exp_eAcceptanceDocumentInformation.shipmentnumber
+		left join Exp_eAcceptanceHouseInformation on Exp_eAcceptanceDocumentInformation.DocumentInformationId = Exp_eAcceptanceHouseInformation.DocumentInformationId
+		left join Exp_OuthouseAcceptanceHouseInformation on Exp_OuthouseAcceptanceHouseInformation.Number = shipment_houseinformation.Number
+		left join inventoryInfo ON Shipment_Master.ShipmentId = inventoryInfo.Shipment_ID
+		left join Exp_ShipmentBooking on shipment_houseinformation.number = Exp_ShipmentBooking.shipmentnumber
+		left join Transhipment_TransferManifestByAWBInfo on imp_shipmentverification.Flightid = Transhipment_TransferManifestByAWBInfo.inboundflightid and shipment_houseinformation.Number = Transhipment_TransferManifestByAWBInfo.ShipmentNumber
+		left join loadedData on loadedData.ShipmentId = shipment_master.ShipmentId AND loadedData.Number = shipment_houseinformation.number
+		left join manifestedData on manifestedData.ShipmentId = shipment_master.ShipmentId AND manifestedData.Number = shipment_houseinformation.number
+		left join offloadedData on offloadedData.ShipmentId = shipment_master.ShipmentId AND offloadedData.Number = shipment_houseinformation.number
+		left join returnedData on returnedData.ShipmentId = shipment_master.ShipmentId
+		where shipment_master.ShipmentType='MAIL' AND shipment_master.ShipmentId=#{shipmentId} AND shipment_houseinformation.number=#{mailBagNumber}
+		order by shipment_houseinformation.CreatedDateTime desc
+	</select>
+	
+	<select id="getContainerDestinationForOverView" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail" resultType="java.lang.String">
+	select ContainerDestination from uld_uldmaster where uldkey=#{storeLocation}
+	</select>
+	
+	<update id="updateNextDestinationOfShipmentHouse" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	update Shipment_HouseInformation set  NextDestination=#{containerDestination} where number=#{mailBagNumber}
+	</update>
+	
+	<update id="updateNextDestinationOfAcceptanceHouse" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	Update Exp_eAcceptanceHouseInformation set NextDestination = #{containerDestination} Where number = #{mailBagNumber}
+	</update>
+	
+	<update id="updateNextDestinationOfOutHouse" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	Update Exp_OuthouseAcceptanceHouseInformation set NextDestination = #{containerDestination} Where number = #{mailBagNumber}
+	</update>
+	
+	<select id="checkContentCode" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail" resultType="java.lang.String">
+	select ContentCode from uld_uldmaster where uldkey=#{storeLocation}
+	</select>
+	
+	<select id="getLoadedSHC" parameterType="java.lang.String" resultType="java.lang.Integer">
+	SELECT COUNT(*)
+			FROM 
+			Exp_AssignedULDTrolleyToFlight INNER JOIN Flt_OperativeFlight_Segments
+			ON Flt_OperativeFlight_Segments.FlightSegmentId = Exp_AssignedULDTrolleyToFlight.FlightSegmentId
+			INNER JOIN Flt_OperativeFlight ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+			INNER JOIN Exp_FlightEvents	ON Exp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Exp_LoadedShipmentInfo ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+			INNER JOIN Shipment_Master ON Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+			LEFT JOIN Exp_LoadedShipmentSHCInfo ON Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+			WHERE 
+			Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{storeLocation} 
+			AND 
+			Exp_AssignedULDTrolleyToFlight.ContentCode = 'M' 
+			AND 
+			Exp_FlightEvents.FlightDepartedOn IS NULL
+			AND Shipment_Master.ShipmentType !=  'MAIL'
+	</select>
+	
+	<select id="checkUldAssignmentForMailFlight" parameterType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail" resultType="com.ngen.cosys.mailbag.overview.information.model.MailbagOverviewDetail">
+	select flt.flightKey as flightKey, seg.DateSTD as flightDate,uld.ContentCode from	Flt_OperativeFlight flt
+		inner join Flt_OperativeFlight_Segments seg on flt.Flight_ID = seg.Flight_ID
+		inner join Exp_FlightEvents evt on flt.Flight_ID = evt.FlightId and Evt.FlightDepartedOn is null
+		inner join Exp_AssignedULDTrolleyToFlight uld on seg.FlightSegmentId = uld.FlightSegmentId
+		inner join Uld_UldMaster uldmaster on uld.ULDTrolleyNumber = uldmaster.UldKey 
+		and uldmaster.outboundflight_id = flt.flight_id
+		Inner Join Exp_FlightEvents ON seg.Flight_id = Exp_FlightEvents.FlightId
+		where uldmaster.uldkey=#{storeLocation}  AND Exp_FlightEvents.FlightDepartedOn IS NULL
+	</select>
+	
+	<select id="sqlGetShipmentdateForMailBag" resultType="java.math.BigInteger">
+	Select ShipmentId From Shipment_Master Where ShipmentNumber = #{shipmentNumber} AND ShipmentDate = #{shipmentDate}
+	</select>
+	
+	<delete id="deleteXrayIfNoStatus">
+	delete Exp_Screening where	HousewayBillNumber = #{mailBagNumber}
+	</delete>
+	
+</mapper>

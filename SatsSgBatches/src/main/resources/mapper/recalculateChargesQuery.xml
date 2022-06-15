@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+
+<mapper namespace="ChargeRecalculateMapper">
+	<select id="fetchShipmentsForRecalculation" resultType="java.math.BigInteger">
+		select
+			ShipmentId
+		from 
+			Shipment_Master
+				inner join Billing_ChargeEntry
+					on Billing_ChargeEntry.ShipmentServiceReferenceId = Shipment_Master.ShipmentId
+					and Billing_ChargeEntry.ReferenceType = 'Shipment'
+		where ShipmentDate between 
+		(select cast(dateadd(day, -isnull((select ParameterValueNum from App_SystemParameters where ParameterCode = 'BIL_RECALCULATION_MAX'), 0),getdate()) as date)) 
+			and 
+		(select cast(dateadd(day, -isnull((select ParameterValueNum from App_SystemParameters where ParameterCode = 'BIL_RECALCULATION_MIN'), 0),getdate()) as date))
+		and DeliveredOn is null
+		and ChargingStatus = 'Open'
+		group by ShipmentId
+	</select>
+</mapper>

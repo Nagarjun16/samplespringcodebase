@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MailResendMapper">
+
+	<resultMap id="failedMailDetailsMap" type="com.ngen.cosys.email.model.MailResendDetail">
+		<result column="OutboundServiceMessageLogId" property="messageLogId" />
+		<result column="MessageSubject" property="messageSubject" />
+		<result column="MessagePayload" property="messagePayload" />
+		<result column="MessageSender" property="messageSender" />
+		<result column="MessageRecipients" property="messageRecipients" />
+		<result column="RecipientCount" property="receiptCount" />
+		<result column="MessageStatus" property="messageStatus" />
+		<result column="MessageReference" property="messageReference" />
+		<result column="FailedReason" property="failedReason" />
+		<result column="CreatedUserCode" property="createdBy" />
+		<result column="CreatedDateTime" property="createdTime" />
+		<association property="template"
+			javaType="com.ngen.cosys.email.model.MailResendTemplate">
+			<id column="TemplateOutboundServiceMessageLogId" property="messageLogId" />
+			<id column="TemplateOutboundServiceMessageTemplateLogId" property="templateLogId" />
+			<result column="TemplateMessageTemplatePayload" property="templatePayload" />
+			<result column="TemplateMessageTemplateParams" property="templateParams" />
+		</association>
+		<collection property="documents" javaType="List"
+			ofType="com.ngen.cosys.email.model.MailResendDocument">
+			<id column="DocumentOutboundServiceMessageLogId" property="messageLogId" />
+			<id column="DocumentOutboundServiceMessageDocumentLogId" property="documentLogId" />
+			<result column="DocumentMessageDocumentName" property="documentName" />
+			<result column="DocumentMessageDocumentFormat" property="documentFormat" />
+			<result column="DocumentMessageDocumentData" property="documentData" />
+		</collection>
+	</resultMap>
+	
+	<resultMap id="failedWrongMailAddressDetailsMap" type="com.ngen.cosys.email.model.MailResendDetail">
+		<result column="OutboundServiceMessageLogId" property="messageLogId" />
+		<result column="MessageSubject" property="messageSubject" />
+		<result column="MessagePayload" property="messagePayload" />
+		<result column="MessageSender" property="messageSender" />
+		<result column="MessageRecipients" property="messageRecipients" />
+		<result column="RecipientCount" property="receiptCount" />
+		<result column="MessageStatus" property="messageStatus" />
+		<result column="MessageReference" property="messageReference" />
+		<result column="FailedReason" property="failedReason" />
+		<result column="CreatedUserCode" property="createdBy" />
+		<result column="CreatedDateTime" property="createdTime" />
+	</resultMap>
+	
+	<select id="sqlSelectFailedMailDetails" resultMap="failedMailDetailsMap">
+		<![CDATA[
+			SELECT	TOP(100)
+					Event_OutboundServiceMessageLog.OutboundServiceMessageLogId, Event_OutboundServiceMessageLog.MessageSubject, 
+					Event_OutboundServiceMessageLog.MessagePayload, Event_OutboundServiceMessageLog.MessageSender, 
+					Event_OutboundServiceMessageLog.MessageRecipients, Event_OutboundServiceMessageLog.RecipientCount, 
+					Event_OutboundServiceMessageLog.MessageStatus, Event_OutboundServiceMessageLog.MessageReference, 
+					Event_OutboundServiceMessageLog.FailedReason, Event_OutboundServiceMessageLog.CreatedUserCode, 
+					Event_OutboundServiceMessageLog.CreatedDateTime,
+			
+					--Template
+					Event_OutboundServiceMessageTemplateLog.OutboundServiceMessageLogId as TemplateOutboundServiceMessageLogId, 
+					Event_OutboundServiceMessageTemplateLog.OutboundServiceMessageTemplateLogId as TemplateOutboundServiceMessageTemplateLogId,
+					Event_OutboundServiceMessageTemplateLog.MessageTemplatePayload as TemplateMessageTemplatePayload, 
+					Event_OutboundServiceMessageTemplateLog.MessageTemplateParams as TemplateMessageTemplateParams,
+			
+					--Document
+					Event_OutboundServiceMessageDocumentLog.OutboundServiceMessageLogId as DocumentOutboundServiceMessageLogId, 
+					Event_OutboundServiceMessageDocumentLog.OutboundServiceMessageDocumentLogId as DocumentOutboundServiceMessageDocumentLogId, 
+					Event_OutboundServiceMessageDocumentLog.MessageDocumentName as DocumentMessageDocumentName, 
+					Event_OutboundServiceMessageDocumentLog.MessageDocumentFormat as DocumentMessageDocumentFormat, 
+					Event_OutboundServiceMessageDocumentLog.MessageDocumentData as DocumentMessageDocumentData
+			
+			FROM	Event_OutboundServiceMessageLog 
+					LEFT JOIN Event_OutboundServiceMessageTemplateLog ON Event_OutboundServiceMessageLog.OutboundServiceMessageLogId = Event_OutboundServiceMessageTemplateLog.OutboundServiceMessageLogId
+					LEFT JOIN Event_OutboundServiceMessageDocumentLog ON Event_OutboundServiceMessageLog.OutboundServiceMessageLogId = Event_OutboundServiceMessageDocumentLog.OutboundServiceMessageLogId
+			WHERE	Event_OutboundServiceMessageLog.CreatedDateTime BETWEEN DATEADD(HOUR,-(select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where ParameterCode = 'MAIL_RESEND_MESSAGE_HOURS'), GETDATE()) AND GETDATE()
+			AND		Event_OutboundServiceMessageLog.MessageType = 'EMAIL'
+			AND		Event_OutboundServiceMessageLog.MessageStatus NOT IN ('SENT','RESENT')
+			AND	(	Event_OutboundServiceMessageLog.FailedReason LIKE '%javax.mail.AuthenticationFailedException%' 
+					OR Event_OutboundServiceMessageLog.FailedReason LIKE '%com.sun.mail.smtp.SMTPSendFailedException%'
+					OR Event_OutboundServiceMessageLog.FailedReason LIKE '%java.net.SocketTimeoutException%'
+					OR Event_OutboundServiceMessageLog.FailedReason LIKE	'%javax.net.ssl.SSLHandshakeException%'
+					OR Event_OutboundServiceMessageLog.FailedReason LIKE '%Could not convert socket to TLS%'	)
+		]]>
+	</select>
+	
+	<select id="sqlSelectFailedWrongMailAddressDetails" resultMap="failedWrongMailAddressDetailsMap">
+		<![CDATA[
+			SELECT	TOP(500)
+					OutboundServiceMessageLogId, MessageSubject, MessagePayload,
+					MessageSender, MessageRecipients, RecipientCount, MessageStatus, 
+					MessageReference, FailedReason, CreatedUserCode, CreatedDateTime
+			FROM	Event_OutboundServiceMessageLog
+			WHERE	CreatedDateTime BETWEEN DATEADD(HOUR, -3, GETDATE()) AND GETDATE()
+			AND		MessageType = 'EMAIL'
+			AND		MessageStatus NOT IN ('SENT','RESENT','NOTIFIED')
+			AND 	FailedReason LIKE '%javax.mail.internet.AddressException%'
+		]]>
+	</select>
+	
+	<update id="sqlUpdateResendMailStatus" parameterType="com.ngen.cosys.email.model.MailResendDetail">
+		<![CDATA[
+			UPDATE 	Event_OutboundServiceMessageLog
+			SET		MessageStatus = #{resendStatus},
+					FailedReason = #{failedReason},
+					LastUpdatedUserCode = 'BATCH', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE	OutboundServiceMessageLogId = #{messageLogId}
+		]]>
+	</update>
+	
+	<select id="sqlNotifyMailAddressForRejectedMails" resultType="java.lang.String">
+		<![CDATA[
+			SELECT	ParameterValueChar
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = 'NOTIFY_MAIL_ADDRESS_FOR_REJECTED_MAILS'
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>
+	</select>
+
+</mapper>

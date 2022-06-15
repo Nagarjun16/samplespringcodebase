@@ -1,0 +1,2830 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentFWBMapper">
+	
+	<!-- Check for shipment delivery exists -->
+	<select id="sqlCheckShipmentDeliveryInitiated"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select 
+			case
+				when (count(1) > 0) then
+					1
+				else
+					0
+				end result 
+		from 
+			Shipment_Master inner join
+			Imp_Delivery
+				on Shipment_Master.ShipmentId = Imp_Delivery.ShipmentId
+		where
+			Shipment_Master.ShipmentNumber = #{awbNumber} and
+			Shipment_Master.ShipmentDate = #{awbDate} and
+			Imp_Delivery.Status <> 'CANCELLED'
+	]]>
+	</select>
+	
+	<!-- Query to check airport belong to china -->
+	<select id="sqlCheckFWBAirportBelongsToChina"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+		With AirportBelongingToChina AS(
+				select 
+					Mst_Airport.AirportCode
+				from 
+					Mst_Airport inner join
+					Mst_City
+						on Mst_Airport.AirportCityCode = Mst_City.CityCode inner join
+					Mst_Country
+						on Mst_Country.CountryCode = Mst_City.CountryCode inner join
+					Mst_CodeAdministration_SubGroupDetails
+						on Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode = Mst_Country.CountryCode and
+					Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode = 'COUNTRY_LIST'
+			), ShipmentBookingDestination AS(
+				select
+					TOP 1 Exp_ShipmentFlightBookingDetail.FlightOffPoint as BookingOffPoint
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+					Exp_FlightEvents
+						on Exp_ShipmentFlightBookingDetail.FlightId = Exp_FlightEvents.FlightId
+				where
+					Exp_ShipmentBooking.ShipmentNumber = #{awbNumber} and
+					Exp_ShipmentBooking.ShipmentDate = #{awbDate} and
+					Exp_ShipmentFlightBookingDetail.BookingStatusCode <> 'XX' and
+					Exp_FlightEvents.FlightCompletedAt is null			
+			)
+			select
+				case 
+					when count(1) > 0 then
+						1
+					else
+						0
+					end result
+			from
+				AirportBelongingToChina
+			where
+				(AirportBelongingToChina.AirportCode  = #{destination}
+					OR AirportBelongingToChina.AirportCode = (select ShipmentBookingDestination.BookingOffPoint from ShipmentBookingDestination))
+		]]>	
+	</select>
+
+	<resultMap id="fwbModelResultMap" type="com.ngen.cosys.shipment.model.FWB"
+		autoMapping="false">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId" />
+		<result property="awbPrefix" column="AwbPrefix" />
+		<result property="awbSuffix" column="AwbSuffix" />
+		<result property="awbNumber" column="AwbNumber" />
+		<result property="awbDate" column="AwbDate" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="pieces" column="Pieces" />
+		<result property="weight" column="Weight" />
+		<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="densityGroupCode" column="DensityGroupCode" />
+		<result property="densityIndicator" column="DensityIndicator" />
+		<result property="volumeAmount" column="VolumeAmount" />
+		<result property="volumeUnitCode" column="VolumeUnitCode" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="carriersExecutionDate" column="CarriersExecutionDate" />
+		<result property="carriersExecutionPlace" column="CarriersExecutionPlace" />
+		<result property="carriersExecutionAuthSign" column="CarriersExecutionAuthorisationSignature" />
+		<result property="customOrigin" column="CustomOrigin" />
+		<result property="shpCertificateSign" column="ShippersCertificateSignature" />
+		<result property="ardAgentReference" column="ARDAgentReference" />
+		<result property="messageSequence" column="MessageSequence" />
+		<result property="messageVersion" column="MessageVersion" />
+		<result property="receivedManuallyFlag" column="ReceivedManuallyFlag" />
+			<result property="siiChargeAmount" column="SalesIncentiveDetailCommissionPercentage" />
+				<result property="cassIndicator" column="SalesIncentiveDetailCASSIndicator" />
+		<result property="messageProcessedDate" column="MessageProcessedDate" />
+		<result property="messageStatus" column="MessageStatus" />
+		<!-- akbar -->
+		<association property="chargeDeclaration"
+			javaType="com.ngen.cosys.shipment.model.ChargesDestinationCurrency"
+			select="sqlGetChargeDeclaration" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+
+		<association property="chargeDestCurrency"
+			javaType="com.ngen.cosys.shipment.model.ChargeDeclaration" select="sqlGetChargeDestCurrency"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<!-- endS -->
+		<association property="consigneeInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetConsigneeInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="shipperInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetShipperInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="alsoNotify"
+			javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetAlsoNotifyInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="agentInfo"
+			javaType="com.ngen.cosys.shipment.model.AgentInfo" select="sqlGetAgentInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="ppd"
+			javaType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary"
+			select="sqlGetPrepaidChargeSummary" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="col"
+			javaType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary"
+			select="sqlGetCollectChargeSummary" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="shipmentReferenceInfor"
+			javaType="com.ngen.cosys.shipment.model.ShpReferenceInformation"
+			select="sqlGetShpReferenceInformation" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<association property="fwbNominatedHandlingParty"
+			javaType="com.ngen.cosys.shipment.model.NominatedHandlingParty"
+			select="sqlGetNominatedHandlingParty" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<!-- <association property="rateDescription" ofType="com.ngen.cosys.shipment.model.RateDescription" 
+			select="sqlGetRateDescription" column="shipmentFreightWayBillId=shipmentFreightWayBillId" 
+			/> -->
+		<association property="senderReference" select="sqlGetSenderReference"
+			javaType="com.ngen.cosys.shipment.model.SenderReference" column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<collection property="shcode" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.SHC" select="sqlGetSHC"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<collection property="flightBooking" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.FlightBooking" select="sqlGetFlightBooking"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<collection property="routing" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.Routing" select="sqlGetRouting"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<collection property="accountingInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.AccountingInfo" select="sqlGetAccountingInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<!-- <collection property="ssrOsiInfo" javaType="List" ofType="com.ngen.cosys.shipment.model.SSROSIInfo" 
+			select="sqlGetSSROSIInfo" column="shipmentFreightWayBillId=shipmentFreightWayBillId" 
+			/> -->
+		<collection property="rateDescription" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.RateDescription" select="sqlGetRateDescription"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+
+
+		<collection property="ssrInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.SSROSIInfo" select="sqlGetSSRInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+
+		<collection property="osiInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.SSROSIInfo" select="sqlGetOSIInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+
+		<!-- <collection property="rateDescriptionOtherInfo" javaType="List" ofType="com.ngen.cosys.shipment.model.RateDescOtherInfo" 
+			select="sqlGetRateDescOtherInfo" column="shipmentFreightWayBillRateDescriptionId=shipmentFreightWayBillRateDescriptionId" 
+			/> -->
+
+		<collection property="otherCharges" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.OtherCharges" select="sqlGetOtherCharges"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+			
+		<collection property="otherChargesCarrier" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.OtherCharges" select="sqlGetOtherChargesByCarrier"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+
+		<collection property="otherParticipantInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.OtherParticipantInfo" select="sqlGetOtherParticipantInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+		<collection property="otherCustomsInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.OtherCustomsInfo" select="sqlGetOtherCustomsInfo"
+			column="shipmentFreightWayBillId=shipmentFreightWayBillId" />
+	</resultMap>
+
+	<resultMap id="getSenderReferenceModels" type="com.ngen.cosys.shipment.model.SenderReference">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillSenderReferenceId" column="ShipmentFreightWayBillSenderReferenceId"
+			jdbcType="INTEGER" />
+		<result column="AirportCityCode" property="airportCityCode" />
+		<result column="OfficeFunctionDesignator" property="officeFunctionDesignator" />
+		<result column="CompanyDesignator" property="companyDesignator" />
+		<result column="FileReference" property="fileReference" />
+		<result column="ParticipantIdentifier" property="refParticipantIdentifier" />
+		<result column="ParticipantCode" property="refParticipantCode" />
+		<result column="ParticipantAirportCityCode" property="refAirportCityCode" />
+	</resultMap>
+
+	<resultMap id="getChargeDestCurrencyModels"
+		type="com.ngen.cosys.shipment.model.ChargesDestinationCurrency">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillCCChargesId" column="ShipmentFreightWayBillCCChargesId"
+			jdbcType="INTEGER" />
+		<result column="DestinationCountryCode" property="destinationCountryCode" />
+		<result column="CurrencyConversionExchangeRate" property="currencyConversionExchangeRate" />
+		<result column="DestinationCurrencyChargeAmount" property="destinationCurrencyChargeAmount" />
+		<result column="ChargesAtDestinationChargeAmount" property="chargesAtDestinationChargeAmount" />
+		<result column="TotalCollectChargesChargeAmount" property="totalCollectChargesChargeAmount" />
+		<result column="DestinationCurrencyCode" property="destinationCurrencyCode" />
+	</resultMap>
+	<resultMap id="getChargeDeclarationModels"
+		type="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="CurrencyCode" property="currencyCode" />
+		<result column="ChargeCode" property="chargeCode" />
+		<result column="PrepaIdCollectChargeDeclaration" property="prepaIdCollectChargeDeclaration" />
+		<!-- <result column="NoCarriageValueDeclared" property="carriageValueDeclaration" /> -->
+		<result column="CarriageValueDeclaration" property="carriageValueDeclaration" />
+		<!-- <result column="NoCustomsValueDeclared" property="customsValueDeclaration" /> -->
+		<result column="CustomsValueDeclaration" property="customsValueDeclaration" />
+		<!-- <result column="NoInsuranceValueDeclared" property="insuranceValueDeclaration" /> -->
+		<result column="InsuranceValueDeclaration" property="insuranceValueDeclaration" />
+
+	</resultMap>
+
+
+
+	<resultMap id="getSHCModels" type="com.ngen.cosys.shipment.model.SHC">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="SpecialHandlingCode" property="specialHandlingCode" />
+	</resultMap>
+
+	<resultMap id="getFlightBookingModels" type="com.ngen.cosys.shipment.model.FlightBooking">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightDate" property="flightDate" />
+	</resultMap>
+	<resultMap id="getRoutingModels" type="com.ngen.cosys.shipment.model.Routing">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="AirportCode" property="airportCode" />
+		<result column="CarrierCode" property="carrierCode" />
+	</resultMap>
+	<resultMap id="getCustomerInfoModels" type="com.ngen.cosys.shipment.model.CustomerInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillCustomerInfoId" column="ShipmentFreightWayBillCustomerInfoId"
+			jdbcType="INTEGER" />
+		<result column="CustomerType" property="customerType" />
+		<result column="CustomerName" property="customerName" />
+		<result column="CustomerAccountNumber" property="customerAccountNumber" />
+		<association property="customerAddressInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerAddressInfo" select="sqlGetCustomerAddressInfo"
+			column="shipmentFreightWayBillCustomerInfoId=shipmentFreightWayBillCustomerInfoId" />
+	</resultMap>
+	<resultMap id="getCustomerAddressInfoModels"
+		type="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		<id property="shipmentFreightWayBillCustomerAddressInfoId" column="ShipmentFreightWayBillCustomerAddressInfoId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillCustomerInfoId" column="ShipmentFreightWayBillCustomerInfoId"
+			jdbcType="INTEGER" />
+		<result column="StreetAddress" property="streetAddress1" />
+		<result column="CustomerPlace" property="customerPlace" />
+		<result column="StateCode" property="stateCode" />
+		<result column="CountryCode" property="countryCode" />
+		<result column="PostalCode" property="postalCode" />
+		<collection property="customerContactInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.CustomerContactInfo" select="sqlGetCustomerContactInfo"
+			column="shipmentFreightWayBillCustomerAddressInfoId=shipmentFreightWayBillCustomerAddressInfoId" />
+	</resultMap>
+	<resultMap id="getCustomerContactInfoModels"
+		type="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		<id property="shipmentFreightWayBillCustomerAddressInfoId" column="ShipmentFreightWayBillCustomerAddressInfoId"
+			jdbcType="INTEGER" />
+		<result column="ContactIdentifier" property="contactIdentifier" />
+		<result column="ContactDetail" property="contactDetail" />
+	</resultMap>
+	<resultMap id="getAccountingInfoModels" type="com.ngen.cosys.shipment.model.AccountingInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightDate" property="flightDays" />
+	</resultMap>
+	<!-- <resultMap id="getSSROSIInfoModels" type="com.ngen.cosys.shipment.model.SSROSIInfo"> 
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId" 
+		jdbcType="INTEGER" /> <result column="ServiceRequestType" property="serviceRequestType" 
+		/> <result column="ServiceRequestcontent" property="serviceRequestcontent" 
+		/> </resultMap> -->
+
+	<resultMap id="getSSRInfoModels" type="com.ngen.cosys.shipment.model.SSROSIInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="ServiceRequestType" property="serviceRequestType" />
+		<result column="ServiceRequestcontent" property="serviceRequestcontent" />
+	</resultMap>
+	<resultMap id="getOSIInfoModels" type="com.ngen.cosys.shipment.model.SSROSIInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="ServiceRequestType" property="serviceRequestType" />
+		<result column="ServiceRequestcontent" property="serviceRequestcontent" />
+	</resultMap>
+
+	<resultMap id="getRateDescriptionModels" type="com.ngen.cosys.shipment.model.RateDescription">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillRateDescriptionId" column="ShipmentFreightWayBillRateDescriptionId"
+			jdbcType="INTEGER" />
+		<result column="RateLineNumber" property="rateLineNumber" />
+		<result column="GrossWeight" property="grossWeight" />
+		<result column="RateClassCode" property="rateClassCode" />
+		<result column="CommodityItemNo" property="commodityItemNo" />
+		<result column="ChargeableWeight" property="chargeableWeight" />
+		<result column="RateChargeAmount" property="rateChargeAmount" />
+		<result column="TotalChargeAmount" property="totalChargeAmount" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<collection property="rateDescriptionOtherInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.RateDescOtherInfo" select="sqlGetRateDescOtherInfo"
+			column="shipmentFreightWayBillRateDescriptionId=shipmentFreightWayBillRateDescriptionId" />
+
+	</resultMap>
+	<resultMap id="getOtherChargesModels" type="com.ngen.cosys.shipment.model.OtherCharges">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillOtherChargesId" column="ShipmentFreightWayBillOtherChargesId"
+			jdbcType="INTEGER" />
+		<result column="OtherChargeIndicator" property="otherChargeIndicator" />
+		<result column="OtherChargeCode" property="otherChargeCode" />
+		<result column="EntitlementCode" property="entitlementCode" />
+		<result column="ChargeAmount" property="chargeAmount" />
+	</resultMap>
+	<resultMap id="getRateDescOtherInfoModels"
+		type="com.ngen.cosys.shipment.model.RateDescOtherInfo">
+		<id property="shipmentFreightWayBillRateDescriptionId" column="ShipmentFreightWayBillRateDescriptionId"
+			jdbcType="INTEGER" />
+		<result column="DimensionLength" property="dimensionLength" />
+		<result column="DimensionWIdth" property="dimensionWIdth" />
+		<result column="Weight" property="weight" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+		<result column="DimensionHeight" property="dimensionHeight" />
+		<result column="NumberOfPieces" property="numberOfPieces" />
+		<result column="VolumeUnitCode" property="volumeUnitCode" />
+		<result column="VolumeAmount" property="volumeAmount" />
+		<result column="ULDNumber" property="uldNumber" />
+		<result column="HarmonisedCommodityCode" property="harmonisedCommodityCode" />
+		<result column="SLACCount" property="slacCount" />
+		<result column="CountryCode" property="countryCode" />
+		<result column="ServiceCode" property="serviceCode" />
+		<result column="LineIdentifier" property="rateLine" />
+	</resultMap>
+	<resultMap id="getOtherParticipantInfoModels"
+		type="com.ngen.cosys.shipment.model.OtherParticipantInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillOtherParticipantInformationId"
+			column="ShipmentFreightWayBillOtherParticipantInformationId"
+			jdbcType="INTEGER" />
+		<result column="ParticipantName" property="participantName" />
+		<result column="AirportCityCode" property="airportCityCode" />
+		<result column="OfficeFunctionDesignator" property="officeFunctionDesignator" />
+		<result column="CompanyDesignator" property="companyDesignator" />
+		<result column="FileReference" property="fileReference" />
+		<result column="OPIParticipantIdentifier" property="opiParticipantIdentifier" />
+		<result column="OPIParticipantCode" property="opiParticipantCode" />
+		<result column="OPIAirportCityCode" property="opiAirportCityCode" />
+	</resultMap>
+	<resultMap id="getOtherCustomsInfoModels"
+		type="com.ngen.cosys.shipment.model.OtherCustomsInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="InformationIdentifier" property="informationIdentifier" />
+		<result column="CSRCIIdentifier" property="csrciIdentifier" />
+		<result column="SCSRCInformation" property="scrcInformation" />
+		<result column="CountryCode" property="countryCode" />
+	</resultMap>
+	<resultMap id="getAgentInfoModels" type="com.ngen.cosys.shipment.model.AgentInfo">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="AccountNumber" property="accountNumber" />
+		<result column="IATACargoAgentNumericCode" property="iATACargoAgentNumericCode" />
+		<result column="IATACargoAgentCASSAddress" property="iATACargoAgentCASSAddress" />
+		<result column="AgentName" property="agentName" />
+		<result column="AgentPlace" property="agentPlace" />
+		<result column="ParticipantIdentifier" property="participantIdentifier" />
+	</resultMap>
+
+	<resultMap id="getPrepaidCollectChargeSummaryModels"
+		type="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="shipmentFreightWayBillPPDCOLId" column="ShipmentFreightWayBillPPDCOLId"
+			jdbcType="INTEGER" />
+		<result column="ChargeTypeLineIdentifier" property="chargeTypeLineIdentifier" />
+		<result column="ValuationChargeAmount" property="valuationChargeAmount" />
+		<result column="TotalWeightChargeAmount" property="totalWeightChargeAmount" />
+		<result column="TaxesChargeAmount" property="taxesChargeAmount" />
+		<result column="TotalOtherChargesDueAgentChargeAmount"
+			property="totalOtherChargesDueAgentChargeAmount" />
+		<result column="TotalOtherChargesDueCarrierChargeAmount"
+			property="totalOtherChargesDueCarrierChargeAmount" />
+		<result column="ChargeSummaryTotalChargeAmount" property="chargeSummaryTotalChargeAmount" />
+	</resultMap>
+	<resultMap id="getGetShpReferenceInformationModels"
+		type="com.ngen.cosys.shipment.model.ShpReferenceInformation">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<result column="ReferenceNumber" property="referenceNumber" />
+		<result column="SupplementaryShipmentInformation1" property="supplementaryShipmentInformation1" />
+		<result column="SupplementaryShipmentInformation2" property="supplementaryShipmentInformation2" />
+	</resultMap>
+	<resultMap id="getGetNominatedHandlingPartyModels"
+		type="com.ngen.cosys.shipment.model.NominatedHandlingParty">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId"
+			jdbcType="INTEGER" />
+		<id property="nominatedHandlingPartyId" column="ShipmentFreightWayBillNominatedHandlingPartyId" />
+		<result column="HandlingPartyName" property="handlingPartyName" />
+		<result column="HandlingPartyPlace" property="handlingPartyPlace" />
+	</resultMap>
+
+	<!-- balck listed Awb number -->
+	<select id="checkBlacklistShipment1" parameterType="com.ngen.cosys.shipment.model.FetchFWBRequest"
+		resultType="java.lang.Integer"> select count(*) from Mst_BlackListedShipments
+		where
+		Mst_BlackListedShipments.ShipmentNumber = #{awbNumber}
+	</select>
+
+	<select id="checkValidCountry" parameterType="java.lang.String"
+		resultType="java.lang.Integer">
+		select count (*) from Mst_Country where
+		CountryCode=#{countryCode}
+
+	</select>
+
+	<select id="checkFlightExits" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="java.lang.Integer">
+
+		SELECT CASE WHEN (count(*) > 0) THEN 1 ELSE 0 END
+		from
+		flt_operativeflight opFlight
+		inner join flt_operativeflight_legs as
+		opLegs
+		on opFlight.Flight_ID=opLegs.Flight_ID
+		where
+		flightkey=(#{carrierCode}+#{flightNumber}) and
+		FlightOriginDate =
+		#{flightDate}
+		<!-- and FlightBoardPoint=#{origin} -->
+
+
+
+	</select>
+
+
+	<select id="sqlGetChargeDeclaration" resultMap="getChargeDeclarationModels"
+		parameterType="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		SELECT
+		ShipmentFreightWayBillId,CurrencyCode,ChargeCode,PrepaIdCollectChargeDeclaration,CarriageValueDeclaration,
+		NoCarriageValueDeclared,CustomsValueDeclaration,NoCustomsValueDeclared,InsuranceValueDeclaration,
+		NoInsuranceValueDeclared
+		FROM
+		Shipment_FreightWayBillChargeDeclaration
+		WHERE
+		Shipment_FreightWayBillChargeDeclaration.ShipmentFreightWayBillId=
+		#{shipmentFreightWayBillId}
+
+	</select>
+
+	<select id="sqlGetChargeDestCurrency" resultMap="getChargeDestCurrencyModels"
+		parameterType="com.ngen.cosys.shipment.model.ChargesDestinationCurrency">
+		SELECT
+		ShipmentFreightWayBillCCChargesId,
+		ShipmentFreightWayBillId,
+		DestinationCountryCode,
+		CurrencyConversionExchangeRate,
+		DestinationCurrencyChargeAmount,
+		ChargesAtDestinationChargeAmount,
+		TotalCollectChargesChargeAmount,
+		DestinationCurrencyCode
+		FROM
+		Shipment_FreightWayBillCCCharges
+		WHERE
+		Shipment_FreightWayBillCCCharges.ShipmentFreightWayBillId=
+		#{shipmentFreightWayBillId}
+
+	</select>
+	<select id="searchFWB" resultMap="fwbModelResultMap"
+		parameterType="java.lang.String">
+SELECT
+			ShipmentFreightWayBillId,
+			AwbPrefix,
+			AwbSuffix,
+			AwbNumber,
+			AwbDate,
+			Origin,
+			Destination,
+			Pieces,
+			WeightUnitCode,
+			Weight,
+			NatureOfGoodsDescription,
+			VolumeUnitCode,
+			VolumeAmount,
+			DensityIndicator,
+			DensityGroupCode,
+			ShippersCertificateSignature,
+			CarriersExecutionDate,
+			CarriersExecutionPlace,
+			CarriersExecutionAuthorisationSignature,
+			CustomOrigin,
+			ARDAgentReference,
+			CreatedUserCode,
+			CreatedDateTime,
+			MessageSequence, 
+			MessageVersion,
+			MessageProcessedDate, 
+			MessageStatus,ReceivedManuallyFlag,
+			SalesIncentiveDetailCommissionPercentage,
+			SalesIncentiveDetailCASSIndicator,
+			(select
+				TOP 1 NatureOfGoodsDescription	
+			from
+				Shipment_FreightWayBillRateDescription inner join
+				Shipment_FreightWayBillRateDescriptionOtherInfo
+					on Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillRateDescriptionId =
+						Shipment_FreightWayBillRateDescriptionOtherInfo.ShipmentFreightWayBillRateDescriptionId
+			where
+				Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillId = Shipment_FreightWayBill.ShipmentFreightWayBillId and
+				Shipment_FreightWayBillRateDescriptionOtherInfo.LineIdentifier = 'NG') as natureOfGoods
+		FROM
+			Shipment_FreightWayBill
+		WHERE
+			Shipment_FreightWayBill.AwbNumber = #{awbNumber}
+	</select>
+
+	<select id="sqlGetSHC" resultMap="getSHCModels"
+		parameterType="com.ngen.cosys.shipment.model.SHC">
+		SELECT
+		ShipmentFreightWayBillSHCId,ShipmentFreightWayBillId,SpecialHandlingCode,CreatedUserCode,CreatedDateTime,
+		LastUpdatedUserCode,LastUpdatedDateTime FROM
+		Shipment_FreightWayBillSHC
+		where
+		Shipment_FreightWayBillSHC.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</select>
+
+	<select id="sqlGetSHCode" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.shipment.model.SHC">
+		SELECT COUNT(*)
+		FROM
+		Shipment_FreightWayBillSHC where
+		SpecialHandlingCode =#{specialHandlingCode}
+
+
+	</select>
+	<select id="sqlGetCustomerInfo1" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.shipment.model.OverseasConsignee">
+		SELECT COUNT(*)
+		FROM
+		Customer_OverseasConsignee where
+		ConsigneeName =#{consigneeName} and
+		DestinationCode =
+		#{destinationCode}
+	</select>
+
+
+	<select id="sqlGetSenderFileReference" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT ParameterValueChar FROM App_SystemParameters
+		where ParameterCode='Sender_File_Ref'
+	</select>
+
+	<select id="sqlGetSenderAirport" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT ParameterValueChar FROM App_SystemParameters
+		where ParameterCode='Sender_Participant_Airport'
+	</select>
+
+	<select id="sqlGetSenderCode" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT ParameterValueChar FROM App_SystemParameters
+		where ParameterCode='Sender_Participant_Code'
+	</select>
+
+	<select id="sqlGetSenderIdentifier" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT ParameterValueChar FROM App_SystemParameters
+		where ParameterCode='Sender_Participant_Identifier'
+	</select>
+	<select id="sqlGetSenderDefaultAddress" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT ParameterValueChar FROM App_SystemParameters
+		where ParameterCode='COSYS_TELEX_ADDRESS'
+	</select>
+
+
+
+	<select id="sqlGetFlightBooking" resultMap="getFlightBookingModels"
+		parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		SELECT
+		ShipmentFreightWayBillFlightBookingId,ShipmentFreightWayBillId,CarrierCode,FlightNumber,FlightDate
+		FROM Shipment_FreightWayBillFlightBooking where
+		Shipment_FreightWayBillFlightBooking.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</select>
+
+	<select id="sqlGetConsigneeInfo" resultMap="getCustomerInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		SELECT
+		ShipmentFreightWayBillCustomerInfoId,ShipmentFreightWayBillId,CustomerType,CustomerAccountNumber,
+		CustomerName FROM Shipment_FreightWayBillCustomerInfo where
+		Shipment_FreightWayBillCustomerInfo.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and CustomerType = 'CNE'
+	</select>
+
+	<select id="sqlGetShipperInfo" resultMap="getCustomerInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		SELECT
+		ShipmentFreightWayBillCustomerInfoId,ShipmentFreightWayBillId,CustomerType,CustomerAccountNumber,
+		CustomerName FROM Shipment_FreightWayBillCustomerInfo where
+		Shipment_FreightWayBillCustomerInfo.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and CustomerType = 'SHP'
+	</select>
+	<select id="sqlGetAlsoNotifyInfo" resultMap="getCustomerInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		SELECT
+		ShipmentFreightWayBillCustomerInfoId,ShipmentFreightWayBillId,CustomerType,CustomerAccountNumber,
+		CustomerName FROM Shipment_FreightWayBillCustomerInfo where
+		Shipment_FreightWayBillCustomerInfo.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and CustomerType = 'NFY'
+	</select>
+
+	<select id="sqlGetCustomerAddressInfo" resultMap="getCustomerAddressInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		SELECT
+		ShipmentFreightWayBillCustomerAddressInfoId,ShipmentFreightWayBillCustomerInfoId,StreetAddress,
+		CustomerPlace,StateCode,CountryCode,PostalCode FROM
+		Shipment_FreightWayBillCustomerAddressInfo where
+		Shipment_FreightWayBillCustomerAddressInfo.ShipmentFreightWayBillCustomerInfoId
+		= #{shipmentFreightWayBillCustomerInfoId}
+	</select>
+	<select id="sqlGetCustomerContactInfo" resultMap="getCustomerContactInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		SELECT
+		ShipmentFreightWayBillCustomerContactInfoId,ShipmentFreightWayBillCustomerAddressInfoId,ContactIdentifier,
+		ContactDetail FROM Shipment_FreightWayBillCustomerContactInfo where
+		Shipment_FreightWayBillCustomerContactInfo.ShipmentFreightWayBillCustomerAddressInfoId
+		= #{shipmentFreightWayBillCustomerAddressInfoId}
+	</select>
+
+	<select id="sqlGetRouting" resultMap="getRoutingModels"
+		parameterType="com.ngen.cosys.shipment.model.Routing">
+		SELECT
+		ShipmentFreightWayBillRoutingId,ShipmentFreightWayBillId,AirportCode,CarrierCode
+		FROM Shipment_FreightWayBillRouting where
+		Shipment_FreightWayBillRouting.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</select>
+
+
+	<select id="routingNormal" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="com.ngen.cosys.shipment.model.Routing">
+
+		select TOP(1) <!--CarrierCode as carrierCode, FlightBoardPoint as fromOrigin, -->
+		FlightOffPoint as toDest
+		from Flt_FlightEnroutement
+		where
+		CarrierCode=
+		#{carrierCode} AND FlightOffPoint=#{airportCode}
+		AND
+		FlightType=#{svc}
+		AND
+		(EndDate is null or EndDate>=GETDATE())
+
+	</select>
+
+	<select id="routingSpecial" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="com.ngen.cosys.shipment.model.Routing">
+
+		select TOP(1) CarrierCode as carrierCode,
+		FlightBoardPoint
+		as
+		airportCode,FlightOffPoint as todest,
+		EnroutementAirportCode as
+		viaDest,
+		EnroutementCarrierCode as tocarrierCode
+		from
+		Flt_Special_FlightEnroutement
+		where <!-- CarrierCode=#{carrierCode} AND -->
+		FlightOffPoint=#{airportCode}
+		AND
+		FlightType=#{svc}
+		AND (EndDate is null
+		or
+		EndDate>=GETDATE())
+
+	</select>
+
+
+	<select id="getFlightBookingDetails" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="com.ngen.cosys.shipment.model.Routing">
+
+		SELECT TOP(1)
+		per.CarrierCode AS carrierCode,
+		per.FlightNumber AS
+		flightNumber,
+		frq.FlightType svc,
+		(leg1.ScheduleLegOrder-leg.ScheduleLegOrder) as stops,
+		leg.FlightBoardPoint as airportCode,
+		leg1.FlightOffPoint as todest,
+		((select top 1 legg1.ArrivalDayChange from
+		Flt_OperativeFlight_Schedule_legs legg1,
+		Flt_OperativeFlight_SchedulePeriods perr,
+		Flt_OperativeFlight_Schedules frqq
+		where
+		perr.FlightSchedulePeriod_ID=frqq.FlightSchedulePeriod_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND per.CarrierCode =
+		#{carrierCode}
+		AND per.FlightNumber=#{flightNumber}
+		AND
+		legg1.FlightOffPoint = leg1.FlightOffPoint
+		AND
+		legg1.ScheduleLegOrder>=legg1.ScheduleLegOrder
+		AND
+		cast(perr.ScheduleStartDate as date)>=CAST(#{flightDate} AS DATE)
+		AND
+		legg1.FlightSchedule_ID=leg.FlightSchedule_ID)
+		-(select top 1
+		legg1.DepartureDayChange from
+		Flt_OperativeFlight_Schedule_legs legg1,
+		Flt_OperativeFlight_SchedulePeriods perr,
+		Flt_OperativeFlight_Schedules frqq
+		where
+		perr.FlightSchedulePeriod_ID=frqq.FlightSchedulePeriod_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND per.CarrierCode =
+		#{carrierCode}
+		AND per.FlightNumber=#{flightNumber}
+		AND
+		legg1.FlightBoardPoint = leg.FlightBoardPoint
+		AND
+		legg1.ScheduleLegOrder>=legg1.ScheduleLegOrder
+		AND
+		cast(perr.ScheduleStartDate as date)>= CAST(#{flightDate} AS DATE)
+		AND
+		legg1.FlightSchedule_ID=leg.FlightSchedule_ID)) dayChange
+		FROM
+		Flt_OperativeFlight_Schedules frq,
+		Flt_OperativeFlight_Schedule_legs
+		leg,
+		Flt_OperativeFlight_Schedule_legs leg1,
+		Flt_OperativeFlight_SchedulePeriods per
+		WHERE
+		per.FlightSchedulePeriod_ID=frq.FlightSchedulePeriod_ID
+		AND
+		frq.FlightSchedule_ID = leg.FlightSchedule_ID
+		AND frq.FlightSchedule_ID
+		= leg1.FlightSchedule_ID
+		AND per.CarrierCode = #{carrierCode}
+		AND
+		per.FlightNumber=#{flightNumber}
+		AND
+		leg.FlightBoardPoint IN (select
+		CityCode
+		from Mst_City City
+		where
+		City.CityCode = #{origin}
+		union
+		select
+		AirportCode
+		from Mst_Airport Apt
+		where Apt.AirportCityCode = #{origin})
+		AND leg1.FlightOffPoint IN
+		(select CityCode
+		from Mst_City City
+		where
+		City.CityCode = #{airportCode}
+		union
+		select AirportCode
+		from Mst_Airport
+		Apt
+		where Apt.AirportCityCode =
+		#{airportCode})
+
+	</select>
+
+
+
+
+	<select id="getFlightScheduleDetails" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="com.ngen.cosys.shipment.model.Routing">
+		SELECT TOP(1)
+		per.CarrierCode AS carrierCode,
+		per.FlightNumber AS
+		flightNumber,
+		per.ScheduleStartDate dateFrom,
+		per.ScheduleEndDate
+		dateTo,
+		frq.FlightType svc,
+
+		(leg1.ScheduleLegOrder-leg.ScheduleLegOrder) as
+		stops,
+
+		leg.FlightBoardPoint as fromOrigin,
+		leg1.FlightOffPoint as
+		todest,
+
+		((select top 1 legg1.ArrivalDayChange from
+		Flt_OperativeFlight_Schedule_legs legg1,
+		Flt_OperativeFlight_SchedulePeriods perr,
+		Flt_OperativeFlight_Schedules frqq
+		where
+		perr.FlightSchedulePeriod_ID=frqq.FlightSchedulePeriod_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		<if test="carrierCode != null and carrierCode !=''">
+			AND per.CarrierCode = #{carrierCode}
+		</if>
+		AND legg1.FlightOffPoint = leg1.FlightOffPoint
+		AND
+		legg1.ScheduleLegOrder>=legg1.ScheduleLegOrder
+		<if test="toDate != null">
+<![CDATA[
+  AND ( (ScheduleEndDate >= GETDATE()) AND ScheduleEndDate <=  GETDATE())) OR   (ScheduleStartDate >= cast(#{flightDate} as date) AND ScheduleStartDate <=  cast(#{flightDate} as date)) OR   (ScheduleStartDate <= cast(#{flightDate} as date) AND ScheduleEndDate >=  GETDATE()))
+]]>
+		</if>
+		<if test="toDate == null">
+<![CDATA[
+AND(ScheduleEndDate >= GETDATE())
+]]>
+		</if>
+		AND legg1.FlightSchedule_ID=leg.FlightSchedule_ID)
+
+		-(select top 1
+		legg1.DepartureDayChange from
+		Flt_OperativeFlight_Schedule_legs legg1,
+		Flt_OperativeFlight_SchedulePeriods perr,
+		Flt_OperativeFlight_Schedules frqq
+		where
+		perr.FlightSchedulePeriod_ID=frqq.FlightSchedulePeriod_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		AND
+		frqq.FlightSchedule_ID = legg1.FlightSchedule_ID
+		<if test="carrierCode != null">
+			AND per.CarrierCode = #{carrierCode}
+		</if>
+		AND legg1.FlightBoardPoint = leg.FlightBoardPoint
+		AND
+		legg1.ScheduleLegOrder >=legg1.ScheduleLegOrder
+		<if test="toDate != null">
+<![CDATA[
+  AND ( (ScheduleEndDate >= GETDATE()) AND ScheduleEndDate <=  GETDATE()) OR   (ScheduleStartDate >= cast(#{flightDate} as date) AND ScheduleStartDate <=  cast(#{flightDate} as date)) OR   (ScheduleStartDate <= cast(#{flightDate} as date) AND ScheduleEndDate >=  GETDATE()))
+]]>
+		</if>
+		<if test="toDate == null">
+<![CDATA[
+AND(ScheduleEndDate >= GETDATE())
+]]>
+		</if>
+		AND legg1.FlightSchedule_ID=leg.FlightSchedule_ID)) dayChange
+		FROM
+		Flt_OperativeFlight_Schedules frq,
+		Flt_OperativeFlight_Schedule_legs
+		leg,
+		Flt_OperativeFlight_Schedule_legs leg1,
+		Flt_OperativeFlight_SchedulePeriods per
+		WHERE
+		per.FlightSchedulePeriod_ID=frq.FlightSchedulePeriod_ID
+		AND
+		frq.FlightSchedule_ID = leg.FlightSchedule_ID
+		AND frq.FlightSchedule_ID
+		= leg1.FlightSchedule_ID
+		<if test="carrierCode != null">
+			AND per.CarrierCode = #{carrierCode}
+		</if>
+		AND leg.FlightBoardPoint=#{fromOrigin}
+
+		AND
+		leg1.FlightOffPoint=#{airportCode} 
+     
+     <![CDATA[
+       AND leg1.ScheduleLegOrder >= leg.ScheduleLegOrder
+     ]]>
+		<if test="toDate != null">
+<![CDATA[
+  AND ( (ScheduleEndDate >= GETDATE()) AND ScheduleEndDate <=  GETDATE()) OR   (ScheduleStartDate >= cast(#{flightDate} as date) AND ScheduleStartDate <=  cast(#{flightDate} as date)) OR   (ScheduleStartDate <= cast(#{flightDate} as date) AND ScheduleEndDate >=  GETDATE()))
+]]>
+		</if>
+		<if test="toDate == null">
+<![CDATA[
+AND (ScheduleEndDate >= GETDATE())
+]]>
+		</if>
+	</select>
+
+
+
+
+
+
+
+	<select id="getFlightFirstDestination" parameterType="com.ngen.cosys.shipment.model.FetchRouting"
+		resultType="com.ngen.cosys.shipment.model.Routing">
+		SELECT distinct
+		opFlight.carriercode as carrierCode
+		,opFlight.FlightServiceType as svc
+		,opLegs.FlightBoardPoint as
+		airportCode
+		,(select opLegs.FlightOffPoint FROM flt_operativeflight AS
+		opFlight
+		INNER JOIN flt_operativeflight_legs as opLegs ON
+		opFlight.Flight_ID=opLegs.Flight_ID
+		WHERE
+		flightkey=(#{carrierCode}+#{flightNumber}) AND
+		FlightOriginDate =
+		#{flightDate} AND
+		opLegs.FlightSegmentOrder =
+		(select
+		max(opLegs.FlightSegmentOrder)
+		from flt_operativeflight as
+		opFlight
+		inner join flt_operativeflight_legs as opLegs
+		on
+		opFlight.Flight_ID=opLegs.Flight_ID
+		where
+		flightkey=(#{carrierCode}+#{flightNumber})
+		and
+		FlightOriginDate =
+		#{flightDate} ) )as toDest
+
+		FROM flt_operativeflight
+		AS opFlight
+		INNER
+		JOIN flt_operativeflight_legs as opLegs ON
+		opFlight.Flight_ID=opLegs.Flight_ID
+		WHERE
+		flightkey=(#{carrierCode}+#{flightNumber})
+		AND
+		FlightOriginDate =
+		#{flightDate}
+		and opLegs.FlightBoardPoint=(select
+		opLegs.FlightBoardPoint FROM flt_operativeflight AS
+		opFlight
+		INNER JOIN
+		flt_operativeflight_legs as opLegs ON
+		opFlight.Flight_ID=opLegs.Flight_ID
+		WHERE
+		flightkey=(#{carrierCode}+#{flightNumber}) AND
+		FlightOriginDate =
+		#{flightDate} AND
+		opLegs.FlightSegmentOrder =
+		(select
+		MIN(opLegs.FlightSegmentOrder)
+		from flt_operativeflight as
+		opFlight
+		inner join flt_operativeflight_legs as opLegs
+		on
+		opFlight.Flight_ID=opLegs.Flight_ID
+		where
+		flightkey=(#{carrierCode}+#{flightNumber})
+		and
+		FlightOriginDate =
+		#{flightDate} ))
+
+	</select>
+
+
+	<select id="sqlGetAccountingInfo" resultMap="getAccountingInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.AccountingInfo">
+		SELECT
+		ShipmentFreightWayBillAccountingInformationId,ShipmentFreightWayBillId,InformationIdentifier,
+		AccountingInformation FROM
+		Shipment_FreightWayBillAccountingInformation where
+		Shipment_FreightWayBillAccountingInformation.ShipmentFreightWayBillId
+		= #{shipmentFreightWayBillId}
+	</select>
+	<!-- <select id="sqlGetSSROSIInfo" resultMap="getSSROSIInfoModels" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo"> 
+		SELECT ShipmentFreightWayBillSSROSIInfoId,ShipmentFreightWayBillId,ServiceRequestType, 
+		ServiceRequestcontent FROM Shipment_FreightWayBillSSROSIInfo where Shipment_FreightWayBillSSROSIInfo.ShipmentFreightWayBillId 
+		= #{shipmentFreightWayBillId} </select> -->
+
+	<select id="sqlGetSSRInfo" resultMap="getSSRInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		SELECT
+		ShipmentFreightWayBillSSROSIInfoId,ShipmentFreightWayBillId,ServiceRequestType,
+		ServiceRequestcontent FROM
+		Shipment_FreightWayBillSSROSIInfo where
+		Shipment_FreightWayBillSSROSIInfo.ShipmentFreightWayBillId
+		=
+		#{shipmentFreightWayBillId}
+		AND ServiceRequestType='SSR'
+	</select>
+
+	<select id="sqlGetOSIInfo" resultMap="getOSIInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		SELECT
+		ShipmentFreightWayBillSSROSIInfoId,ShipmentFreightWayBillId,ServiceRequestType,
+		ServiceRequestcontent FROM
+		Shipment_FreightWayBillSSROSIInfo where
+		Shipment_FreightWayBillSSROSIInfo.ShipmentFreightWayBillId
+		=
+		#{shipmentFreightWayBillId}
+		AND ServiceRequestType='OSI'
+	</select>
+
+
+
+
+	<select id="sqlGetSenderReference" resultMap="getSenderReferenceModels"
+		parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		SELECT
+		ShipmentFreightWayBillSenderReferenceId,ShipmentFreightWayBillId,AirportCityCode,
+		OfficeFunctionDesignator,CompanyDesignator,FileReference,ParticipantIdentifier,ParticipantCode,
+		ParticipantAirportCityCode FROM
+		Shipment_FreightWayBillSenderReference
+		where
+		Shipment_FreightWayBillSenderReference.ShipmentFreightWayBillId
+		=
+		#{shipmentFreightWayBillId}
+	</select>
+
+	<select id="sqlGetRateDescription" resultMap="getRateDescriptionModels"
+		parameterType="com.ngen.cosys.shipment.model.RateDescription">
+	<![CDATA[
+		select
+			ShipmentFreightWayBillRateDescriptionId,
+			ShipmentFreightWayBillId,
+			row_number() over(order by RateLineNumber asc) RateLineNumber,
+			NumberOfPieces,
+			WeightUnitCode,
+			GrossWeight,
+			RateClassCode,
+			CommodityItemNo,
+			ChargeableWeight,
+			RateChargeAmount,
+			TotalChargeAmount
+		from 
+			Shipment_FreightWayBillRateDescription 
+		where
+			Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	]]>
+	</select>
+	<select id="sqlGetOtherCharges" resultMap="getOtherChargesModels"
+		parameterType="com.ngen.cosys.shipment.model.OtherCharges">
+		SELECT
+		ShipmentFreightWayBillOtherChargesId,ShipmentFreightWayBillId,OtherChargeIndicator,OtherChargeCode,
+		EntitlementCode,ChargeAmount FROM Shipment_FreightWayBillOtherCharges
+		where
+		Shipment_FreightWayBillOtherCharges.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and
+		Shipment_FreightWayBillOtherCharges.EntitlementCode = 'A'
+	</select>
+	<select id="sqlGetOtherChargesByCarrier" resultMap="getOtherChargesModels"
+		parameterType="com.ngen.cosys.shipment.model.OtherCharges">
+		SELECT
+		ShipmentFreightWayBillOtherChargesId,ShipmentFreightWayBillId,OtherChargeIndicator,OtherChargeCode,
+		EntitlementCode,ChargeAmount FROM Shipment_FreightWayBillOtherCharges
+		where
+		Shipment_FreightWayBillOtherCharges.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and
+		Shipment_FreightWayBillOtherCharges.EntitlementCode = 'C'
+	</select>
+	<select id="sqlGetRateDescOtherInfo" resultMap="getRateDescOtherInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.RateDescOtherInfo">
+		SELECT
+			ShipmentFreightWayBillRateDescriptionOtherInfoId,ShipmentFreightWayBillRateDescriptionId,MeasurementUnitCode,DimensionLength,Weight,
+			DimensionWIdth,DimensionHeight,NumberOfPieces,VolumeUnitCode,VolumeAmount,ULDNumber,SLACCount,HarmonisedCommodityCode,
+			CountryCode,ServiceCode,NatureOfGoodsDescription,LineIdentifier
+		FROM
+			Shipment_FreightWayBillRateDescriptionOtherInfo 
+		where
+			Shipment_FreightWayBillRateDescriptionOtherInfo.ShipmentFreightWayBillRateDescriptionId = #{shipmentFreightWayBillRateDescriptionId}
+		order by
+			Shipment_FreightWayBillRateDescriptionOtherInfo.ShipmentFreightWayBillRateDescriptionOtherInfoId
+	</select>
+	<select id="sqlGetOtherParticipantInfo" resultMap="getOtherParticipantInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo">
+		SELECT
+		ShipmentFreightWayBillOtherParticipantInformationId,ShipmentFreightWayBillId,ParticipantName,AirportCityCode,
+		OfficeFunctionDesignator,CompanyDesignator,FileReference,OPIParticipantIdentifier,OPIParticipantCode,
+		OPIAirportCityCode FROM
+		Shipment_FreightWayBillOtherParticipantInformation where
+		Shipment_FreightWayBillOtherParticipantInformation.ShipmentFreightWayBillId
+		= #{shipmentFreightWayBillId}
+	</select>
+
+
+
+
+	<select id="sqlGetOtherCustomsInfo" resultMap="getOtherCustomsInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo">
+		SELECT
+		ShipmentFreightWayBillOtherCustomsInfoId,ShipmentFreightWayBillId,InformationIdentifier,CSRCIIdentifier,
+		SCSRCInformation,CountryCode FROM
+		Shipment_FreightWayBillOtherCustomsInfo where
+		Shipment_FreightWayBillOtherCustomsInfo.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</select>
+	<select id="sqlGetAgentInfo" resultMap="getAgentInfoModels"
+		parameterType="com.ngen.cosys.shipment.model.AgentInfo">
+		SELECT
+		ShipmentFreightWayBillId,AccountNumber,IATACargoAgentNumericCode,IATACargoAgentCASSAddress,
+		ParticipantIdentifier,AgentName,AgentPlace FROM
+		Shipment_FreightWayBillAgentInfo where
+		Shipment_FreightWayBillAgentInfo.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</select>
+	<select id="sqlGetPrepaidChargeSummary" resultMap="getPrepaidCollectChargeSummaryModels"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary">
+		SELECT
+		ShipmentFreightWayBillPPDCOLId,ShipmentFreightWayBillId,ChargeTypeLineIdentifier,TotalWeightChargeIdentifier,TotalWeightChargeAmount,
+		ValuationChargeIdentifier,ValuationChargeAmount,TaxesChargeIdentifier,TaxesChargeAmount,
+		TotalOtherChargesDueAgentChargeIdentifier,TotalOtherChargesDueAgentChargeAmount,TotalOtherChargesDueCarrierChargeIdentifier,
+		TotalOtherChargesDueCarrierChargeAmount,ChargeSummaryTotalChargeIdentifier,ChargeSummaryTotalChargeAmount
+		FROM Shipment_FreightWayBillPPDCOL where
+		Shipment_FreightWayBillPPDCOL.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and
+		Shipment_FreightWayBillPPDCOL.ChargeTypeLineIdentifier in ('PPD','P')
+	</select>
+	<select id="sqlGetCollectChargeSummary" resultMap="getPrepaidCollectChargeSummaryModels"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary">
+		SELECT
+		ShipmentFreightWayBillPPDCOLId,ShipmentFreightWayBillId,ChargeTypeLineIdentifier,TotalWeightChargeIdentifier,TotalWeightChargeAmount,
+		ValuationChargeIdentifier,ValuationChargeAmount,TaxesChargeIdentifier,TaxesChargeAmount,
+		TotalOtherChargesDueAgentChargeIdentifier,TotalOtherChargesDueAgentChargeAmount,TotalOtherChargesDueCarrierChargeIdentifier,
+		TotalOtherChargesDueCarrierChargeAmount,ChargeSummaryTotalChargeIdentifier,ChargeSummaryTotalChargeAmount
+		FROM Shipment_FreightWayBillPPDCOL where
+		Shipment_FreightWayBillPPDCOL.ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId} and
+		Shipment_FreightWayBillPPDCOL.ChargeTypeLineIdentifier in ('COL','C')
+	</select>
+	<select id="sqlGetShpReferenceInformation" resultMap="getGetShpReferenceInformationModels"
+		parameterType="com.ngen.cosys.shipment.model.ShpReferenceInformation">
+		SELECT
+		ShipmentFreightWayBillId,ReferenceNumber,SupplementaryShipmentInformation1,SupplementaryShipmentInformation2
+		FROM Shipment_FreightWayBillShipmentReferenceInformation where
+		Shipment_FreightWayBillShipmentReferenceInformation.ShipmentFreightWayBillId
+		= #{shipmentFreightWayBillId}
+	</select>
+	<select id="sqlGetNominatedHandlingParty" resultMap="getGetNominatedHandlingPartyModels"
+		parameterType="com.ngen.cosys.shipment.model.NominatedHandlingParty">
+		SELECT
+		ShipmentFreightWayBillId,HandlingPartyName,HandlingPartyPlace,ShipmentFreightWayBillNominatedHandlingPartyId
+		FROM
+		Shipment_FreightWayBillNominatedHandlingParty where
+		Shipment_FreightWayBillNominatedHandlingParty.ShipmentFreightWayBillId
+		= #{shipmentFreightWayBillId}
+	</select>
+
+
+	<insert id="insertAWBDetails" parameterType="com.ngen.cosys.shipment.model.FWB"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillId"
+		keyColumn="ShipmentFreightWayBillId">
+		INSERT INTO Shipment_FreightWayBill
+		(AwbPrefix,AwbSuffix,AwbNumber,AwbDate,Origin,Destination,Pieces,
+		WeightUnitCode,Weight,VolumeUnitCode,VolumeAmount,DensityIndicator,DensityGroupCode,ShippersCertificateSignature,
+		CustomOrigin,CarriersExecutionDate,CarriersExecutionPlace,CarriersExecutionAuthorisationSignature,
+		NatureOfGoodsDescription,ARDAgentReference,CreatedUserCode,CreatedDateTime,
+		MessageSequence,MessageVersion, MessageProcessedDate, MessageStatus,
+		ReceivedManuallyFlag,	SalesIncentiveDetailCommissionPercentage,
+		SalesIncentiveDetailCASSIndicator
+		)
+		VALUES(
+		#{awbPrefix}
+		,#{awbSuffix}
+		,#{awbNumber}
+		,#{awbDate}
+		,#{origin}
+		,#{destination}
+		,#{pieces}
+		,#{weightUnitCode}
+		,#{weight}
+		,#{volumeUnitCode}
+		,#{volumeAmount}
+		,#{densityIndicator}
+		,#{densityGroupCode}
+		,#{shpCertificateSign}
+		,#{customOrigin}
+		,CAST(#{carriersExecutionDate} AS DATETIME)
+		,#{carriersExecutionPlace}
+		,#{carriersExecutionAuthSign}
+		,#{natureOfGoodsDescription}
+		,#{ardAgentReference}
+		,#{createdBy}
+		,CAST(GETDATE() AS DATETIME)
+		,#{messageSequence}
+		,#{messageVersion}
+		,#{messageProcessedDate}
+		,#{messageStatus}
+		,#{receivedManuallyFlag},
+		#{siiChargeAmount},
+		#{cassIndicator}
+		)
+	</insert>
+	<insert id="insertAWBSHCDetails" parameterType="com.ngen.cosys.shipment.model.SHC">
+		INSERT INTO
+		Shipment_FreightWayBillSHC
+		(ShipmentFreightWayBillId,SpecialHandlingCode,CreatedUserCode,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillId},#{specialHandlingCode},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBFlightBookingDetails" parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		INSERT
+		INTO
+		Shipment_FreightWayBillFlightBooking(ShipmentFreightWayBillId,CarrierCode,FlightNumber,FlightDate,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId}
+		,#{carrierCode}
+		,#{flightNumber}
+		,#{flightDate}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+	<!-- <insert id="insertAWBShipperInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerInfo"> 
+		INSERT INTO Shipment_FreightWayBillFlightBooking(ShipmentFreightWayBillId,CarrierCode,FlightNumber,FlightDate,CreatedUserCode,CreatedDateTime) 
+		VALUES(#{shipmentFreightWayBillId},#{carrierCode},#{flightNumber},DAY(#{flightDays}),#{createdBy},GETDATE() 
+		</insert> -->
+	<insert id="insertAWBShipperInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillCustomerInfoId"
+		keyColumn="ShipmentFreightWayBillCustomerInfoId">
+		INSERT INTO Shipment_FreightWayBillCustomerInfo
+		(ShipmentFreightWayBillId
+		,CustomerType
+		,CustomerName
+		,CustomerAccountNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillId}
+		,#{customerType}
+		,#{customerName}
+		,#{customerAccountNumber}
+		,#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBShipperAddInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillCustomerAddressInfoId"
+		keyColumn="ShipmentFreightWayBillCustomerAddressInfoId">
+		INSERT INTO Shipment_FreightWayBillCustomerAddressInfo
+		(ShipmentFreightWayBillCustomerInfoId
+		,StreetAddress
+		,CustomerPlace
+		,StateCode
+		,CountryCode
+		,PostalCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillCustomerInfoId}
+		,#{streetAddress1}
+		,#{customerPlace}
+		,#{stateCode}
+		,#{countryCode}
+		,#{postalCode}
+		,#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBShipperContactInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillCustomerContactInfoId"
+		keyColumn="ShipmentFreightWayBillCustomerContactInfoId">
+		INSERT INTO Shipment_FreightWayBillCustomerContactInfo
+		(ShipmentFreightWayBillCustomerAddressInfoId,ContactIdentifier,ContactDetail,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillCustomerAddressInfoId},#{contactIdentifier},#{contactDetail},#{createdBy},GETDATE())
+	</insert>
+
+	<insert id="insertOverseasConsignee" parameterType="com.ngen.cosys.shipment.model.OverseasConsignee"
+		useGeneratedKeys="true" keyProperty="overseasConsignee_ID" keyColumn="OverseasConsignee_ID">
+		INSERT INTO Customer_OverseasConsignee
+		(
+		DestinationCode
+		,ConsigneeName
+		,ConsigneeAddress
+		,ConsigneePlace
+		,ConsigneeState
+		,CountryCode
+		,ConsigneePostalCode
+		,ConsigneePhone
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(
+		#{destinationCode}
+		,#{consigneeName}
+		,#{consigneeAddress}
+		,#{consigneePlace}
+		,#{consigneeState}
+		,#{CountryCode}
+		,#{consigneePostalCode}
+		,#{consigneePhone}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+	<insert id="insertAWBAgentInfoDetails" parameterType="com.ngen.cosys.shipment.model.AgentInfo">
+		INSERT INTO
+		Shipment_FreightWayBillAgentInfo
+		(ShipmentFreightWayBillId,AccountNumber,IATACargoAgentNumericCode,IATACargoAgentCASSAddress,
+		ParticipantIdentifier,AgentName,AgentPlace,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{accountNumber},#{iATACargoAgentNumericCode},#{iATACargoAgentCASSAddress},
+		#{participantIdentifier},#{agentName},#{agentPlace},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBSSROSIDetails" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillSSROSIInfoId"
+		keyColumn="ShipmentFreightWayBillSSROSIInfoId">
+		INSERT INTO
+		Shipment_FreightWayBillSSROSIInfo
+		(ShipmentFreightWayBillId,ServiceRequestType,ServiceRequestcontent,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{serviceRequestType},#{serviceRequestcontent},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBAlsoNotifyDetails" parameterType="com.ngen.cosys.shipment.model.CustomerInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillCustomerInfoId"
+		keyColumn="ShipmentFreightWayBillCustomerInfoId">
+		INSERT INTO
+		Shipment_FreightWayBillCustomerInfo(ShipmentFreightWayBillId,CustomerType,CustomerName,
+		CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{customerType},#{customerName},
+		#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBRateDescription" parameterType="com.ngen.cosys.shipment.model.RateDescription"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillRateDescriptionId"
+		keyColumn="ShipmentFreightWayBillRateDescriptionId">
+		INSERT INTO
+		Shipment_FreightWayBillRateDescription(ShipmentFreightWayBillId,RateLineNumber,
+		GrossWeight,RateClassCode,CommodityItemNo,ChargeableWeight,RateChargeAmount,TotalChargeAmount,
+		CreatedUserCode,CreatedDateTime,NumberOfPieces,WeightUnitCode)
+		VALUES(#{shipmentFreightWayBillId},#{rateLineNumber},#{grossWeight},#{rateClassCode},#{commodityItemNo},
+		#{chargeableWeight},#{rateChargeAmount},#{totalChargeAmount},#{createdBy},
+		GETDATE(),#{numberOfPieces},#{weightUnitCode})
+	</insert>
+
+
+
+	<insert id="insertAWBChargesDestinationCurrency"
+		parameterType="com.ngen.cosys.shipment.model.ChargesDestinationCurrency"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillCCChargesId"
+		keyColumn="ShipmentFreightWayBillCCChargesId">
+		INSERT INTO
+		Shipment_FreightWayBillCCCharges(ShipmentFreightWayBillId,
+		DestinationCountryCode,
+		CurrencyConversionExchangeRate,
+		DestinationCurrencyChargeAmount,
+		ChargesAtDestinationChargeAmount,
+		TotalCollectChargesChargeAmount,
+		DestinationCurrencyCode,
+		CreatedUserCode,
+		CreatedDateTime
+		)
+		VALUES(#{shipmentFreightWayBillId},
+		#{destinationCountryCode},
+		#{currencyConversionExchangeRate},
+		#{destinationCurrencyChargeAmount},
+		#{chargesAtDestinationChargeAmount},
+		#{totalCollectChargesChargeAmount},
+		#{destinationCurrencyCode},
+		#{createdBy},
+		GETDATE())
+	</insert>
+
+
+	<insert id="insertAWBRateDescOtherInfo" parameterType="com.ngen.cosys.shipment.model.RateDescOtherInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillRateDescriptionOtherInfoId"
+		keyColumn="ShipmentFreightWayBillRateDescriptionOtherInfoId">
+		INSERT
+		INTO
+		Shipment_FreightWayBillRateDescriptionOtherInfo(ShipmentFreightWayBillRateDescriptionId,
+		DimensionLength,DimensionWIdth,DimensionHeight,NumberOfPieces,VolumeUnitCode,VolumeAmount,ULDNumber,MeasurementUnitCode,
+		SLACCount,HarmonisedCommodityCode,CountryCode,ServiceCode,Weight,NatureOfGoodsDescription,LineIdentifier,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillRateDescriptionId},#{dimensionLength},#{dimensionWIdth},#{dimensionHeight},#{numberOfPieces},#{volumeUnitCode},
+		#{volumeAmount},#{uldNumber},#{measurementUnitCode},#{slacCount},#{harmonisedCommodityCode},#{countryCode},#{serviceCode},#{weight},#{natureOfGoodsDescription},
+		#{rateLine},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBAccountingInfo" parameterType="com.ngen.cosys.shipment.model.AccountingInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillAccountingInformationId"
+		keyColumn="ShipmentFreightWayBillAccountingInformationId">
+		INSERT INTO
+		Shipment_FreightWayBillAccountingInformation
+		(ShipmentFreightWayBillId,InformationIdentifier,AccountingInformation,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{informationIdentifier},#{accountingInformation},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBChargeDeclaration" parameterType="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		INSERT
+		INTO Shipment_FreightWayBillChargeDeclaration
+		(ShipmentFreightWayBillId,CurrencyCode,ChargeCode,CarriageValueDeclaration,CustomsValueDeclaration,
+		InsuranceValueDeclaration,PrepaIdCollectChargeDeclaration,NoCarriageValueDeclared,NoCustomsValueDeclared,
+		NoInsuranceValueDeclared,CreatedUserCode,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillId},#{currencyCode},#{chargeCode},#{fwbCarriageValueDeclaration},#{fwbCustomsValueDeclaration},
+		#{fwbInsuranceValueDeclaration},#{prepaIdCollectChargeDeclaration},null,
+		null,null,#{createdBy},GETDATE())
+	</insert>
+	<select id="sqlIsValidCurrencyFWB"
+		parameterType="com.ngen.cosys.shipment.model.ChargeDeclaration"
+		resultType="java.lang.Boolean">		
+		SELECT
+		case when count(CurrencyCode) > 0 then
+				1
+			else
+				0
+			end result
+		FROM 
+			Mst_Currency
+		WHERE
+			CurrencyCode = #{currencyCode}
+	</select>
+	<insert id="insertAWBPrepaidCollectChargeSummary"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillPPDCOLId"
+		keyColumn="ShipmentFreightWayBillPPDCOLId">
+		INSERT INTO Shipment_FreightWayBillPPDCOL
+		(ShipmentFreightWayBillId,ChargeTypeLineIdentifier,TotalWeightChargeIdentifier,TotalWeightChargeAmount,
+		ValuationChargeIdentifier,ValuationChargeAmount,TaxesChargeIdentifier,TaxesChargeAmount,
+		TotalOtherChargesDueAgentChargeIdentifier,TotalOtherChargesDueAgentChargeAmount,TotalOtherChargesDueCarrierChargeIdentifier
+		,TotalOtherChargesDueCarrierChargeAmount,ChargeSummaryTotalChargeIdentifier,ChargeSummaryTotalChargeAmount
+		,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{chargeTypeLineIdentifier},#{totalWeightChargeIdentifier},#{totalWeightChargeAmount},
+		#{valuationChargeIdentifier},#{valuationChargeAmount},#{taxesChargeIdentifier},#{taxesChargeAmount},
+		#{totalOtherChargesDueAgentChargeIdentifier},#{totalOtherChargesDueAgentChargeAmount},#{totalOtherChargesDueCarrierChargeIdentifier},
+		#{totalOtherChargesDueCarrierChargeAmount},#{chargeSummaryTotalChargeIdentifier},#{chargeSummaryTotalChargeAmount},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBNominatedHandlingParty"
+		parameterType="com.ngen.cosys.shipment.model.NominatedHandlingParty">
+		INSERT INTO
+		Shipment_FreightWayBillNominatedHandlingParty(ShipmentFreightWayBillId,HandlingPartyName,
+		HandlingPartyPlace,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId}
+		,#{handlingPartyName},#{handlingPartyPlace},#{createdBy},GETDATE())
+	</insert>
+	<select id="sqlgetShpReferenceInformation"
+		parameterType="com.ngen.cosys.shipment.model.ShpReferenceInformation"
+		resultType="java.lang.Boolean">		
+		SELECT
+		case when count(shipmentFreightWayBillId) > 0 then
+				1
+			else
+				0
+			end result
+		FROM 
+			Shipment_FreightWayBillShipmentReferenceInformation
+		WHERE
+		   ShipmentFreightWayBillId =#{shipmentFreightWayBillId}
+	</select>
+	<insert id="insertAWBShpReferInfo"
+		parameterType="com.ngen.cosys.shipment.model.ShpReferenceInformation">
+		INSERT INTO
+		Shipment_FreightWayBillShipmentReferenceInformation
+		(ShipmentFreightWayBillId,ReferenceNumber,SupplementaryShipmentInformation1,SupplementaryShipmentInformation2
+		,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId}
+		,#{referenceNumber},#{supplementaryShipmentInformation1},#{supplementaryShipmentInformation2},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBOtherParticipantInfo" parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillOtherParticipantInformationId"
+		keyColumn="ShipmentFreightWayBillOtherParticipantInformationId">
+		INSERT
+		INTO
+		Shipment_FreightWayBillOtherParticipantInformation
+		(ShipmentFreightWayBillId,ParticipantName,
+		AirportCityCode,OfficeFunctionDesignator,CompanyDesignator,FileReference,OPIParticipantIdentifier
+		,OPIParticipantCode,OPIAirportCityCode,CreatedUserCode,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillId},#{participantName},#{airportCityCode},#{officeFunctionDesignator},#{companyDesignator},
+		#{fileReference},#{opiParticipantIdentifier},#{opiParticipantCode},#{opiAirportCityCode},#{createdBy},GETDATE())
+	</insert>
+
+
+
+	<insert id="insertAWBSenderRef" parameterType="com.ngen.cosys.shipment.model.SenderReference"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillSenderReferenceId"
+		keyColumn="ShipmentFreightWayBillSenderReferenceId">
+		INSERT
+		INTO
+		Shipment_FreightWayBillSenderReference
+		(ShipmentFreightWayBillId,
+		AirportCityCode,OfficeFunctionDesignator,CompanyDesignator,FileReference,ParticipantIdentifier
+		,ParticipantCode,ParticipantAirportCityCode,CreatedUserCode,CreatedDateTime)
+		VALUES
+		(#{shipmentFreightWayBillId},#{airportCityCode},#{officeFunctionDesignator},#{companyDesignator},
+		#{fileReference},#{refParticipantIdentifier},#{refParticipantCode},#{refAirportCityCode},#{createdBy},GETDATE())
+	</insert>
+
+
+	<insert id="insertAWBOtherCustomsInfo" parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillOtherCustomsInfoId"
+		keyColumn="ShipmentFreightWayBillOtherCustomsInfoId">
+		INSERT INTO
+		Shipment_FreightWayBillOtherCustomsInfo
+		(ShipmentFreightWayBillId
+		,CountryCode,InformationIdentifier,CSRCIIdentifier,SCSRCInformation,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{countryCode},#{informationIdentifier},#{csrciIdentifier},#{scrcInformation},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBOtherCharges" parameterType="com.ngen.cosys.shipment.model.OtherCharges"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillOtherChargesId"
+		keyColumn="ShipmentFreightWayBillOtherChargesId">
+		INSERT INTO
+		Shipment_FreightWayBillOtherCharges
+		(ShipmentFreightWayBillId,OtherChargeIndicator,OtherChargeCode,EntitlementCode,ChargeAmount,CreatedUserCode,CreatedDateTime
+		)
+		VALUES
+		(#{shipmentFreightWayBillId},#{otherChargeIndicator},#{otherChargeCode},#{entitlementCode},#{chargeAmount},#{createdBy},GETDATE())
+	</insert>
+	<insert id="insertAWBRouting" parameterType="com.ngen.cosys.shipment.model.Routing"
+		useGeneratedKeys="true" keyProperty="shipmentFreightWayBillRoutingId"
+		keyColumn="ShipmentFreightWayBillRoutingId">
+		INSERT INTO
+		Shipment_FreightWayBillRouting
+		(ShipmentFreightWayBillId,AirportCode,CarrierCode,CreatedUserCode,CreatedDateTime)
+		VALUES(#{shipmentFreightWayBillId},#{airportCode},#{carrierCode},#{createdBy},GETDATE())
+	</insert>
+	<update id="updateAWBDetails" parameterType="com.ngen.cosys.shipment.model.FWB">
+
+		UPDATE
+		  Shipment_FreightWayBill
+		SET		 
+		 Origin = #{origin}
+		 ,Destination = #{destination}
+		 ,Pieces = #{pieces}
+		 ,WeightUnitCode = #{weightUnitCode}
+		 ,Weight = #{weight}
+		 ,VolumeUnitCode = #{volumeUnitCode}
+		 ,VolumeAmount = #{volumeAmount}
+		 ,DensityIndicator = #{densityIndicator}
+		 ,DensityGroupCode = #{densityGroupCode}
+		 ,ShippersCertificateSignature = #{shpCertificateSign}
+		 ,CustomOrigin = #{customOrigin}
+		 ,CarriersExecutionDate = CAST(#{carriersExecutionDate} AS DATETIME)
+		 ,CarriersExecutionPlace = #{carriersExecutionPlace}
+		 ,CarriersExecutionAuthorisationSignature = #{carriersExecutionAuthSign}
+		 ,NatureOfGoodsDescription = #{natureOfGoodsDescription}
+		 ,ARDAgentReference = #{ardAgentReference}
+		 ,MessageSequence = #{messageSequence}
+		 ,MessageVersion = #{messageVersion}
+		 ,MessageProcessedDate = CAST(#{messageProcessedDate} AS DATETIME)
+		 ,MessageStatus = #{messageStatus}
+		 ,ReceivedManuallyFlag= #{receivedManuallyFlag}
+		 ,SalesIncentiveDetailCommissionPercentage= #{siiChargeAmount}
+		 ,SalesIncentiveDetailCASSIndicator= #{cassIndicator}
+		 ,OVCDReasonCode= #{ovcdReasonCode}
+		 ,LastUpdatedUserCode= #{createdBy}
+		 ,LastUpdatedDateTime= getDate()
+		WHERE
+		  AwbPrefix = #{awbPrefix} and
+		  AwbSuffix = #{awbSuffix} and
+		  AwbNumber = #{awbNumber} and
+		  AwbDate = CAST(#{awbDate} AS date)
+	</update>
+
+	<update id="updateAWBSHCDetails" parameterType="com.ngen.cosys.shipment.model.SHC">
+		UPDATE
+		Shipment_FreightWayBillSHC
+		SET
+		SpecialHandlingCode =
+		#{specialHandlingCode}
+		,CreatedUserCode = #{createdBy}
+		,CreatedDateTime
+		= GETDATE()
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</update>
+	<!-- update shipper details -->
+	<update id="updateAWBShipperInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		UPDATE
+		Shipment_FreightWayBillCustomerInfo
+		SET
+
+		CustomerName = #{customerName}
+		,CustomerAccountNumber = #{customerAccountNumber}
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+		AND
+		CustomerType=#{customerType}
+
+	</update>
+	<update id="updateAWBShipperAddInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		UPDATE Shipment_FreightWayBillCustomerAddressInfo
+		SET
+		StreetAddress =
+		#{streetAddress1}
+		,CustomerPlace =
+		#{customerPlace}
+		,StateCode =
+		#{stateCode}
+		,CountryCode = #{countryCode}
+		,PostalCode = #{postalCode}
+		WHERE
+		ShipmentFreightWayBillCustomerInfoId =
+		#{shipmentFreightWayBillCustomerInfoId}
+	</update>
+
+	<update id="updateAWBShipperContactInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		UPDATE Shipment_FreightWayBillCustomerContactInfo
+		SET 
+			ContactIdentifier = #{contactIdentifier},
+			ContactDetail = #{contactDetail}
+		WHERE
+			ShipmentFreightWayBillCustomerAddressInfoId = #{shipmentFreightWayBillCustomerAddressInfoId} and		
+			ShipmentFreightWayBillCustomerContactInfoId = #{shipmentFreightWayBillCustomerContactInfoId}
+	</update>
+
+	<!-- End of shipper update -->
+	<!-- update Flight booking , routing and Agent Info -->
+	<update id="updateAWBFlightBookingDetails" parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		UPDATE
+		Shipment_FreightWayBillFlightBooking
+		SET
+
+		FlightNumber = #{flightNumber}
+		,FlightDate = #{flightDate}
+		,CarrierCode = #{carrierCode}
+		WHERE
+		ShipmentFreightWayBillFlightBookingId =
+		#{shipmentFreightWayBillFlightBookingId}
+
+	</update>
+	<update id="updateAWBRouting" parameterType="com.ngen.cosys.shipment.model.Routing">
+		UPDATE
+
+		Shipment_FreightWayBillRouting
+		SET
+		AirportCode = #{airportCode}
+		,CarrierCode = #{carrierCode}
+
+		WHERE
+		ShipmentFreightWayBillRoutingId =
+		#{shipmentFreightWayBillRoutingId}
+	</update>
+	
+	<delete id="deleteAwbRouting" parameterType="com.ngen.cosys.shipment.model.Routing">
+		DELETE
+		FROM
+		Shipment_FreightWayBillRouting
+		WHERE
+		ShipmentFreightWayBillRoutingId =
+		#{shipmentFreightWayBillRoutingId}
+
+	</delete>
+	<update id="updateAWBAgentInfoDetails" parameterType="com.ngen.cosys.shipment.model.AgentInfo">
+		UPDATE
+
+		Shipment_FreightWayBillAgentInfo
+		SET
+
+		AccountNumber = #{accountNumber}
+		,IATACargoAgentNumericCode =
+		#{iATACargoAgentNumericCode}
+		,IATACargoAgentCASSAddress =
+		#{iATACargoAgentCASSAddress}
+		,ParticipantIdentifier =
+		#{participantIdentifier}
+		,AgentName =
+		#{agentName}
+		,AgentPlace =
+		#{agentPlace}
+
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</update>
+	<!-- end update Flight booking , routing and Agent Info -->
+
+	<update id="updateAWBSSROSIDetails" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		UPDATE
+
+		Shipment_FreightWayBillSSROSIInfo
+		SET
+		ServiceRequestcontent =
+		#{serviceRequestcontent}
+
+		WHERE
+		ShipmentFreightWayBillSSROSIInfoId =
+		#{shipmentFreightWayBillSSROSIInfoId}
+		AND
+		ServiceRequestType =
+		#{serviceRequestType}
+	</update>
+
+
+	<update id="updateAWBAccountingInfo" parameterType="com.ngen.cosys.shipment.model.AccountingInfo">
+		UPDATE
+
+		Shipment_FreightWayBillAccountingInformation
+		SET
+
+		InformationIdentifier =
+		#{informationIdentifier}
+		,AccountingInformation =
+		#{accountingInformation}
+
+		WHERE
+		ShipmentFreightWayBillAccountingInformationId =
+		#{shipmentFreightWayBillAccountingInformationId}
+
+	</update>
+
+
+	<update id="updateAWBChargeDeclaration" parameterType="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		UPDATE
+
+		Shipment_FreightWayBillChargeDeclaration
+		SET
+		CurrencyCode = #{currencyCode},
+		ChargeCode = #{chargeCode},
+		PrepaIdCollectChargeDeclaration = #{prepaIdCollectChargeDeclaration},
+		CarriageValueDeclaration = #{fwbCarriageValueDeclaration},
+		<!-- NoCarriageValueDeclared = #{carriageValueDeclaration}, -->
+		CustomsValueDeclaration = #{fwbCustomsValueDeclaration},
+		<!-- NoCustomsValueDeclared = #{customsValueDeclaration}, -->
+		InsuranceValueDeclaration = #{fwbInsuranceValueDeclaration}
+		<!-- ,NoInsuranceValueDeclared = #{insuranceValueDeclaration} -->
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	</update>
+
+
+
+	<update id="updateAWBRateDescription" parameterType="com.ngen.cosys.shipment.model.RateDescription">
+		UPDATE
+
+		Shipment_FreightWayBillRateDescription
+		SET
+
+		RateLineNumber =
+		#{rateLineNumber}
+		,NumberOfPieces = #{numberOfPieces}
+		,WeightUnitCode =
+		#{weightUnitCode}
+		,GrossWeight = #{grossWeight}
+		,RateClassCode =
+		#{rateClassCode}
+		,CommodityItemNo = #{commodityItemNo}
+		,ChargeableWeight = #{chargeableWeight}
+		,RateChargeAmount =
+		#{rateChargeAmount}
+		,TotalChargeAmount = #{totalChargeAmount}
+
+
+
+		WHERE
+		ShipmentFreightWayBillRateDescriptionId =
+		#{shipmentFreightWayBillRateDescriptionId}
+
+	</update>
+
+
+
+	<update id="updateAWBChargeDestCurrency"
+		parameterType="com.ngen.cosys.shipment.model.ChargesDestinationCurrency">
+		UPDATE
+
+		Shipment_FreightWayBillCCCharges
+		SET
+
+		DestinationCountryCode =
+		#{destinationCountryCode}
+		,CurrencyConversionExchangeRate = #{currencyConversionExchangeRate}
+		,DestinationCurrencyChargeAmount =
+		#{destinationCurrencyChargeAmount}
+		,ChargesAtDestinationChargeAmount =
+		#{chargesAtDestinationChargeAmount}
+		,TotalCollectChargesChargeAmount =
+		#{totalCollectChargesChargeAmount}
+		,DestinationCurrencyCode =
+		#{destinationCurrencyCode}
+
+		WHERE
+		ShipmentFreightWayBillCCChargesId =
+		#{shipmentFreightWayBillCCChargesId}
+
+	</update>
+
+
+	<update id="updateAWBOtherCharges" parameterType="com.ngen.cosys.shipment.model.OtherCharges">
+		UPDATE
+
+		Shipment_FreightWayBillOtherCharges
+		SET
+
+		EntitlementCode =
+		#{entitlementCode}
+		,OtherChargeIndicator = #{otherChargeIndicator}
+		,OtherChargeCode = #{otherChargeCode}
+		,ChargeAmount = #{chargeAmount}
+		WHERE
+		ShipmentFreightWayBillOtherChargesId =
+		#{shipmentFreightWayBillOtherChargesId}
+	</update>
+
+
+	<update id="updateAWBNominatedHandlingParty"
+		parameterType="com.ngen.cosys.shipment.model.NominatedHandlingParty">
+		UPDATE
+
+		Shipment_FreightWayBillNominatedHandlingParty
+		SET
+
+		HandlingPartyName = #{handlingPartyName}
+		,HandlingPartyPlace =
+		#{handlingPartyPlace}
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+	</update>
+
+
+
+	<update id="updateAWBShpReferInfo"
+		parameterType="com.ngen.cosys.shipment.model.ShpReferenceInformation">
+		UPDATE
+
+		Shipment_FreightWayBillShipmentReferenceInformation
+		SET
+
+		ReferenceNumber
+		= #{referenceNumber}
+		,SupplementaryShipmentInformation1 =
+		#{supplementaryShipmentInformation1}
+		,SupplementaryShipmentInformation2 =
+		#{supplementaryShipmentInformation2}
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</update>
+
+
+
+	<update id="updateAWBOtherParticipantInfo" parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo">
+		UPDATE
+
+		Shipment_FreightWayBillOtherParticipantInformation
+		SET
+
+		ParticipantName =
+		#{participantName}
+		,AirportCityCode = #{airportCityCode}
+		,OfficeFunctionDesignator = #{officeFunctionDesignator}
+		,CompanyDesignator = #{companyDesignator}
+		,FileReference =
+		#{fileReference}
+		,OPIParticipantIdentifier =
+		#{opiParticipantIdentifier}
+		,OPIParticipantCode = #{opiParticipantCode}
+		,OPIAirportCityCode = #{opiAirportCityCode}
+		WHERE
+		ShipmentFreightWayBillOtherParticipantInformationId =
+		#{shipmentFreightWayBillOtherParticipantInformationId}
+
+	</update>
+
+
+	<update id="updateAWBSenderRef" parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		UPDATE
+
+		Shipment_FreightWayBillSenderReference
+		SET
+
+		AirportCityCode =
+		#{airportCityCode}
+		,OfficeFunctionDesignator =
+		#{officeFunctionDesignator}
+		,CompanyDesignator = #{companyDesignator}
+		,FileReference =
+		#{fileReference}
+		,ParticipantIdentifier =
+		#{refParticipantIdentifier}
+		,ParticipantCode = #{refParticipantCode}
+		,ParticipantAirportCityCode = #{refAirportCityCode}
+		WHERE
+		ShipmentFreightWayBillSenderReferenceId =
+		#{shipmentFreightWayBillSenderReferenceId}
+
+	</update>
+
+
+
+
+	<update id="updateAWBOtherCustomsInfo" parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo">
+		UPDATE
+
+		Shipment_FreightWayBillOtherCustomsInfo
+		SET
+
+		InformationIdentifier =
+		#{informationIdentifier}
+		,CSRCIIdentifier = #{csrciIdentifier}
+		,SCSRCInformation = #{scrcInformation}
+		,CountryCode = #{countryCode}
+		WHERE
+		ShipmentFreightWayBillOtherCustomsInfoId =
+		#{shipmentFreightWayBillOtherCustomsInfoId}
+
+	</update>
+	<update id="updateAWBRateDescOtherInfo" parameterType="com.ngen.cosys.shipment.model.RateDescOtherInfo">
+		UPDATE
+
+		Shipment_FreightWayBillRateDescriptionOtherInfo
+		SET
+
+		DimensionLength =
+		#{dimensionLength}
+		,DimensionWIdth = #{dimensionWIdth}
+		,DimensionHeight
+		= #{dimensionHeight}
+		,NumberOfPieces =
+		#{numberOfPieces}
+		,VolumeUnitCode
+		= #{volumeUnitCode}
+		,VolumeAmount =
+		#{volumeAmount}
+		,ULDNumber =
+		#{uldNumber}
+		,MeasurementUnitCode =
+		#{measurementUnitCode}
+		,SLACCount =
+		#{slacCount}
+		,HarmonisedCommodityCode =
+		#{harmonisedCommodityCode}
+		,CountryCode =
+		#{countryCode}
+		,ServiceCode =
+		#{serviceCode}
+		,Weight =
+		#{weight}
+		,NatureOfGoodsDescription = #{natureOfGoodsDescription}
+		,LineIdentifier = #{rateLine}
+
+
+		WHERE
+		ShipmentFreightWayBillRateDescriptionOtherInfoId =
+		#{shipmentFreightWayBillRateDescriptionOtherInfoId}
+	</update>
+	
+	<select id="sqlgetAWBPrepaidCollectChargeSummary"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary"
+		resultType="java.lang.Boolean">		
+		SELECT
+		case when count(ShipmentFreightWayBillPPDCOLId) > 0 then
+				1
+			else
+				0
+			end result
+		FROM 
+			Shipment_FreightWayBillPPDCOL
+		WHERE
+		   ShipmentFreightWayBillId =#{shipmentFreightWayBillId} and
+		   ChargeTypeLineIdentifier = #{chargeTypeLineIdentifier}
+	</select>
+
+	<update id="updateAWBPrepaidCollectChargeSummary"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary">
+		UPDATE
+
+		Shipment_FreightWayBillPPDCOL
+		SET
+
+		TotalWeightChargeIdentifier = #{totalWeightChargeIdentifier}
+		,TotalWeightChargeAmount =
+		#{totalWeightChargeAmount}
+		,ValuationChargeIdentifier =
+		#{valuationChargeIdentifier}
+		,ValuationChargeAmount =
+		#{valuationChargeAmount}
+		,TaxesChargeIdentifier =
+		#{taxesChargeIdentifier}
+		,TaxesChargeAmount =
+		#{taxesChargeAmount}
+		,TotalOtherChargesDueAgentChargeIdentifier =
+		#{totalOtherChargesDueAgentChargeIdentifier}
+		,TotalOtherChargesDueAgentChargeAmount =
+		#{totalOtherChargesDueAgentChargeAmount}
+		,TotalOtherChargesDueCarrierChargeIdentifier =
+		#{totalOtherChargesDueCarrierChargeIdentifier}
+		,TotalOtherChargesDueCarrierChargeAmount =
+		#{totalOtherChargesDueCarrierChargeAmount}
+		,ChargeSummaryTotalChargeIdentifier =
+		#{chargeSummaryTotalChargeIdentifier}
+		,ChargeSummaryTotalChargeAmount =
+		#{chargeSummaryTotalChargeAmount}
+		WHERE
+		ShipmentFreightWayBillPPDCOLId =
+		#{shipmentFreightWayBillPPDCOLId} and
+		ChargeTypeLineIdentifier=#{chargeTypeLineIdentifier}
+
+	</update>
+	<update id="updateOverseasConsignee" parameterType="com.ngen.cosys.shipment.model.OverseasConsignee">
+		UPDATE
+		Customer_OverseasConsignee
+		SET
+		DestinationCode = #{destinationCode}
+		,ConsigneeName = #{consigneeName}
+		,ConsigneeAddress =
+		#{consigneeAddress}
+		,ConsigneePlace = #{consigneePlace}
+		,ConsigneeState
+		= #{consigneeState}
+		,CountryCode = #{CountryCode}
+		,ConsigneePostalCode =
+		#{consigneePostalCode}
+		,ConsigneePhone = #{consigneePhone}
+		,CreatedUser_Code = #{createdBy}
+		,Created_DateTime
+		= GETDATE()
+		WHERE
+		OverseasConsignee_ID =
+		#{overseasConsignee_ID}
+
+
+
+	</update>
+
+
+
+	<!-- Delete Operation -->
+	<delete id="deleteAWBDetails" parameterType="com.ngen.cosys.shipment.model.FWB">
+		DELETE
+		FROM
+		Shipment_FreightWayBill
+		WHERE
+		AwbNumber =
+		#{awbNumber}
+
+	</delete>
+
+
+
+
+	<delete id="deleteForUpdateAWBShipperContactInfoDetails"
+		parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillCustomerContactInfo
+		WHERE
+		ShipmentFreightWayBillCustomerContactInfoId =
+		#{shipmentFreightWayBillCustomerContactInfoId}
+	</delete>
+
+
+	<delete id="deleteForUpdateAWBShipperAddInfoDetails"
+		parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillCustomerAddressInfo
+		WHERE
+		ShipmentFreightWayBillCustomerInfoId =
+		#{shipmentFreightWayBillCustomerInfoId}
+	</delete>
+
+	<delete id="deleteForUpdateAWBShipperInfoDetails" parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillCustomerInfo
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+		AND
+		CustomerType
+		= #{customerType}
+	</delete>
+	<delete id="deleteAWBOtherCustomsInfo" parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherCustomsInfo
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+	</delete>
+
+	<delete id="deleteForUpdateAWBOtherCustomsInfo" parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherCustomsInfo
+		WHERE
+		ShipmentFreightWayBillOtherCustomsInfoId =
+		#{shipmentFreightWayBillOtherCustomsInfoId}
+
+	</delete>
+
+	<delete id="deleteAWBOtherParticipantInfo" parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherParticipantInformation
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	</delete>
+
+
+	<delete id="deleteAWBSenderRef" parameterType="com.ngen.cosys.shipment.model.SenderReference">
+		DELETE
+		FROM
+		Shipment_FreightWayBillSenderReference
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</delete>
+
+	<delete id="deleteForUpdateAWBOtherParticipantInfo"
+		parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherParticipantInformation
+		WHERE
+		ShipmentFreightWayBillOtherParticipantInformationId =
+		#{shipmentFreightWayBillOtherParticipantInformationId}
+	</delete>
+
+	<delete id="deleteForUpdateAWBRateDescOtherInfoAll"
+		parameterType="com.ngen.cosys.shipment.model.RateDescription">
+		DELETE
+		FROM
+		Shipment_FreightWayBillRateDescriptionOtherInfo
+		WHERE
+		ShipmentFreightWayBillRateDescriptionId =
+		#{shipmentFreightWayBillRateDescriptionId}
+
+
+	</delete>
+	<delete id="deleteForUpdateAWBRateDescOtherInfo" parameterType="com.ngen.cosys.shipment.model.RateDescOtherInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillRateDescriptionOtherInfo
+		WHERE
+		ShipmentFreightWayBillRateDescriptionOtherInfoId =
+		#{shipmentFreightWayBillRateDescriptionOtherInfoId}
+
+
+	</delete>
+
+	<delete id="deleteForUpdateAWBPrepaidCollectChargeSummary"
+		parameterType="com.ngen.cosys.shipment.model.PrepaidCollectChargeSummary">
+		DELETE
+		FROM
+		Shipment_FreightWayBillPPDCOL
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	</delete>
+	
+	<delete id="deleteAWBOtherCharges" parameterType="com.ngen.cosys.shipment.model.OtherCharges">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherCharges
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</delete>
+	
+	<delete id="deleteAWBOtherChargesWithid" parameterType="com.ngen.cosys.shipment.model.FWB">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherCharges
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+	</delete>
+
+
+	<delete id="deleteForUpdateAWBOtherCharges" parameterType="com.ngen.cosys.shipment.model.OtherCharges">
+		DELETE
+		FROM
+		Shipment_FreightWayBillOtherCharges
+		WHERE
+		ShipmentFreightWayBillOtherChargesId =
+		#{shipmentFreightWayBillOtherChargesId}
+	</delete>
+	<!-- DELETE FROM Shipment_FreightWayBillRateDescription WHERE ShipmentFreightWayBillId 
+		= #{shipmentFreightWayBillId} -->
+	<delete id="deleteForUpdateAWBRateDescription" parameterType="com.ngen.cosys.shipment.model.RateDescription">
+
+		DELETE
+		FROM
+		Shipment_FreightWayBillRateDescription
+		WHERE
+		ShipmentFreightWayBillRateDescriptionId =
+		#{shipmentFreightWayBillRateDescriptionId}
+
+	</delete>
+
+
+
+
+	<delete id="deleteForUpdateChargesDestinationCurrency"
+		parameterType="com.ngen.cosys.shipment.model.ChargesDestinationCurrency">
+		DELETE
+		FROM
+		Shipment_FreightWayBillCCCharges
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+
+	</delete>
+
+
+
+	<delete id="deleteForUpdateAWBAgentInfoDetails" parameterType="com.ngen.cosys.shipment.model.AgentInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillAgentInfo
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	</delete>
+
+	<delete id="deleteForUpdateAWBSSRDetails" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillSSROSIInfo
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+		AND
+		ServiceRequestType=
+		#{serviceRequestType}
+	</delete>
+	<delete id="deleteForUpdateAWBSSROSIDetails" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillSSROSIInfo
+		WHERE
+		ShipmentFreightWayBillSSROSIInfoId =
+		#{shipmentFreightWayBillSSROSIInfoId}
+		AND
+		ServiceRequestType=
+		#{serviceRequestType}
+	</delete>
+	<delete id="deleteForUpdateAWBOSIDetails" parameterType="com.ngen.cosys.shipment.model.SSROSIInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillSSROSIInfo
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+		AND
+		ServiceRequestType=
+		#{serviceRequestType}
+
+	</delete>
+
+
+	<delete id="deleteForUpdateAWBChargeDeclaration" parameterType="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		DELETE
+		FROM
+		Shipment_FreightWayBillChargeDeclaration
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+
+	</delete>
+
+	<delete id="deleteAWBAccountingInfo" parameterType="com.ngen.cosys.shipment.model.AccountingInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillAccountingInformation
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+
+	</delete>
+
+	<delete id="deleteForUpdateAWBAccountingInfo" parameterType="com.ngen.cosys.shipment.model.AccountingInfo">
+		DELETE
+		FROM
+		Shipment_FreightWayBillAccountingInformation
+		WHERE
+		ShipmentFreightWayBillAccountingInformationId =
+		#{shipmentFreightWayBillAccountingInformationId}
+
+	</delete>
+
+	<delete id="deleteForUpdateAWBFlightBookingDetails"
+		parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		DELETE
+		FROM
+		Shipment_FreightWayBillFlightBooking
+		WHERE
+		ShipmentFreightWayBillId = #{shipmentFreightWayBillId}
+	</delete>
+	<delete id="deleteForUpdateAWBFlightBookingDetailsByOne"
+		parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		DELETE
+		FROM
+		Shipment_FreightWayBillFlightBooking
+		WHERE
+		ShipmentFreightWayBillFlightBookingId =
+		#{shipmentFreightWayBillFlightBookingId}
+	</delete>
+
+
+	<delete id="deleteForUpdateAWBRouting" parameterType="com.ngen.cosys.shipment.model.Routing">
+		DELETE
+		FROM
+		Shipment_FreightWayBillRouting
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+	</delete>
+	<delete id="deleteForUpdateAWBSHCDetails" parameterType="com.ngen.cosys.shipment.model.SHC">
+		DELETE
+		FROM
+		Shipment_FreightWayBillSHC
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+
+	</delete>
+	<delete id="deleteForUpdateAWBShpReferInfo"
+		parameterType="com.ngen.cosys.shipment.model.ShpReferenceInformation">
+		DELETE
+		FROM
+		Shipment_FreightWayBillShipmentReferenceInformation
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+	</delete>
+
+	<delete id="deleteForUpdateAWBNominatedHandlingParty"
+		parameterType="com.ngen.cosys.shipment.model.NominatedHandlingParty">
+		DELETE
+		FROM
+		Shipment_FreightWayBillNominatedHandlingParty
+		WHERE
+		ShipmentFreightWayBillId =
+		#{shipmentFreightWayBillId}
+
+	</delete>
+
+	<select id="checkDuplicate" parameterType="com.ngen.cosys.shipment.model.AccountingInfo"
+		resultType="java.lang.Integer">
+		select count(*) from
+		Shipment_FreightWayBillAccountingInformation where
+		ShipmentFreightWayBillId=#{shipmentFreightWayBillId} AND
+		InformationIdentifier=#{informationIdentifier}
+	</select>
+
+	<select id="checkDuplicateRateDesc" parameterType="com.ngen.cosys.shipment.model.RateDescription"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_FreightWayBillRateDescription
+		where ShipmentFreightWayBillId=#{shipmentFreightWayBillId}
+		AND
+		RateLineNumber= #{rateLineNumber}
+	</select>
+
+	<select id="checkDuplicateRateDescOtherInfo" parameterType="com.ngen.cosys.shipment.model.RateDescOtherInfo"
+		resultType="java.lang.Integer">
+		select count(*) from
+		Shipment_FreightWayBillRateDescriptionOtherInfo
+		where
+		ShipmentFreightWayBillId=#{shipmentFreightWayBillId}
+		AND
+		MeasurementUnitCode=#{measurementUnitCode}
+	</select>
+
+	<select id="checkDuplicateOtherCharges" parameterType="com.ngen.cosys.shipment.model.OtherCharges"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_FreightWayBillOtherCharges
+		where ShipmentFreightWayBillId=#{shipmentFreightWayBillId}
+		AND
+		OtherChargeIndicator=#{otherChargeIndicator}
+		AND
+		OtherChargeCode=#{otherChargeCode}
+
+	</select>
+
+	<select id="checkDuplicateOtherParticipantInfo" parameterType="com.ngen.cosys.shipment.model.OtherParticipantInfo"
+		resultType="java.lang.Integer">
+		select count(*) from
+		Shipment_FreightWayBillOtherParticipantInformation
+		where
+		ShipmentFreightWayBillId=#{shipmentFreightWayBillId}
+		AND
+		OfficeFunctionDesignator=#{officeFunctionDesignator}
+		AND
+		CompanyDesignator=#{companyDesignator}
+		AND
+		FileReference=#{fileReference}
+		AND
+		OPIParticipantIdentifier=#{opiParticipantIdentifier}
+		AND
+		OPIParticipantCode =#{opiAirportCityCode}
+
+
+	</select>
+
+
+	<select id="checkDuplicateOtherCustomsInfo" parameterType="com.ngen.cosys.shipment.model.OtherCustomsInfo"
+		resultType="java.lang.Integer">
+		select count(*) from
+		Shipment_FreightWayBillOtherCustomsInfo
+		where
+		ShipmentFreightWayBillId=#{shipmentFreightWayBillId}
+		AND
+		InformationIdentifier=#{informationIdentifier}
+		AND
+		CSRCIIdentifier=#{csrciIdentifier}
+		AND
+		SCSRCInformation=#{scrcInformation}
+
+	</select>
+
+
+
+	
+
+
+	<select id="fwbOnSearch" parameterType="java.lang.String"
+		resultMap="fwbModelResultMapOnSearch">
+		select 
+			ShipmentNumber as AwbNumber,
+			ShipmentDate as AwbDate,
+			Origin ,
+			Destination,
+			ShipmentId
+			,Pieces,
+			Weight,
+			WeightUnitCode,
+			NatureOfGoodsDescription
+		from 
+			Shipment_Master 
+		where 
+			ShipmentNumber = #{awbNumber}
+		union
+		select
+			AwbNumber,
+			AwbDate,
+			Origin ,
+			Destination,
+			null,
+			Pieces,
+			Weight,
+			WeightUnitCode,
+			(select 
+				top 1 NatureOfGoodsDescription
+			from
+				Shipment_FreightHouseListByHAWB
+			where
+				Shipment_FreightHouseListByHAWB.ShipmentFreightHouseListByAWBId = Shipment_FreightHouseListByAWB.ShipmentFreightHouseListByAWBId)
+		from
+			Shipment_FreightHouseListByAWB
+		where
+			Shipment_FreightHouseListByAWB.AwbNumber = #{awbNumber} and 
+			not exists(
+				select
+					null
+				from
+					Shipment_Master
+				where 
+					ShipmentNumber = Shipment_FreightHouseListByAWB.AwbNumber and
+					ShipmentDate = Shipment_FreightHouseListByAWB.AwbDate
+			)
+	</select>
+	<select id="sqlGetSHCOnSearch" resultMap="getSHCModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.SHC">
+		SELECT SpecialHandlingCode from Shipment_MasterSHC where
+		ShipmentId=#{shipmentId}
+	</select>
+	<resultMap id="getSHCModelsOnSearch" type="com.ngen.cosys.shipment.model.SHC">
+		<id property="shipmentId" column="shipmentId" jdbcType="INTEGER" />
+		<result column="SpecialHandlingCode" property="specialHandlingCode" />
+	</resultMap>
+	<select id="sqlGetFlightBookingOnSearch" resultMap="getFlightBookingModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.FlightBooking">
+		select
+			Exp_ShipmentFlightBookingDetail.Flightid as bookingFlightid,
+			Shipment_Master.Shipmentid,
+			Shipment_Master.PartShipment,
+			FOF.CarrierCode ,
+			FOF.FlightNumber,
+			FOF.FlightOriginDate as flightDate,
+			FOF.FlightKey
+		From
+			Exp_ShipmentBooking inner join 
+			Exp_ShipmentFlightBookingDetail 
+				on Exp_ShipmentBooking.Bookingid = Exp_ShipmentFlightBookingDetail.Bookingid left join 
+			Shipment_Master 
+				on Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber and
+					Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate left join 
+			Flt_OperativeFlight FOF 
+				on FOF.Flight_id=Exp_ShipmentFlightBookingDetail.FlightId
+		where
+			Exp_ShipmentBooking.ShipmentNumber = #{awbNumber} and
+			Exp_ShipmentBooking.ShipmentDate = #{awbDate} and
+			Exp_ShipmentFlightBookingDetail.BookingStatusCode not in ('XX') and
+			Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		group by
+			Exp_ShipmentFlightBookingDetail.Flightid,
+			Shipment_Master.Shipmentid,
+			Shipment_Master.PartShipment,
+			FOF.CarrierCode ,
+			FOF.FlightNumber,
+			FOF.FlightOriginDate,
+			FOF.FlightKey
+	</select>
+	<resultMap id="getFlightBookingModelsOnSearch" type="com.ngen.cosys.shipment.model.FlightBooking">
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightDate" property="flightDate" />
+	</resultMap>
+
+	<select id="sqlGetRoutingOnSearch" resultMap="getRoutingModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.Routing">
+		select
+		SMR.FromPoint,
+		SMR.Carrier
+		from
+		Shipment_Master SM inner join Shipment_MasterRoutingInfo SMR
+		on
+		SM.ShipmentId = SMR.ShipmentId
+		where
+		SM.ShipmentId = #{shipmentId}
+	</select>
+	<resultMap id="getRoutingModelsOnSearch" type="com.ngen.cosys.shipment.model.Routing">
+
+		<result column="FromPoint" property="airportCode" />
+		<result column="CarrierCode" property="carrierCode" />
+	</resultMap>
+	
+	
+	<select id="sqlGetConsigneeInfoOnSearch" resultMap="getCustomerInfoModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		select  top(1)
+			Shipment_MasterCustomerInfo.ShipmentCustomerInfoId,
+			Shipment_MasterCustomerInfo.CustomerName,
+			Customer_Master.CustomerCode,
+			Shipment_MasterCustomerInfo.CustomerType,
+			Customer_Master.AccountNumber,
+			Shipment_Master.shipmentId			
+		from
+			Shipment_Master inner join
+			Shipment_MasterCustomerInfo
+				on
+				Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId 
+				inner join 
+				Customer_Master
+				on 
+				Shipment_MasterCustomerInfo.CustomerName = Customer_Master.CustomerShortName
+		
+		where
+			Shipment_MasterCustomerInfo.CustomerType in ('CNE','DCNE') and
+			Shipment_Master.ShipmentId=#{shipmentId}
+	</select>
+	
+	<resultMap id="getCustomerInfoModelsOnSearch" type="com.ngen.cosys.shipment.model.CustomerInfo">
+		
+		<result column="ShipmentCustomerInfoId" property="shipmentCustomerInfoId" />
+		<result column="CustomerType" property="customerType" />
+		<result column="CustomerName" property="customerName" />
+		<result column="AccountNumber" property="customerAccountNumber" />
+		<association property="customerAddressInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerAddressInfo" select="sqlGetCustomerAddressInfoOnSearch"
+			column="shipmentCustomerInfoId=shipmentCustomerInfoId" />
+	</resultMap>
+	<select id="sqlGetCustomerAddressInfoOnSearch" resultMap="getCustomerAddressInfoModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+	select 
+			Shipment_MasterCustomerAddressInfo.ShipmentCustomerAddInfoId,
+			Shipment_MasterCustomerAddressInfo.StreetAddress,
+			Shipment_MasterCustomerAddressInfo.StateCode,
+			Shipment_MasterCustomerAddressInfo.Postal,
+			Shipment_MasterCustomerAddressInfo.CountryCode,
+			Shipment_MasterCustomerAddressInfo.Place,
+			Shipment_MasterCustomerInfo.ShipmentCustomerInfoId
+		from
+			
+			Shipment_MasterCustomerInfo
+			inner join
+			Shipment_MasterCustomerAddressInfo 
+				on 
+					Shipment_MasterCustomerInfo.ShipmentCustomerInfoId = Shipment_MasterCustomerAddressInfo.ShipmentCustomerInfoId 
+			
+		where
+	Shipment_MasterCustomerInfo.ShipmentCustomerInfoId=#{shipmentCustomerInfoId}
+			
+	</select>
+	<resultMap id="getCustomerAddressInfoModelsOnSearch"
+		type="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		<result column="StreetAddress" property="streetAddress1" />
+		<result column="Place" property="customerPlace" />
+		<result column="StateCode" property="stateCode" />
+		<result column="CountryCode" property="countryCode" />
+		<result column="Postal" property="postalCode" />
+		<collection property="customerContactInfo" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.CustomerContactInfo" select="sqlGetCustomerContactInfoOnSearch"
+			column="shipmentCustomerAddInfoId=shipmentCustomerAddInfoId" />
+	</resultMap>
+	<select id="sqlGetCustomerContactInfoOnSearch" resultMap="getCustomerContactInfoModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo">
+	select 
+	
+			Shipment_MasterCustomerContactInfo.ContactTypeCode ,
+			Shipment_MasterCustomerContactInfo.ContactTypeDetail		
+		from
+			Shipment_MasterCustomerContactInfo inner join Shipment_MasterCustomerAddressInfo
+				on
+					Shipment_MasterCustomerAddressInfo.ShipmentCustomerAddInfoId = Shipment_MasterCustomerContactInfo.ShipmentCustomerAddInfoId 	
+		where 
+		Shipment_MasterCustomerContactInfo.ShipmentCustomerAddInfoId=#{shipmentCustomerAddInfoId} and
+		Shipment_MasterCustomerContactInfo.ContactTypeCode not in ('EM')
+	</select>
+	<resultMap id="getCustomerContactInfoModelsOnSearch"
+		type="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		<result column="ContactTypeCode" property="contactIdentifier" />
+		<result column="ContactTypeDetail" property="contactDetail" />
+	</resultMap>
+	<resultMap id="fwbModelResultMapOnSearch" type="com.ngen.cosys.shipment.model.FWB"
+		autoMapping="false">
+		<id property="shipmentFreightWayBillId" column="ShipmentFreightWayBillId" />
+		<result property="awbPrefix" column="AwbPrefix" />
+		<result property="awbSuffix" column="AwbSuffix" />
+		<result property="awbNumber" column="AwbNumber" />
+		<result property="awbDate" column="AwbDate" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="pieces" column="Pieces" />
+		<result property="weight" column="Weight" />
+		<result property="weightUnitCode" column="WeightUnitCode" />
+		<result property="densityGroupCode" column="DensityGroupCode" />
+		<result property="densityIndicator" column="DensityIndicator" />
+		<result property="volumeAmount" column="VolumeAmount" />
+		<result property="volumeUnitCode" column="VolumeUnitCode" />
+		<result property="natureOfGoodsDescription" column="natureOfgoods" />
+		<result property="natureOfgoods" column="natureOfgoods" />
+		<result property="carriersExecutionDate" column="CarriersExecutionDate" />
+		<result property="carriersExecutionPlace" column="CarriersExecutionPlace" />
+		<result property="carriersExecutionAuthSign" column="CarriersExecutionAuthorisationSignature" />
+		<result property="customOrigin" column="CustomOrigin" />
+		<result property="shpCertificateSign" column="ShippersCertificateSignature" />
+		<result property="ardAgentReference" column="ARDAgentReference" />
+		<result property="messageSequence" column="MessageSequence" />
+		<result property="messageVersion" column="MessageVersion" />
+		<result property="receivedManuallyFlag" column="ReceivedManuallyFlag" />
+		<result property="messageProcessedDate" column="MessageProcessedDate" />
+		<result property="messageStatus" column="MessageStatus" />
+		<result property="shipmentId" column="ShipmentId" />
+		<association property="shipperInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetShipperInfoOnSearch"
+			column="shipmentId=shipmentId" />
+	<association property="consigneeInfo"
+			javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetConsigneeInfoOnSearch"
+			column="shipmentId=shipmentId" />
+		<collection property="shcode" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.SHC" select="sqlGetSHCOnSearch"
+			column="shipmentId=shipmentId" />
+		<collection property="flightBooking" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.FlightBooking" select="sqlGetFlightBookingOnSearch"
+			column="{awbNumber=AwbNumber, awbDate=AwbDate}" />
+		<collection property="routing" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.Routing" select="sqlGetRoutingOnSearch"
+			column="shipmentId=shipmentId" />
+	
+		
+	</resultMap>
+	<select id="sqlGetShipperInfoOnSearch" resultMap="getCustomerInfoModelsOnSearch"
+		parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+		select  top(1)
+			Shipment_MasterCustomerInfo.ShipmentCustomerInfoId,
+			Shipment_MasterCustomerInfo.CustomerName,
+			Customer_Master.CustomerCode,
+			Shipment_MasterCustomerInfo.CustomerType,
+			Customer_Master.AccountNumber,
+			Shipment_Master.shipmentId			
+		from
+			Shipment_Master inner join
+			Shipment_MasterCustomerInfo
+				on
+				Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId 
+				inner join 
+				Customer_Master
+				on 
+				Shipment_MasterCustomerInfo.CustomerName = Customer_Master.CustomerShortName
+		
+		where
+			Shipment_MasterCustomerInfo.CustomerType in ('SHP','DSHP') and
+			Shipment_Master.ShipmentId=#{shipmentId}
+	</select>
+	
+	<select id="fetchFWBDetailsForMobile" resultMap="fwbDetailsForMobile"
+		parameterType="com.ngen.cosys.shipment.model.FWBDetails">
+		select 
+		AwbNumber,
+		Origin,
+		Destination,
+		Pieces,
+		Weight,
+		NatureOfGoodsDescription,
+		SpecialHandlingCode
+		from 
+		Shipment_FreightWayBill fwb left join Shipment_FreightWayBillSHC shc
+		on fwb.ShipmentFreightWayBillId = shc.ShipmentFreightWayBillId
+		where fwb.AwbNumber = #{shipmentNumber}
+	</select>
+	
+	<resultMap type="com.ngen.cosys.shipment.model.FWBDetails" id="fwbDetailsForMobile">
+	<result column="AwbNumber" property="shipmentNumber"/>
+	<result column="Origin" property="origin"/>
+	<result column="Destination" property="destination"/>
+	<result column="Pieces" property="pieces"/>
+	<result column="Weight" property="weight"/>
+	<result column="NatureOfGoodsDescription" property="nog"/>
+	<collection property="shc" javaType="List" ofType="java.lang.String">
+	<result column="SpecialHandlingCode" property="shc"/>
+	</collection>
+	</resultMap>
+	
+	<update id="saveFWBDetailsForMobile" parameterType="com.ngen.cosys.shipment.model.FWBDetails">
+	update Shipment_FreightWayBill
+	set Pieces = #{pieces},
+	Weight = #{weight}
+	where AwbNumber = #{shipmentNumber}
+	</update>
+	
+	<!--Shipment Master Query START -->
+	<select id="sqlCheckFWBForPartShipment"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="java.lang.Boolean">
+		select
+			case when (select
+							count(ShipmentNumber)
+						from 
+							Imp_ArrivalManifestShipmentInfo
+						where 
+							ShipmentNumber = #{awbNumber} and 
+							ShipmentDate = #{awbDate} and 
+							ShipmentDescriptionCode in ('P','D')) > 0 then
+				1
+			when (select
+							count(ShipmentNumber)
+						from 
+							Exp_ShipmentBooking inner join
+							Exp_ShipmentPartBookingDetail
+								on Exp_ShipmentBooking.BookingId = Exp_ShipmentPartBookingDetail.BookingId
+						where 
+							Exp_ShipmentBooking.ShipmentNumber = #{awbNumber} and 
+							Exp_ShipmentBooking.ShipmentDate = #{awbDate}
+				  ) > 1 then
+				1
+			else
+				0
+			end result
+	</select>
+	
+	<select id="sqlCheckFWBForSVCShipment"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentNumber) > 0 then
+				1
+			else
+				0
+			end result
+		from 
+			Exp_ShipmentBooking
+		where
+			ShipmentNumber = #{awbNumber} and 
+			ShipmentDate = #{awbDate} and 
+			ServiceFlag = 1
+	</select>
+	
+	<select id="sqlGetFWBSHCAnEAWB" 
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="java.lang.Boolean">
+			select 
+				case 
+					when count(1) > 0 then
+						1
+					else
+						0
+					end result
+			from 
+				Shipment_FreightWayBill inner join
+				Shipment_FreightWayBillSHC 
+					on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillSHC.ShipmentFreightWayBillId inner join
+				Mst_AssociateSHCByHandlingGroup
+					on Shipment_FreightWayBillSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+				Mst_SHCHandlingGroup
+					on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+			where
+				Shipment_FreightWayBill.AwbNumber = #{awbNumber} and 
+				Shipment_FreightWayBill.AwbDate = #{awbDate} and
+				Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'EAW'
+	</select>
+		
+	<select id="sqlGetFWBShipmentInfoForCharges"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="com.ngen.cosys.shipment.model.FWB">
+		select
+                     Shipment_Master.ShipmentId as shipmentId,
+                     Customer_Master.Customer_ID as customerId
+              from
+                     Shipment_Master 
+					 inner join Shipment_MasterCustomerInfo
+						on Shipment_Master.ShipmentId = Shipment_MasterCustomerInfo.ShipmentId
+					 inner join Customer_Master
+						on Shipment_MasterCustomerInfo.CustomerCode = Customer_Master.CustomerCode
+		where
+			Shipment_Master.ShipmentNumber = #{awbNumber} and
+			Shipment_Master.ShipmentDate = #{awbDate} and
+			Shipment_MasterCustomerInfo.CustomerType = 'AGT' and
+			DeRegisterDate is null	
+	</select>
+	
+	<select id="sqlGetFWBEAcceptanceDocumentInformation"
+		parameterType="com.ngen.cosys.shipment.model.FWB"
+		resultType="com.ngen.cosys.shipment.model.FWB">
+		select
+			Exp_EAcceptanceDocumentInformation.Origin as "origin",
+			Exp_EAcceptanceDocumentInformation.Destination as "destination",
+			Exp_EAcceptanceDocumentInformation.Piece as "pieces",
+			Exp_EAcceptanceDocumentInformation.Weight as "weight"
+		from
+			Exp_EAcceptanceDocumentInformation
+		where
+			Exp_EAcceptanceDocumentInformation.ShipmentNumber = #{awbNumber} and
+			Exp_EAcceptanceDocumentInformation.ShipmentDate = #{awbDate} and
+			Exp_EAcceptanceDocumentInformation.Status = 'ACCEPTED'
+	</select>
+</mapper>   

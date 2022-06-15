@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sqlQueryTempTrackingInterface">
+
+	<resultMap id="tempTrackingRequestMapper"
+		type="com.ngen.cosys.temp.tracking.model.TempTrackingRequestModel">
+		<result property="awbNumber" column="ShipmentNumber" />
+		<result property="location" column="ShipmentLocation" />
+		<result property="fromDate" column="fromDate" />
+		<result property="toDate" column="toDate" />
+		<result property="frequencyMin" column="frequencyMin" />
+
+
+
+	</resultMap>
+
+
+	<select id="fetTempTrackingShipmentId" resultMap="tempTrackingRequestMapper">
+		select sm.ShipmentId,sm.ShipmentNumber,shp.ShipmentLocation,
+		convert(varchar(17), getdate(), 113) AS toDate,convert(varchar(17),
+		dateadd(hh,-1,getdate()), 113) AS fromDate,30 as frequencyMin
+		from shipment_inventory shp join
+		Whs_Location wh on wh.locationcode=shp.warehouselocation
+		join whs_sector sect on sect.WhsSectorId=wh.WhsSectorId
+		join whs_terminal term on term.WhsTerminalid=sect.Whsterminalid
+		join Shipment_Master sm on sm.ShipmentId=shp.Shipment_ID
+		where term.terminalcode='AFT2'
+
+
+	</select>
+
+
+</mapper>

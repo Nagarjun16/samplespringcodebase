@@ -1,0 +1,725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="eccmodel">
+	
+	<resultMap id="getCustID"
+		type="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		<result column="Customer_ID" property="customerID" />
+	</resultMap>
+	<resultMap id="getid" type="java.lang.String">
+		<result column="UserLoginCode" property="userId" />
+	</resultMap>
+	<resultMap id="getTime" type="com.ngen.cosys.impbd.model.SearchInbound">
+		<id column="ShiftStartsAt" jdbcType="TIMESTAMP" property="startsAt" />
+		<id column="ShiftEndsAt" jdbcType="TIMESTAMP" property="endsAt" />
+		<result column="ComTeamId" jdbcType="TIMESTAMP" property="comTeamId" />
+	</resultMap>
+
+	<resultMap id="get" type="com.ngen.cosys.impbd.model.EccInboundResult">
+		<id column="ShiftStartsAt" jdbcType="TIMESTAMP" property="startsAt" />
+		<id column="ShiftEndsAt" jdbcType="TIMESTAMP" property="endsAt" />
+		<result column="ComTeamId" jdbcType="TIMESTAMP" property="comTeamId" />
+	</resultMap>
+
+	<resultMap id="getUserIdAuth" type="com.ngen.cosys.impbd.model.AuthorizeTo">
+		<result column="UserLoginCode" property="userID" />
+	</resultMap>
+
+	<select id="fetchUserIdAuth" parameterType="com.ngen.cosys.impbd.model.AuthorizeTo"
+		resultMap="getUserIdAuth">
+		select 
+			UserLoginCode
+		from		
+			Imp_AgentDeliveryPlanningWorksheetAuthorisedToChange
+	</select>
+	
+	<select id="fetchid" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultMap="getid">
+		select 
+			UserLoginCode
+		from 
+			Adm_UserProfile 
+		where 
+			UserShortName = #{eo}
+	</select>
+
+	<select id="getTeamName" parameterType="com.ngen.cosys.impbd.model.SearchInbound"
+		resultType="java.lang.String">
+		select 
+			TeamName 
+		from 
+			Com_Team			
+		where 
+			cast(ShiftStartsAt as Time) = cast(#{startsAt} as Time) and 
+			cast(ShiftEndsAt as Time) = cast(#{endsAt} as Time)
+	</select>
+    <select id="getEOSummary" parameterType="com.ngen.cosys.impbd.model.SearchInbound"
+		resultType="java.lang.String">
+	<![CDATA[
+		select  
+			Com_TeamMembers.Staff 
+		from 
+			Com_TeamMembers 
+		where 
+			Com_TeamMembers.ComTeamId = #{comTeamId} and 
+			role in ('EO', 'ECCEO')
+		union
+		select
+			distinct Adm_UserProfile.UserShortName as Staff		
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+			Imp_AgentDeliveryPlanningWorksheetShipments
+				on Flt_OperativeFlight_Legs.Flight_ID = Imp_AgentDeliveryPlanningWorksheetShipments.FlightId inner join
+			Imp_AgentDeliveryShipmentsAssignedTaskList
+				on Imp_AgentDeliveryPlanningWorksheetShipments.ImpAgentDeliveryPlanningWorksheetShipmentsId = Imp_AgentDeliveryShipmentsAssignedTaskList.ImpAgentDeliveryPlanningWorksheetShipmentsId inner join
+			Adm_UserProfile
+				on Imp_AgentDeliveryShipmentsAssignedTaskList.UserLoginCode = Adm_UserProfile.UserLoginCode
+		where
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = #{date} and
+			Cast(Flt_OperativeFlight_Legs.DateSTA as Time) between cast(#{startsAt} as Time) and cast(#{endsAt} as Time) AND
+			Flt_OperativeFlight_Legs.FlightOffPoint= #{tenantAirport}
+	
+	]]>
+	</select>
+	
+	<resultMap id="getShipment" type="com.ngen.cosys.impbd.model.ShipmentList">
+		<id column="flightID" property="flightID" />
+		<id column="agent" property="agent" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="flagNT" property="flagNT" />
+		<result column="flagT" property="flagT" />
+		<result column="ParkingBayArrivalAircraft" property="bay" />
+		<result column="DateSTA" jdbcType="TIMESTAMP" property="sta" />
+		<result column="DateETA" jdbcType="TIMESTAMP" property="eta" />
+		<result column="DateATA" jdbcType="TIMESTAMP" property="ata" />
+	</resultMap>
+
+	<resultMap id="shipmentListDetails"
+		type="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		<id column="FlightID" property="flightID" />
+		<id column="shipmentNumber" property="shipmentNumber" />
+		<result column="ImpAgentDeliveryPlanningWorksheetShipmentsId" property="worksheetShipmentID" />
+		<result column="ImpAgentDeliveryPlanningWorksheetId" property="worksheetID" />
+		<result column="ULDNumber" property="uldnumber" />
+		<result column="FlagMaintain" property="flagMaintain" />
+		<result column="UserLoginCode" property="userid" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="CreatedDateTime" property="createdOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="ShipmentStatus" property="status" />
+		<result column="Remarks" property="remarks" />
+		<result column="isArrivalDone" property="isArrivalDone" />
+		<result column="Customer_ID" property="agentCustomerId" /> 
+		<result column="CustomerCode" property="agent" />
+		<result column="NoShowFlag" property="noShow" />
+		<result column="shipmentType" property="shipmentType" />
+		<result column="LoadingAdvice" property="loadingAdivce" />
+		<result column="WarehouseLocationCode" property="wareHouseLocation" />
+		<result column="DeliveryLocationCode" property="deliveryLocation" />
+		<collection property="shcList"
+			ofType="com.ngen.cosys.impbd.model.SpecialHandlingCode" javaType="ArrayList">
+			<result column="shc" property="shc" />
+		</collection>
+		<collection property="eqpOperator"
+			ofType="com.ngen.cosys.impbd.model.EquipmentOperator" javaType="ArrayList">
+			<result column="UserShortName" property="eo" />
+		</collection>
+	</resultMap>
+	
+	<select id="getDetails" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		resultType="com.ngen.cosys.impbd.model.EccInboundResult">
+		select 
+			PlannedBy as plannedBy,
+			FlightHandledBy as flightHandledBy
+		from 
+			Imp_AgentDeliveryPlanningWorksheet
+		where 
+			ImpAgentDeliveryPlanningWorksheetId = #{worksheetID}
+	</select>
+	
+	<update id="updateShift" parameterType="com.ngen.cosys.impbd.model.EccInboundResult">
+		update Imp_AgentDeliveryPlanningWorksheet
+		set
+			PlannedBy=#{plannedBy},
+			FlightHandledBy=#{flightHandledBy}
+		where 
+			ImpAgentDeliveryPlanningWorksheetId=#{worksheetID}
+	</update>
+
+
+	<select id="sqlGetShipmentDetails" 
+		parameterType="com.ngen.cosys.impbd.model.ShipmentList"
+		resultMap="shipmentListDetails">
+		WITH X AS(
+			select 
+				'U' as FlagMaintain, 
+				ADM.UserShortName,
+				TASK.UserLoginCode,
+				PLN.ImpAgentDeliveryPlanningWorksheetId ,
+				PLN.ImpAgentDeliveryPlanningWorksheetShipmentsId ,
+				PLN.ShipmentDate,
+				isnull((select CreatedDateTime from Agt_InboundPreBookingShipments where shipmentNumber=PLN.ShipmentNumber and ShipmentDate=pln.ShipmentDate
+					AND InboundFlightId= PLN.FlightId ),PLN.CreatedDateTime) CreatedDateTime,
+					(select count(*) from Imp_ArrivalManifestShipmentInfo where shipmentNumber=PLN.ShipmentNumber and ShipmentDate= PLN.ShipmentDate
+					) as isArrivalDone,
+				PLN.FlightId as FlightID,
+				PLN.ShipmentNumber,PLN.LoadingAdvice,
+				PLN.Pieces, PLN.Weight,
+				PLN.NoShowFlag ,PLN.ShipmentStatus,
+				PLN.Remarks,
+				mst.Customer_ID,
+				mst.CustomerCode,
+				PLN.WarehouseLocationCode,
+				PLN.DeliveryLocationCode,
+				SHC.SpecialHandlingCode as shc,
+				PLN.ShipmentType as shipmentType
+		from
+			Customer_Master mst RIGHT JOIN
+			Imp_AgentDeliveryPlanningWorksheetShipmentSHC shc right join
+			Imp_AgentDeliveryPlanningWorksheetShipments PLN 
+				on PLN.ImpAgentDeliveryPlanningWorksheetShipmentsId=SHC.ImpAgentDeliveryPlanningWorksheetShipmentsId 
+				ON mst.Customer_ID =PLN.CustomerID left join
+			Imp_AgentDeliveryShipmentsAssignedTaskList TASK left join
+			Adm_UserProfile adm 
+				on ADM.UserLoginCode=TASK.UserLoginCode 
+				ON TASK.ImpAgentDeliveryPlanningWorksheetShipmentsId = pln.ImpAgentDeliveryPlanningWorksheetShipmentsId,
+			Imp_AgentDeliveryPlanningWorksheet WORK
+		where
+			WORK.ImpAgentDeliveryPlanningWorksheetId=PLN.ImpAgentDeliveryPlanningWorksheetId
+			<if test="agent!=null">
+				and mst.Customer_ID =#{agent}
+			</if>
+			AND PLN.FlightId= #{flightID}
+		UNION
+		SELECT 
+			distinct 'C' as FlagMaintain,
+			NULL as UserShortName, 
+			NULL as UserLoginCode, 
+			NULL as ImpAgentDeliveryPlanningWorksheetId,
+			NULL as ImpAgentDeliveryPlanningWorksheetShipmentsId,
+			shp.ShipmentDate,shp.CreatedDateTime,
+			1 as isArrivalDone ,
+			shp.InboundFlightId as FlightID , 
+			shp.ShipmentNumber,
+			concat(uldA.ULDNumber, 
+						(select 
+								CASE WHEN count(shpM.ImpArrivalManifestULDId) > 1 THEN '(M)'else '' end
+							from
+								Imp_ArrivalManifestULD uldM inner join 
+								Imp_ArrivalManifestShipmentInfo shpM
+									on uldM.ImpArrivalManifestULDId=shpm.ImpArrivalManifestULDId
+									and shpM.ImpArrivalManifestULDId=uldA.ImpArrivalManifestULDId
+								HAVING uldA.ULDNumber is not null
+							UNION
+						select 
+							LoadingAdvice 
+						from 
+							Agt_InboundPreBookingShipments 
+						where
+							ShipmentNumber=shp.ShipmentNumber and 
+							ShipmentDate=shp.ShipmentDate
+							and not EXISTS(select 
+												1 
+											from 
+												Imp_ArrivalManifestShipmentInfo 
+											where
+												ShipmentNumber=shp.ShipmentNumber and 
+												ShipmentDate=shp.ShipmentDate)),' ',arr.piece) as LoadingAdvice,
+			shp.Pieces,
+			shp.Weight,
+			NULL as NoShowFlag,
+			shp.Status,
+			shp.Remarks,
+			MST.Customer_ID,
+			MST.CustomerCode,
+			NULL as WarehouseLocationCode,
+			NULL as DeliveryLocationCode,
+			shpshc.SpecialHandlingCode as shc,
+			SHP.ShipmentType as shipmentType
+		FROM 
+			Customer_Master mst,
+			Customer_Types cus,
+			Agt_InboundPreBooking pbk,
+			Agt_InboundPreBookingShipments shp LEFT JOIN 
+			Imp_ArrivalManifestShipmentInfo arr
+				on arr.ShipmentNumber=shp.ShipmentNumber
+				and arr.ShipmentDate= shp.ShipmentDate left join 
+			Imp_ArrivalManifestULD uldA
+				ON arr.ImpArrivalManifestULDId=uldA.ImpArrivalManifestULDId inner JOIN 
+			Agt_InboundPreBookingShipmentsSHC shpshc
+				ON shpshc.AgentInboundPreBookingShipmentsId = shp.AgentInboundPreBookingShipmentsId LEFT OUTER JOIN 
+			Mst_AssociateSHCByHandlingGroup shcassgrp
+				ON shcassgrp.SpecialHandlingCode = shpshc.SpecialHandlingCode LEFT OUTER JOIN 
+			Mst_SHCHandlingGroup shcgrp
+				ON shcassgrp.MstSHCHandlingGroupID= shcgrp.MstSHCHandlingGroupID
+		WHERE not
+			EXISTS (select 
+						1 
+					from 
+						Imp_AgentDeliveryPlanningWorksheetShipments
+					where 
+						ShipmentNumber = shp.ShipmentNumber and 
+						ShipmentDate=shp.ShipmentDate and 
+						FlightId=shp.InboundFlightId) and
+			pbk.AgentInboundPreBookingId=shp.AgentInboundPreBookingId and
+			pbk.CustomerId= cus.Customer_ID and 
+			cus.Customer_ID=MST.Customer_ID
+			<if test="agent!=null">
+				and MST.Customer_ID = #{agent}
+				and cus.CustomerTypeCode =
+				'AGT'
+			</if>
+			AND shp.InboundFlightId= #{flightID}
+		)
+		select 
+			FlagMaintain, 
+			UserShortName,
+			UserLoginCode,
+			ImpAgentDeliveryPlanningWorksheetId,
+			ImpAgentDeliveryPlanningWorksheetShipmentsId,
+			ShipmentDate,CreatedDateTime,
+			isArrivalDone,
+			FlightID,
+			ShipmentNumber,
+			string_agg(LoadingAdvice, ' , ') as LoadingAdvice,
+			Pieces, 
+			Weight, 
+			NoShowFlag,
+			ShipmentStatus,
+			Remarks,
+			Customer_ID,
+			CustomerCode,
+			WarehouseLocationCode,
+			DeliveryLocationCode, 
+			shc,
+			shipmentType 
+		FROM 
+			x
+		group by 
+			FlagMaintain, 
+			UserShortName,
+			UserLoginCode,
+			ImpAgentDeliveryPlanningWorksheetId,
+			ImpAgentDeliveryPlanningWorksheetShipmentsId,
+			ShipmentDate,
+			CreatedDateTime,
+			isArrivalDone,
+			FlightID,
+			ShipmentNumber,
+			Pieces, 
+			Weight,
+			NoShowFlag,
+			ShipmentStatus,
+			Remarks,
+			Customer_ID,
+			CustomerCode,
+			WarehouseLocationCode,
+			DeliveryLocationCode, 
+			shc,
+			shipmentType
+			order by Customer_ID
+	</select>
+
+	<select id="getShip" parameterType="com.ngen.cosys.impbd.model.SearchInbound"
+		resultMap="getShipment">
+		select
+			DISTINCT '1' as flagNT,NULL,
+			FLT.Flight_ID as flightID,
+			FLT.FlightKey,
+			FLT.ParkingBayArrivalAircraft,
+			legs.DateSTA,
+			legs.DateETA,
+			legs.DateATA
+		from
+			Flt_OperativeFlight FLT ,
+			Flt_OperativeFlight_Legs legs
+		where
+			flt.Flight_ID=legs.Flight_ID and
+			cast(coalesce(legs.DateATA, legs.DateETA, legs.DateSTA) as datetime) between cast(#{shiftStartTime} as datetime) and cast(#{shiftEndTime} as datetime) and
+			(EXISTS (select * FROM Agt_InboundPreBookingShipments WHERE FLT.Flight_ID = InboundFlightId)
+			or EXISTS( select * from Imp_AgentDeliveryPlanningWorksheetShipments where FLT.Flight_ID= FlightId)) and						
+			legs.FlightOffPoint= #{tenantAirport}
+			
+			<if test="flightKey != null and flightKey !='' ">
+			and FLT.FlightKey = #{flightKey}
+			</if>
+		order by
+			DateSTA
+	</select>
+
+	<insert id="insertShipment" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		useGeneratedKeys="true" keyColumn="ImpAgentDeliveryPlanningWorksheetShipmentsId"
+		keyProperty="worksheetShipmentID">
+		INSERT INTO Imp_AgentDeliveryPlanningWorksheetShipments(
+			ImpAgentDeliveryPlanningWorksheetId,
+			FlightId
+			,CustomerID
+			,ShipmentNumber
+			,ShipmentDate
+			,ShipmentType
+			,ULDNumber
+			,Pieces
+			,Weight
+			,LoadingAdvice
+			,Remarks
+			,NoShowFlag
+			,WarehouseLocationCode
+			,DeliveryLocationCode
+			,ShipmentStatus
+			,CreatedUserCode
+			,CreatedDateTime
+		)VALUES(
+			#{worksheetID}
+			,#{flightID}
+			,#{agent}
+			,#{shipmentNumber}
+			,#{shipmentDate}
+			,#{shipmentType}
+			,#{uldnumber}
+			,#{pieces}
+			,#{weight}
+			,#{loadingAdivce}
+			,#{remarks}
+			,#{noShow}
+			,#{wareHouseLocation}
+			,#{deliveryLocation}
+			,#{status}
+			,#{createdBy}
+			,#{createdOn}
+		)
+	</insert>
+	<update id="updateShipment" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		update Imp_AgentDeliveryPlanningWorksheetShipments
+		set 
+			FlightId = #{flightID}
+			,ShipmentNumber = #{shipmentNumber}
+			,ShipmentDate = #{shipmentDate}
+			,ShipmentType=#{shipmentType}
+			,ULDNumber = #{uldnumber}
+			,Pieces = #{pieces}
+			,Weight = #{weight}
+			,LoadingAdvice = #{loadingAdivce}
+			,Remarks = #{remarks}
+			,WarehouseLocationCode =#{wareHouseLocation}
+			,DeliveryLocationCode = #{deliveryLocation}
+			,ShipmentStatus = #{status}
+			,NoShowFlag = #{noShow}
+			,ImpAgentDeliveryPlanningWorksheetId = #{worksheetID}
+			,CustomerID = #{agent}
+		WHERE
+			ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</update>
+
+	<delete id="deleteSHC" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		delete from Imp_AgentDeliveryPlanningWorksheetShipmentSHC where ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</delete>
+	
+	<update id="updateEO" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		update Imp_AgentDeliveryShipmentsAssignedTaskList
+		set 
+			UserLoginCode =#{userid}
+		where
+			ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</update>
+	
+	<delete id="deleteEo" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		delete from Imp_AgentDeliveryShipmentsAssignedTaskList where ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</delete>
+	
+	<delete id="deleteShip" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		delete from Imp_AgentDeliveryPlanningWorksheetShipments where ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</delete>
+
+	<insert id="insertEo" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		useGeneratedKeys="true" keyColumn="ImpAgentDeliveryShipmentsAssignedTaskListId"
+		keyProperty="worksheetAssignedList">
+		insert into Imp_AgentDeliveryShipmentsAssignedTaskList (
+			ImpAgentDeliveryPlanningWorksheetShipmentsId
+			,UserLoginCode
+			,CreatedUserCode
+			,CreatedDateTime
+		)values(
+			#{worksheetShipmentID}
+			,#{userid}
+			,#{createdBy}
+			,#{createdOn}
+		)
+	</insert>
+
+	<insert id="insertShift" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		useGeneratedKeys="true" keyColumn="ImpAgentDeliveryPlanningWorksheetId"
+		keyProperty="worksheetID">
+		insert into Imp_AgentDeliveryPlanningWorksheet(
+			PlannedDate
+			,PlannedShiftStartTime
+			,PlannedShiftEndTime
+			,CreatedUserCode
+			,CreatedDateTime
+			,PlannedBy
+			,FlightHandledBy
+		)values(
+			#{date}
+			,#{startsAt}
+			,#{endsAt}
+			,#{createdBy}
+			,#{createdOn}
+			,#{plannedBy}
+			,#{flightHandledBy}
+		)
+	</insert>
+	
+	<select id="validateTeam" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Imp_AgentDeliveryPlanningWorksheet
+		where 
+			PlannedDate=#{date} and 
+			PlannedShiftStartTime= cast(#{startsAt} AS TIME) and 
+			PlannedShiftEndTime= cast(#{endsAt} AS TIME)
+	</select>
+	
+	<insert id="insertAuthorizeTo" parameterType="com.ngen.cosys.impbd.model.AuthorizeTo">
+		insert into Imp_AgentDeliveryPlanningWorksheetAuthorisedToChange(
+			ImpAgentDeliveryPlanningWorksheetId,
+			UserLoginCode,
+			CreatedUserCode
+			,CreatedDateTime
+		)values(
+			#{worksheetID},
+			#{userID},
+			#{createdBy}
+			,#{createdOn}
+		)
+	</insert>
+
+	<insert id="insertSHC" parameterType="com.ngen.cosys.impbd.model.SpecialHandlingCode">
+		insert into Imp_AgentDeliveryPlanningWorksheetShipmentSHC(
+			ImpAgentDeliveryPlanningWorksheetShipmentsId
+			,SpecialHandlingCode
+			,CreatedUserCode
+			,CreatedDateTime
+		)values(
+			#{worksheetShipmentID}
+			,#{shc}
+			, #{createdBy}
+			,#{createdOn}
+		)
+	</insert>
+	
+	<select id="fetchCustID" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultMap="getCustID">
+		select Customer_ID FROM Customer_Master
+		WHERE
+		customerCode=#{agent}
+	</select>
+
+	<select id="fetchDate" parameterType="com.ngen.cosys.impbd.model.SearchInbound"
+		resultMap="getTime">
+		select 
+			format(ShiftStartsAt , 'HHmm') ShiftStartsAt,
+			format(ShiftEndsAt , 'HHmm') ShiftEndsAt ,
+			TeamName as workingShift,
+			ComTeamId
+		FROM 
+			Com_Team
+		where 
+			TeamName=#{workingShift}
+	</select>
+
+	<select id="fetch" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		resultMap="get">
+		SELECT 
+			cast (ShiftStartsAt as time) ShiftStartsAt ,
+			cast (ShiftEndsAt as time) ShiftEndsAt ,
+			TeamName as workingShift,
+			ComTeamId
+		FROM 
+			Com_Team
+		where 
+			TeamName=#{workingShift}
+	</select>
+
+	<select id="fetchWorkingShift" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		resultMap="getWorkingShift">
+		select 
+			ImpAgentDeliveryPlanningWorksheetId
+		from
+			Imp_AgentDeliveryPlanningWorksheet
+		where
+			ImpAgentDeliveryPlanningWorksheetId=#{worksheetID}
+	</select>
+
+	<resultMap id="getWorkingShift" type="com.ngen.cosys.impbd.model.EccInboundResult">
+		<result column="ImpAgentDeliveryPlanningWorksheetId" jdbcType="NUMERIC"
+			property="worksheetID" />
+	</resultMap>
+	<delete id="deleteAuthorizeTo" parameterType="com.ngen.cosys.impbd.model.AuthorizeTo">
+		delete from
+			Imp_AgentDeliveryPlanningWorksheetAuthorisedToChange
+		where
+			ImpAgentDeliveryPlanningWorksheetId=#{worksheetID} and
+			UserLoginCode=#{userID}
+	</delete>
+	
+	<resultMap id="getShipmentID"
+		type="com.ngen.cosys.impbd.model.ShipmentListDetails">
+		<result column="ImpAgentDeliveryPlanningWorksheetShipmentsId"
+			property="worksheetShipmentID" />
+	</resultMap>
+	<select id="fetchShipmentID" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultMap="getShipmentID">
+		select 
+			ImpAgentDeliveryPlanningWorksheetShipmentsId
+		from
+			Imp_AgentDeliveryPlanningWorksheetShipments
+		where
+			ImpAgentDeliveryPlanningWorksheetShipmentsId= #{worksheetShipmentID}
+	</select>
+	
+	<select id="fetchWorksheetID" parameterType="com.ngen.cosys.impbd.model.SearchInbound"
+		resultType="java.lang.Integer">
+		select 
+			ImpAgentDeliveryPlanningWorksheetId as worksheetID
+		from
+			Imp_AgentDeliveryPlanningWorksheet
+		where 
+			PlannedShiftStartTime=cast(#{startsAt} as Time) and
+			PlannedShiftEndTime = cast(#{endsAt} as Time) and 
+			PlannedDate=#{date}
+	</select>
+	
+	<select id="searchWorksheetID" parameterType="com.ngen.cosys.impbd.model.EccInboundResult"
+		resultType="java.lang.Integer">
+		select 
+			ImpAgentDeliveryPlanningWorksheetId as worksheetID
+		from
+			Imp_AgentDeliveryPlanningWorksheet
+		where 
+			PlannedShiftStartTime=cast(#{startsAt} as Time) and
+			PlannedShiftEndTime = cast(#{endsAt} as Time) and 
+			PlannedDate=#{date}
+	</select>
+	
+	<select id="searchShipmentID" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		select 
+			ShipmentId 
+		from 
+			Shipment_Master 
+		where
+			ShipmentNumber=#{shipmentNumber} AND 
+			ShipmentDate = #{shipmentDate}
+	</select>
+	
+	<select id="checkHANDEDOVER" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from
+			Imp_AgentDeliveryShipmentsAssignedTaskList
+		where 
+			HandedOverTo is not null and
+			ImpAgentDeliveryPlanningWorksheetShipmentsId=#{worksheetShipmentID}
+	</select>
+
+	<select id="checkOK" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		FROM 
+			Shipment_Inventory where Shipment_ID=#{shipmentId} and 
+			ShipmentLocation is not null
+	</select>
+
+	<select id="checkDelivered" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Imp_Delivery
+		where 
+			ShipmentId=#{shipmentId}
+	</select>
+	
+	<select id="fetchShc" parameterType="com.ngen.cosys.impbd.model.SpecialHandlingCode"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Mst_SHCHandlingGroup 
+		where 
+			SHCHandlingGroupCode=#{shc}
+	</select>
+	
+	<select id="fetchEO" parameterType="com.ngen.cosys.impbd.model.EquipmentOperator"
+		resultType="java.lang.String">
+		Select TOP 1
+			pro.UserLoginCode
+		from 
+			Adm_UserRoleAssignment assign,
+			Adm_ApplicationRole rol,
+			Adm_UserProfile pro
+		where
+			rol.ApplicationRoleCode=assign.ApplicationRoleCode and
+			assign.UserProfile_ID=pro.UserProfile_ID and
+			(rol.ApplicationRoleCode = 'EO'or rol.ApplicationRoleCode like 'ECC%') and 
+			pro.UserShortName =#{eo}
+	</select>
+	
+	<select id="checkShipment" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		select 
+			count(*) 
+		from 
+			Imp_AgentDeliveryPlanningWorksheetShipments
+		where 
+			ShipmentNumber=#{shipmentNumber} and 
+			shipmentDate=#{shipmentDate} and
+			FlightId =#{flightID}
+	</select>
+	
+	<select id="checkShipmentDetails" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		select 
+			count(*) 
+		from 
+			Imp_AgentDeliveryPlanningWorksheetShipments
+		where 
+			ShipmentNumber=#{shipmentNumber} and 
+			shipmentDate=#{shipmentDate} and FlightId =#{flightID}
+			and ImpAgentDeliveryPlanningWorksheetShipmentsId <> #{worksheetShipmentID}
+			]]>
+
+	</select>
+	
+	<select id="getCustomerIdByAgentCodeOrAgentId" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultMap="getCustID">
+		select
+	       MST.Customer_ID 
+		from
+		       Customer_Types  cus
+		     , Customer_Master MST
+		where
+				cus.Customer_ID  = MST.Customer_ID 
+		       	and MST.customerCode = #{agent}
+		       	and cus.CustomerTypeCode = 'AGT'
+		
+			
+	</select>
+	
+	 <select id="fetchCustomerCode" parameterType="com.ngen.cosys.impbd.model.ShipmentListDetails"
+		resultType = "java.lang.String">
+		select CustomerCode FROM Customer_Master
+		WHERE
+		Customer_ID=#{agent}
+	</select> 
+	
+	
+	
+</mapper>

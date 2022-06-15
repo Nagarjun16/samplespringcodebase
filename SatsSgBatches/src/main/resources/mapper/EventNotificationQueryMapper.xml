@@ -1,0 +1,838 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EventNotificationMapper">
+
+	<resultMap id="eventNotificationFrequencyJobMap" type="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<id column="EventNotificationFrequencyJobId" property="eventTypeId" />
+		<result column="EntityName" property="entity" />
+		<result column="EventName" property="eventName" />
+		<result column="Active" property="active" />
+	</resultMap>
+	 
+	<!-- Event Notification Frequency Job Configuration -->
+	<select id="sqlSelectEventNotificationFrequencyJobDetails" resultMap="eventNotificationFrequencyJobMap" 
+			parameterType="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<![CDATA[
+			SELECT	EventNotificationFrequencyJobId, EntityName, EventName, Active
+			FROM	Event_NotificationFrequencyJob
+		]]>
+	</select>
+	
+	<!-- Event Notification Configuration -->
+	<select id="sqlSelectEventNotificationLastExecutionTime" resultType="java.lang.Object" 
+			parameterType="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<![CDATA[
+			SELECT 	MAX(JobStartTime) 
+			FROM 	Event_NotificationJob 
+			WHERE 	EntityName = #{entity}
+			AND		EventName = #{eventName}
+		]]>
+	</select>
+	
+	<resultMap id="eventNotificationMap" type="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<id column="EventTypesId" property="eventTypeId" />
+		<result column="Flow" property="module" />
+		<result column="Purpose" property="entity" />
+		<result column="Type" property="eventName" />
+		<result column="Active" property="active" />
+	</resultMap>
+	 
+	<!-- Event Notification Configuration -->
+	<select id="sqlSelectEventNotificationConfig" resultMap="eventNotificationMap" 
+			parameterType="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<![CDATA[
+			SELECT	EventTypesId, Flow, Purpose, Type, Active
+			FROM	Event_Types
+			WHERE	Purpose = #{entity}
+			AND		Type = #{eventName}
+		]]>
+	</select>
+	
+	<resultMap id="eventNotificationDetailsMap" type="com.ngen.cosys.event.notification.model.EventNotificationModel">
+		<id column="EventTypesId" property="eventTypeId" />
+		<id column="EventModule" property="eventModule" />
+		<result column="Flow" property="module" />
+		<result column="Purpose" property="entity" />
+		<result column="Type" property="eventName" />
+		<result column="Active" property="active" />
+		<!-- Event Notification configured details for the Entity and Event Type -->
+		<collection property="eventNotification" javaType="List"
+			ofType="com.ngen.cosys.event.notification.model.EventNotification" 
+			select="selectEventNotificationInlineDetails"
+			column="{eventTypeId=EventTypesId,eventModule=EventModule}" />
+	</resultMap>
+	
+	<resultMap id="eventNotificationInlineDetailsMap" 
+				type="com.ngen.cosys.event.notification.model.EventNotification">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="SLACategory" property="slaType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="FlightType" property="flightType" />
+		<result column="SpecialHandlingGroup" property="shc" />
+		<result column="FlightTime" property="flightTime" />
+		<result column="Equation" property="equation" />
+		<result column="OccurenceInMinutes" property="minutes" />
+		<result column="WithInTimeDuration" property="withInTimeDuration" />
+		<result column="OccurenceInCount" property="count" />
+		<result column="FixedTime" property="frequency.fixedTime" />
+		<result column="RepeatTime" property="frequency.repeatTime" />
+		<result column="DLSPrecisionTime" property="dlsPrecisionTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightPrecisionTime" property="flightPrecisionTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<!-- Associated Event Template -->
+		<association property="template"
+			javaType="com.ngen.cosys.event.notification.model.EventTemplate"
+			select="selectEventTemplate" column="{eventNotificationId=EventNotificationId}" />
+		<!-- Communication(Notification) Types -->
+		<collection property="notificationTypes" javaType="List"
+			ofType="com.ngen.cosys.event.notification.model.EventCommunication" 
+			select="selectEventCommunicationTypes"
+			column="{eventNotificationId=EventNotificationId}" />
+		<!-- User Notification Details -->
+		<collection property="notificationUsers" javaType="List"
+			ofType="com.ngen.cosys.event.notification.model.NotificationUser" 
+			select="selectEventNotificationUsers"
+			column="{eventNotificationId=EventNotificationId}" />
+		<!-- Flight Information Details -->
+		<collection property="flightInformations" javaType="List"
+			ofType="com.ngen.cosys.event.notification.model.FlightInformation" 
+			select="selectEventNotificationFlightInformation"
+			column="{eventNotificationId=EventNotificationId}" />
+	</resultMap>
+	
+	<!-- Templates  -->
+	<resultMap id="eventTemplateMap" type="com.ngen.cosys.event.notification.model.EventTemplate">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<id column="EventTemplateId" property="templateId" />
+		<result column="Name" property="templateName" />
+		<result column="Email" property="emailTemplate" />
+		<result column="SMS" property="smsTemplate" />
+		<result column="FAX" property="faxTemplate" />
+	</resultMap>
+	
+	<!-- Communication Types -->
+	<resultMap id="eventCommunicationTypesMap" type="com.ngen.cosys.event.notification.model.EventCommunication">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="EventCommunicationTypesId" property="communicationTypeId" />
+		<result column="Type" property="communicationType" />
+	</resultMap>
+	
+	<!-- Notification Users -->
+	<resultMap id="eventNotificationUsersMap" type="com.ngen.cosys.event.notification.model.NotificationUser">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="UserLoginCode" property="loginCode" />
+		<result column="Email" property="emailId" />
+	</resultMap>
+	
+	<!-- Notification Flight Information -->
+	<resultMap id="eventNotificationFlightInformationMap" 
+				type="com.ngen.cosys.event.notification.model.FlightInformation">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDateTime" />
+	</resultMap>
+	
+	<!-- Event Notification Details -->
+	<select id="sqlSelectEventNotificationDetails" resultMap="eventNotificationDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<![CDATA[
+			SELECT	EventTypesId, Flow, Purpose, Type, Active, 
+					#{eventModule} AS EventModule 
+			FROM	Event_Types
+			WHERE	Purpose = #{entity}
+			AND		Type = #{eventName}
+		]]>
+	</select>
+	
+	<select id="selectEventNotificationInlineDetails" resultMap="eventNotificationInlineDetailsMap">
+		<![CDATA[
+			SELECT	Event_Notification.EventNotificationId, Event_Notification.SLACategory, 
+					Event_Notification.AircraftType, Event_Notification.FlightType, 
+					Event_Notification.SpecialHandlingGroup, Event_Notification.FlightTime, 
+					Event_Notification.Equation, Event_Notification.Code, 
+					Event_Notification.OccurenceInMinutes,
+		]]>
+		<if test="eventModule != null and eventModule != ''">
+		<choose>
+			<when test="eventModule == 'IMPORT'">
+				<![CDATA[ 
+					LEAD(Event_Notification.OccurenceInMinutes, 1, NULL) 
+					OVER(PARTITION BY Event_Notification.EventTypesId 
+					ORDER BY 
+						(CASE WHEN Event_Notification.SLACategory = 'RED' 
+							THEN 1 
+							ELSE 
+								CASE WHEN Event_Notification.SLACategory = 'AMBER'
+									THEN 2
+									ELSE 3
+								END
+							END
+						) 
+					ASC) WithInTimeDuration, 
+				]]>
+			</when>
+			<when test="eventModule == 'EXPORT'">
+				<![CDATA[
+					LEAD(Event_Notification.OccurenceInMinutes, 1, NULL) 
+					OVER(PARTITION BY Event_Notification.EventTypesId 
+					ORDER BY 
+						(CASE WHEN Event_Notification.SLACategory = 'RED' 
+							THEN 1 
+							ELSE 
+								CASE WHEN Event_Notification.SLACategory = 'AMBER'
+									THEN 2
+									ELSE 3
+								END
+							END
+						) 
+					DESC) WithInTimeDuration, 
+				]]>
+			</when>
+		</choose>				
+		</if>
+		<![CDATA[			
+					Event_Notification.OccurenceInCount,
+					Event_Notification.FixedTime, Event_Notification.RepeatTime, 
+					Event_Notification.DLSPrecisionTime, Event_Notification.FlightPrecisionTime
+			FROM	Event_Notification
+			WHERE	Event_Notification.EventTypesId = #{eventTypeId}
+		]]>
+		<if test="eventModule != null and eventModule != ''">
+		<choose>
+			<when test="eventModule == 'IMPORT'">
+				<![CDATA[ 
+					ORDER BY 
+						(	CASE WHEN Event_Notification.SLACategory = 'RED' 
+							THEN 1 
+							ELSE 
+								CASE WHEN Event_Notification.SLACategory = 'AMBER'
+									THEN 2
+									ELSE 3
+								END
+							END
+						) ASC
+				]]>
+			</when>
+			<when test="eventModule == 'EXPORT'">
+				<![CDATA[
+					ORDER BY 
+						(	CASE WHEN Event_Notification.SLACategory = 'RED' 
+							THEN 1 
+							ELSE 
+								CASE WHEN Event_Notification.SLACategory = 'AMBER'
+									THEN 2
+									ELSE 3
+								END
+							END
+						) DESC
+				]]>
+			</when>
+		</choose>				
+		</if>
+	</select>
+	
+	<select id="selectEventTemplate" resultMap="eventTemplateMap">
+		<![CDATA[
+			SELECT	Event_Template.EventTemplateId, Event_Template.Name,
+					Event_Template.Email, 
+					Event_Template.SMS, 
+					Event_Template.FAX
+			FROM	Event_AssociateNotificationTemplate
+				INNER JOIN
+					Event_Template
+				ON	Event_Template.EventTemplateId = Event_AssociateNotificationTemplate.EventTemplateId
+			WHERE	Event_AssociateNotificationTemplate.EventNotificationId = #{eventNotificationId}
+		]]>
+	</select>
+	
+	<select id="selectEventCommunicationTypes" resultMap="eventCommunicationTypesMap">
+		<![CDATA[
+			SELECT	#{eventNotificationId} AS EventNotificationId, 
+					Event_CommunicationTypes.EventCommunicationTypesId, 
+					Event_CommunicationTypes.Type
+			FROM	Event_CommunicationTypes
+				INNER JOIN
+					Event_NotificationMode
+				ON	Event_NotificationMode.EventCommunicationTypesId 
+						= Event_CommunicationTypes.EventCommunicationTypesId
+			WHERE	Event_NotificationMode.EventNotificationId = #{eventNotificationId}
+			AND		Event_CommunicationTypes.Active = 1
+		]]>
+	</select>
+	
+	<select id="selectEventNotificationUsers" resultMap="eventNotificationUsersMap">
+		<![CDATA[
+			SELECT	#{eventNotificationId} AS EventNotificationId,
+					Event_NotificationUserGroup.UserLoginCode, 
+					Event_GroupMemberList.Email
+			FROM	Event_NotificationUserGroup
+				INNER JOIN
+					Event_GroupMemberList
+				ON	Event_GroupMemberList.EventGroupId = Event_NotificationUserGroup.EventGroupId
+				AND	(Event_GroupMemberList.UserLoginCode = Event_NotificationUserGroup.UserLoginCode
+						OR	Event_NotificationUserGroup.UserLoginCode IS NULL
+					)
+			WHERE	Event_NotificationUserGroup.EventNotificationId = #{eventNotificationId}
+		]]>
+	</select>
+	
+	<select id="selectEventNotificationFlightInformation" resultMap="eventNotificationFlightInformationMap">
+		<![CDATA[
+			SELECT	#{eventNotificationId} AS EventNotificationId,
+					Event_NotificationByFlight.CarrierCode,
+					Event_NotificationByFlight.FlightKey,
+					Event_NotificationByFlight.FlightDate
+			FROM	Event_NotificationByFlight
+				INNER JOIN
+					Event_Notification
+				ON	Event_Notification.EventNotificationId = Event_NotificationByFlight.EventNotificationId
+			WHERE	Event_Notification.EventNotificationId = #{eventNotificationId}
+		]]>
+	</select>
+	
+	<!-- Notification Flight Information -->
+	<resultMap id="inboundNotCompletedFlightDetailsMap" type="com.ngen.cosys.event.notification.model.FlightEvents">
+		<id column="ImpFlightEventsId" property="flightEventId" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateETD" property="dateETD" />
+		<result column="DateATD" property="dateATD" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="DateETA" property="dateETA" />
+		<result column="DateATA" property="dateATA" />
+		<result column="RampCheckInCompletedAt" property="rampCheckInCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="DocumentVerificationCompletedAt" property="documentVerificationCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="BreakDownCompletedAt" property="breakdownCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FightClosedAt" property="flightClosedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightCompletedAt" property="flightCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<select id="sqlSelectInboundNotCompletedFlightDetails" resultMap="inboundNotCompletedFlightDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.ImportFlightEvents">
+		<![CDATA[
+			SELECT	Imp_FlightEvents.ImpFlightEventsId, Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode, Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate, 
+					Flt_OperativeFlight.FlightType, Flt_OperativeFlight_Legs.AircraftType,
+					Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight_Legs.DateETA, Flt_OperativeFlight_Legs.DateATA,
+					Imp_FlightEvents.RampCheckInCompletedAt, 
+					Imp_FlightEvents.DocumentVerificationCompletedAt, 
+					Imp_FlightEvents.BreakDownCompletedAt,
+					Imp_FlightEvents.FightClosedAt,
+					Imp_FlightEvents.FlightCompletedAt
+			FROM	Imp_FlightEvents	
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Imp_FlightEvents.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE	1 = 1
+		]]>
+		<if test="!breakdownCompleted and !rampCheckInCompleted and !inboundFlightCompleted">
+			AND 	1 = 2
+		</if>
+		<if test="breakdownCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.BreakDownCompletedAt IS NULL 
+			AND		Imp_FlightEvents.BreakDownCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="rampCheckInCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.RampCheckInCompletedAt IS NULL 
+			AND		Imp_FlightEvents.RampCheckInCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="inboundFlightCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.FlightCompletedAt IS NULL 
+			AND		Imp_FlightEvents.FlightCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+	</select>
+	
+	<!-- Notification Flight Information -->
+	<resultMap id="outboundNotCompletedFlightDetailsMap" type="com.ngen.cosys.event.notification.model.FlightEvents">
+		<id column="ExpFlightEventsId" property="flightEventId" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateETD" property="dateETD" />
+		<result column="DateATD" property="dateATD" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="DateETA" property="dateETA" />
+		<result column="DateATA" property="dateATA" />
+		<result column="BuildupCompletedAt" property="buildupCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="DLSCompletedAt" property="dlsCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="ManifestCompletedAt" property="manifestCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FlightCompletedAt" property="flightCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightDepartedOn" property="flightDepartedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<select id="sqlSelectOutboundNotCompletedFlightDetails" resultMap="outboundNotCompletedFlightDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.ExportFlightEvents">
+		<![CDATA[
+			SELECT	Exp_FlightEvents.ExpFlightEventsId, Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode, Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate, 
+					Flt_OperativeFlight.FlightType, Flt_OperativeFlight_Legs.AircraftType,
+					Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight_Legs.DateETA, Flt_OperativeFlight_Legs.DateATA,
+					Exp_FlightEvents.BuildupCompletedAt, 
+					Exp_FlightEvents.DLSCompletedAt, 
+					Exp_FlightEvents.ManifestCompletedAt,
+					Exp_FlightEvents.FlightCompletedAt,
+					Exp_FlightEvents.FlightDepartedOn
+			FROM	Exp_FlightEvents	
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE	1 = 1
+		]]>
+		<if test="!buildUpCompleted and !dlsCompleted and !manifestCompleted and !outboundFlightCompleted">
+			AND 	1 = 2
+		</if>
+		<if test="buildUpCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.BuildupCompletedAt IS NULL 
+			AND		Exp_FlightEvents.BuildupCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="dlsCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.DLSCompletedAt IS NULL 
+			AND		Exp_FlightEvents.DLSCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="manifestCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.ManifestCompletedAt IS NULL 
+			AND		Exp_FlightEvents.ManifestCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="outboundFlightCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.FlightCompletedAt IS NULL 
+			AND		Exp_FlightEvents.FlightCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+	</select>
+	
+	<!-- Notification Inbound Completed Flight Information -->
+	<resultMap id="inboundCompletedFlightDetailsMap" type="com.ngen.cosys.event.notification.model.FlightEvents">
+		<id column="ImpFlightEventsId" property="flightEventId" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightServiceType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateETD" property="dateETD" />
+		<result column="DateATD" property="dateATD" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="DateETA" property="dateETA" />
+		<result column="DateATA" property="dateATA" />
+		<result column="RampCheckInCompletedAt" property="rampCheckInCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="DocumentVerificationCompletedAt" property="documentVerificationCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="BreakDownCompletedAt" property="breakdownCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FightClosedAt" property="flightClosedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightCompletedAt" property="flightCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<select id="sqlSelectInboundCompletedFlightDetails" resultMap="inboundCompletedFlightDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.ImportFlightEvents">
+		<![CDATA[
+			SELECT	Imp_FlightEvents.ImpFlightEventsId, Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode, Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate, 
+					Flt_OperativeFlight.FlightServiceType, Flt_OperativeFlight_Legs.AircraftType,
+					Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight_Legs.DateETA, Flt_OperativeFlight_Legs.DateATA,
+					Imp_FlightEvents.RampCheckInCompletedAt, 
+					Imp_FlightEvents.DocumentVerificationCompletedAt, 
+					Imp_FlightEvents.BreakDownCompletedAt,
+					Imp_FlightEvents.FightClosedAt,
+					Imp_FlightEvents.FlightCompletedAt
+			FROM	Imp_FlightEvents	
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Imp_FlightEvents.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE	1 = 1
+		]]>
+		<if test="!breakdownCompleted and !rampCheckInCompleted and !inboundFlightCompleted">
+			AND 	1 = 2
+		</if>
+		<if test="breakdownCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.BreakDownCompletedAt IS NOT NULL 
+			AND		Imp_FlightEvents.BreakDownCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="rampCheckInCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.RampCheckInCompletedAt IS NOT NULL 
+			AND		Imp_FlightEvents.RampCheckInCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="inboundFlightCompleted">
+			<![CDATA[
+			AND		Imp_FlightEvents.FlightCompletedAt IS NOT NULL 
+			AND		Imp_FlightEvents.FlightCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTA 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+	</select>
+	
+	<!-- Notification Outbound Completed Flight Information -->
+	<resultMap id="outboundCompletedFlightDetailsMap" type="com.ngen.cosys.event.notification.model.FlightEvents">
+		<id column="ExpFlightEventsId" property="flightEventId" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightOriginDate" property="flightOriginDate" />
+		<result column="FlightServiceType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateETD" property="dateETD" />
+		<result column="DateATD" property="dateATD" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="DateETA" property="dateETA" />
+		<result column="DateATA" property="dateATA" />
+		<result column="BuildupCompletedAt" property="buildupCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="DLSCompletedAt" property="dlsCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="ManifestCompletedAt" property="manifestCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FlightCompletedAt" property="flightCompletedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="FlightDepartedOn" property="flightDepartedOn" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<select id="sqlSelectOutboundCompletedFlightDetails" resultMap="outboundCompletedFlightDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.ExportFlightEvents">
+		<![CDATA[
+			SELECT	Exp_FlightEvents.ExpFlightEventsId, Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode, Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate, 
+					Flt_OperativeFlight.FlightServiceType, Flt_OperativeFlight_Legs.AircraftType,
+					Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Legs.DateATD,
+					Flt_OperativeFlight_Legs.DateSTA, Flt_OperativeFlight_Legs.DateETA, Flt_OperativeFlight_Legs.DateATA,
+					Exp_FlightEvents.BuildupCompletedAt, 
+					Exp_FlightEvents.DLSCompletedAt, 
+					Exp_FlightEvents.ManifestCompletedAt,
+					Exp_FlightEvents.FlightCompletedAt,
+					Exp_FlightEvents.FlightDepartedOn
+			FROM	Exp_FlightEvents	
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE	1 = 1
+		]]>
+		<if test="!buildUpCompleted and !dlsCompleted and !manifestCompleted and !outboundFlightCompleted">
+			AND 	1 = 2
+		</if>
+		<if test="buildUpCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.BuildupCompletedAt IS NOT NULL 
+			AND		Exp_FlightEvents.BuildupCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="dlsCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.DLSCompletedAt IS NULL 
+			AND		Exp_FlightEvents.DLSCompletedBy IS NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="manifestCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.ManifestCompletedAt IS NOT NULL 
+			AND		Exp_FlightEvents.ManifestCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+		<if test="outboundFlightCompleted">
+			<![CDATA[
+			AND		Exp_FlightEvents.FlightCompletedAt IS NOT NULL 
+			AND		Exp_FlightEvents.FlightCompletedBy IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD IS NOT NULL
+			AND		Flt_OperativeFlight_Legs.DateSTD 
+						BETWEEN DATEADD(HOUR, -3, DATEADD(HOUR, +8, GETDATE())) 
+							AND DATEADD(HOUR, +3, DATEADD(HOUR, +8, GETDATE()))
+			ORDER BY Flt_OperativeFlight_Legs.DateSTD, Flt_OperativeFlight.FlightKey
+			]]>
+		</if>
+	</select>
+	
+	<resultMap id="eventNotificationJobLogMap" 
+				type="com.ngen.cosys.event.notification.model.EventNotificationLog">
+		<id column="EventNotificationJobId" property="eventNotificationLogId" />
+		<result column="EntityName" property="entity" />
+		<result column="EventName" property="eventName" />
+		<result column="JobStartTime" property="startTime" />
+		<result column="JobEndTime" property="endTime" />
+		<result column="NotificationSentTime" property="notificationSentTime" />
+		<result column="NotificationScheduledTime" property="notificationScheduledTime" />
+		<result column="NotificationSentCount" property="notificationSentCount" />
+		<result column="TotalRecords" property="totalRecords" />
+		<result column="ExecutionCount" property="executionCount" />
+		<result column="NewlyAdded" property="newlyAdded" />
+		<result column="UpdatedCount" property="updatedCount" />
+		<result column="CompletedCount" property="completedCount" />
+	</resultMap>
+	
+	<!-- Notification Job Log -->
+	<select id="sqlSelectEventNotificationJobLog" resultMap="eventNotificationJobLogMap"
+			parameterType="com.ngen.cosys.event.notification.model.EventTypeConfig">
+		<![CDATA[
+			SELECT 	EventNotificationJobId, EntityName, EventName, 
+					JobStartTime, JobEndTime, NotificationSentTime, NotificationScheduledTime, 
+					NotificationSentCount, TotalRecords, ExecutionCount,
+					NewlyAdded, UpdatedCount, CompletedCount		
+			FROM	Event_NotificationJob
+			WHERE	EntityName = #{entity}
+			AND 	EventName = #{eventName}
+			AND		JobStartTime = (
+						SELECT 	MAX(JobStartTime) FROM Event_NotificationJob 
+						WHERE 	EntityName = #{entity}
+						AND		EventName = #{eventName}
+					)
+		]]>
+	</select>
+	
+	<insert id="sqlInsertEventNotificationJobLog" 
+			parameterType="com.ngen.cosys.event.notification.model.EventNotificationLog"
+			useGeneratedKeys="true" keyColumn="EventNotificationJobId" keyProperty="eventNotificationLogId" >
+		<![CDATA[
+			INSERT INTO Event_NotificationJob
+			(
+				EntityName, EventName, JobStartTime, JobEndTime, 
+				NotificationSentTime, NotificationScheduledTime,
+				NotificationSentCount, TotalRecords, ExecutionCount, 
+				NewlyAdded, UpdatedCount, CompletedCount,
+				CreatedUserCode, CreatedDateTime
+			)
+			VALUES
+			(
+				#{entity}, #{eventName}, #{startTime}, #{endTime},
+				#{notificationSentTime}, #{notificationScheduledTime},
+				#{notificationSentCount}, #{totalRecords}, #{executionCount},
+				#{newlyAdded}, #{updatedCount}, #{completedCount},
+				#{createdBy}, GETDATE()
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateEventNotificationJobLog" 
+		parameterType="com.ngen.cosys.event.notification.model.EventNotificationLog">
+		<![CDATA[
+			UPDATE 	Event_NotificationJob
+			SET		JobStartTime = #{startTime},
+					JobEndTime = #{endTime},
+					NotificationSentTime = #{notificationSentTime},
+					NotificationSentCount = #{notificationSentCount},
+					TotalRecords = #{totalRecords},
+					ExecutionCount = #{executionCount},
+					NewlyAdded = #{newlyAdded},
+					UpdatedCount = #{updatedCount},
+					CompletedCount = #{completedCount},
+					LastUpdatedUserCode = #{modifiedBy},
+					LastUpdatedDateTime = GETDATE()
+			WHERE	EventNotificationJobId = #{eventNotificationLogId} 
+		]]>
+	</update>
+	
+	<update id="sqlUpdateEventNotificationSentTimeJobLog" 
+		parameterType="com.ngen.cosys.event.notification.model.EventNotificationLog">
+		<![CDATA[
+			UPDATE 	Event_NotificationJob
+			SET		NotificationSentTime = #{notificationSentTime},
+					NotificationSentCount = NotificationSentCount + #{notificationSentCount},
+					LastUpdatedUserCode = #{modifiedBy},
+					LastUpdatedDateTime = GETDATE()
+			WHERE	EventNotificationJobId = #{eventNotificationLogId} 
+		]]>
+	</update>
+	
+	<resultMap id="eventNotificationJobLogDetailsMap" 
+				type="com.ngen.cosys.event.notification.model.EventNotificationLogDetails">
+		<id column="EventNotificationJobDetailsId" property="eventNotificationLogDetailsId" />
+		<result column="EventNotificationJobId" property="eventNotificationLogId" />
+		<result column="EventNotificationId" property="eventNotificationId" />
+		<result column="FlightId" property="flightId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDateTime" property="flightDateTime" />
+		<result column="HasCompleted" property="hasCompleted" />
+	</resultMap>
+	
+	<!-- Notification Job Log Details -->
+	<select id="sqlSelectEventNotificationJobDetailsLog" resultMap="eventNotificationJobLogDetailsMap"
+			parameterType="com.ngen.cosys.event.notification.model.EventNotificationLog">
+		<![CDATA[
+			SELECT 	EventNotificationJobDetailsId, EventNotificationJobId, EventNotificationId, 
+					FlightId, FlightKey, FlightDateTime, HasCompleted
+			FROM	Event_NotificationJobDetails
+			WHERE	EventNotificationJobId = #{eventNotificationLogId}
+			AND		HasCompleted = 0
+		]]>
+	</select>
+	
+	<insert id="sqlInsertEventNotificationJobDetailsLog" 
+			parameterType="com.ngen.cosys.event.notification.model.EventNotificationLogDetails" 
+			useGeneratedKeys="true" 
+			keyColumn="EventNotificationJobDetailsId" 
+			keyProperty="eventNotificationLogDetailsId" >
+		<![CDATA[
+			INSERT INTO Event_NotificationJobDetails
+			(
+				EventNotificationJobId, EventNotificationId, 
+				FlightId, FlightKey, 
+				FlightDateTime, HasCompleted,
+				CreatedUserCode, CreatedDateTime
+			)
+			VALUES
+			(
+				#{eventNotificationLogId}, #{eventNotificationId}, 
+				#{flightId}, #{flightKey},
+				#{flightDateTime}, #{hasCompleted},
+				#{createdBy}, GETDATE()
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateEventNotificationJobDetailsLog" 
+		parameterType="com.ngen.cosys.event.notification.model.EventNotificationLogDetails">
+		<![CDATA[
+			UPDATE 	Event_NotificationJobDetails
+			SET		HasCompleted = #{hasCompleted},
+					LastUpdatedUserCode = #{modifiedBy},
+					LastUpdatedDateTime = GETDATE()
+			WHERE	EventNotificationJobId = #{eventNotificationLogId}
+			AND		FlightId = #{flightId}
+		]]>
+	</update>
+	
+	<!-- Other Utility queries -->
+	<select id="sqlSQCGroupEmail" resultType="com.ngen.cosys.sqcsla.model.Emails">
+		select 
+	Event_GroupMemberList.Email emailId
+	from Event_Group inner join
+	Event_GroupMemberList on Event_Group.EventGroupId = Event_GroupMemberList.EventGroupId
+	where Event_Group.Name = 'SQCSURVEY'
+	</select>
+	
+	<select id="sqlCAGGroupEmail" resultType="com.ngen.cosys.sqcsla.model.Emails">
+		select 
+	Event_GroupMemberList.Email emailId
+	from Event_Group inner join
+	Event_GroupMemberList on Event_Group.EventGroupId = Event_GroupMemberList.EventGroupId
+	where Event_Group.Name = 'CAGSURVEY'
+	</select>
+	
+</mapper>

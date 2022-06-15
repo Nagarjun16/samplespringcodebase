@@ -1,0 +1,722 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ExportAwbDocumentMapper">
+	<select id="sqlGetExportAwbDocument" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentSearchModel" resultMap="exportAwbDocumentMap">
+		
+		select  Shipment_Master.shipmentId shipmentId,
+				Shipment_Master.shipmentType shipmentType,
+				Shipment_Master.shipmentNumber shipmentNumber,
+				Shipment_Master.svc svc,
+				Shipment_Master.origin origin,
+				Shipment_Master.destination destination,
+				Shipment_Master.pieces pieces,
+				Shipment_Master.weight weight,
+				Shipment_Master.chargeableWeight chargeableWeight,
+				Shipment_Master.weightUnitCode weightUnitCode,
+				Shipment_Master.natureOfGoodsDescription natureOfGoodsDescription,
+				Shipment_Master.HandledByDOMINT as handledByDOMINT,
+				Shipment_OtherChargeInfo.chargeCode chargeCode,
+				Shipment_Master.carrierCode carrierCode,
+				Exp_eAcceptanceDocumentInformation.ACCEPTED accepted,
+				Exp_eAcceptanceDocumentInformation.FinalizeWeight finalizeWeight,
+				Exp_eAcceptanceDocumentInformation.firstBookedFlight firstBookedFlight,
+				Exp_eAcceptanceDocumentInformation.firstBookedFlightDate firstBookedFlightDate,             
+				case 
+					when Shipment_Master.DocumentPouchReceivedOn is null then 
+						0
+						else
+						1 
+				end as pouchReceived,
+				Exp_eAcceptanceDocumentInformation.requestedTemperatureRange,
+				Exp_eAcceptanceDocumentInformation.acceptedDateTime,
+				Exp_eacceptanceserviceInformation.AcceptanceType as acceptanceType
+		from Shipment_Master 
+		left join Shipment_OtherChargeInfo on Shipment_Master.ShipmentId = Shipment_OtherChargeInfo.ShipmentId 
+		left join Exp_eAcceptanceDocumentInformation on Shipment_Master.ShipmentNumber=Exp_eAcceptanceDocumentInformation.ShipmentNumber and Shipment_Master.ShipmentDate=Exp_eAcceptanceDocumentInformation.ShipmentDate
+		left join Exp_eacceptanceserviceInformation on Exp_eAcceptanceDocumentInformation.ServiceInformationId=Exp_eacceptanceserviceInformation.ServiceInformationId
+		where Shipment_Master.ShipmentNumber=#{shipmentNumber} and Shipment_Master.ShipmentDate=#{shipmentDate};
+		
+	</select>
+	
+	<select id="sqlGetSpecialHandlingCode" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel" resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterSHCModel">
+	 	select shipmentMasterSHCId,shipmentId,specialHandlingCode from Shipment_MasterSHC where shipmentId=#{shipmentId}
+	</select>
+	
+	<select id="sqlGetRoutingInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterRoutingInfoModel" resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterRoutingInfoModel">
+	 	select shipmentMasterRoutingId,shipmentId,fromPoint,carrier from Shipment_MasterRoutingInfo where shipmentId=#{shipmentId} order by ShipmentMasterRoutingId
+	</select>
+	
+	<select id="sqlGetShipperShipmentMasterCustomerInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel" 
+												  resultMap="getShipmentMasterCustomerInfoMap">
+	 	select shipmentCustomerInfoId,
+	 		   shipmentId,
+	 		   customerCode,
+	 		   customerName,
+	 		   accountNumber,
+	 		   overseasCustomer,
+	 		   appointedAgent,
+	 		   contactEmail,
+	 		   notifyPartyCode,
+	 		   notifyPartyName,
+	 		   authorizedPersonnel,
+	 		   authorizationRemarks,
+	 		   customerType
+	 	from Shipment_MasterCustomerInfo 
+	 	where shipmentId=#{shipmentId} and customerType='SHP'
+	</select>
+	
+	<select id="sqlGetConsigneeShipmentMasterCustomerInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel" 
+												  resultMap="getShipmentMasterCustomerInfoMap">
+	 	select shipmentCustomerInfoId,
+	 		   shipmentId,
+	 		   customerCode,
+	 		   customerName,
+	 		   accountNumber,
+	 		   overseasCustomer,
+	 		   appointedAgent,
+	 		   contactEmail,
+	 		   notifyPartyCode,
+	 		   notifyPartyName,
+	 		   authorizedPersonnel,
+	 		   authorizationRemarks,
+	 		   customerType
+	 	from Shipment_MasterCustomerInfo 
+	 	where shipmentId=#{shipmentId} and customerType='CNE'
+	</select>
+	
+	<select id="expawbdoc_sqlGetShipmentMasterCustomerAddressInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel" 
+												  resultMap="getShipmentMasterCustomerAdressInfoMap">
+			
+			select shipmentCustomerAddInfoId,
+				   shipmentCustomerInfoId,
+				   streetAddress,
+				   place,
+				   postal,
+				   stateCode,
+				   countryCode
+			from Shipment_MasterCustomerAddressInfo
+			where shipmentCustomerInfoId=#{shipmentCustomerInfoId}
+				   			 	
+	</select>
+	
+	<select id="expawbdoc_sqlGetShipmentMasterCustomerContactInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel" 
+												  resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel">
+			select shipmentCustomerAddInfoId,
+				   contactTypeCode,
+				   contactTypeDetail,
+				   shipmentCustomerContInfoId
+			from Shipment_MasterCustomerContactInfo
+			where shipmentCustomerAddInfoId=#{shipmentCustomerAddInfoId}				   			 	
+	</select>
+	
+	<!--  
+	<select id="sqlGetIVRSNotificationContactInfo" 
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.IVRSNotificationContactInfo"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.IVRSNotificationContactInfo">
+		   select ivrsNotificationContactInfoId,
+		          customerType,
+		          contactTypeCode,
+		          contactTypeDetail,
+		          shipmentId
+		   from IVRS_NotificationContactInfo
+		   where shipmentId=#{shipmentId}
+	</select>
+	
+	<select id="sqlGetFwbContactInfo" 
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel">		
+			select 
+				Shipment_FreightWayBillCustomerContactInfo.ContactIdentifier as contactTypeCode,
+				Shipment_FreightWayBillCustomerContactInfo.ContactDetail as contactTypeDetail,
+				Shipment_FreightWayBillCustomerInfo.CustomerType as customerType			
+			from
+				Shipment_FreightWayBill inner join
+				Shipment_Master 
+				    on Shipment_Master.ShipmentNumber=Shipment_FreightWayBill.AwbNumber and 
+					Shipment_FreightWayBill.AwbDate=Shipment_Master.ShipmentDate inner join
+				Shipment_FreightWayBillCustomerInfo
+					on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillCustomerInfo.ShipmentFreightWayBillId inner join
+				Shipment_FreightWayBillCustomerAddressInfo 
+					on Shipment_FreightWayBillCustomerAddressInfo.ShipmentFreightWayBillCustomerInfoId = Shipment_FreightWayBillCustomerInfo.ShipmentFreightWayBillCustomerInfoId inner join
+				Shipment_FreightWayBillCustomerContactInfo
+				on Shipment_FreightWayBillCustomerContactInfo.ShipmentFreightWayBillCustomerAddressInfoId = Shipment_FreightWayBillCustomerAddressInfo.ShipmentFreightWayBillCustomerAddressInfoId left join			
+				Customer_Master
+					on Shipment_FreightWayBillCustomerInfo.CustomerName = Customer_Master.CustomerShortName
+			where
+				Shipment_FreightWayBillCustomerInfo.CustomerType = #{customerType} and
+				Shipment_Master.ShipmentId=#{shipmentId} 
+	</select>
+	-->
+	
+	<select id="expawbdoc_sqlGetShipmentMasterOSIInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel">
+		select
+			shipmentId,
+			shipmentRemark_Id,
+			remarkType,
+			shipmentRemarks
+		from
+			Shipment_Remarks
+		where
+			Shipment_Remarks.ShipmentId=#{shipmentId} and
+			Shipment_Remarks.RemarkType='OSI'
+	</select>
+	
+	<select id="sqlGetShipmentMasterGenInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel">
+		select
+			shipmentId,
+			shipmentRemark_Id,
+			remarkType,
+			shipmentRemarks
+		from
+			Shipment_Remarks
+		where
+			Shipment_Remarks.ShipmentId=#{shipmentId} and
+			Shipment_Remarks.RemarkType='GEN'
+	</select>
+	
+	<select id="expawbdoc_sqlGetShipmentMasterSSRInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel">
+		select
+			shipmentId,
+			shipmentRemark_Id,
+			remarkType,
+			shipmentRemarks
+		from
+			Shipment_Remarks
+		where
+			Shipment_Remarks.ShipmentId=#{shipmentId} and
+			Shipment_Remarks.RemarkType='SSR'
+	</select>
+
+	<select id="expawbdoc_sqlGetAcceptanceInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel" resultMap="acceptanceInfoMap">
+	 	select  shpMaster.shipmentId shipmentId,
+	 			accptDoc.DocumentInformationId documentInformationId,
+				accptHouse.HouseInformationId houseInformationId,
+				accptHouse.Number houseNumber,
+				accptHouse.HouseDate houseDate,
+				shpHouse.ArrivalReportSent arrivalReportSent,
+				shpHouse.ACKReceived ackReceived,
+				accptHouse.Pieces housePcs,
+				accptHouse.Weight houseWeight
+				from Exp_eAcceptanceDocumentInformation accptDoc
+				join Exp_eAcceptanceHouseInformation accptHouse on accptDoc.DocumentInformationId = accptHouse.DocumentInformationId
+				join Shipment_Master shpMaster
+				on accptDoc.ShipmentNumber = shpMaster.ShipmentNumber and accptDoc.ShipmentDate  = shpMaster.ShipmentDate 
+				join Shipment_HouseInformation shpHouse on shpMaster.ShipmentId = shpHouse.ShipmentId and accptHouse.Number = shpHouse.Number
+				where shpMaster.shipmentId=#{shipmentId}
+	</select>
+	
+	<select id="sqlGetLocationInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.AcceptanceInfoModel" resultType="com.ngen.cosys.shipment.exportawbdocument.model.LocationInfo">
+		select loc.documentInformationId documentInformationId,
+			   loc.houseInformationId houseInformationId,
+			   Pieces locPcs,
+			   Weight locWeight,
+			   wareHouseLocation wareHouseLocation,
+			   ShipmentLocation ShipmentLocation,
+			   shc.shc locShc
+		from Exp_eAcceptanceWeighingLocation loc left join
+				(select LocationId, STRING_AGG(SpecialHandlingCode,',') shc from Exp_eAcceptanceWeighingLocationSHC group by LocationId) shc on loc.LocationId = shc.LocationId
+		Where loc.documentInformationId=#{documentInformationId}
+		<if test="houseInformationId!=null">
+		and loc.houseInformationId=#{houseInformationId}
+		</if>
+	</select>
+	
+	<resultMap id="exportAwbDocumentMap" type="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		<association property="shipper"
+			javaType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+			select="sqlGetShipperShipmentMasterCustomerInfo" 
+			column="shipmentId=shipmentId" />
+			
+		<association property="consignee"
+			javaType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+			select="sqlGetConsigneeShipmentMasterCustomerInfo" 
+			column="shipmentId=shipmentId" />	
+			
+		<collection property="specialHandlingCodeList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterSHCModel"
+			select="sqlGetSpecialHandlingCode" column="shipmentId=shipmentId" />
+			
+		<collection property="acceptanceInfoList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.AcceptanceInfoModel"
+			select="expawbdoc_sqlGetAcceptanceInfo" column="shipmentId=shipmentId" />	
+						
+		<collection property="routing" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+			select="sqlGetRoutingInfo" column="shipmentId=shipmentId" />
+			
+		<collection property="otherServiceInformationList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+			select="expawbdoc_sqlGetShipmentMasterOSIInfo" column="shipmentId=shipmentId" />
+			
+		<collection property="generalRemarksList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+			select="sqlGetShipmentMasterGenInfo" column="shipmentId=shipmentId" />
+			
+		<collection property="specialServiceRequestList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel"
+			select="expawbdoc_sqlGetShipmentMasterSSRInfo" column="shipmentId=shipmentId" />							
+	</resultMap>
+	
+	<resultMap id="getShipmentMasterCustomerInfoMap" type="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel">
+		<association property="address"
+			javaType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel"
+			select="expawbdoc_sqlGetShipmentMasterCustomerAddressInfo" 
+			column="shipmentCustomerInfoId=shipmentCustomerInfoId" />	
+		
+		<!--  
+		<collection property="fwbContactInformation" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel"
+			select="sqlGetFwbContactInfo" column="shipmentId=shipmentId" />	
+			
+		<collection property="ivrsContactInformation" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.IVRSNotificationContactInfo"
+			select="sqlGetIVRSNotificationContactInfo" column="shipmentId=shipmentId" />	
+		-->	
+			
+	</resultMap>
+	
+	<resultMap id="getShipmentMasterCustomerAdressInfoMap" type="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel">
+		<collection property="contactInformation" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel"
+			select="expawbdoc_sqlGetShipmentMasterCustomerContactInfo" column="shipmentCustomerAddInfoId=shipmentCustomerAddInfoId" />	
+	</resultMap>
+	
+	
+	<resultMap id="acceptanceInfoMap" type="com.ngen.cosys.shipment.exportawbdocument.model.AcceptanceInfoModel">
+		<collection property="locationInfoList" javaType="List"
+			ofType="com.ngen.cosys.shipment.exportawbdocument.model.LocationInfo"
+			select="sqlGetLocationInfo" column="{documentInformationId=documentInformationId,houseInformationId=houseInformationId}" />	 
+	</resultMap>
+	
+	
+
+	<select id="expawbdoc_sqlGetShipmentId" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel"
+		resultType="java.math.BigInteger">
+		select shipmentId
+		from
+			Shipment_Master
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+	</select>
+	
+	
+	<insert id="expawbdoc_sqlInsertShipmentMaster" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel"
+		keyColumn="ShipmentId" keyProperty="shipmentId" useGeneratedKeys="true">
+		insert into Shipment_Master(
+			ShipmentType,
+			ShipmentNumber,
+			ShipmentDate,
+			SVC,
+			Origin,
+			Destination,
+			Pieces,
+			Weight,
+			ChargeableWeight,
+			WeightUnitCode,
+			NatureOfGoodsDescription,
+			DocumentReceivedOn,
+			<if test="pouchReceived">
+				DocumentPouchReceivedOn,
+			</if>
+			CarrierCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentType},
+			#{shipmentNumber},
+			#{shipmentDate},
+			#{svc},
+			#{origin},
+			#{destination},
+			#{pieces},
+			#{weight},
+			#{chargeableWeight},
+			#{weightUnitCode},
+			#{natureOfGoodsDescription},
+			getdate(),
+			<if test="pouchReceived">
+				#{createdOn},
+			</if>
+			#{carrierCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<update id="expawbdoc_sqlUpdateShipmentMaster" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		 update Shipment_Master
+              set
+              		 ShipmentType= #{shipmentType},
+                     SVC = #{svc},
+                     Origin = cast(#{origin} as varchar),
+                     Destination = cast(#{destination} as varchar),
+                     Pieces = cast(#{pieces} as numeric),
+                     Weight = #{weight},
+                     ChargeableWeight=#{chargeableWeight},
+                     WeightUnitCode = cast(#{weightUnitCode} as varchar),
+                     NatureOfGoodsDescription = cast(#{natureOfGoodsDescription} as varchar),
+                     DocumentReceivedOn = getdate(),
+                     <if test="pouchReceived">
+						DocumentPouchReceivedOn = #{createdOn},
+					</if>
+                     CarrierCode = cast(#{carrierCode} as varchar)
+                     ,LastUpdatedUserCode = #{modifiedBy}
+                     ,LastUpdatedDateTime =getDate()            
+               where
+                     ShipmentNumber = cast(#{shipmentNumber} as varchar) and
+                     ShipmentDate = cast(#{shipmentDate} as datetime)   
+
+	</update>
+	
+	<!-- Shipment Master customer info Mapper Starts -->
+	<select id="sqlGetShipmentMasterCustomerInfoId"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+		resultType="java.lang.Integer">		
+		select
+			ShipmentCustomerInfoId 
+		from
+			Shipment_MasterCustomerInfo
+		where
+			ShipmentId = #{shipmentId} and
+			CustomerType = #{customerType}
+	</select>
+	
+	<insert id="expawbdoc_sqlInsertShipmentMasterCustomerInfo" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+		keyColumn="ShipmentCustomerInfoId" keyProperty="shipmentCustomerInfoId" useGeneratedKeys="true">
+		
+		insert into Shipment_MasterCustomerInfo(
+			ShipmentId,
+			CustomerType,
+			CustomerCode,
+			CustomerName,
+			AccountNumber,
+			AppointedAgent,
+			ContactEmail,
+			AuthorizationRemarks,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{customerType},
+			#{customerCode},
+			#{customerName},
+			#{accountNumber},
+			#{appointedAgent},			
+			#{contactEmail},
+			#{authorizationRemarks},
+			#{createdBy},
+			#{createdOn}
+		)
+		
+	</insert>
+	
+	
+	<update id="expawbdoc_sqlUpdateShipmentMasterCustomerInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel">
+		update Shipment_MasterCustomerInfo
+		set
+			CustomerCode = #{customerCode},
+			CustomerName = #{customerName },
+			AccountNumber = #{accountNumber},
+			AppointedAgent = #{appointedAgent},	
+			ContactEmail = #{contactEmail},
+			AuthorizedPersonnel = #{authorizedPersonnel},
+			AuthorizationRemarks = #{authorizationRemarks},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}			
+		where
+			ShipmentId = #{shipmentId} and
+			CustomerType = #{customerType}
+	</update>
+	
+	<select id="expawbdoc_sqlGetShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel"
+		resultType="java.lang.Boolean">
+		select
+			case when count(ShipmentOtherChargesId) > 0 then
+				1
+			else
+				0
+			end result
+		from
+			Shipment_OtherChargeInfo
+		where
+			ShipmentId = #{shipmentId}
+	</select>
+	
+	<insert id="expawbdoc_sqlInsertShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel"
+		keyColumn="ShipmentOtherChargesId"
+		useGeneratedKeys="true">
+		insert into Shipment_OtherChargeInfo(
+			ShipmentId,
+			ChargeCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{chargeCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<update id="expawbdoc_sqlUpdateShipmentOtherChargeInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		update Shipment_OtherChargeInfo
+		set
+			ChargeCode = #{chargeCode}
+		where
+			ShipmentId = #{shipmentId}
+	</update>
+	
+	<insert id="expawbdoc_sqlInsertShipmentMasterShc" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterSHCModel"
+		keyColumn="ShipmentMasterSHCId" keyProperty="shipmentMasterSHCId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterSHC(
+			ShipmentId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentId},
+			#{specialHandlingCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<delete id="sqlDeleteShipmentMasterSHC"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterSHCModel">
+		delete from Shipment_MasterSHC where ShipmentId = #{shipmentId}
+	</delete>
+	
+	
+	
+	<insert id="expawbdoc_sqlInsertShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterRoutingInfoModel"
+		keyColumn="ShipmentMasterRoutingId" keyProperty="shipmentMasterRoutingId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterRoutingInfo(
+			ShipmentId,
+			FromPoint,
+			Carrier,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentId},
+			#{fromPoint},
+			#{carrier},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<delete id="expawbdoc_sqlDeleteShipmentMasterRoutingInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterRoutingInfoModel">
+		delete from Shipment_MasterRoutingInfo where ShipmentId = #{shipmentId}
+	</delete>
+	
+
+	<select id="sqlGetShipmentMasterCustomerAddressInfoId" 
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel"
+		resultType="java.math.BigInteger">
+		select
+			ShipmentCustomerAddInfoId
+		from
+			Shipment_MasterCustomerAddressInfo
+		where
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</select>
+	
+	<insert id="expawbdoc_sqlInsertShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel"
+		keyColumn="ShipmentCustomerAddInfoId" keyProperty="shipmentCustomerAddInfoId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerAddressInfo(
+			ShipmentCustomerInfoId,
+			StreetAddress,
+			Place,
+			Postal,
+			StateCode,
+			CountryCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{shipmentCustomerInfoId},
+			#{streetAddress },
+			#{place},
+			#{postal},
+			#{stateCode},
+			#{countryCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<update id="expawbdoc_sqlUpdateShipmentMasterCustomerAddressInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel">
+		update Shipment_MasterCustomerAddressInfo
+		set
+			StreetAddress = #{streetAddress},
+			Place = #{place},
+			Postal = #{postal},
+			StateCode = #{stateCode},
+			CountryCode = #{countryCode},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentCustomerInfoId = #{shipmentCustomerInfoId}
+	</update>
+	
+	
+	<insert id="expawbdoc_sqlInsertShipmentMasterCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel"
+		keyProperty="shipmentCustomerContInfoId"
+		keyColumn="ShipmentCustomerContInfoId"
+		useGeneratedKeys="true">
+		insert into Shipment_MasterCustomerContactInfo(		
+			ShipmentCustomerAddInfoId,			
+			ContactTypeCode,
+			ContactTypeDetail,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{shipmentCustomerAddInfoId},			
+			#{contactTypeCode},
+			#{contactTypeDetail},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	
+	<delete id="expawbdoc_sqlDeleteShipmentMasterCustomerContactInfo"
+		parameterType="java.math.BigInteger">
+		delete from Shipment_MasterCustomerContactInfo where ShipmentCustomerAddInfoId =#{shipmentCustomerAddInfoId}
+	</delete>
+	
+	
+	<!--  
+	<insert id="expawbdoc_sqlInsertIvrsCustomerContactInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.IVRSNotificationContactInfo"
+		keyColumn="IVRSNotificationContactInfoId" keyProperty="ivrsNotificationContactInfoId"
+		useGeneratedKeys="true">
+		insert into IVRS_NotificationContactInfo (
+		    CustomerType,				
+			ContactTypeCode,
+			ContactTypeDetail,
+			ShipmentId,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(		
+			#{customerType},			
+			#{contactTypeCode},
+			#{contactTypeDetail},
+			#{shipmentId},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+	-->
+	
+	<!--  
+	<delete id="sqlDeleteIvrsNotificationContactInfo"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerContactInfoModel">
+		delete from IVRS_NotificationContactInfo where shipMentId=#{shipmentId} and customerType=#{customerType}
+	</delete>
+	-->
+	
+	<select id="expawbdoc_sqlFetchflightId" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel"
+		resultType="java.math.BigInteger">
+		SELECT
+		top(1) a.Flight_ID
+		from flt_OperativeFlight a inner join Flt_OperativeFlight_Legs b on
+		a.Flight_ID = b.Flight_ID
+		where
+		a.FlightKey=#{firstBookedFlight} and cast(b.DateSTD as date)= cast(#{firstBookedFlightDate} as date)
+
+	</select>
+	
+	<insert id="expawbdoc_sqlInsertShipmentRemarks"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentRemarksModel">
+		insert into Shipment_Remarks(
+			ShipmentNumber,
+			ShipmentDate,
+			ShipmentId,
+			RemarkType,
+			Flight_ID,
+			ShipmentRemarks,
+			ShipmentType,
+			CreatedUser_Code,
+			Created_DateTime
+		) values(
+		#{shipmentNumber},
+		#{shipmentDate},
+		#{shipmentId},
+		#{remarkType},
+		#{flightId},
+		#{shipmentRemarks},
+		#{shipmentType},
+		#{createdBy},
+		#{createdOn}
+		)
+	</insert>
+	
+	<delete id="sqlDeleteOSIRemarks"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		delete from Shipment_Remarks where shipMentId=#{shipmentId} and remarkType='OSI'
+	</delete>
+	
+	<delete id="sqlDeleteSSRRemarks"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		delete from Shipment_Remarks where shipMentId=#{shipmentId} and remarkType='SSR'
+	</delete>
+	
+	<delete id="sqlDeleteGENRemarks"
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		delete from Shipment_Remarks where shipMentId=#{shipmentId} and remarkType='GEN'
+	</delete>
+	
+	
+	
+	<update id="sqlDocumentComplete" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		 
+		 update Exp_eAcceptanceDocumentInformation
+		 set STATUS='ACCEPTED',
+		 	 ACCEPTED=1,
+		 	 AcceptedDateTime = getdate()	 	 
+		 where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentDate}
+
+	</update>
+	
+	<update id="sqlDocumentReopen" parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ExportAwbDocumentModel">
+		 
+		 update Exp_eAcceptanceDocumentInformation
+		 set STATUS='STARTED',
+		 	 ACCEPTED=0,
+		 	 AcceptedDateTime = NULL	 	 
+		 where ShipmentNumber=#{shipmentNumber} and ShipmentDate=#{shipmentDate}
+
+	</update>
+	
+	
+	<select id="sqlGetCustomerAddressDetails" 
+		parameterType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerInfoModel"
+		resultType="com.ngen.cosys.shipment.exportawbdocument.model.ShipmentMasterCustomerAddressInfoModel">
+		select CorrespondenceAddress as streetAddress,
+			   CorrespondencePlace as place,
+			   CorrespondencePostalCode as postal,
+			   CorrespondenceCountryCode as countryCode,
+			   CorrespondenceStateCode as stateCode
+		from Customer_Master 
+		where CustomerCode=#{customerCode};
+	</select>
+	
+</mapper>

@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DeleteHouseWayBill">
+	<update id="sqlQueryUpdateAcceptByHouseFlagInMaster"
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	update Shipment_master set AcceptanceBYHouse = 0 where 
+	ShipmentId = #{shipmentId}
+	</update>
+	
+	<select id="sqlQueryCheckInvPcWgt"
+		parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+		select
+		Case
+		when pieces=0 and Weight=0
+		then 0
+		else 1
+		end as pieceWeightInvt
+		from shipment_inventory
+		where
+		ShipmentInventory_Id=#{shipmentInventoryId} and
+		Shipment_ID=#{shipmentId}
+		<choose>
+			<when test="shipmentLocation!= null and shipmentLocation!= ''">
+				and ShipmentLocation = #{shipmentLocation}
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation!= null and warehouseLocation!= ''">
+				and WarehouseLocation = #{warehouseLocation}
+			</when>
+		</choose>
+		and Flight_ID = #{inboundFlightId}
+	</select>
+	
+	<insert id="sqlQueryInsertRemakrsForHouseDeletion"
+		parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+		INSERT INTO Shipment_Remarks
+		(ShipmentNumber
+		,ShipmentId
+		,ShipmentDate
+		,RemarkType
+		,Flight_ID
+		,ShipmentRemarks
+		,CreatedUser_Code
+		,Created_DateTime
+		,ShipmentType)
+		VALUES
+		(#{shipmentNumber},
+		#{shipmentId},
+		#{shipmentDate},
+		'GEN',
+		#{inboundFlightId},
+		#{remarks,jdbcType=NVARCHAR},
+		#{createdBy},
+		#{createdOn},
+		'AWB')
+	</insert>
+	
+	<select id="sqlQueryFetchShipmentIdInCaseInvNotAvlbl" 
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillSearchModel"
+	resultType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+select Shipment_Master.ShipmentId as shipmentId,
+	  Shipment_HouseInformation.ShipmentHouseId as shipmentHouseId
+	  from 
+	  Shipment_Master 
+	  inner join Shipment_HouseInformation on Shipment_Master.ShipmentId=Shipment_HouseInformation.ShipmentId
+	 where Shipment_Master.ShipmentNumber=#{shipmentNumber} and Shipment_Master.ShipmentDate=#{shipmentDate} 
+	 and Shipment_HouseInformation.Number=#{hawbNumber}
+	</select>
+	<delete id="sqlQueryDeleteShipmentHouseInfo" 
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Shipment_HouseInformation
+	where ShipmentId=#{shipmentId} and ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	<delete id="sqlQueryDeleteShipmentHouseSHCInfo" 
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Shipment_HouseSHC where ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	<delete id="sqlQueryDeleteShipmentHouseCustomerInfo" 
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Shipment_HouseCustomerInfo where ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	<delete id="sqlQueryDeleteShipmentHouseAddressInfo" 
+	parameterType="java.math.BigInteger">
+	delete from Shipment_HouseCustomerAddressInfo where ShipmentHouseCustomerInfoId=#{shpHseCstmrId}
+	</delete>
+	<select id="sqlQueryGetShipmentHouseAddressInfoIds"
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+	resultType="java.math.BigInteger">
+	select ShipmentHouseCustomerInfoId from Shipment_HouseCustomerInfo where ShipmentHouseId=#{shipmentHouseId}
+	</select>
+	
+	<select id="sqlQueryFetchHouseContactAdressInfo" parameterType="java.math.BigInteger" resultType="java.math.BigInteger">
+	select ShipmentHouseCustomerAddressInfoId from Shipment_HouseCustomerAddressInfo where ShipmentHouseCustomerInfoId=#{x}
+	</select>
+	<delete id="sqlQueryDeleteHouseCustomerAddressContactInfo" parameterType="java.math.BigInteger">
+	delete from Shipment_HouseCustomerContactInfo where ShipmentHouseCustomerAddressInfoId=#{fetchShipmentHouseCustomerContactInfo}
+	</delete>
+	<select id="sqlCheckForShipmentIsImportExport" 
+	parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillSearchModel"
+	resultType="java.lang.String">
+	select Case When Destination NOT IN (#{tenantAirport}, #{tenantCity})
+		then 'E'
+		else 'I' end as expImpChck from Shipment_master shpMst where shpMst.ShipmentNumber=#{shipmentNumber} and
+		shpMst.ShipmentDate=#{shipmentDate} 
+	</select>
+	
+	<resultMap
+		type="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		id="getInventoryDetailsForExport">
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentInventoryHouseId" property="shipmentInventoryHouseId" />
+		<result column="DocumentInformationId" property="documentInfoid" />
+		<result column="HouseInformationId" property="expHouseInfId" />
+		<result column="Number" property="hawbNumber" />
+		<result column="locationId" property="locationId" />
+		<result column="WeighingId" property="weighingId" />
+		<result column="FinalizeWeight" property="finalized" />
+		<result column="ArrivalReportSent" property="arrivalRptSent" />
+		<result column="ShipmentHouseId" property="shipmentHouseId" />
+		<result column="Pieces" property="housePieces" />
+		<result column="Weight" property="houseWeight" />
+		<result column="ShipmentInventory_Id" property="shipmentInventoryId" />
+		<result column="shipmentLocation" property="shipmentLocation" />
+		<result column="warehouseLocation" property="warehouseLocation" />
+		<result column="invHouseWeight" property="shipmentInventoryHouseWeight" />
+		<result column="invHousePiece" property="shipmentInventoryHousePieces" />
+	</resultMap>
+	
+	<update id="sqlQueryupdateHseWgnPieceWgt"
+		parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+		Update Exp_eAcceptanceHouseWeighing set Pieces=Pieces-#{shipmentInventoryHousePieces},
+		GrossWeight=GrossWeight-#{shipmentInventoryHouseWeight} 
+		where WeighingId =#{weighingId}
+	</update>
+	<select id="sqlQueryfetchHseWgnPieceWgt"
+		parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+		select Pieces from  Exp_eAcceptanceHouseWeighing where WeighingId =#{weighingId}
+	</select>
+		
+	<select id="sqlQueryfetchEaccHseInfPieceWgt"
+		parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+		select Pieces from  Exp_eAcceptanceHouseInformation where HouseInformationId =#{expHouseInfId}
+	</select>
+		
+    <select id="sqlQueryFetchHouseDimID"
+		parameterType="java.lang.Integer"
+		resultType="java.math.BigInteger">
+		select ShipmentHouseDimensionId 
+		from Shipment_HouseDimension where 
+		ShipmentHouseId=#{shipmentHouseId}
+    </select>
+
+	<delete id="sqlQueryDeleteDataFromDimesionDetails" parameterType="java.math.BigInteger">	
+		delete from Shipment_HouseDimensionDtls WHERE ShipmentHouseDimensionId= #{shipmentHouseDimId}
+	</delete>	
+	
+	
+	<delete id="sqlQueryDeleteDataFromDimesion" parameterType="java.lang.Integer">	
+		delete from  Shipment_HouseDimension WHERE ShipmentHouseId= #{shipmentHouseId}
+	</delete>
+	
+	<delete id="sqlQueryDeleteShipmentInventoryInfo"    parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+		delete from Shipment_Inventory where ShipmentHouseId= #{shipmentHouseId}
+	</delete>
+	
+	  <select id="sqlGetShipmentInventoryId"
+	   parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+		select ShipmentInventory_Id from Shipment_Inventory where ShipmentHouseId=#{shipmentHouseId}
+		
+		</select>
+	
+	
+		<delete id="sqlDeleteShcInventory"   
+		 parameterType="java.math.BigInteger">
+			delete from Shipment_InventorySHC where ShipmentInventoryId=#{shipmentInventoryId}
+	</delete>
+	
+	<select id="sqlGetImpBreakdownStrorageInfoId"
+	   parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+	select ImpBreakDownStorageInfoId from Imp_BreakDownStorageInfo where ShipmentHouseId=#{shipmentHouseId}
+	</select>
+	
+	<delete id="sqlDeleteImpBreakDownShc"   
+		 parameterType="java.math.BigInteger">
+	delete from Imp_BreakDownStorageSHCInfo where ImpBreakDownStorageInfoId=#{impBreakdownInfoId}
+	</delete>
+	
+	<delete id="sqlQueryDeleteHAWBImpBreakdownStorageInfo"    parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Imp_BreakDownStorageInfo where ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	
+	<select id="sqlGetShipmentFreightOutId"
+	   parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel"
+		resultType="java.math.BigInteger">
+	select ShipmentFreightOutId from Shipment_FreightOut where ShipmentHouseId=#{shipmentHouseId}
+	</select>
+	
+	<delete id="sqlQueryDeleteImpBreakdownStorageInfo"    parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Shipment_FreightOutSHC where ShipmentFreightOutId=#{shipmentFreightOutId}
+	</delete>
+	
+	<delete id="sqlQueryDeleteShipmentFreightOut"    parameterType="com.ngen.cosys.shipment.deletehousewaybill.model.DeleteHouseWayBillResponseModel">
+	delete from Shipment_FreightOut where ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	
+	<select id="sqlShipmentHouseDetails" parameterType="Map" resultType="com.ngen.cosys.shipment.deletehousewaybill.model.UpdateShipmentDetails">
+	SELECT distinct
+         House.Number AS HAWBNo
+         ,(select Shipment_HouseCustomerInfo.CustomerName FROM Shipment_Master INNER JOIN 
+						       Shipment_HouseInformation 
+						        ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+							   Shipment_HouseCustomerInfo 
+							    ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId
+						WHERE Shipment_HouseCustomerInfo.CustomerType    = 'CNE' 
+						  AND Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId  
+						  AND Shipment_HouseInformation.ShipmentId       = Mst.ShipmentId) as consigneeName
+			, (select houseAddress.Place FROM Shipment_Master INNER JOIN 
+						       Shipment_HouseInformation 
+						        ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+							   Shipment_HouseCustomerInfo 
+							    ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId
+						left join Shipment_HouseCustomerAddressInfo houseAddress 
+						on Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId = houseAddress.ShipmentHouseCustomerInfoId
+						WHERE Shipment_HouseCustomerInfo.CustomerType    = 'CNE' 
+						  AND Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId  
+						  AND Shipment_HouseInformation.ShipmentId       = Mst.ShipmentId) as consigneeAddress
+         ,(SELECT SUM(Pieces)
+         FROM Imp_BreakDownStorageInfo INNER JOIN
+         Imp_BreakDownULDTrolleyInfo
+         ON Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId INNER JOIN
+         Imp_ShipmentVerification
+         ON Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+         WHERE Imp_ShipmentVerification.ShipmentId = Mst.ShipmentId
+         AND Imp_ShipmentVerification.FlightId = #{flightId}
+         AND (Imp_BreakDownStorageInfo.ShipmentHouseId = House.ShipmentHouseId OR Imp_BreakDownStorageInfo.ShipmentHouseId IS NULL)) receivedPcs
+         ,(SELECT SUM(Weight)
+         FROM Imp_BreakDownStorageInfo INNER JOIN
+         Imp_BreakDownULDTrolleyInfo
+         ON Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId INNER JOIN
+         Imp_ShipmentVerification
+         ON Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+         WHERE Imp_ShipmentVerification.ShipmentId = Mst.ShipmentId
+         AND Imp_ShipmentVerification.FlightId = #{flightId}
+         AND (Imp_BreakDownStorageInfo.ShipmentHouseId = House.ShipmentHouseId OR Imp_BreakDownStorageInfo.ShipmentHouseId IS NULL)) receivedGrWt
+         ,(SELECT SUM(ChargebleWeight)
+         FROM Imp_BreakDownStorageInfo INNER JOIN
+         Imp_BreakDownULDTrolleyInfo
+         ON Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId INNER JOIN
+         Imp_ShipmentVerification
+         ON Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId
+         WHERE Imp_ShipmentVerification.ShipmentId = Mst.ShipmentId
+         AND Imp_ShipmentVerification.FlightId = #{flightId}
+         AND (Imp_BreakDownStorageInfo.ShipmentHouseId = House.ShipmentHouseId OR Imp_BreakDownStorageInfo.ShipmentHouseId IS NULL)) receivedChWt
+         ,ISNULL((SELECT
+         Shipment_MasterCustomerInfo.CustomerCode
+         FROM
+         Shipment_MasterCustomerInfo
+         WHERE
+         Shipment_MasterCustomerInfo.CustomerType = 'AGT' and
+         Shipment_MasterCustomerInfo.ShipmentId = Mst.ShipmentId
+         ),(SELECT
+             CASE
+             WHEN Shipment_MasterCustomerInfo.AppointedAgent is not null then
+             Customer_Master.CustomerCode
+             END
+             FROM
+             Shipment_MasterCustomerInfo LEFT JOIN
+             Customer_Master
+             ON Shipment_MasterCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+             WHERE
+             Shipment_MasterCustomerInfo.CustomerType = 'CNE' and
+             Shipment_MasterCustomerInfo.ShipmentId = Mst.ShipmentId)) consolAgentCode
+         ,ISNULL((SELECT Shipment_HouseCustomerInfo.CustomerCode
+                  FROM Shipment_Master INNER JOIN
+                  Shipment_HouseInformation
+                  ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+                  Shipment_HouseCustomerInfo
+                  ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId
+                  WHERE Shipment_HouseCustomerInfo.CustomerType = 'AGT'
+                  AND Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId
+                  AND Shipment_HouseInformation.ShipmentId = Mst.ShipmentId
+                ),(SELECT top 1
+                   CASE
+                   WHEN Shipment_HouseCustomerInfo.AppointedAgent is not null then
+                   Customer_Master.CustomerCode
+                   END
+                   FROM Shipment_Master INNER JOIN
+                   Shipment_HouseInformation
+                   ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+                   Shipment_HouseCustomerInfo
+                   ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId LEFT JOIN
+                   Customer_Master
+                   ON Shipment_HouseCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+                   WHERE
+                   Shipment_HouseCustomerInfo.CustomerType = 'CNE'
+                   AND Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId
+                 AND Shipment_HouseInformation.ShipmentId = House.ShipmentId)) clearingAgentCode
+            ,House.Origin as HAWBOrigin
+            ,House.Destination as HAWBDest
+            ,ISNULL((SELECT
+                      Shipment_MasterCustomerInfo.CustomerName
+                      FROM
+                      Shipment_MasterCustomerInfo
+                      WHERE
+                      Shipment_MasterCustomerInfo.CustomerType = 'AGT' and
+                      Shipment_MasterCustomerInfo.ShipmentId = Mst.ShipmentId
+                     ),(SELECT
+                         CASE
+                         WHEN Shipment_MasterCustomerInfo.AppointedAgent is not null then
+                         Customer_Master.CustomerShortName
+                         END
+                         FROM
+                         Shipment_MasterCustomerInfo LEFT JOIN
+                         Customer_Master
+                         ON Shipment_MasterCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+                         WHERE
+                         Shipment_MasterCustomerInfo.CustomerType = 'CNE' and
+                         Shipment_MasterCustomerInfo.ShipmentId = Mst.ShipmentId)) consolAgentName
+           ,ISNULL((SELECT
+                     Shipment_HouseCustomerInfo.CustomerName
+                     FROM Shipment_Master INNER JOIN
+                     Shipment_HouseInformation
+                     ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+                     Shipment_HouseCustomerInfo
+                     ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId
+                     WHERE Shipment_HouseCustomerInfo.CustomerType = 'AGT'
+                     AND Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId
+                     AND Shipment_HouseInformation.ShipmentId = Mst.ShipmentId
+                   ),(SELECT top 1
+                       CASE
+                       WHEN Shipment_HouseCustomerInfo.AppointedAgent is not null then
+                       Customer_Master.CustomerShortName
+                       END
+                       FROM Shipment_Master INNER JOIN
+                       Shipment_HouseInformation
+                       ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId INNER JOIN
+                       Shipment_HouseCustomerInfo
+                       ON Shipment_HouseInformation.ShipmentHouseId = Shipment_HouseCustomerInfo.ShipmentHouseId LEFT JOIN
+                       Customer_Master
+                       ON Shipment_HouseCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+                       WHERE
+                       Shipment_HouseCustomerInfo.CustomerType = 'CNE' and
+                       Shipment_HouseCustomerInfo.ShipmentHouseId = House.ShipmentHouseId
+                       AND Shipment_HouseInformation.ShipmentId = Mst.ShipmentId
+                       )) clearingAgentName
+
+           ,(SELECT CASE WHEN COUNT(1) > 0 THEN 'Y'
+              ELSE 'N'
+              END
+              FROM Com_DamageInfo INNER JOIN
+              Com_DamageLineItems
+              ON Com_DamageInfo.DamageInfoId = Com_DamageLineItems.DamageInfoId
+              WHERE Com_DamageInfo.EntityType = 'AWB'
+              AND Com_DamageInfo.EntityKey = Mst.ShipmentNumber
+              AND Com_DamageInfo.EntityDate = Mst.ShipmentDate
+              AND Com_DamageInfo.SubEntityKey = House.Number ) isDamage
+           ,(SELECT Com_DamageLineItems.Remarks
+             FROM Com_DamageInfo INNER JOIN
+             Com_DamageLineItems
+             ON Com_DamageInfo.DamageInfoId = Com_DamageLineItems.DamageInfoId
+             WHERE Com_DamageInfo.EntityType = 'AWB'
+             AND Com_DamageInfo.EntityKey = Mst.ShipmentNumber
+             AND Com_DamageInfo.EntityDate = Mst.ShipmentDate
+             AND Com_DamageInfo.SubEntityKey = House.Number) damageRemarks
+           ,'N' IsBondedTrucking
+           ,'XXX' BondedTruckerCode
+           ,ISNULL(House.Pieces, Mst.Pieces) AS declaredPcs
+           ,ISNULL(House.Weight, Mst.Weight) as declaredGrWt
+           ,ISNULL(House.ChargeableWeight, Mst.ChargeableWeight) as declaredChWt
+           
+             FROM Imp_ArrivalManifestByFlight INNER JOIN
+             Flt_OperativeFlight
+             ON Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID INNER JOIN
+             Flt_OperativeFlight_Legs
+             ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+             AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+             LEFT JOIN Flt_OperativeFlight_Attributes
+             ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Attributes.Flight_ID
+             AND Flt_OperativeFlight_Attributes.FlightType = 'I'
+             INNER JOIN
+             Imp_ArrivalManifestBySegment
+             ON Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId INNER JOIN
+             Flt_OperativeFlight_Segments
+             ON Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId AND
+             Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID INNER JOIN
+             Imp_ArrivalManifestULD
+             ON Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId INNER JOIN
+             Imp_ArrivalManifestShipmentInfo
+             ON Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId INNER JOIN
+             Shipment_Master Mst
+             ON Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Mst.ShipmentNumber AND
+             Imp_ArrivalManifestShipmentInfo.ShipmentDate = Mst.ShipmentDate
+             AND Mst.Destination = #{tenantAirport}
+             INNER JOIN Imp_FlightEvents imf on imf.FlightId = Flt_OperativeFlight.Flight_ID
+             INNER JOIN Imp_ShipmentVerification ims on imf.FlightId = ims.FlightId AND ims.ShipmentId = Mst.ShipmentId LEFT JOIN
+             Shipment_HouseInformation House
+             ON Mst.ShipmentId = House.ShipmentId
+             WHERE Flt_OperativeFlight.Flight_ID = #{flightId}
+             AND Mst.ShipmentId = ISNULL(#{shipmentId},(Select ShipmentId from Shipment_Master where ShipmentNumber=#{shipmentNumber} and ShipmentDate=CAST(#{shipmentDate} as DATE)))
+             
+              AND House.Number=#{HAWBNo}
+            
+	</select>
+	
+		
+</mapper>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentReuseMapper">
+
+	<select id="fetchOriginAirport" resultType="java.lang.String"
+		parameterType="com.ngen.cosys.shipment.model.AddShipmentNumberForReuse">
+		SELECT TOP 1 airport.AirportCityCode
+		FROM
+		Mst_Airport
+		airport
+		WHERE
+		airport.AirportCode= #{origin};
+	</select>
+
+	<select id="fetchShipmentNumber" parameterType="com.ngen.cosys.shipment.model.MarkShipmentForReuse"
+		resultType="com.ngen.cosys.shipment.model.SearchShipmentNumberForReuse">
+		select
+		Shipment_Reuse.ShipmentReuse_Id as shipmentId,
+		Shipment_Reuse.AwbNumber as awbResponseNumber,
+		Shipment_Reuse.Source
+		source,
+		Shipment_Reuse.CreatedUser_Code as approvedBy,
+		Shipment_Reuse.Created_DateTime as createdDateAndTime,
+		Shipment_Reuse.Remarks remarks
+		from Shipment_Reuse
+		where
+		Shipment_Reuse.AwbNumber = #{awbshipmentNumber}
+	</select>
+
+	<select id="fetchAllShipmentNumber"
+		resultType="com.ngen.cosys.shipment.model.SearchShipmentNumberForReuse">
+		select
+		Shipment_Reuse.ShipmentReuse_Id as shipmentId,
+		Shipment_Reuse.AwbNumber as awbResponseNumber,
+		Shipment_Reuse.Source
+		source,
+		Shipment_Reuse.CreatedUser_Code as approvedBy,
+		Shipment_Reuse.Created_DateTime as createdDateAndTime,
+		Shipment_Reuse.Remarks remarks
+		from Shipment_Reuse
+	</select>
+	
+	<select id="searchValidShipment"
+	 parameterType="com.ngen.cosys.shipment.model.MarkShipmentForReuse"
+      resultType="java.lang.Integer">
+      	select count(*) from Shipment_Reuse where AwbNumber = #{awbshipmentNumber}
+      </select>
+      
+      	<select id="searchValidShipmentToAdd"
+	 parameterType="com.ngen.cosys.shipment.model.AddShipmentNumberForReuse"
+      resultType="java.lang.Integer">
+      	select count(*) from Shipment_Reuse where AwbNumber = #{shipmentNumber}
+      </select>
+
+	<insert id="addShipmentNumber"
+		parameterType="com.ngen.cosys.shipment.model.AddShipmentNumberForReuse">
+		insert into
+		Shipment_Reuse (AwbPrefix, AwbSuffix,
+		AwbNumber, Source,
+		Remarks,
+		CreatedUser_Code, Created_DateTime)
+		values
+		(#{awbPrefix}, #{awbSuffix},
+		#{shipmentNumber}, #{origin}, #{remarks},
+		#{createdBy}, getdate())
+	</insert>
+
+	<delete id="deleteShipmentNumber"
+		parameterType="com.ngen.cosys.shipment.model.SearchShipmentNumberForReuse">
+		DELETE from
+		Shipment_Reuse WHERE ShipmentReuse_Id =
+		#{shipmentId};
+	</delete>
+
+</mapper>
+   

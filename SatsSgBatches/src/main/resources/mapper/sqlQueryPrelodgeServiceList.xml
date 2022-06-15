@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sqlQueryPrelodgeServiceList">
+
+	    <select id="fetchPrelodgeServiceList" resultType="com.ngen.cosys.application.model.PrelodgeShipmentJobModel">
+	     SELECT 
+	       	 PreSvc.PrelodgeServiceNo prelodgeServiceNo
+	        ,PreSvc.PrelodgeServiceId prelodgeServiceId
+			,PreLodge.ShipmentNumber shipmentNumber
+			,PreLodge.ShipmentDate as shipmentDate
+			,PreLodge.PrelodgeDocumentId prelodgeDocumentId
+			from Agt_PrelodgeExportDocuments PreLodge 
+			INNER JOIN Agt_PrelodgeExportService PreSvc ON PreLodge.PrelodgeServiceId=PreSvc.PrelodgeServiceId 
+			where PreSvc.prelodgeServiceNo IS NOT NULL
+			AND PreSvc.ServiceStatus not in ('ACCEPTED', 'SERVICING')
+			AND (getdate()-(CAST((select ParameterValueChar from App_SystemParameters
+			where ParameterCode = 'DAYS_FOR_SERVICENUMBER_DELETION') as decimal(16,4)))) > PreSvc.CreatedDateTime
+			order by PreSvc.CreatedDateTime desc
+		</select>
+	
+
+		<delete id="deleteServiceNumberJob" parameterType="com.ngen.cosys.application.model.PrelodgeShipmentJobModel">
+		     DELETE FROM
+			 	Agt_PrelodgeExportService 
+			 WHERE PrelodgeServiceNo = #{prelodgeServiceNo}	    
+		</delete>
+	
+		<update id="updateServiceNoNullJob" parameterType="com.ngen.cosys.application.model.PrelodgeShipmentJobModel">
+		UPDATE 
+			Agt_PrelodgeExportDocuments 
+		SET 
+			PrelodgeServiceId = NULL
+			, ShipmentStatus = 'OPEN'
+			, LastUpdatedUser_Code = #{modifiedBy}
+			 , LastUpdatedDateTime = #{modifiedOn}  
+		WHERE 
+			ShipmentNumber = #{shipmentNumber}  and ShipmentDate = cast(#{shipmentDate} as date) 
+	</update>
+
+</mapper>

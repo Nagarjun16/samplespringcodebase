@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Request" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+  <xs:element name="Request" msdata:IsDataSet="true" msdata:Locale="en-US">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Bag">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="BagStatus" type="xs:string" minOccurs="1" msdata:Ordinal="0" /><!-- "TA" Bag handover to DNATA scan --> 
+              <xs:element name="BagStatusDateTime" type="xs:dateTime" minOccurs="1" msdata:Ordinal="1" /><!-- bag status date time in yyyy-mm-dd hh:mm:ss -->
+			  <xs:element name="BagConditionCode" type="xs:string" minOccurs="0" msdata:Ordinal="0" /><!-- bag condition code -->				
+				<!-- bag condition code listing at below -->
+				<!-- 20 = Good condition -->
+				<!-- 21 = Damaged by weather or improper handling no theft evident -->
+				<!-- 22 = Cut, torn or broken; mail not intact -->
+				<!-- 23 = Seal tampered with or missing; mail not intact -->
+				<!-- 24 = Serious weight or item loss, but no external tampering detected -->
+				<!-- 25 = Bar code not readable -->
+				<!-- 26 = Pilfered here (evidence of local theft) -->
+				<!-- 27 = Unprotected or abandoned -->
+				<!-- 28 = Carrier failed to load or make transfer here -->
+				<!-- 29 = Carrier misdelivered to this location -->
+            <xs:element name="FlightNo" type="xs:string" minOccurs="0" msdata:Ordinal="0" /> <!-- Flight Number -->
+            <xs:element name="FlightDate" type="xs:dateTime" minOccurs="0" msdata:Ordinal="0" /> <!-- Flight Departure date time -->
+            </xs:sequence>
+            <xs:attribute name="RecpID" type="xs:string" use="required" /><!-- 29 chars receptacle ID --> 
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

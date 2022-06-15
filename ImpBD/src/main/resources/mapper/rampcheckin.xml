@@ -1,0 +1,1725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RampCheckInMapper">
+	<!-- Inbound Ramp CheckIn Start -->
+
+	<resultMap id="rampCheckInFlightData"
+		type="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		autoMapping="false">
+		<id property="flightId" column="Flight_ID" />
+		<result property="flight" column="FlightKey" />
+		<result property="flightDate" column="FlightOriginDate" />
+		<result property="uldReceived" column="MaxULDCount" />
+		<result property="origin" column="FlightBoardPoint" />
+		<result property="sta" column="DateSTA" />
+		<result property="eta" column="DateETA" />
+		<result property="ata" column="DateATA" />
+		<result property="tenantAirport" column="tenantAirport" />
+		<collection property="ulds" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInUld" select="getULDs"
+			column="{flightId=Flight_ID, tenantAirport=tenantAirport}" />
+		<collection property="perGroupshcs" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+			select="getRampPerSHCList"
+			column="{flightId=Flight_ID}" />
+	</resultMap>
+
+	<resultMap type="com.ngen.cosys.impbd.model.RampCheckInUld"
+		id="uldMap" autoMapping="false">
+		<id property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="transferType" column="TransferType" />
+		<result property="contentCode" column="ContentCode" />
+		<result property="usedAsTrolley" column="UsedAsTrolley" />
+		<result property="damaged" column="DamagedFlag" />
+		<result property="empty" column="EmptyFlag" />
+		<result property="piggyback" column="PiggybackFlag" />
+		<result property="remarks" column="Remarks" />
+		<result property="checkedinAt" column="CheckedInAt" typeHandler="com.ngen.cosys.timezone.typehandler.UTCDateTimeTypeHandler"/>
+		<result property="checkedinBy" column="CheckedInBy" />
+		<result property="checkedinArea" column="CheckedInArea" />
+		<result property="offloadedFlag" column="OffloadedFlag" />
+		<result property="phc" column="phc" />
+		<result property="val" column="val" />
+		<result property="manual" column="manual" />
+		<result property="offloadReason" column="OffloadedReasonCode" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handOverId" column="ImpHandOverId" />
+		<result property="driverId" column="HandedOverBy" />
+		<result property="handoverDateTime" column="CompletedAt" typeHandler="com.ngen.cosys.timezone.typehandler.UTCDateTimeTypeHandler"/>
+		<result property="ouboundFlightId" column="outboundFlightId" />
+		<result property="ouboundFlightKey" column="ouboundFlightKey" />
+		<result property="ouboundFlightDate" column="ouboundFlightDate"/>
+		<result property="handlingInstructions" column="HandlingInstructionForRamp" />
+		<result property="handlingMode" column="HandlingMode" />
+		<result property="phcFlag" column="PhcFlag" />
+		<result property="manualUpdate" column="ManualUpdate" />
+		<result property="origin" column="origin" />
+		<result property="temperatureValue" column="temperatureValue" />
+		<result property="temperatureType" column="temperatureType" />
+		<result property="temperatureTypeValue" column="temperatureTypeValue" />
+		<result property="temperatureCaptureDt" column="temperatureCaptureDt" />
+		<result property="tempRemarks" column="remarks" />
+		<result property="uldEvent" column="uldEvent" />
+		<collection property="shcs" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+			select="selectRampULDSHC"
+			column="{impRampCheckInId=ImpRampCheckInId}" />		
+	</resultMap>
+	<resultMap type="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		id="shcMap" autoMapping="false">
+		<id property="impRampCheckInULDSHCId"
+			column="ImpRampCheckInULDSHCId" />
+		<result property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="shc" column="SpecialHandlingCode" />
+	</resultMap>
+	<select id="getFlight"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSearchFlight"
+		resultMap="rampCheckInFlightData">
+		
+		select
+		F1.Flight_ID,
+		f1.FlightKey,
+		f1.FlightOriginDate,
+		F2.DateSTA,
+		F2.DateETA,
+		F2.DateATA,
+		F2.FlightBoardPoint,
+		MaxULDCount,
+		#{tenantAirport} as tenantAirport
+		from 
+		Flt_OperativeFlight F1 Join Flt_OperativeFlight_Legs F2 on
+		F1.Flight_ID = F2.Flight_ID
+		where
+		FlightKey = #{flight}
+		and
+		CAST( F2.DateSTA as date) = #{flightDate} and
+		F2.FlightOffPoint =#{tenantAirport}
+	</select>
+
+	<select id="getULDs" resultMap="uldMap">
+	<![CDATA[
+		select 
+			distinct
+			RAM.ImpRampCheckInId,
+			RAM.FlightId ,RAM.ULDNumber ,RAM.TransferType,
+			case 
+				when
+					 RAM.ContentCode is null then 
+						'C'
+				else 
+					RAM.ContentCode 
+				end as ContentCode,
+			RAM.UsedAsTrolley,
+			RAM.DamagedFlag,
+			RAM.EmptyFlag,
+			RAM.PiggybackFlag,
+			RAM.Remarks,
+			RAM.CheckedInAt,
+			RAM.CheckedInBy,
+			RAM.CheckedInArea,
+			RAM.OffloadedFlag,
+			RAM.PHCFlag AS phc,
+			RAM.ValFlag AS val,
+			RAM.ManualFlag AS manual,
+			RAM.OffloadedReasonCode,
+			HAN.ImpHandOverId,
+			HAN.TractorNumber,
+			HAN.HandedOverBy,
+			HAN.CompletedAt,'R' AS flagCRUD,
+			IINC.ConnectingFlightId as outboundFlightId,
+			segmentData.FlightBoardPoint origin,
+			
+			case 
+				when IINC.ConnectingFlightId  is not null then 
+					(select flightkey from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+				end ouboundFlightKey,
+			case 
+				when IINC.ConnectingFlightId  is not null then 
+					(select 
+							Flt_operativeFlight_Legs.DateSTD 
+						from 
+							Flt_operativeFlight inner join
+							Flt_operativeFlight_Legs
+								on Flt_operativeFlight.Flight_ID = Flt_operativeFlight_Legs.Flight_ID
+						where 
+							Flt_operativeFlight.Flight_id = IINC.ConnectingFlightId and
+							Flt_operativeFlight_Legs.FlightBoardPoint = #{tenantAirport}) 
+				end ouboundFlightDate,
+			IINC.HandlingInstructionForRamp,
+			IINC.HandlingMode,
+			case 
+				when IINC.PHCFlag = 1 then 
+					'Y' 
+				else 
+					'N' 
+				end as PhcFlag,
+			IINC.ManualUpdate,
+			ULDT.temperatureValue,
+	    	ULDT.temperatureType,
+			ULDT.temperatureTypeValue,
+			ULDT.temperatureCaptureDt,
+			ULDT.remarks,
+			ULDT.UldEvent
+		from 
+			Imp_RampCheckIn RAM inner join
+			Flt_OperativeFlight OPR 
+				on OPR.Flight_ID = RAM.FlightId left join
+			(select 
+					IHO.FlightId, 
+					IHO.ImpHandOverId,
+					IHO.TractorNumber,
+					IHO.HandedOverBy,
+					IHO.CompletedAt, 
+					HAN.ContainerTrolleyNumber
+				from
+				    Imp_HandOver IHO inner join 
+					Imp_HandOverContainerTrolleyInformation HAN
+						on HAN.ImpHandOverId = IHO.ImpHandOverId
+				where
+					IHO.FlightId = #{flightId}
+			) HAN
+				on HAN.ContainerTrolleyNumber = RAM.ULDNumber and 
+					HAN.FlightId = RAM.FlightId left join 
+			Imp_InboundContainers IINC 
+				on RAM.ULDNumber = IINC.ULDNumber  and 
+					RAM.FlightId  = IINC.incomingFlightId inner join 
+			Uld_ContentCodes con 
+				on RAM.ContentCode = con.ContentCode and 
+					con.ApronCargoLocation = 'C' left join 
+		    (select 
+					distinct
+		            manifestUld.uldNumber,
+					string_agg(Flt_OperativeFlight_Segments.FlightBoardPoint, ' ') as FlightBoardPoint,
+					#{flightId} as FlightId
+		        from 
+		            Imp_ArrivalManifestBySegment  manifestSeg  
+		            inner join Imp_ArrivalManifestULD  manifestUld 
+						on manifestUld.ImpArrivalManifestBySegmentId=manifestSeg.ImpArrivalManifestBySegmentId 
+			        inner join Flt_OperativeFlight_Segments 
+						on Flt_OperativeFlight_Segments.FlightSegmentId=manifestSeg.FlightSegmentId
+				where
+					Flt_OperativeFlight_Segments.Flight_ID = #{flightId} and
+					Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport} and
+					manifestUld.uldNumber is not null		
+				group by	
+					manifestUld.uldNumber
+			) segmentData 
+				on RAM.FlightId = segmentData.FlightId and 
+					segmentData.ULDNumber=RAM.ULDNumber
+					 left join ULD_TemperatureLog ULDT on ULDT.flightId = OPR.Flight_ID and ULDT.Uldkey = RAM.ULDNumber
+		where
+			OPR.Flight_ID = #{flightId}
+		order by
+			RAM.ULDNumber
+	]]>
+	</select>
+
+	<insert id="insertInboundRampUlds"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="impRampCheckInId"
+		keyColumn="ImpRampCheckInId">
+		INSERT INTO Imp_RampCheckIn
+		(FlightId
+		,ULDNumber
+		,TransferType
+		,ContentCode
+		,UsedAsTrolley
+		,DamagedFlag
+		,EmptyFlag
+		,PiggybackFlag
+		,Remarks
+		,CheckedInAt
+		,CheckedInBy
+		,CheckedInArea
+		,OffloadedFlag
+		,OffloadedReasonCode
+		,CreatedUserCode
+		,CreatedDateTime
+		,PHCFlag
+		,ValFlag
+		,ManualFlag)
+		VALUES
+		(#{flightId}
+		,#{uldNumber}
+		,#{transferType}
+		,#{contentCode}
+		,#{usedAsTrolley}
+		,#{damaged}
+		,#{empty}
+		,#{piggyback}
+		,#{remarks}
+		,#{createdOn}
+		,#{checkedinBy}
+		,#{terminal}
+		,#{offloadedFlag}
+		,#{offloadReason}
+		,#{createdBy}
+		,GETDATE()
+		,#{phc}
+		,#{val}
+		,1)
+	</insert>
+	<select id="selectRampULDSHC" resultMap="shcMap">
+		SELECT
+		ImpRampCheckInULDSHCId
+		,ImpRampCheckInId
+		,SpecialHandlingCode
+		FROM
+		Imp_RampCheckInULDSHC
+		WHERE ImpRampCheckInId = #{impRampCheckInId}
+	</select>
+	<select id="getRampPerSHCList" resultMap="shcMap">
+		select shcc.SpecialHandlingCode as SpecialHandlingCode from Mst_SHCHandlingGroup
+		       shcg JOIN Mst_AssociateSHCByHandlingGroup shcc
+		              on
+		              shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		              where
+		             
+		              shcg.SHCHandlingGroupCode='PER'
+			
+	</select>
+	<select id="checkUldExistedForthisFlight" parameterType="com.ngen.cosys.impbd.model.RampCheckInUld" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			Imp_RampCheckIn
+		Where
+			ULDNumber=#{uldNumber} and FlightId=#{flightId}
+	</select>
+	
+	<insert id="insertRampULDSHC"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		useGeneratedKeys="true" keyProperty="impRampCheckInULDSHCId"
+		keyColumn="ImpRampCheckInULDSHCId">
+		INSERT INTO Imp_RampCheckInULDSHC
+		(ImpRampCheckInId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		((SELECT
+		TOP 1 ImpRampCheckInId FROM Imp_RampCheckIn ORDER BY ImpRampCheckInId
+		DESC)
+		,#{shc}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+	<insert id="insertRampULDSHCUsingId"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		useGeneratedKeys="true" keyProperty="impRampCheckInULDSHCId"
+		keyColumn="ImpRampCheckInULDSHCId">
+		INSERT INTO Imp_RampCheckInULDSHC
+		(ImpRampCheckInId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{impRampCheckInId}
+		,#{shc}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+	<update id="updateInboundRampUldShc"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC">
+		UPDATE
+		Imp_RampCheckInULDSHC
+		SET
+		ImpRampCheckInId =
+		#{impRampCheckInId}
+		,SpecialHandlingCode = #{shc}
+		,LastUpdatedUserCode =
+		#{modifiedBy}
+		,LastUpdatedDateTime = GETDATE()
+		WHERE ImpRampCheckInULDSHCId
+		=
+		{impRampCheckInULDSHCId}
+	</update>
+
+	<delete id="deleteInboundRampUldShc"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC">
+		DELETE FROM
+		Imp_RampCheckInULDSHC WHERE ImpRampCheckInId
+		=
+		#{impRampCheckInId}
+	</delete>
+
+
+	<delete id="deleteInboundRampUldShcUsingRampId"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		DELETE FROM Imp_RampCheckInULDSHC WHERE ImpRampCheckInId
+		=
+		#{impRampCheckInId}
+	</delete>
+
+	<update id="updateInboundRampUld"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE
+		Imp_RampCheckIn
+		SET
+		ULDNumber = #{uldNumber}
+		,TransferType = #{transferType}
+		<if test=" contentCode != null and contentCode !=''">
+			,ContentCode = #{contentCode}
+		</if>
+		<if test=" usedAsTrolley != null ">
+			,UsedAsTrolley = #{usedAsTrolley}
+		</if>
+		<if test=" damaged != null ">
+			,DamagedFlag = #{damaged}
+		</if>
+		<if test=" empty != null ">
+			,EmptyFlag = #{empty}
+		</if>
+		<if test=" remarks != null and remarks !=''">
+			,Remarks = #{remarks}
+		</if>
+		<if test="checkedinBy != null and checkedinBy !=''">
+			,CheckedInBy = #{checkedinBy}
+		</if>
+		<if test="checkedinAt == null">
+		   ,CheckedInAt = getDate()
+		</if>
+		<if test=" checkedinArea != null and checkedinArea !=''">
+			,CheckedInArea = #{terminal}
+		</if>
+		<if test="offloadedFlag != null and offloadedFlag !=''">
+			,OffloadedFlag = #{offloadedFlag}
+		</if>
+		<if test="offloadReason != null and offloadReason !=''">
+			,OffloadedReasonCode = #{offloadReason}
+		</if>
+		,LastUpdatedUserCode = #{createdBy}
+		,LastUpdatedDateTime =CURRENT_TIMESTAMP
+		,PiggybackFlag = #{piggyback}
+		,PHCFlag = #{phc}
+		,ValFlag = #{val}
+		<if test="manual != null and manual !=''">
+			,ManualFlag = #{manual}
+		</if>
+		WHERE FlightId = #{flightId}
+		AND
+		ImpRampCheckInId = #{impRampCheckInId}
+	</update>
+	
+	<update id="unCheckinUlds"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE
+		Imp_RampCheckIn
+		SET
+		  CheckedInBy = NULL
+		 ,CheckedInAt = NULL
+		WHERE FlightId = #{flightId} AND
+		ImpRampCheckInId = #{impRampCheckInId}
+	</update>
+	
+	
+	
+	<select id="getUcmFlightDetails"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.math.BigInteger">
+		  select Top(1) UCMFlightDetails_ID from  Uld_UCMFlightDetails where  
+          FlightId=#{flightId}
+	</select>
+
+	<insert id="insertUCMFlightDetails"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="impRampCheckInId"
+		keyColumn="UCMFlightDetails_ID">
+		INSERT INTO Uld_UCMFlightDetails
+		(
+		FlightKey
+		,FlightDate
+		,CreatedUser_Code
+		,Created_DateTime,
+		FlightId
+		)
+		VALUES
+		(
+		 #{flight}
+		,#{flightDate}
+		,'SYSADMIN'
+		,GETDATE()
+		,#{flightId}
+	    )
+	</insert>
+	<select id="getUCMUldDetails"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		select UldNumber as uldNumber from Uld_UCMUldDetails where UldNumber =#{uldNumber} and UCMFlightDetails_ID=#{impRampCheckInId}
+</select>
+	<insert id="insertUCMDetails"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="impRampCheckInId"
+		keyColumn="UCMUldDetails_ID">
+	
+		MERGE Uld_UCMUldDetails AS Uld_UCMUldDetails1 USING
+                  (SELECT #{uldNumber} uldNumber) AS Uld_UCMUldDetails2 
+                     ON Uld_UCMUldDetails1.uldNumber=Uld_UCMUldDetails2.uldNumber and Uld_UCMUldDetails1.UCMFlightDetails_Id= #{impRampCheckInId}
+              WHEN MATCHED THEN
+                     UPDATE  
+                            SET Contentcode = #{contentCode},StationPoint=#{origin},IsImport=1                                                                                       
+        WHEN NOT MATCHED THEN
+                     INSERT (UldNumber
+		                    ,ContentCode
+		                    ,UCMFlightDetails_Id
+		                    ,StationPoint
+		                    ,Finalize
+		                    ,IsImport
+		                    ,CreatedUser_Code
+		                    ,Created_DateTime)
+                      Values(
+					        #{uldNumber}
+		                   ,#{contentCode}
+		                   ,#{impRampCheckInId}
+		                   ,#{origin}
+		                   ,0
+		                   ,1
+		                   ,#{createdBy}
+		                   ,CURRENT_TIMESTAMP  
+						   );
+		
+	</insert>
+	
+	<select id="getUldMasterData"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.math.BigInteger">
+		  select uld_id from Uld_UldMaster where UldKey=#{uldNumber}
+	</select>
+
+<insert id="insertUldMasterData"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="impRampCheckInId"
+		keyColumn="Uld_ID">
+	INSERT INTO Uld_UldMaster
+           ( 
+            UldKey
+           ,ContentCode
+           ,UldConditionType 
+           ,CreatedUser_Code
+           ,Created_DateTime
+           ,LastUpdatedUser_Code
+           ,LastUpdated_DateTime
+          
+		   )
+     VALUES
+           (
+            #{uldNumber}
+           ,#{contentCode}
+           ,'DAM'
+           ,#{createdBy}
+           ,CURRENT_TIMESTAMP
+           ,#{createdBy}
+           ,CURRENT_TIMESTAMP
+		  )
+	</insert>
+	
+	<update id="updateUldMaster"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		 update Uld_UldMaster set UldConditionType='DAM' where Uld_ID=#{impRampCheckInId}
+	</update>
+
+
+	<delete id="deleteUldByRampCheckIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		DELETE FROM
+		Imp_RampCheckIn
+		WHERE FlightId = #{flightId}
+		and ULDNumber =
+		#{uldNumber}
+	</delete>
+	<delete id="deleteuldFromImpHandOver"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		DELETE FROM
+		Imp_HandOver
+		WHERE FlightId = #{flightId} and
+		ImpHandOverId =
+		#{handOverId}
+	</delete>
+	<delete id="deleteUldTrollyInfo"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		delete from
+		Imp_HandOverContainerTrolleyInformation where
+		ImpHandOverId=
+		#{handOverId}
+	</delete>
+	
+	<select id="fetchHandoverrecord"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.String">
+		  select 
+              top(1)
+		      HAN.ContainerTrolleyNumber
+		  from
+		    Imp_HandOver IHO
+		      INNER JOIN 
+			Imp_HandOverContainerTrolleyInformation HAN ON HAN.ImpHandOverId = IHO.ImpHandOverId
+		  where 
+		    HAN.ContainerTrolleyNumber=#{uldNumber} and IHO.FlightId=#{flightId}
+    </select>
+
+	<insert id="insertHandoverByRampCheckin"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="handOverId"
+		keyColumn="ImpHandOverId">
+		INSERT INTO
+		Imp_HandOver (
+		FlightId
+		,HandedOverAt
+		,TractorNumber
+		,HandedOverBy
+		,StartedAt
+		<if test="driverId != null">
+		,CompletedAt
+		</if>
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES(
+		#{flightId}
+		,#{terminal}
+		,#{tractorNumber}
+		,#{driverId}
+		,#{createdOn}
+	    <if test="driverId != null">
+		,#{handoverDateTime,jdbcType=TIMESTAMP}
+		</if>
+		,#{createdBy}
+		,GETDATE()
+		)
+	</insert>
+
+	<select id="selectRampCheckInEvent"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		SELECT TOP 1 ImpFlightEventsId impFlightEventsId, FlightId
+		flightId,
+		FirstTimeRampCheckInCompletedBy
+		firstTimeRampCheckInCompletedBy,RampCheckInCompletedAt
+		rampCheckInCompletedAt, RampCheckInCompletedBy rampCheckInCompletedBy
+		FROM Imp_FlightEvents WHERE FlightId = #{flightId}
+	</select>
+
+	<insert id="insertRampCheckInEvent"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus"
+		useGeneratedKeys="true" keyProperty="impFlightEventsId"
+		keyColumn="ImpFlightEventsId">
+		INSERT INTO Imp_FlightEvents
+		(FlightId
+		,FirstTimeRampCheckInCompletedAt
+		,FirstTimeRampCheckInCompletedBy
+		,RampCheckInCompletedAt
+		,RampCheckInCompletedBy
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{flightId}
+		,CURRENT_TIMESTAMP
+		,#{rampCheckInCompletedBy}
+		,CURRENT_TIMESTAMP
+		,#{createdBy}
+		,#{createdBy}
+		,CURRENT_TIMESTAMP)
+	</insert>
+
+	<select id="findFirstUldCheckedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		SELECT FirstULDCheckedInBy firstULDCheckedInBy,FlightId
+		flightId FROM Imp_FlightEvents WHERE FlightId = #{flightId}
+	</select>
+
+	<select id="findFirstUldTowedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		SELECT FirstULDTowedBy firstULDTowedBy,FlightId flightId
+		FROM Imp_FlightEvents WHERE FlightId = #{flightId}
+	</select>
+
+	<update id="updateLastUldTowedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		LastULDTowedAt =
+		CURRENT_TIMESTAMP
+		,LastULDTowedBy =
+		#{firstULDTowedBy}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<update id="updateFirstUldTowedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		LastULDTowedBy =
+		#{firstULDTowedBy}
+		,LastULDTowedAt
+		= CURRENT_TIMESTAMP
+		,FirstULDTowedAt =
+		CURRENT_TIMESTAMP
+		,FirstULDTowedBy = #{firstULDTowedBy}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<insert id="insertFirstUldCheckedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus"
+		useGeneratedKeys="true" keyProperty="impFlightEventsId"
+		keyColumn="ImpFlightEventsId">
+		INSERT INTO Imp_FlightEvents
+		(FlightId
+		,FirstULDCheckedInAt
+		,FirstULDCheckedInBy
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{flightId}
+		,CURRENT_TIMESTAMP
+		,#{createdBy}
+		,#{createdBy}
+		,CURRENT_TIMESTAMP)
+	</insert>
+
+	<update id="updateFirstUldCheckedIn"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		FirstULDCheckedInAt =
+		CURRENT_TIMESTAMP
+		,FirstULDCheckedInBy = #{modifiedBy}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<update id="updateFirstTimeRampCheckInEvent"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE Imp_FlightEvents
+		SET
+		FirstTimeRampCheckInCompletedAt =
+		CURRENT_TIMESTAMP
+		,FirstTimeRampCheckInCompletedBy = #{rampCheckInCompletedBy}
+		,RampCheckInCompletedAt =
+		CURRENT_TIMESTAMP
+		,RampCheckInCompletedBy =
+		#{rampCheckInCompletedBy}
+		,LastUpdatedUserCode = #{createdBy}
+		,LastUpdatedDateTime =
+		CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<update id="updateRampCheckInEvent"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		RampCheckInCompletedAt =
+		CURRENT_TIMESTAMP
+		,RampCheckInCompletedBy = #{rampCheckInCompletedBy}
+		,LastUpdatedUserCode = #{rampCheckInCompletedBy}
+		,LastUpdatedDateTime =
+		CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<update id="updateRampCheckInEventReopen"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInStatus">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		RampCheckInCompletedAt = NULL
+		,RampCheckInCompletedBy = NULL
+		,LastUpdatedUserCode = #{rampCheckInCompletedBy}
+		,LastUpdatedDateTime = CURRENT_TIMESTAMP
+		WHERE FlightId = #{flightId}
+	</update>
+
+	<update id="updateHandoverByRampCheckin"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE
+		Imp_HandOver SET
+		CreatedDateTime =CURRENT_TIMESTAMP
+		<if test="flightId != null and  flightId !=''">
+			,FlightId =#{flightId}
+		</if>	
+		<if test="tractorNumber != null and tractorNumber  !='' and driverId != null and  driverId !=''">
+			,TractorNumber =#{tractorNumber}
+		</if>
+		<if test="driverId != null and  driverId !=''">
+			<if test="terminal != null and terminal  !=''">
+				,HandedOverAt =#{terminal}
+			</if>
+			,HandedOverBy =#{driverId}
+		    ,CompletedAt =CURRENT_TIMESTAMP
+		</if>
+		,LastUpdatedDateTime =CURRENT_TIMESTAMP
+		<if test="driverId == null">
+			,HandedOverBy =null
+			,HandedOverAt =null
+			,TractorNumber =null
+			,CompletedAt=null
+		</if>
+		
+		WHERE
+		FlightId = #{flightId} AND ImpHandOverId = #{handOverId}
+	</update>
+
+	<insert id="insertHandoverByRampCheckinUld"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUldNumber"
+		useGeneratedKeys="true"
+		keyProperty="impHandOverContainerTrolleyInformationId"
+		keyColumn="ImpHandOverContainerTrolleyInformationId">
+		INSERT INTO Imp_HandOverContainerTrolleyInformation (
+		ImpHandOverId
+		,ContainerTrolleyNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES(
+		#{handOverId}
+		,#{uldNumber}
+		,#{createdBy}
+		,getDate()
+		)
+	</insert>
+
+	<select id="getIdForRampCheckInHandOverUldTrolly"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		SELECT TOP 1 ImpHandOverId prelodgeDocumentId FROM
+		Imp_HandOver ORDER
+		BY
+		ImpHandOverId DESC;
+	</select>
+
+	<update id="updateHandoverByRampCheckinUld"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE
+		Imp_HandOverContainerTrolleyInformation SET
+		ImpHandOverId
+		=#{impHandOverId}
+		<if
+			test=" containerTrolleyNumber != null and  containerTrolleyNumber !=''">
+			,ContainerTrolleyNumber =#{containerTrolleyNumber}
+		</if>
+		<if test=" usedAsTrolley != null and  usedAsTrolley !=''">
+			,UsedAsTrolley =#{usedAsTrolley}
+		</if>
+		<if test=" capturedManual != null and  capturedManual !=''">
+			,CapturedManual = #{capturedManual}
+		</if>
+		<if
+			test=" sourceOfInformation != null and  sourceOfInformation !=''">
+			,SourceOfInformation = #{sourceOfInformation}
+		</if>
+		WHERE
+		ContainerTrolleyNumber = #{containerTrolleyNumber} AND
+		ImpHandOverId =
+		#{impHandOverId}
+	</update>
+
+	<select id="selectPiggyBackULD"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInPiggyback">
+		SELECT 
+		   ImpRampCheckInPiggyBackULDInfoId piggybackId
+		  ,ImpRampCheckInId impRampCheckInId
+		  ,ULDNumber uldNumber
+		FROM
+		   Imp_RampCheckInPiggyBackULDInfo
+		WHERE 
+		   ImpRampCheckInId = #{impRampCheckInId}
+	</select>
+	
+	<select id="selectPiggyBackULDNumber"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback"
+		resultType="java.lang.String">
+		SELECT 
+		   top(1)
+		   piggyUld.ULDNumber uldNumber
+		FROM
+		   Imp_RampCheckInPiggyBackULDInfo piggyUld
+		     inner join 
+		   Imp_RampCheckIn on 
+		     Imp_RampCheckIn.ImpRampCheckInId=piggyUld.ImpRampCheckInId
+		WHERE 
+		     piggyUld.ULDNumber = #{uldNumber} and Imp_RampCheckIn.flightId=#{flightId} order by Imp_RampCheckIn.CreatedDateTime desc
+	</select>
+
+	<insert id="insertPiggyBackULD"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback"
+		useGeneratedKeys="true" keyProperty="impRampCheckInPiggyBackULDInfoId"
+		keyColumn="ImpRampCheckInPiggyBackULDInfoId">
+		INSERT INTO Imp_RampCheckInPiggyBackULDInfo
+		(ImpRampCheckInId
+		,ULDNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{impRampCheckInId}
+		,#{uldNumber}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+	<update id="updatePiggyBackULD"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback">
+		UPDATE
+		Imp_RampCheckInPiggyBackULDInfo
+		SET ULDNumber = #{uldNumber}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =GETDATE()
+		WHERE ImpRampCheckInPiggyBackULDInfoId = #{piggybackId}
+	</update>
+
+	<delete id="deletePiggyBackULD"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback">
+		DELETE FROM
+		Imp_RampCheckInPiggyBackULDInfo
+		WHERE
+		ImpRampCheckInId =
+		#{impRampCheckInId} and ULDNumber = #{uldNumber}
+	</delete>
+
+	<delete id="deletePiggyBackULDByRampCheckInId"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggyback">
+		DELETE FROM Imp_RampCheckInPiggyBackULDInfo
+		WHERE
+		ImpRampCheckInId =
+		#{impRampCheckInId}
+	</delete>
+
+	<select id="getUldFromUldMaster"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.Integer">
+		SELECT count(*) FROM Uld_UldMaster WHERE UldKey =
+		#{uldNumber}
+	</select>
+
+	<select id="getSHCFromSHCMaster"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM Mst_SpecialHandlingCode WHERE
+		SpecialHandlingCode =
+		#{shc}
+	</select>
+
+	<select id="getBulkFlag"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInDetails">
+		SELECT
+		FlightId flightId,
+		BulkShipmentsExists "bulk"
+		FROM
+		Imp_FlightEvents
+		WHERE FlightId = #{flightId}
+	</select>
+
+	<update id="updateBulkStatus"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		BulkShipmentsExists = #{bulk}
+		WHERE
+		FlightId =
+		#{flightId}
+	</update>
+	<select id="getFlightList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSearchFlight"
+		resultMap="rampCheckInFlightDataList">
+		SELECT TOP 1
+		flt.Flight_ID,
+		FlightKey,
+		FlightOriginDate,
+		MaxULDCount,
+		leg.DateSTA,
+		leg.DateETA,
+		leg.DateATA
+		FROM
+		Flt_OperativeFlight flt,
+		Flt_OperativeFlight_Legs leg
+		WHERE
+		flt.Flight_ID = leg.Flight_ID AND leg.FlightOffPoint = #{tenantAirport}
+		AND
+		flt.FlightKey = #{flight} AND CAST(leg.DateSTA AS DATE) =
+		#{flightDate}
+	</select>
+
+	<resultMap id="rampCheckInFlightDataList"
+		type="com.ngen.cosys.impbd.model.RampCheckInList" autoMapping="false">
+		<id property="flightId" column="Flight_ID" />
+		<result property="flight" column="FlightKey" />
+		<result property="flightDate" column="FlightOriginDate" />
+		<result property="uldReceived" column="MaxULDCount" />
+		<result property="sta" column="DateSTA" />
+		<result property="eta" column="DateETA" />
+		<result property="ata" column="DateATA" />
+		<collection property="pending" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInPending"
+			select="getULDList"
+			column="{flightId=Flight_ID}" />
+		<collection property="verified" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInVerified"
+			select="getULDVerified"
+			column="{flightId=Flight_ID}" />
+		<collection property="pendVerified" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInPendVerified"
+			select="getULDPendVerified"
+			column="{flightId=Flight_ID}" />
+	</resultMap>
+
+	<select id="getULDList" resultMap="uldMapList">
+		SELECT DISTINCT RAM.ImpRampCheckInId,
+		RAM.FlightId ,RAM.ULDNumber ,RAM.TransferType,
+		case when
+		RAM.ContentCode is null
+		then 'C'
+		ELSE RAM.ContentCode
+		END AS
+		ContentCode,RAM.UsedAsTrolley,RAM.DamagedFlag,
+		RAM.EmptyFlag,RAM.PiggybackFlag,RAM.Remarks,
+		RAM.CheckedInAt,RAM.CheckedInBy,RAM.CheckedInArea,
+		RAM.OffloadedFlag,RAM.PHCFlag AS phc,RAM.ValFlag AS val,
+		RAM.ManualFlag AS manual,RAM.OffloadedReasonCode,
+		HAN.ImpHandOverId,HAN.TractorNumber,HAN.HandedOverBy,
+		HAN.CompletedAt,'R' AS flagCRUD,
+		IINC.ConnectingFlightId as outboundFlightId,
+		segmentData.FlightBoardPoint origin,
+		case when
+		IINC.ConnectingFlightId  is not null then (select flightkey from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightKey,
+		case when
+		IINC.ConnectingFlightId  is not null then (select FlightOriginDate from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightDate,
+		IINC.HandlingInstructionForRamp,
+		IINC.HandlingMode,
+	    case when
+        RAM.PHCFlag=1
+		THEN 'Y' ELSE 'N' END AS PhcFlag,
+		ULDT.temperatureValue,
+	    ULDT.temperatureType,
+		ULDT.temperatureTypeValue,
+		ULDT.temperatureCaptureDt,
+		ULDT.remarks,
+		ULDT.UldEvent
+		FROM Imp_RampCheckIn RAM
+		INNER JOIN
+		Flt_OperativeFlight OPR ON OPR.Flight_ID = RAM.FlightId
+		LEFT OUTER JOIN
+		(SELECT IHO.FlightId, IHO.ImpHandOverId,IHO.TractorNumber
+		,IHO.HandedOverBy,IHO.CompletedAt, HAN.ContainerTrolleyNumber
+		FROM
+		Imp_HandOver IHO
+		INNER JOIN Imp_HandOverContainerTrolleyInformation HAN
+		ON HAN.ImpHandOverId = IHO.ImpHandOverId) HAN
+		ON
+		HAN.ContainerTrolleyNumber = RAM.ULDNumber AND HAN.FlightId =
+		RAM.FlightId
+		LEFT JOIN Imp_InboundContainers IINC ON IINC.ULDNumber=RAM.ULDNumber
+		and IINC.incomingFlightId=RAM.flightId and IINC.ConnectingFlightId is not null
+		INNER join Uld_ContentCodes con on RAM.ContentCode= con.ContentCode 
+		AND con.ApronCargoLocation = 'C'
+		left join Imp_ArrivalManifestByFlight manifestFlight on manifestFlight.FlightId=RAM.FlightId  
+        left outer join 
+         (
+         select 
+              manifestUld.uldNumber,manifestSeg.ImpArrivalManifestByFlightId,Flt_OperativeFlight_Segments.FlightBoardPoint 
+         from 
+              Imp_ArrivalManifestBySegment  manifestSeg  
+               inner join Imp_ArrivalManifestULD  manifestUld on manifestUld.ImpArrivalManifestBySegmentId=manifestSeg.ImpArrivalManifestBySegmentId 
+	           inner join Flt_OperativeFlight_Segments on Flt_OperativeFlight_Segments.FlightSegmentId=manifestSeg.FlightSegmentId
+          ) segmentData on segmentData.ImpArrivalManifestByFlightId=manifestFlight.ImpArrivalManifestByFlightId and segmentData.ULDNumber=RAM.ULDNumber
+          left join ULD_TemperatureLog ULDT on ULDT.flightId = OPR.Flight_ID and ULDT.Uldkey = RAM.ULDNumber
+		WHERE
+		OPR.Flight_ID = #{flightId}
+		AND
+		RAM.CheckedInBy IS
+		NULL AND
+		HAN.HandedOverBy
+		IS NULL
+		ORDER BY ULDNumber
+	</select>
+	<resultMap
+		type="com.ngen.cosys.impbd.model.RampCheckInPending" id="uldMapList"
+		autoMapping="false">
+		<id property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="transferType" column="TransferType" />
+		<result property="contentCode" column="ContentCode" />
+		<result property="usedAsTrolley" column="UsedAsTrolley" />
+		<result property="damaged" column="DamagedFlag" />
+		<result property="empty" column="EmptyFlag" />
+		<result property="piggyback" column="PiggybackFlag" />
+		<result property="remarks" column="Remarks" />
+		<result property="checkedinAt" column="CheckedInAt"/>
+		<result property="checkedinBy" column="CheckedInBy" />
+		<result property="checkedinArea" column="CheckedInArea" />
+		<result property="offloadedFlag" column="OffloadedFlag" />
+		<result property="phc" column="phc" />
+		<result property="val" column="val" />
+		<result property="manual" column="manual" />
+		<result property="offloadReason" column="OffloadedReasonCode" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handOverId" column="ImpHandOverId" />
+		<result property="driverId" column="HandedOverBy" />
+		<result property="handoverDateTime" column="CompletedAt"/>
+		<result property="ouboundFlightId" column="outboundFlightId" />
+		<result property="ouboundFlightKey" column="ouboundFlightKey" />
+		<result property="ouboundFlightDate" column="ouboundFlightDate" />
+		<result property="handlingInstructions" column="Remarks" />
+		<result property="handlingMode" column="HandlingMode" />
+		<result property="phcFlag" column="PhcFlag" />
+		<result property="temperatureValue" column="temperatureValue" />
+		<result property="temperatureType" column="temperatureType" />
+		<result property="temperatureTypeValue" column="temperatureTypeValue" />
+		<result property="temperatureCaptureDt" column="temperatureCaptureDt" />
+		<result property="tempRemarks" column="remarks" />
+		<result property="uldEvent" column="uldEvent" />
+		<collection property="shcs" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+			select="selectRampULDPen"
+			column="{impRampCheckInId=ImpRampCheckInId}" />
+	</resultMap>
+	
+	
+    <select id="getFlightSegmentList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInSegmentList">
+	    SELECT FlightBoardPoint as boardPoint,FlightOffPoint as offPoint FROM Flt_OperativeFlight_LEGS 
+		WHERE
+	    Flight_ID =#{flightId} 
+		ORDER BY FlightSegmentOrder asc
+	</select>
+
+	<select id="selectRampULDPen" resultMap="shcPenList">
+		SELECT
+		ImpRampCheckInULDSHCId
+		,ImpRampCheckInId
+		,SpecialHandlingCode
+		FROM
+		Imp_RampCheckInULDSHC
+		WHERE ImpRampCheckInId = #{impRampCheckInId}
+	</select>
+
+
+	<resultMap type="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		id="shcPenList" autoMapping="false">
+		<id property="impRampCheckInULDSHCId"
+			column="ImpRampCheckInULDSHCId" />
+		<result property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="shc" column="SpecialHandlingCode" />
+	</resultMap>
+	<select id="getBulkList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInList"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInList">
+		SELECT
+		FlightId flightId,
+		BulkShipmentsExists "bulk"
+		FROM
+		Imp_FlightEvents
+		WHERE FlightId = #{flightId}
+	</select>
+
+	<select id="getULDVerified" resultMap="uldMapVerified">
+		SELECT DISTINCT
+		RAM.ImpRampCheckInId,
+		RAM.FlightId ,RAM.ULDNumber ,RAM.TransferType,
+		case when
+		RAM.ContentCode is null
+		then 'C'
+		ELSE RAM.ContentCode
+		END AS
+		ContentCode,RAM.UsedAsTrolley,RAM.DamagedFlag,
+		RAM.EmptyFlag,RAM.PiggybackFlag,RAM.Remarks,
+		RAM.CheckedInAt,RAM.CheckedInBy,RAM.CheckedInArea,
+		RAM.OffloadedFlag,RAM.PHCFlag AS phc,RAM.ValFlag AS val,
+		RAM.ManualFlag AS manual,RAM.OffloadedReasonCode,
+		HAN.ImpHandOverId,HAN.TractorNumber,HAN.HandedOverBy,
+		HAN.CompletedAt,'R' AS flagCRUD,
+		IINC.ConnectingFlightId as outboundFlightId,
+		segmentData.FlightBoardPoint origin,
+		case when
+		IINC.ConnectingFlightId  is not null then (select flightkey from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightKey,
+		case when
+		IINC.ConnectingFlightId  is not null then (select FlightOriginDate from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightDate,
+		IINC.HandlingInstructionForRamp,
+		IINC.HandlingMode,
+	    case when
+        RAM.PHCFlag=1
+		THEN 'Y' ELSE 'N' END AS PhcFlag,
+		ULDT.temperatureValue,
+	    ULDT.temperatureType,
+		ULDT.temperatureTypeValue,
+		ULDT.temperatureCaptureDt,
+		ULDT.remarks,
+		ULDT.UldEvent
+		FROM Imp_RampCheckIn RAM
+		INNER JOIN
+		Flt_OperativeFlight OPR ON OPR.Flight_ID = RAM.FlightId
+		LEFT OUTER JOIN
+		(SELECT IHO.FlightId, IHO.ImpHandOverId,IHO.TractorNumber
+		,IHO.HandedOverBy,IHO.CompletedAt, HAN.ContainerTrolleyNumber
+		FROM
+		Imp_HandOver IHO
+		INNER JOIN Imp_HandOverContainerTrolleyInformation HAN
+		ON HAN.ImpHandOverId = IHO.ImpHandOverId) HAN
+		ON
+		HAN.ContainerTrolleyNumber = RAM.ULDNumber AND HAN.FlightId =
+		RAM.FlightId
+		LEFT JOIN Imp_InboundContainers IINC ON IINC.ULDNumber=RAM.ULDNumber
+		and IINC.incomingFlightId=RAM.flightId and IINC.ConnectingFlightId is not null
+		INNER join Uld_ContentCodes con on RAM.ContentCode= con.ContentCode 
+		AND con.ApronCargoLocation = 'C'
+		left join Imp_ArrivalManifestByFlight manifestFlight on manifestFlight.FlightId=RAM.FlightId  
+        left outer join 
+         (
+         select 
+              manifestUld.uldNumber,manifestSeg.ImpArrivalManifestByFlightId,Flt_OperativeFlight_Segments.FlightBoardPoint 
+         from 
+              Imp_ArrivalManifestBySegment  manifestSeg  
+               inner join Imp_ArrivalManifestULD  manifestUld on manifestUld.ImpArrivalManifestBySegmentId=manifestSeg.ImpArrivalManifestBySegmentId 
+	           inner join Flt_OperativeFlight_Segments on Flt_OperativeFlight_Segments.FlightSegmentId=manifestSeg.FlightSegmentId
+          ) segmentData on segmentData.ImpArrivalManifestByFlightId=manifestFlight.ImpArrivalManifestByFlightId and segmentData.ULDNumber=RAM.ULDNumber
+           left join ULD_TemperatureLog ULDT on ULDT.flightId = OPR.Flight_ID and ULDT.Uldkey = RAM.ULDNumber
+		WHERE
+		OPR.Flight_ID = #{flightId} 
+		AND
+		RAM.CheckedInBy IS
+		NULL AND
+		HAN.HandedOverBy
+		IS NOT NULL
+		ORDER BY ULDNumber
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.impbd.model.RampCheckInVerified"
+		id="uldMapVerified" autoMapping="false">
+		<id property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="transferType" column="TransferType" />
+		<result property="contentCode" column="ContentCode" />
+		<result property="usedAsTrolley" column="UsedAsTrolley" />
+		<result property="damaged" column="DamagedFlag" />
+		<result property="empty" column="EmptyFlag" />
+		<result property="piggyback" column="PiggybackFlag" />
+		<result property="remarks" column="Remarks" />
+		<result property="checkedinAt" column="CheckedInAt"/>
+		<result property="checkedinBy" column="CheckedInBy" />
+		<result property="checkedinArea" column="CheckedInArea" />
+		<result property="offloadedFlag" column="OffloadedFlag" />
+		<result property="phc" column="phc" />
+		<result property="val" column="val" />
+		<result property="manual" column="manual" />
+		<result property="offloadReason" column="OffloadedReasonCode" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handOverId" column="ImpHandOverId" />
+		<result property="driverId" column="HandedOverBy" />
+		<result property="handoverDateTime" column="CompletedAt"/>
+		<result property="ouboundFlightId" column="outboundFlightId" />
+		<result property="ouboundFlightKey" column="ouboundFlightKey" />
+		<result property="ouboundFlightDate" column="ouboundFlightDate" />
+		<result property="handlingInstructions" column="Remarks" />
+		<result property="handlingMode" column="HandlingMode" />
+		<result property="phcFlag" column="PhcFlag" />
+		<result property="origin" column="origin" />
+		<result property="temperatureValue" column="temperatureValue" />
+		<result property="temperatureType" column="temperatureType" />
+		<result property="temperatureTypeValue" column="temperatureTypeValue" />
+		<result property="temperatureCaptureDt" column="temperatureCaptureDt" />
+		<result property="tempRemarks" column="remarks" />
+		<result property="uldEvent" column="uldEvent" />
+		<collection property="shcs" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+			select="selectRampULDVerified"
+			column="{impRampCheckInId=ImpRampCheckInId}" />
+	</resultMap>
+
+	<select id="selectRampULDVerified" resultMap="shcVerified">
+		SELECT
+		ImpRampCheckInULDSHCId
+		,ImpRampCheckInId
+		,SpecialHandlingCode
+		FROM
+		Imp_RampCheckInULDSHC
+		WHERE ImpRampCheckInId = #{impRampCheckInId}
+	</select>
+
+
+	<resultMap type="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		id="shcVerified" autoMapping="false">
+		<id property="impRampCheckInULDSHCId"
+			column="ImpRampCheckInULDSHCId" />
+		<result property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="shc" column="SpecialHandlingCode" />
+	</resultMap>
+
+	<select id="getULDPendVerified" resultMap="uldMapPendVerified">
+		SELECT DISTINCT
+		RAM.ImpRampCheckInId,
+		RAM.FlightId ,RAM.ULDNumber ,RAM.TransferType,
+		case when
+		RAM.ContentCode is null
+		then 'C'
+		ELSE RAM.ContentCode
+		END AS
+		ContentCode,RAM.UsedAsTrolley,RAM.DamagedFlag,
+		RAM.EmptyFlag,RAM.PiggybackFlag,RAM.Remarks,
+		RAM.CheckedInAt,RAM.CheckedInBy,RAM.CheckedInArea,
+		RAM.OffloadedFlag,RAM.PHCFlag AS phc,RAM.ValFlag AS val,
+		RAM.ManualFlag AS manual,RAM.OffloadedReasonCode,
+		HAN.ImpHandOverId,HAN.TractorNumber,HAN.HandedOverBy,
+		HAN.CompletedAt,'R' AS flagCRUD,
+		IINC.ConnectingFlightId as outboundFlightId,
+		segmentData.FlightBoardPoint origin,
+		case when
+		IINC.ConnectingFlightId  is not null then (select flightkey from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightKey,
+		case when
+		IINC.ConnectingFlightId  is not null then (select FlightOriginDate from flt_operativeflight where flight_id=IINC.ConnectingFlightId) 
+		end ouboundFlightDate,
+		IINC.HandlingInstructionForRamp,
+		IINC.HandlingMode,
+	    case when
+        RAM.PHCFlag=1
+		THEN 'Y' ELSE 'N' END AS PhcFlag,
+		ULDT.temperatureValue,
+	    ULDT.temperatureType,
+		ULDT.temperatureTypeValue,
+		ULDT.temperatureCaptureDt,
+		ULDT.remarks,
+		ULDT.UldEvent
+		FROM Imp_RampCheckIn RAM
+		INNER JOIN
+		Flt_OperativeFlight OPR ON OPR.Flight_ID = RAM.FlightId
+		LEFT OUTER JOIN
+		(SELECT IHO.FlightId, IHO.ImpHandOverId,IHO.TractorNumber
+		,IHO.HandedOverBy,IHO.CompletedAt, HAN.ContainerTrolleyNumber
+		FROM
+		Imp_HandOver IHO
+		INNER JOIN Imp_HandOverContainerTrolleyInformation HAN
+		ON HAN.ImpHandOverId = IHO.ImpHandOverId) HAN
+		ON
+		HAN.ContainerTrolleyNumber = RAM.ULDNumber AND HAN.FlightId =
+		RAM.FlightId
+		LEFT JOIN Imp_InboundContainers IINC ON IINC.ULDNumber=RAM.ULDNumber
+		and IINC.incomingFlightId=RAM.flightId and IINC.ConnectingFlightId is not null
+		INNER join Uld_ContentCodes con on RAM.ContentCode= con.ContentCode 
+		AND con.ApronCargoLocation = 'C'
+		left join Imp_ArrivalManifestByFlight manifestFlight on manifestFlight.FlightId=RAM.FlightId  
+        left outer join 
+         (
+         select 
+              manifestUld.uldNumber,manifestSeg.ImpArrivalManifestByFlightId,Flt_OperativeFlight_Segments.FlightBoardPoint 
+         from 
+              Imp_ArrivalManifestBySegment  manifestSeg  
+               inner join Imp_ArrivalManifestULD  manifestUld on manifestUld.ImpArrivalManifestBySegmentId=manifestSeg.ImpArrivalManifestBySegmentId 
+	           inner join Flt_OperativeFlight_Segments on Flt_OperativeFlight_Segments.FlightSegmentId=manifestSeg.FlightSegmentId
+          ) segmentData on segmentData.ImpArrivalManifestByFlightId=manifestFlight.ImpArrivalManifestByFlightId and segmentData.ULDNumber=RAM.ULDNumber
+          left join ULD_TemperatureLog ULDT on ULDT.flightId = OPR.Flight_ID and ULDT.Uldkey = RAM.ULDNumber
+		WHERE
+		OPR.Flight_ID = #{flightId} 
+		AND
+		RAM.CheckedInBy IS
+		NOT NULL
+		and
+		HAN.HandedOverBy IS not NULL
+		ORDER BY ULDNumber
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.impbd.model.RampCheckInPendVerified"
+		id="uldMapPendVerified" autoMapping="false">
+		<id property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="transferType" column="TransferType" />
+		<result property="contentCode" column="ContentCode" />
+		<result property="usedAsTrolley" column="UsedAsTrolley" />
+		<result property="damaged" column="DamagedFlag" />
+		<result property="empty" column="EmptyFlag" />
+		<result property="piggyback" column="PiggybackFlag" />
+		<result property="remarks" column="Remarks" />
+		<result property="checkedinAt" column="CheckedInAt"/>
+		<result property="checkedinBy" column="CheckedInBy" />
+		<result property="checkedinArea" column="CheckedInArea" />
+		<result property="offloadedFlag" column="OffloadedFlag" />
+		<result property="phc" column="phc" />
+		<result property="val" column="val" />
+		<result property="manual" column="manual" />
+		<result property="offloadReason" column="OffloadedReasonCode" />
+		<result property="tractorNumber" column="TractorNumber" />
+		<result property="handOverId" column="ImpHandOverId" />
+		<result property="driverId" column="HandedOverBy" />
+		<result property="handoverDateTime" column="CompletedAt"/>
+		<result property="ouboundFlightId" column="outboundFlightId" />
+		<result property="ouboundFlightKey" column="ouboundFlightKey" />
+		<result property="ouboundFlightDate" column="ouboundFlightDate" />
+		<result property="handlingInstructions" column="Remarks" />
+		<result property="handlingMode" column="HandlingMode" />
+		<result property="phcFlag" column="PhcFlag" />
+		<result property="origin" column="origin" />
+		<result property="temperatureValue" column="temperatureValue" />
+		<result property="temperatureType" column="temperatureType" />
+		<result property="temperatureTypeValue" column="temperatureTypeValue" />
+		<result property="temperatureCaptureDt" column="temperatureCaptureDt" />
+		<result property="tempRemarks" column="remarks" />
+		<result property="uldEvent" column="uldEvent" />
+		<collection property="shcs" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+			select="selectRampULDPenVerified"
+			column="{impRampCheckInId=ImpRampCheckInId}" />
+	</resultMap>
+
+	<select id="selectRampULDPenVerified" resultMap="shcPenVerified">
+		SELECT
+		ImpRampCheckInULDSHCId
+		,ImpRampCheckInId
+		,SpecialHandlingCode
+		FROM
+		Imp_RampCheckInULDSHC
+		WHERE ImpRampCheckInId = #{impRampCheckInId}
+	</select>
+	<resultMap type="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		id="shcPenVerified" autoMapping="false">
+		<id property="impRampCheckInULDSHCId"
+			column="ImpRampCheckInULDSHCId" />
+		<result property="impRampCheckInId" column="ImpRampCheckInId" />
+		<result property="shc" column="SpecialHandlingCode" />
+	</resultMap>
+
+	<insert id="insertPiggyBackULDList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList"
+		useGeneratedKeys="true" keyProperty="impRampCheckInPiggyBackULDInfoId"
+		keyColumn="ImpRampCheckInPiggyBackULDInfoId">
+		INSERT INTO Imp_RampCheckInPiggyBackULDInfo
+		(ImpRampCheckInId
+		,ULDNumber
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{impRampCheckInId}
+		,#{uldNumber}
+		,#{createdBy}
+		,GETDATE())
+	</insert>
+
+	<update id="updatePiggyBackULDList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList">
+		UPDATE
+		Imp_RampCheckInPiggyBackULDInfo
+		SET ULDNumber =
+		#{uldNumber}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime =
+		GETDATE()
+		WHERE ImpRampCheckInId = #{impRampCheckInId} and
+		ImpRampCheckInPiggyBackULDInfoId = #{impRampCheckInPiggyBackULDInfoId}
+	</update>
+
+	<select id="existULDList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList">
+		SELECT
+		ImpRampCheckInPiggyBackULDInfoId
+		,ImpRampCheckInId
+		,ULDNumber
+		FROM
+		Imp_RampCheckInPiggyBackULDInfo
+		WHERE ULDNumber =
+		#{uldNumber}
+	</select>
+	<select id="selectPiggyBackULDList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList">
+		SELECT ImpRampCheckInPiggyBackULDInfoId
+		,ImpRampCheckInId
+		impRampCheckInId
+		,ULDNumber uldNumber
+		FROM
+		Imp_RampCheckInPiggyBackULDInfo
+		WHERE ImpRampCheckInId =
+		#{impRampCheckInId}
+	</select>
+
+	<select id="getCarrierCodeCountphc"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.Integer">
+		select count (shcg.SHCHandlingGroupCode) from
+		Mst_SHCHandlingGroup
+		shcg JOIN Mst_AssociateSHCByHandlingGroup shcc
+		on
+		shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		where
+		shcc.SpecialHandlingCode=#{carrierCode} and
+		shcg.SHCHandlingGroupCode='PHC'
+	</select>
+
+	<select id="getCarrierCodeCountVal"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.Integer">
+		select count (shcg.SHCHandlingGroupCode) from
+		Mst_SHCHandlingGroup
+		shcg JOIN Mst_AssociateSHCByHandlingGroup shcc
+		on
+		shcg.MstSHCHandlingGroupID=shcc.MstSHCHandlingGroupID
+		where
+		shcc.SpecialHandlingCode=#{carrierCode} and
+		shcg.SHCHandlingGroupCode='VAL'
+	</select>
+
+	<select id="checkForContentCode"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.Integer">
+		select 
+			case
+				when count(1) > 0 and (Imp_RampCheckIn.TransferType is null OR len(Imp_RampCheckIn.TransferType) = 0) then
+					1
+				when count(1) > 0 and 
+				(select
+					count(1)
+				from
+					Transhipment_TransferTypes
+				where
+					Transhipment_TransferTypes.TransferType = Imp_RampCheckIn.TransferType and
+					Transhipment_TransferTypes.TransferType = 'ST') > 0 then
+					1
+				else
+					0
+				end result
+		from 
+			Imp_RampCheckIn left join
+			Uld_ContentCodes
+				on Imp_RampCheckIn.ContentCode = Uld_ContentCodes.ContentCode and ApronCargoLocation = 'C'
+		where 
+			ULDNumber = #{uldNumber} and
+			FlightId = #{flightId} 
+		
+		group by
+			Imp_RampCheckIn.TransferType
+	</select>
+
+
+	<delete id="deletePiggyBackULDList"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInPiggybackList">
+		DELETE FROM
+		Imp_RampCheckInPiggyBackULDInfo
+		WHERE
+		ImpRampCheckInId =
+		#{impRampCheckInId} and ULDNumber = #{uldNumber}
+	</delete>
+	
+	<select id="getCountOfFFMUlds"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		resultType="java.lang.Integer">
+		select
+                    count(DISTINCT Imp_FreightFlightManifestULD.ULDNumber)
+              from
+                     Imp_FreightFlightManifestByFlight,
+                     Imp_FreightFlightManifestBySegment,
+                     Imp_FreightFlightManifestULD
+              where
+                     Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId and
+                     Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestBySegmentId = Imp_FreightFlightManifestULD.ImpFreightFlightManifestBySegmentId and
+           
+                     Imp_FreightFlightManifestByFlight.FlightId = #{flightId} and
+                     Imp_FreightFlightManifestBySegment.MessageStatus = 'PROCESSED' and Imp_FreightFlightManifestULD.ULDNumber is not null
+	</select>
+	  
+  <select id="sqlIsTrolley"
+		parameterType="java.lang.String" resultType="java.lang.String">
+		select UldTypeDescription from Uld_UldType where UldType=#{uldType}
+	</select>
+	<select id="getCountOfNilCargo"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		resultType="java.lang.Integer">
+		select count(*) from Imp_FreightFlightManifestByFlight FFM
+		inner join Imp_FreightFlightManifestBySegment FFMS on FFM.ImpFreightFlightManifestByFlightId=FFMS.ImpFreightFlightManifestByFlightId
+		inner join Flt_OperativeFlight 
+		on
+		Flt_OperativeFlight.Flight_ID=FFM.FlightId
+		inner join Flt_OperativeFlight_Segments on 
+		Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID 
+		where Flt_OperativeFlight_Segments.flightoffpoint=#{tenantAirport} and Flt_OperativeFlight.FlightKey=#{flight}
+		and cast(Flt_OperativeFlight_Segments.DateSTA as date)=#{flightDate} and FFMS.NilCargo=1
+	</select>
+	<select id="getCountOfSegments"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInDetails"
+		resultType="java.lang.Integer">
+		select count(*)
+        from Flt_OperativeFlight_Segments inner join Flt_OperativeFlight 
+		on
+		Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID 
+		where Flt_OperativeFlight_Segments.flightoffpoint=#{tenantAirport} and Flt_OperativeFlight.FlightKey=#{flight}
+		and cast(Flt_OperativeFlight_Segments.DateSTA as date)=#{flightDate}
+	</select>
+	<select id="getCountShcs"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInSHC"
+		resultType="java.lang.Integer">
+	select count(*) from Imp_RampCheckInULDSHC where ImpRampCheckInId=#{impRampCheckInId}
+			and SpecialHandlingCode=#{shc}
+			</select>
+			
+	<select id="getFlightOriginCarrier"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInUld">		
+      select top(1) CarrierCode as carrierCode , FlightBoardPoint as origin from flt_operativeFlight flt
+        left join flt_operativeFlight_legs legs on
+      flt.flight_id = legs.flight_id where flt.Flight_id=#{flightId} and FlightOffPoint=#{tenantAirport} order by FlightSegmentOrder DESC
+  </select>
+  <select id="getCountOfUcmFinalizedForFlightLevel"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.Integer">		
+         select count(*) from Uld_UCMUldDetails ucm JOIN Uld_UCMFlightDetails flight ON
+         ucm.UCMFlightDetails_ID=flight.UCMFlightDetails_ID where FlightId=#{flightId} 
+  </select>
+  <select id="getCountOfUcmFinalizedForUCMDetailsLevel"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.Integer">		
+         select count(*) from Uld_UCMUldDetails ucm JOIN Uld_UCMFlightDetails flight ON
+         ucm.UCMFlightDetails_ID=flight.UCMFlightDetails_ID where FlightId=#{flightId} AND
+         Finalize=1
+  </select>
+   <select id="getFlightType"
+		parameterType="java.math.BigInteger"
+		resultType="java.lang.String">		
+         select FlightType from Flt_OperativeFlight where Flight_ID=#{flightId}
+  </select>
+  
+  <select id="checkUploadPhoto"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.lang.Boolean">
+	SELECT 
+		CASE  
+		WHEN
+			 COUNT(*) > 0 then 1 else 0 END 
+		FROM 
+			 Com_UploadedDocumentStore
+
+		where EntityType='ULD' and entityKey=#{uldNumber} and stage='Ramp' and AssociatedTo= 'Flight'
+  </select>
+
+   <select id="getSqlImpRampCheckInId"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.math.BigInteger">
+			SELECT impRampCheckInId
+			FROM imp_rampcheckin
+			WHERE flightid = #{flightId}
+				AND ULDNumber = #{uldNumber} 
+   </select>
+  
+  <delete id="deleteSqlImpRampCheckInULDSHC"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		DELETE FROM Imp_RampCheckInULDSHC WHERE ImpRampCheckInId =	#{impRampCheckInId}
+		
+	</delete>
+	
+	<delete id="deleteSqlImpRampCheckInPiggyBackULDInfo"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+			DELETE FROM	Imp_RampCheckInPiggyBackULDInfo
+			WHERE	ImpRampCheckInId = #{impRampCheckInId} and ULDNumber = #{uldNumber}
+	</delete>
+	<select id="getUldmasterUldCount"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.math.BigInteger">		
+           select  count(*) from uld_uldmaster where UldKey=#{uldNumber} and InboundFlight_ID=#{flightId}
+    </select>
+  
+  <update id="updateRampCheckInPiggyBackDetails"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE
+		Imp_RampCheckIn
+		SET
+		 LastUpdatedUserCode = #{createdBy}
+		,LastUpdatedDateTime =CURRENT_TIMESTAMP
+		,PiggybackFlag = #{piggyback}
+		,Remarks = #{remarks}
+		
+		WHERE FlightId = #{flightId}
+		AND
+		ImpRampCheckInId = #{impRampCheckInId}
+	</update>
+	<select id="fetchHandoverID"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		resultType="java.math.BigInteger">
+		  select 
+              top(1)
+		      HAN.ImpHandOverId
+		  from
+		    Imp_HandOver IHO
+		      INNER JOIN 
+			Imp_HandOverContainerTrolleyInformation HAN ON HAN.ImpHandOverId = IHO.ImpHandOverId
+		  where 
+		    HAN.ContainerTrolleyNumber=#{uldNumber} and IHO.FlightId=#{flightId}
+		    order by StartedAt Desc
+    </select>
+    
+    <insert id="saveAllUldTemperatureLog"
+		parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+		useGeneratedKeys="true" keyProperty="uldTemperatureLogId"
+		keyColumn="ULDTemperatureLogId">
+		INSERT INTO ULD_TemperatureLog
+           (ULDKey
+           ,TemperatureType
+           ,TemperatureTypeValue
+           ,ULDEvent
+           ,TemperatureValue
+           ,TemperatureCaptureDt
+           ,remarks
+           ,FlightId
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,LastUpdatedUserCode
+           ,LastUpdatedDateTime)
+     VALUES
+           (#{uldNumber}
+           ,#{temperatureType}
+           ,#{temperatureTypeValue}
+           ,#{uldEvent}
+           ,#{temperatureValue}
+           ,#{temperatureCaptureDt}
+           ,#{tempRemarks}
+           ,#{flightId}
+           ,#{createdBy}
+           ,getDate()
+           ,#{modifiedBy}
+           ,getDate())
+	</insert>
+	
+	<update id="sqlUpdateTemperatureLog" parameterType="com.ngen.cosys.impbd.model.RampCheckInUld">
+		UPDATE 
+			ULD_TemperatureLog
+        SET 
+            TemperatureType = #{temperatureType}
+           ,TemperatureTypeValue = #{temperatureTypeValue}
+           ,ULDEvent = #{uldEvent}
+           ,TemperatureValue = #{temperatureValue}
+           ,TemperatureCaptureDt = #{temperatureCaptureDt}
+           ,remarks = #{tempRemarks}
+           ,LastUpdatedUserCode = #{modifiedBy} 
+           ,LastUpdatedDateTime = getDate()
+		where
+			ULDKey = #{uldNumber} and
+			FlightId =#{flightId}
+	</update>
+	
+	<select id="sqlFetchExistingTemperatureLog" parameterType="com.ngen.cosys.impbd.model.RampCheckInUld"
+	resultType="java.lang.Integer">
+	
+	select count(*) from ULD_TemperatureLog where uldkey = #{uldNumber} and flightid = #{flightId}
+	
+	</select>
+	
+  
+</mapper>

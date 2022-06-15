@@ -1,0 +1,33 @@
+package com.ngen.cosys.transhipment.service;
+
+import com.ngen.cosys.framework.exception.CustomException;
+import com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB;
+import com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo;
+import com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBSearch;
+
+public interface ShipmentTransferByAWBService {
+
+	TranshipmentTransferManifestByAWBSearch searchList(TranshipmentTransferManifestByAWBSearch search)
+			throws CustomException;
+
+	TranshipmentTransferManifestByAWB search(TranshipmentTransferManifestByAWBSearch search)
+		throws CustomException;
+
+
+	TranshipmentTransferManifestByAWB maintain(TranshipmentTransferManifestByAWB maintain) throws CustomException;
+
+	TranshipmentTransferManifestByAWBSearch cancelAWB(TranshipmentTransferManifestByAWBSearch maintain) throws CustomException;
+
+	TranshipmentTransferManifestByAWBSearch finalizeAWB(TranshipmentTransferManifestByAWBSearch maintain) throws CustomException;
+
+	TranshipmentTransferManifestByAWB getTRMNumber(TranshipmentTransferManifestByAWB maintain)throws CustomException;
+
+	TranshipmentTransferManifestByAWBInfo getShipmentDetail(TranshipmentTransferManifestByAWBInfo maintain) throws CustomException;
+
+	TranshipmentTransferManifestByAWB mobileSearch(TranshipmentTransferManifestByAWBSearch search) throws CustomException;
+
+	TranshipmentTransferManifestByAWB mobileMaintain(TranshipmentTransferManifestByAWB search) throws CustomException;
+
+	String getCarrierNameBasedOnCarrierCode(String carrierCode) throws CustomException;
+
+}

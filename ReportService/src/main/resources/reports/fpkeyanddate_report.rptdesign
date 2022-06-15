@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <list-property name="propertyBindings">
+        <structure>
+            <property name="name">queryText</property>
+            <property name="id">522</property>
+        </structure>
+        <structure>
+            <property name="name">queryTimeOut</property>
+            <property name="id">522</property>
+        </structure>
+        <structure>
+            <property name="name">rowFetchSize</property>
+            <property name="id">522</property>
+        </structure>
+    </list-property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="fkey" id="523">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="fdate" id="524">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="533">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="538">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="521">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="522">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">flight</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flight</text-property>
+                    <text-property name="heading">flight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">std</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">std</text-property>
+                    <text-property name="heading">std</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">off</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">off</text-property>
+                    <text-property name="heading">off</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">bay</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">bay</text-property>
+                    <text-property name="heading">bay</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">acc</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">acc</text-property>
+                    <text-property name="heading">acc</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">details</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">details</text-property>
+                    <text-property name="heading">details</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">acregNo</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">acregNo</text-property>
+                    <text-property name="heading">acregNo</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">fkey</property>
+                    <property name="dataType">string</property>
+                    <property name="position">3</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">fdate</property>
+                    <property name="dataType">string</property>
+                    <property name="position">4</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">flight</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">std</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">off</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">bay</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">acc</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">details</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">acregNo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">flight</property>
+                    <property name="nativeName">flight</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">std</property>
+                    <property name="nativeName">std</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">off</property>
+                    <property name="nativeName">off</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">bay</property>
+                    <property name="nativeName">bay</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">acc</property>
+                    <property name="nativeName">acc</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">details</property>
+                    <property name="nativeName">details</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">acregNo</property>
+                    <property name="nativeName">acregNo</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select DISTINCT * from (select
+
+              Flt_OperativeFlight.FlightKey AS flight,
+
+              Flt_OperativeFlight_Legs.DateSTD AS std,
+
+              Flt_OperativeFlight_Segments.FlightOffPoint AS "off",
+
+              Flt_OperativeFlight.ParkingBayDepAircraft AS bay,
+
+              Flt_OperativeFlight_Legs.AircraftType AS acc,
+
+              Exp_AgentAcceptancePlanningAdvice.Advice AS details,
+               Flt_OperativeFlight.OutboundAircraftRegNo as acregNo
+
+              from
+
+              Flt_OperativeFlight inner join 
+				Exp_AgentAcceptancePlanningAdvice
+					on Flt_OperativeFlight.Flight_ID = Exp_AgentAcceptancePlanningAdvice.FlightId inner join
+				Flt_OperativeFlight_Legs
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+				Flt_OperativeFlight_Segments
+					on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and
+						Exp_AgentAcceptancePlanningAdvice.OffPoint = Flt_OperativeFlight_Segments.FlightOffPoint
+
+              where
+
+               Flt_OperativeFlight_Segments.FlightBoardPoint = ?
+			  AND Exp_AgentAcceptancePlanningAdvice.Advice != 'No Show'
+			  AND Flt_OperativeFlight_Legs.FlightBoardPoint = ?
+
+                      AND
+
+ 
+
+            
+ 
+
+             Flt_OperativeFlight.FlightKey = ? AND (CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) = CAST(? AS DATE))
+
+ 
+
+              ) info
+              order by std]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flight</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flight</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>std</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>std</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>std</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>off</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>off</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>off</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>bay</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>bay</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>bay</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>acc</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>acc</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>acc</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>details</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>150</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>details</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>details</design:label>
+            <design:formattingHints>
+              <design:displaySize>150</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <page-footer>
+                <grid id="534">
+                    <property name="width">1.2666666666666666in</property>
+                    <column id="535">
+                        <property name="width">1.2666666666666666in</property>
+                    </column>
+                    <row id="536">
+                        <cell id="537">
+                            <data id="539">
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">tenantCurrentDateTime</property>
+                                        <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                        <property name="dataType">string</property>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">tenantCurrentDateTime</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="361">
+            <property name="height">0.6041666666666666in</property>
+            <property name="width">7.947916666666667in</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">Column Binding</property>
+                    <text-property name="displayName">day</text-property>
+                    <expression name="expression" type="javascript">BirtStr.toUpper(Formatter.format(BirtDateTime.now(),"EEEE a"))</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Column Binding_1</property>
+                    <text-property name="displayName">date</text-property>
+                    <expression name="expression" type="javascript">BirtStr.toUpper(Formatter.format(BirtDateTime.now(),"dd MMM yy"))</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="362">
+                <property name="width">4.739583333333333in</property>
+            </column>
+            <column id="363"/>
+            <row id="364">
+                <property name="height">0.6041666666666666in</property>
+                <cell id="365">
+                    <property name="paddingTop">1pt</property>
+                    <property name="paddingBottom">1pt</property>
+                    <data id="381">
+                        <property name="fontSize">25pt</property>
+                        <property name="fontWeight">bold</property>
+                        <property name="fontStyle">normal</property>
+                        <property name="textAlign">right</property>
+                        <property name="resultSetColumn">Column Binding</property>
+                    </data>
+                </cell>
+                <cell id="366">
+                    <data id="382">
+                        <property name="fontSize">20pt</property>
+                        <property name="paddingTop">10pt</property>
+                        <property name="textAlign">right</property>
+                        <property name="resultSetColumn">Column Binding_1</property>
+                    </data>
+                </cell>
+            </row>
+        </grid>
+        <label id="520">
+            <text-property name="text"></text-property>
+        </label>
+        <table id="469">
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">thin</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">thin</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">thin</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">thin</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">flight</property>
+                    <text-property name="displayName">flight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["flight"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">std</property>
+                    <text-property name="displayName">std</text-property>
+                    <expression name="expression" type="javascript">BirtStr.toUpper(Formatter.format(dataSetRow["std"], 'ddMMMYYYY HH:mm'))</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">off</property>
+                    <text-property name="displayName">off</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["off"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">bay</property>
+                    <text-property name="displayName">bay</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["bay"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">acc</property>
+                    <text-property name="displayName">acc</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["acc"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">details</property>
+                    <text-property name="displayName">details</text-property>
+                    <expression name="expression" type="javascript">if (dataSetRow["details"]== null) { '' }&#13;
+   else {&#13;
+     function wrap(longStr,width)&#13;
+      {&#13;
+       length = longStr.length;&#13;
+      if(length &lt;= width)&#13;
+          return longStr;&#13;
+      return (longStr.substring(0, width) + "\n" + wrap(longStr.substring(width, length), width)); }        &#13;
+&#13;
+&#13;
+     wrap( dataSetRow["details"], 25 );&#13;
+&#13;
+       }</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">acregNo</property>
+                    <text-property name="displayName">acregNo</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["acregNo"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="491"/>
+            <column id="492"/>
+            <column id="493"/>
+            <column id="494">
+                <property name="width">0.7in</property>
+            </column>
+            <column id="528">
+                <property name="width">0.8in</property>
+            </column>
+            <column id="495">
+                <property name="width">0.7in</property>
+            </column>
+            <column id="496">
+                <property name="width">3in</property>
+            </column>
+            <header>
+                <row id="470">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <property name="height">0.3541666666666667in</property>
+                    <cell id="471">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="497">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">g.flight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="472">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="498">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">ecc.export.std</text-property>
+                        </label>
+                    </cell>
+                    <cell id="473">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="499">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">export.ecc.off</text-property>
+                        </label>
+                    </cell>
+                    <cell id="474">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="500">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">exp.bay</text-property>
+                        </label>
+                    </cell>
+                    <cell id="526">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="532">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">exp.ac.reg</text-property>
+                        </label>
+                    </cell>
+                    <cell id="475">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="501">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">exp.ac</text-property>
+                        </label>
+                    </cell>
+                    <cell id="476">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="502">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">sans-serif</property>
+                            <property name="fontSize">12pt</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="paddingTop">2.5pt</property>
+                            <text-property name="text">exp.details</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="477">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <cell id="478">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="516">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">flight</property>
+                        </data>
+                    </cell>
+                    <cell id="479">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="517">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">std</property>
+                        </data>
+                    </cell>
+                    <cell id="480">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="518">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">off</property>
+                        </data>
+                    </cell>
+                    <cell id="481">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="515">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">bay</property>
+                        </data>
+                    </cell>
+                    <cell id="527">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="530">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">acregNo</property>
+                        </data>
+                    </cell>
+                    <cell id="482">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="514">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">acc</property>
+                        </data>
+                    </cell>
+                    <cell id="483">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="519">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">details</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+    </body>
+</report>

@@ -1,0 +1,825 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="exportManifestMapper">
+	<!-- <resultMap id="createManifestFlightResultMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestFlight"
+		autoMapping="false">
+		<id property="flight.flightId" column="flightId" />
+		<result property="flight.flightKey" column="flightKey" />
+		<result property="flight.flightOriginDate" column="flightOriginDate" />
+		<result property="flight.status" column="status" />
+		<result property="flight.aircraftRegistration" column="aircraftRegistration" />
+		<result property="flight.std" column="std" />
+		<result property="flight.etd" column="etd" />
+		<collection property="segment" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestSegment" select="sqlGetLoadSegmentInfo"
+			column="{flightId=flightId,tenantId=tenantId}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="createManifestSegmentMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestSegment">
+		<id property="segmentId" column="FlightSegmentId" />
+		<id property="flightId" column="Flight_ID" />
+		<result property="segment" column="FlightOffPoint" />
+        <collection property="ulds" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestULD" select="sqlGetAssignULD"
+			column="{flightId=Flight_ID,segmentId=FlightSegmentId}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="createManifestULDResultMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestULD" autoMapping="false">
+		<id property="uldSequenceId" column="AssUldTrolleyId" />
+		<result property="uldTrolleyNo" column="ULDTrolleyNumber" />
+		<result property="remarks" column="Remarks" />
+		<result property="trolleyInd" column="TrolleyInd" />
+		<result property="segment.segmentId" column="FlightSegmentId" />
+		<result property="segment.segment" column="FlightOffPoint" />
+		<collection property="shipment" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestShipment"
+			select="sqlGetShipmentInfo"
+			column="{flightId=flightId
+		,uldSequenceId=AssUldTrolleyId,uldNumber=ULDTrolleyNumber}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="loadShipmentMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestShipment"
+		autoMapping="false">
+		<id property="shipmentId" column="ShipmentId" />
+		<result property="uldSequenceId" column="AssUldTrolleyId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="loadedShipmentInfoId" column="LoadedShipmentInfoId" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="shipmentDate" column="ShipmentDate" />
+		<result property="loadedPieces" column="Pieces" />
+		<result property="loadedWeight" column="Weight" />
+		<result property="natureOfGoods" column="NatureOfGoodsDescription" />
+		<result property="weightCode" column="WeightUnitCode" />
+		<result property="manifestRemark" column="Remarks" />
+		<collection property="shcList" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestSHC" select="sqlGetShipmentSHC"
+			column="loadedShipmentInfoId=LoadedShipmentInfoId" />
+		<collection property="houseList" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestHouse" select="sqlGetShipmentHouse"
+			column="loadedShipmentInfoId=LoadedShipmentInfoId" />
+	</resultMap>
+	<resultMap id="shipmentSHC"
+		type="com.ngen.cosys.export.manifest.model.ManifestSHC" autoMapping="false">
+		<result property="code" column="SpecialHandlingCode"></result>
+	</resultMap>
+	<resultMap id="shipmentHouse" type="com.ngen.cosys.export.manifest.model.ManifestHouse">
+		<result property="type" column="Type" />
+		<result property="number" column="Number" />
+		<result property="pieces" column="Pieces" />
+		<result property="weight" column="Weight" />
+	</resultMap> -->
+	<!-- <select id="fetchLoadDetails" parameterType="com.ngen.cosys.export.model.Flight"
+		resultMap="createManifestFlightResultMap">
+		SELECT flight.Flight_ID flightId
+		,flight.FlightKey flightKey
+		,leg.DateSTD flightOriginDate
+		,flight.FlightStatus status
+		,flight.OutboundAircraftRegNo aircraftRegistration
+		,leg.DateSTD std
+		,leg.DateETD etd
+		,#{tenantId} tenantId
+		FROM Flt_OperativeFlight flight
+		left join
+		Flt_OperativeFlight_Legs leg ON
+		flight.Flight_ID =
+		leg.Flight_ID
+		WHERE
+		flight.FlightKey = #{flightKey}
+		AND
+		CAST(leg.DateSTD AS DATE)
+		=#{flightOriginDate}
+		AND
+		leg.FlightBoardPoint =
+		#{tenantId}
+	</select> -->
+
+	<!-- <select id="sqlGetLoadSegmentInfo" resultMap="createManifestSegmentMap">
+		SELECT
+		Flight_ID
+		,FlightOffPoint
+		,FlightSegmentId
+		FROM Flt_OperativeFlight_Segments WHERE
+		Flight_ID = #{flightId}
+		AND FlightBoardPoint = #{tenantId}
+		AND FlightSegmentId in (select FlightSegmentId from Exp_AssignedULDTrolleyToFlight where FlightId = #{flightId})
+	</select> -->
+
+	<!-- <select id="sqlGetAssignULD" resultMap="createManifestULDResultMap">
+		SELECT #{flightId} flightId
+		,AssUldTrolleyId,
+		ULDTrolleyNumber,
+		Remarks,
+		TrolleyInd,
+		ULD.FlightSegmentId as FlightSegmentId,
+		FlightOffPoint
+		FROM
+		Exp_AssignedULDTrolleyToFlight ULD left join
+		Flt_OperativeFlight_Segments segment
+		ON ULD.FlightSegmentId =
+		segment.FlightSegmentId WHERE
+		ULD.FlightSegmentId = #{segmentId}
+	</select> -->
+
+	<!-- <select id="sqlGetShipmentInfo" resultMap="loadShipmentMap" 
+	parameterType="com.ngen.cosys.export.manifest.model.ManifestShipment">
+		SELECT shipment.Origin Origin,
+		shipment.Destination Destination,
+		loadShipment.Pieces Pieces,
+		loadShipment.Weight Weight,
+		loadShipment.LoadedShipmentInfoId LoadedShipmentInfoId,
+		shipment.NatureOfGoodsDescription NatureOfGoodsDescription,
+		shipment.WeightUnitCode WeightUnitCode,
+		shipment.ShipmentId ShipmentId,
+		shipment.ShipmentNumber ShipmentNumber,
+		shipment.ShipmentDate ShipmentDate,
+		#{uldSequenceId} AssUldTrolleyId,
+		#{uldNumber} ULDNumber,
+		CASE WHEN bookingRemark.RemarkType = #{remarkType}
+		THEN bookingRemark.Remarks
+		ELSE NULL END Remarks
+		FROM Exp_LoadedShipmentInfo
+		loadShipment
+		inner join Shipment_Master shipment ON
+		loadShipment.ShipmentId =
+		shipment.ShipmentId
+		inner join
+		Exp_AssignedULDTrolleyToFlight ULD ON
+		loadShipment.AssUldTrolleyId =
+		ULD.AssUldTrolleyId
+		inner join
+		Exp_ShipmentBooking booking ON
+		shipment.ShipmentNumber = booking.ShipmentNumber and
+		shipment.ShipmentDate = booking.ShipmentDate
+		inner join
+		Exp_ShipmentFlightBookingDetail bookingFlight ON
+		booking.BookingId = bookingFlight.BookingId
+		left join
+		Exp_ShipmentBookingRemarks bookingRemark ON
+		bookingRemark.FlightBookingId = bookingFlight.FlightBookingId
+		WHERE loadShipment.AssUldTrolleyId =
+		#{uldSequenceId}
+	</select> -->
+
+	<!-- <select id="sqlGetShipmentSHC" resultMap="shipmentSHC">
+		SELECT SpecialHandlingCode FROM Exp_LoadedShipmentSHCInfo where LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select> -->
+
+	<!-- <select id="sqlGetShipmentHouse" resultMap="shipmentHouse">
+		SELECT Type,
+		Number,
+		Pieces,
+		Weight
+		FROM
+		Exp_LoadedShipmentHouseInfo where LoadedShipmentInfoId=#{loadedShipmentInfoId}
+	</select> -->
+	
+	<select id="getManifestId" resultType="java.lang.Integer" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestSegment">
+		select ManifestId from Exp_Manifest where  FlightSegmentId = #{segmentId} and type = #{type}
+		and VersionNo = #{versionNo}
+		<!-- FlightId = #{flightId} and -->
+	</select>
+	
+	<insert id="insertManifest" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestSegment"
+		keyProperty="manifestId" keyColumn="ManifestId">
+		insert into Exp_Manifest
+		(FlightId,FlightSegmentId, VersionNo,CreatedUserCode, CreatedDateTime, Type)
+		values (#{flightId},#{segmentId}, #{versionNo},#{createdBy}, #{createdOn},
+		#{type})
+	</insert>
+	
+	<!-- <insert id="insertManifestConnectingFlight" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment"
+		keyProperty="manifestConnectingFlightId" keyColumn="ManifestConnectingFlightInfoId">
+		INSERT INTO Exp_ManifestConnectingFlightInfo (ManifestId,FlightKey,FlightDate,Destination
+		,CreatedUserCode,CreatedDateTime) VALUES
+           (#{manifestId},#{flightKey},#{flightDate},#{destination}
+           ,#{createdBy},#{createdOn})
+	</insert> -->
+	
+	<select id="getManifestULDId" resultType="java.lang.Integer" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestULD">
+		select ManifestUldInfoId from Exp_ManifestULDInfo where ManifestId = #{manifestId} 
+		<if test="uldTrolleyNo != null">
+		and ULDNumber = #{uldTrolleyNo}
+		</if>
+		<if test="uldTrolleyNo == null">
+		and ULDNumber is null
+		</if>
+	</select>
+	
+	<insert id="insertManifestULD" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestULD"
+		keyProperty="manifestUldId" keyColumn="ManifestUldInfoId">
+		insert into Exp_ManifestULDInfo
+		(ManifestId, ULDNumber,
+		Remarks, CreatedUserCode, CreatedDateTime
+		)
+		values (#{manifestId}, #{uldTrolleyNo}, #{remarks},
+		#{createdBy},#{createdOn})
+	</insert>
+	
+	<select id="getManifestShipmentId" resultType="java.lang.Integer" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestShipment">
+		select ManifestShipmentInfoId from Exp_ManifestShipmentInfo where ManifestId = #{manifestId} and ManifestUldInfoId = #{manifestUldId} and ShipmentId=#{shipmentId}
+	</select>
+	
+	<insert id="insertManifestShipment" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestShipment"
+		keyProperty="manifestShipmentInfoId" keyColumn="ManifestShipmentInfoId">
+		insert into
+		Exp_ManifestShipmentInfo (ManifestId, ShipmentId,
+		ManifestUldInfoId,
+		Origin, Destination,Piece, Weight, WeightCode,
+		NatureOfGoodsDescription,Remarks, CreatedUserCode, CreatedDateTime)
+		values
+		(#{manifestId}, #{shipmentId}, #{manifestUldId},
+		#{origin},
+		#{destination},#{loadedPieces}, #{loadedWeight}, #{weightCode},
+		#{natureOfGoods},#{manifestRemark}, #{createdBy},
+		#{createdOn})
+	</insert>
+	<update id="updateManifestShipment" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestShipment">
+		update Exp_ManifestShipmentInfo SET Origin = #{origin},Destination = #{destination},Piece = #{loadedPieces},
+		Weight = #{loadedWeight},WeightCode = #{weightCode},NatureOfGoodsDescription = #{natureOfGoods},Remarks = #{manifestRemark},
+		LastUpdatedUserCode = #{modifiedBy},LastUpdatedDateTime = #{modifiedOn} 
+		WHERE ManifestId = #{manifestId} and ShipmentId = #{shipmentId} and ManifestUldInfoId = #{manifestUldId}
+	</update>
+	<delete id="deleteAllManifestShipmentSHC" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestShipment">
+		DELETE FROM Exp_ManifestShipmentSHCInfo WHERE ManifestShipmentInfoId = #{manifestShipmentInfoId}
+	</delete>
+	<insert id="insertManifestShipmentSHC" useGeneratedKeys="true"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestSHC"
+		keyProperty="shipmentSHCInfoId" keyColumn="ManifestShipmentSHCInfoId">
+		insert into Exp_ManifestShipmentSHCInfo
+		(ManifestShipmentInfoId, SpecialHandlingCode,
+		CreatedUserCode,CreatedDateTime)
+		values (#{shipmentInfoId},
+		#{code},
+		#{createdBy},#{createdOn})
+	</insert>
+	<delete id="deleteAllManifestShipmentHouse" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestShipment">
+		DELETE FROM Exp_ManifestShipmentHouseInfo where ManifestShipmentInfoId = #{manifestShipmentInfoId}
+	</delete>
+	<insert id="insertManifestShipmentHouse" 
+	parameterType="com.ngen.cosys.satssginterfaces.mss.model.ManifestHouse">
+		INSERT INTO Exp_ManifestShipmentHouseInfo
+           (ManifestShipmentInfoId
+           ,Type
+           ,Number
+           ,Pieces
+           ,Weight
+           ,CreatedUserCode
+           ,CreatedDateTime)
+     VALUES
+           (#{shipmentInfoId},#{type},#{number},#{pieces},#{weight}
+           ,#{createdBy},#{createdOn})
+	</insert>
+	<!-- <select id="getEventStoreData" parameterType="com.ngen.cosys.export.model.Flight" 
+	resultType="com.ngen.cosys.export.manifest.model.ManifestShipment">
+	 SELECT shipment.ShipmentId shipmentId
+      ,SUM(Piece) loadedPieces
+      ,SUM(Weight) loadedWeight
+     FROM Exp_ManifestShipmentInfo  shipment
+     INNER JOIN 
+     Exp_Manifest manifest ON shipment.ManifestId = manifest.ManifestId
+     INNER JOIN 
+     Exp_WorkingListShipment assignedShipment ON shipment.ShipmentId = assignedShipment.ShipmentId
+     WHERE manifest.FlightId = #{flightId} GROUP BY shipment.ShipmentId, assignedShipment.AssignedPieces,assignedShipment.AssignedWeight
+     HAVING SUM(shipment.Piece) = assignedShipment.AssignedPieces AND SUM(shipment.Weight) = assignedShipment.AssignedWeight
+	</select> -->
+	<!-- <update id="setManifestControlFirstTime" parameterType="com.ngen.cosys.export.model.Flight">
+	 UPDATE Exp_FlightEvents
+	  SET FirstTimeManifestCompletedBy = #{createdBy}
+	      ,FirstTimeManifestCompletedAt = #{createdOn}
+	      ,ManifestCompletedBy = #{createdBy}
+	      ,ManifestCompletedAt = #{createdOn}
+	  WHERE FlightId = #{flightId}
+	</update> -->
+	<!-- <update id="setManifestControl" parameterType="com.ngen.cosys.export.model.Flight">
+	 UPDATE Exp_FlightEvents
+	  SET  ManifestCompletedBy = #{createdBy}
+	      ,ManifestCompletedAt = #{createdOn}
+	  WHERE FlightId = #{flightId}
+	</update> -->
+	<!-- create manifest ends here -->
+	<!-- display manifest starts here -->
+<!-- 	<resultMap id="displayManifestFlightResultMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestFlight"
+		autoMapping="false">
+		<id property="flight.flightId" column="flightId" />
+		<result property="flight.flightKey" column="flightKey" />
+		<result property="flight.flightOriginDate" column="flightOriginDate" />
+		<result property="flight.status" column="status" />
+		<result property="flight.aircraftRegistration" column="aircraftRegistration" />
+		<result property="flight.std" column="std" />
+		<result property="flight.etd" column="etd" />
+		<result property="flight.status" column="status"/>
+		<collection property="segment" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestSegment" select="sqlDisplayManifestGetSegmentInfo"
+			column="{flightId=flightId,tenantId=tenantId}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="displayManifestSegmentMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestSegment">
+		<id property="manifestId" column="ManifestId" />
+		<id property="segmentId" column="FlightSegmentId" />
+		<id property="flightId" column="FlightId" />
+		<result property="segment" column="FlightOffPoint" />
+		<result property="type" column="Type" />
+		<result property="versionNo" column="VersionNo" />
+		<collection property="connectingFlight" javaType="List" 
+		    ofType="com.ngen.cosys.export.manifest.model.ConnectingFlight"
+		    select="sqlDisplayGetConnectingFlight" column="{manifestId=ManifestId}" />
+		<collection property="ulds" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestULD" select="sqlDisplayGetULD"
+			column="{manifestId=ManifestId,segmentId=FlightSegmentId,segment=FlightOffPoint}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="displayManifestULDResultMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestULD" autoMapping="false">
+		<id property="manifestId" column="ManifestId" />
+		<id property="manifestUldId" column="ManifestUldInfoId" />
+		<result property="uldTrolleyNo" column="ULDNumber" />
+		<result property="remarks" column="Remarks" />
+		<result property="segment.segmentId" column="FlightSegmentId" />
+		<result property="segment.segment" column="FlightOffPoint" />
+		<result property="trolleyInd" column="trolleyInd"/>
+		<collection property="shipment" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestShipment"
+			select="sqlDisplayGetShipmentInfo"
+			column="{manifestId=ManifestId,manifestUldId=ManifestUldInfoId,uldNumber=ULDNumber,trolleyInd=trolleyInd}" />
+	</resultMap> -->
+
+	<!-- <resultMap id="displayManifestShipmentMap"
+		type="com.ngen.cosys.export.manifest.model.ManifestShipment"
+		autoMapping="false">
+		<id property="manifestId" column="ManifestId" />
+		<id property="manifestUldId" column="ManifestUldInfoId" />
+		<id property="manifestShipmentInfoId" column="ManifestShipmentInfoId" />
+		<id property="shipmentId" column="ShipmentId" />
+		<result property="uldNumber" column="ULDNumber" />
+		<result property="manifestRemark" column="Remarks" />
+		<result property="partShipment" column="PartShipment" typeHandler="com.ngen.cosys.typehandlers.YesNoBoolean" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="shipmentDate" column="ShipmentDate" />
+		<result property="loadedPieces" column="Piece" />
+		<result property="loadedWeight" column="Weight" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="natureOfGoods" column="NatureOfGoodsDescription" />
+		<result property="weightCode" column="WeightUnitCode" />
+		<result property="createdOn" column="CreatedDateTime" />
+		<result property="trolleyInd" column="trolleyInd"/>
+		<collection property="shcList" javaType="List"
+			ofType="com.ngen.cosys.export.manifest.model.ManifestSHC" select="sqlDisplayManifestGetShipmentSHC"
+			column="manifestShipmentInfoId=ManifestShipmentInfoId" />
+		<collection property="houseList" javaType="List"
+			ofType="com.ngen.cosys.export.model.ShipmentHouse" select="sqlDisplayManifestGetShipmentHouse"
+			column="manifestShipmentInfoId=ManifestShipmentInfoId" />
+	</resultMap> -->
+	<!-- <resultMap id="displayManifestShipmentSHC"
+		type="com.ngen.cosys.export.manifest.model.ManifestSHC" autoMapping="false">
+		<result property="shipmentInfoId" column="ManifestShipmentInfoId"/>
+		<result property="shipmentSHCInfoId" column="ManifestShipmentSHCInfoId"/>
+		<result property="code" column="SpecialHandlingCode"></result>
+	</resultMap> -->
+	<!-- <resultMap id="displayManifestShipmentHouse" type="com.ngen.cosys.export.manifest.model.ManifestHouse">
+		<result property="shipmentInfoId" column="ManifestShipmentInfoId"/>
+		<result property="shipmentHouseInfoId" column="ManifestShipmentHouseInfoId"/>
+		<result property="type" column="Type" />
+		<result property="number" column="Number" />
+		<result property="pieces" column="Pieces" />
+		<result property="weight" column="Weight" />
+	</resultMap> -->
+	<!-- <resultMap type="com.ngen.cosys.export.manifest.model.ConnectingFlight" id="displayManifestConnectingFlightResultMap">
+	    <result property="manifestConnectingFlightId" column="ManifestConnectingFlightInfoId"/>
+		<result property="manifestId" column="ManifestId"/>
+		<result property="flightKey" column="FlightKey" />
+		<result property="flightDate" column="FlightDate" />
+		<result property="destination" column="Destination" />
+	</resultMap> -->
+	<!-- <select id="displayManifestDetails" parameterType="com.ngen.cosys.export.model.Flight"
+		resultMap="displayManifestFlightResultMap">
+		SELECT flight.Flight_ID flightId
+		,flight.FlightKey flightKey
+		,leg.DateSTD flightOriginDate
+		,flight.OutboundAircraftRegNo aircraftRegistration
+		,leg.DateSTD std
+		,leg.DateETD etd
+		,#{tenantId} tenantId
+		,
+        CASE WHEN
+		event.FlightCompletedAt is not null THEN 'Flight Completed'
+		WHEN
+		event.ManifestCompletedAt is not null THEN 'Manifest Completed'
+		WHEN
+		event.DLSCompletedAt is not null THEN 'DLS Completed'
+		WHEN
+		event.BuildupCompletedAt is not null THEN 'Buildup Completed'
+		ELSE
+		'Working List Created' END as status
+		FROM Flt_OperativeFlight flight
+		left join
+		Flt_OperativeFlight_Legs leg ON
+		flight.Flight_ID =
+		leg.Flight_ID
+		left join Exp_FlightEvents event on leg.Flight_ID = event.FlightId
+		WHERE
+		flight.FlightKey = #{flightKey}
+		AND
+		CAST(leg.DateSTD AS date) =#{flightOriginDate}
+		AND
+		leg.FlightBoardPoint =
+		#{tenantId}
+	</select> -->
+
+	<!-- <select id="sqlDisplayManifestGetSegmentInfo" resultMap="displayManifestSegmentMap">
+		SELECT
+		FlightId
+		,ManifestId
+		,Type
+		,VersionNo
+		,FlightOffPoint
+		,manifest.FlightSegmentId FlightSegmentId
+		FROM
+		Flt_OperativeFlight_Segments segment
+		inner join Exp_Manifest manifest
+		ON segment.FlightSegmentId =
+		manifest.FlightSegmentId
+		WHERE
+		Flight_ID =
+		#{flightId}
+		AND FlightBoardPoint = #{tenantId}
+		
+	</select> -->
+	
+	<!-- <select id="sqlDisplayGetConnectingFlight" resultMap="displayManifestConnectingFlightResultMap">
+		SELECT ManifestConnectingFlightInfoId,ManifestId,FlightKey
+		,FlightDate,Destination FROM Exp_ManifestConnectingFlightInfo WHERE ManifestId =#{manifestId} 
+	</select> -->
+	
+	<!-- <select id="sqlDisplayGetULD" resultMap="displayManifestULDResultMap">
+		SELECT
+		#{segmentId} FlightSegmentId
+		,#{segment} FlightOffPoint 
+		,manifest.ManifestUldInfoId ManifestUldInfoId
+		,manifest.ManifestId ManifestId
+		,manifest.UldNumber UldNumber
+		,manifest.Remarks Remarks
+		,case when uld.UldType is null and uld.UldNumber is null and uld.UldCarrierCode is null
+		then 1 else 0 end trolleyInd
+		FROM Exp_ManifestULDInfo manifest left join Uld_UldMaster uld on uld.UldKey = manifest.UldNumber WHERE ManifestId
+		= #{manifestId}
+	</select> -->
+
+	<!-- <select id="sqlDisplayGetShipmentInfo" resultMap="displayManifestShipmentMap">
+		SELECT
+		#{uldNumber} ULDNumber
+		,#{trolleyInd} trolleyInd
+		,shipment.ShipmentNumber ShipmentNumber
+		,shipment.ShipmentDate ShipmentDate
+		,ManifestShipmentInfoId
+		,ManifestId
+		,manifest.ShipmentId ShipmentId
+		,manifest.Origin Origin
+		,manifest.Destination Destination
+		,Piece
+		,manifest.Weight Weight
+		,WeightCode
+		,manifest.NatureOfGoodsDescription
+		NatureOfGoodsDescription
+		,Remarks
+		,PartShipment
+		,ManifestUldInfoId
+		,manifest.CreatedDateTime CreatedDateTime
+		FROM
+		Exp_ManifestShipmentInfo manifest LEFT JOIN Shipment_Master shipment
+		ON
+		manifest.ShipmentId =
+		shipment.ShipmentId WHERE ManifestId =
+		#{manifestId} AND ManifestUldInfoId =
+		#{manifestUldId}
+	</select> -->
+
+	<!-- <select id="sqlDisplayManifestGetShipmentSHC" resultMap="displayManifestShipmentSHC">
+		SELECT ManifestShipmentSHCInfoId,
+		ManifestShipmentSHCInfoId,
+		SpecialHandlingCode
+		FROM Exp_ManifestShipmentSHCInfo WHERE
+		ManifestShipmentInfoId = #{manifestShipmentInfoId}
+	</select> -->
+
+	<!-- <select id="sqlDisplayManifestGetShipmentHouse" resultMap="displayManifestShipmentHouse">
+		SELECT ManifestShipmentHouseInfoId 
+		,ManifestShipmentHouseInfoId 
+		,Type
+		,Number
+		,Pieces
+		,Weight
+		FROM Exp_ManifestShipmentHouseInfo WHERE ManifestShipmentInfoId = #{manifestShipmentInfoId}
+	</select> -->
+	<!-- display manifest ends here -->
+	<!-- separate manifest starts here -->
+	<!-- <delete id="deleteManifestShipmentHouse" parameterType="com.ngen.cosys.export.manifest.model.ManifestHouse">
+		DELETE FROM Exp_ManifestShipmentHouseInfo where ManifestShipmentHouseInfoId = #{shipmentHouseInfoId}
+	</delete> -->
+	<!-- <delete id="deleteManifestShipmentSHC" parameterType="com.ngen.cosys.export.manifest.model.ManifestSHC">
+		DELETE FROM Exp_ManifestShipmentSHCInfo WHERE ManifestShipmentSHCInfoId = #{shipmentSHCInfoId}
+	</delete> -->
+	<!-- <delete id="deleteManifestShipment" parameterType="com.ngen.cosys.export.manifest.model.ManifestShipment">
+		DELETE FROM Exp_ManifestShipmentInfo WHERE ManifestShipmentInfoId = #{manifestShipmentInfoId}
+	</delete> -->
+	<!-- <delete id="deleteManifestULD" parameterType="com.ngen.cosys.export.manifest.model.ManifestULD">
+		DELETE FROM Exp_ManifestULDInfo WHERE ManifestUldInfoId = #{manifestUldId}
+	</delete> -->
+	<!-- <delete id="deleteManifestConnectingFlight" parameterType="com.ngen.cosys.export.manifest.model.ConnectingFlight">
+		DELETE FROM Exp_ManifestConnectingFlightInfo WHERE ManifestConnectingFlightInfoId = #{manifestConnectingFlightId}
+	</delete> -->
+	<!-- <delete id="deleteManifest" parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment">
+		DELETE FROM Exp_Manifest WHERE ManifestId = #{manifestId}
+	</delete> -->
+	<!-- <select id="getManifestULDS" parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment" resultType="int">
+		SELECT COUNT(*)
+		FROM Exp_ManifestULDInfo WHERE ManifestId
+		= #{manifestId}
+	</select> -->
+	<!-- <select id="getManifestShipments" parameterType="com.ngen.cosys.export.manifest.model.ManifestULD" resultType="int">
+		SELECT COUNT(*)
+		FROM Exp_ManifestShipmentInfo  WHERE ManifestId =
+		#{manifestId} AND ManifestUldInfoId =
+		#{manifestUldId}
+	</select> -->
+	<!-- <select id="getSeparateManifestVersion" parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment" resultType="long">
+		select case when SeparateManifestVersion is null then 1 else SeparateManifestVersion+1 end from Exp_FlightEvents where FlightId=#{flightId}
+	</select> -->
+	<!-- <select id="getSupplementaryManifestVersion" parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment" resultType="long">
+		select case when SupplementaryManifestVersion is null then 1 else SupplementaryManifestVersion+1 end from Exp_FlightEvents where FlightId=#{flightId}
+	</select> -->
+	<update id="updateSupplementaryManifestVersion" parameterType="java.math.BigInteger">
+		update Exp_FlightEvents set SupplementaryManifestVersion = (select case when SupplementaryManifestVersion is null then 1 
+		else SupplementaryManifestVersion+1 end from Exp_FlightEvents where FlightId=#{flightId}) where FlightId=#{flightId}
+	</update>
+	<update id="updateSeparateManifestVersion" parameterType="java.math.BigInteger">
+		update Exp_FlightEvents set SeparateManifestVersion = (select case when SeparateManifestVersion is null then 1 
+		else SeparateManifestVersion+1 end from Exp_FlightEvents where FlightId=#{flightId}) where FlightId=#{flightId}
+	</update>
+	
+	<!-- separate manifest ends here -->
+	<!-- supplementary manifest starts here -->
+	
+	<!-- <resultMap id="supplementaryManifestFlightResultMap"
+		type="com.ngen.cosys.export.manifest.model.SeparateManifest"
+		autoMapping="false">
+		<id property="flight.flightId" column="flightId" />
+		<result property="flight.flightKey" column="FlightKey"/>
+		<result property="flight.flightOriginDate" column="FlightOriginDate"/>
+	    <collection property="manifestShipmentInfoIds" javaType="List"
+			 ofType="java.lang.Long">
+				<result column="ManifestShipmentInfoId"></result>
+		</collection>				
+	 </resultMap> -->
+	<!-- <select id="fetchSupplementaryLoadDetails" parameterType="com.ngen.cosys.export.manifest.model.ManifestSegment"
+		resultMap="supplementaryManifestFlightResultMap">
+        SELECT flight.Flight_ID flightId
+        ,flight.FlightKey FlightKey
+        ,Flt_OperativeFlight_Legs.DateSTD FlightOriginDate
+		,shipment.ManifestShipmentInfoId ManifestShipmentInfoId
+		FROM Flt_OperativeFlight flight
+		inner join Flt_OperativeFlight_Legs
+		on
+		flight.Flight_ID=Flt_OperativeFlight_Legs.Flight_ID
+		inner join Exp_Manifest manifest 
+		on flight.Flight_ID = manifest.FlightId 
+		inner join Exp_ManifestULDInfo uld
+		on manifest.ManifestId = uld.ManifestId
+		inner join Exp_ManifestShipmentInfo shipment
+		on uld.ManifestUldInfoId = shipment.ManifestUldInfoId
+		left join Exp_FlightEvents flightEvent 
+		on flightEvent.FlightId = flight.Flight_ID 
+		WHERE
+		flight.Flight_ID = #{flightId}
+		and manifest.Type = #{type}
+		and manifest.VersionNo = #{versionNo}		
+		and flightEvent.FirstTimeManifestCompletedAt &lt; shipment.CreatedDateTime
+		and Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}
+	</select> -->
+	<!-- supplementary manifest ends here -->
+	
+	<!-- <update id="updateFlightRegistration" parameterType="com.ngen.cosys.export.model.Flight">
+		UPDATE Flt_OperativeFlight
+		SET OutboundAircraftRegNo = #{aircraftRegistration}
+		WHERE Flight_ID = #{flightId} AND (
+		OutboundAircraftRegNo != #{aircraftRegistration}
+		or OutboundAircraftRegNo is null
+		)
+	</update> -->
+	
+	<!-- <update id="updateManifestConnectingFlight" parameterType="com.ngen.cosys.export.manifest.model.ConnectingFlight">
+		UPDATE Exp_ManifestConnectingFlightInfo SET FlightKey = #{flightKey},
+		FlightDate = #{flightDate},Destination =#{destination} WHERE ManifestConnectingFlightInfoId =#{manifestConnectingFlightId} 
+	</update> -->
+	
+	
+	<!-- Validator starts here -->
+	<!-- <select id="getCodeShareExists" parameterType="com.ngen.cosys.export.model.Flight" resultType="java.lang.Integer"> 
+		 SELECT COUNT(*)
+	  FROM Flt_Share_OperativeFlight shareFlight 
+	  INNER JOIN Flt_OperativeFlight operative
+	  ON shareFlight.ShareFlightKey = operative.FlightKey
+	   inner join 
+	  	 Flt_OperativeFlight_Legs
+	  on Flt_OperativeFlight_Legs.Flight_ID=operative.Flight_ID
+	  AND CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) = cast(#{flightOriginDate} as date ) 
+	  WHERE MasterFlightKey = #{flightKey} AND #{flightOriginDate} BETWEEN DateStart AND DateEnd
+	  and Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}
+	</select> -->
+	<!-- <select id="nonManifestedCodeShare" parameterType="com.ngen.cosys.export.model.Flight" 
+	resultType="com.ngen.cosys.export.model.Flight"> 
+			SELECT TOP 1 operative.FlightKey,operative.Flight_ID flightId,  Flt_OperativeFlight_Legs.DateSTD as FlightOriginDate
+	  FROM Flt_Share_OperativeFlight shareFlight 
+	  INNER JOIN Flt_OperativeFlight operative
+	  ON shareFlight.ShareFlightKey = operative.FlightKey 
+	  inner join 
+	  	 Flt_OperativeFlight_Legs
+	  on Flt_OperativeFlight_Legs.Flight_ID=operative.Flight_ID
+	  AND CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) = cast(#{flightOriginDate} as date ) 
+	  INNER JOIN Exp_FlightEvents flightEvent
+	  ON operative.Flight_ID = flightEvent.FlightId
+	  WHERE MasterFlightKey = #{flightKey} AND #{flightOriginDate} BETWEEN DateStart AND DateEnd
+	  AND flightEvent.ManifestCompletedAt IS NULL AND flightEvent.ManifestCompletedBy IS NULL
+	 and Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}
+	</select> -->
+	<!-- <select id="getShipmentLoadNotEqual" parameterType="com.ngen.cosys.export.model.Flight"
+	resultType="com.ngen.cosys.export.manifest.model.ManifestShipment">
+	select * from (select 
+		       BookingInfo.ShipmentDate shipmentDate,
+		       BookingInfo.ShipmentNumber shipmentNumber,
+		       BookingInfo.BookingPieces shipmentPieces,
+		       BookingInfo.BookingWeight shipmentWeight,
+		       loadShipmentInfo.Pieces loadedPieces,   
+		       loadShipmentInfo.Weight loadedWeight,
+				BookingInfo.BookingCancellationFlag,
+				case when (BookingInfo.BookingCancellationFlag = 0 and (BookingInfo.BookingPieces = loadShipmentInfo.Pieces and  
+		                                    BookingInfo.BookingWeight = loadShipmentInfo.Weight))  then
+					  1
+				when (BookingInfo.BookingCancellationFlag = 1 and (loadShipmentInfo.Pieces is null or loadShipmentInfo.pieces = 0)) then
+					  1
+				else
+					  0
+				end pieceWeightMatches
+		from
+		Flt_OperativeFlight inner join
+		(select 
+		       Exp_ShipmentBooking.ShipmentNumber,
+		       Exp_ShipmentBooking.ShipmentDate,
+		       Shipment_Master.ShipmentId,
+		       Exp_ShipmentFlightBookingDetail.FlightId,
+		       Exp_ShipmentFlightBookingDetail.BookingPieces,
+		       Exp_ShipmentFlightBookingDetail.BookingWeight,
+			   Exp_ShipmentFlightBookingDetail.BookingCancellationFlag
+		from 
+		Exp_ShipmentBooking inner join 
+		Exp_ShipmentFlightBookingDetail
+		on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail .BookingId left join 
+		Shipment_Master
+		on 
+		Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber and 
+		cast(Exp_ShipmentBooking.ShipmentDate as date) =  cast(Shipment_Master.ShipmentDate as date)
+		where Exp_ShipmentFlightBookingDetail.BookingCancellationFlag !=1
+		and Exp_ShipmentFlightBookingDetail.FlightBoardPoint = #{tenantId}
+		) BookingInfo 
+		       on BookingInfo.FlightId = Flt_OperativeFlight.Flight_ID left join
+		(select 
+		       Shipment_Master.ShipmentNumber,
+		       Shipment_Master.ShipmentDate,
+		       Shipment_Master.ShipmentId,
+		       Exp_AssignedULDTrolleyToFlight.FlightId,
+		       SUM(Exp_LoadedShipmentInfo.Pieces) Pieces,
+		       SUM(Exp_LoadedShipmentInfo.Weight) Weight
+		from 
+		Exp_AssignedULDTrolleyToFlight inner join 
+		Exp_LoadedShipmentInfo
+		on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId join 
+		Shipment_Master
+		on 
+		Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+		group by Shipment_Master.ShipmentNumber,
+		       Shipment_Master.ShipmentDate,
+		       Shipment_Master.ShipmentId,
+		       Exp_AssignedULDTrolleyToFlight.FlightId) loadShipmentInfo
+		       on loadShipmentInfo.FlightId = Flt_OperativeFlight.Flight_ID
+		       and loadShipmentInfo.ShipmentId = BookingInfo.ShipmentId
+		where 
+		Flt_OperativeFlight.FlightKey = #{flightKey} and cast(Flt_OperativeFlight.FlightOriginDate as date) = #{flightOriginDate}) NotMatchingData 
+		where 
+		 (NotMatchingData.pieceWeightMatches = 0)
+	</select> -->
+	<!-- <select id="getNumberOfDGNorExp" parameterType="com.ngen.cosys.export.manifest.model.ManifestShipment" resultType="java.lang.Integer">
+	select count(*) from Mst_SpecialHandlingCode shc
+	    inner join Mst_AssociateSHCByHandlingGroup shcjoint on
+	    shcjoint.SpecialHandlingCode = shc.SpecialHandlingCode
+	    inner join Mst_SHCHandlingGroup handlinggroup on
+	    handlinggroup.MstSHCHandlingGroupID = shcjoint.MstSHCHandlingGroupID 
+	    where shc.SpecialHandlingCode in (
+	    <foreach item="shcList" index="index" collection="shcList" separator=",">
+				#{shcList.code}
+	    </foreach>)
+	    and handlinggroup.SHCHandlingGroupCode = 'DGN'
+	</select> -->
+	<!-- <select id="getNumberOfHouseUnequal" parameterType="com.ngen.cosys.export.manifest.model.ManifestShipment" resultType="java.lang.Integer">
+	select count(*) from Exp_LoadedShipmentInfo shipment
+		inner join Shipment_Master master on  master.ShipmentId = shipment.ShipmentId
+		inner join Shipment_FreightHouseListByAWB awb on awb.AwbNumber = master.ShipmentNumber and awb.AwbDate=master.ShipmentDate
+		inner join Shipment_FreightHouseListByHAWB hawb 
+		on hawb.ShipmentFreightHouseListByAWBId = awb.ShipmentFreightHouseListByAWBId
+		where shipment.ShipmentId = #{shipmentId}
+		group by master.ShipmentNumber,master.ShipmentDate, shipment.Pieces,shipment.Weight
+		having sum(hawb.Pieces) != shipment.Pieces or sum(hawb.Weight) != shipment.Weight
+	</select> -->
+	
+	<select id="checkDamagedULD" resultType="java.lang.String">
+		select UldKey from Uld_UldMaster where UldConditionType != 'DAM' 
+		--and UldConditionType is not null 
+		and UldKey in
+		<foreach item="item" index="index" collection="list"
+        open="(" separator="," close=")">
+          #{item}
+    	</foreach>
+	</select>
+	<!-- Validator ends here -->
+	<!-- <resultMap type="com.ngen.cosys.export.buildup.model.CommonLoadShipment" id="expressAutoLoadResultMap" autoMapping="false">
+		<id property="flightId" column="Flight_ID" />
+		<result property="flightKey" column="FlightKey" />
+		<result property="flightOriginDate" column="DateSTD" />
+		<collection property="uldList" javaType="List"
+			ofType="com.ngen.cosys.export.buildup.model.UldShipment" select="getAutoLoadULDData"
+			column="{flightId=Flight_ID,tenantId=tenantId,flightKey=FlightKey,flightOriginDate=FlightOriginDate}" />	
+	</resultMap> -->
+	<!-- <resultMap type="com.ngen.cosys.export.buildup.model.UldShipment" id="expressAutoLoadULDResultMap" autoMapping="false">
+		<id property="assUldTrolleyNo" column="flightId" />
+		<result property="flightKey" column="flightKey" />
+		<result property="flightOriginDate" column="flightOriginDate" />
+		<collection property="uldList" javaType="List"
+			ofType="com.ngen.cosys.export.buildup.model.UldShipment" select="getAutoLoadULDData"
+			column="{flightId=flightId,tenantId=tenantId}" />	
+	</resultMap> -->
+	<!-- Auto Load starts here -->
+	<!-- <select id="getAutoLoadData" parameterType="com.ngen.cosys.export.model.Flight" resultMap="expressAutoLoadResultMap">
+		select Flt_OperativeFlight.Flight_ID,FlightKey,Flt_OperativeFlight_Legs.DateSTD
+		 from Flt_OperativeFlight 
+		 inner join Flt_OperativeFlight_Legs
+		 on
+		 Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID
+		where FlightKey= #{flightKey} and cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{flightOriginDate} as date )
+		and Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}
+	</select> -->
+	<!-- <select id="getAutoLoadULDData" resultMap="expressAutoLoadULDResultMap">
+	select 
+		case when inventory.ShipmentLocation = (SELECT TOP 1 uldMaster.UldNumber FROM Uld_UldMaster uldMaster WHERE uldMaster.UldNumber = inventory.ShipmentLocation)
+		then inventory.ShipmentLocation
+		when LEN(inventory.ShipmentLocation)>9
+		then inventory.ShipmentLocation
+		else null
+		end as uldNumber,
+		master.ShipmentId,
+		inventory.Weight,
+		inventory.Pieces
+		from Exp_WorkingListFlightDetails workingListFlight 
+		inner join Exp_WorkingListShipment workingListShipment  
+		on workingListFlight.ExpWorkingListId = workingListShipment.ExpWorkingListID
+		inner join Shipment_Master master on master.ShipmentId = workingListShipment.ShipmentId
+		inner join Shipment_Inventory inventory on inventory.Shipment_ID = master.ShipmentId
+		inner join Shipment_InventorySHC inventorySHC on inventorySHC.ShipmentInventoryId = inventory.ShipmentInventory_Id
+		inner join Mst_AssociateSHCByHandlingGroup shcjoint on shcjoint.SpecialHandlingCode = inventorySHC.SpecialHandlingCode
+		inner join Mst_SHCHandlingGroup handlinggroup on handlinggroup.MstSHCHandlingGroupID = shcjoint.MstSHCHandlingGroupID
+		where workingListShipment.ShipmentId not in 
+		(select loadedShipment.ShipmentId from Exp_LoadedShipmentInfo loadedShipment
+		inner join Exp_AssignedULDTrolleyToFlight uld on uld.AssUldTrolleyId = loadedShipment.AssUldTrolleyId
+		where uld.FlightId = #{flightId}) 
+		and inventory.AssignedUldTrolley is null and workingListFlight.FlightId = #{flightId}
+		and handlinggroup.SHCHandlingGroupCode = 'EXP'
+	</select> -->
+	 <!-- Auto Load ends here -->
+	 	 <!-- FlightID Fetch -->
+	 	 <!-- <select id="getFlightId" resultType="com.ngen.cosys.export.model.Flight"
+		parameterType="com.ngen.cosys.export.model.Flight">
+	SELECT  
+		 opflight.Flight_ID as flightId
+		,opflight.FlightKey as flightKey
+		,Flt_OperativeFlight_Legs.DateSTD as flightOriginDate
+	FROM 
+		Flt_OperativeFlight opflight 
+		inner join Flt_OperativeFlight_Legs
+		on
+		Flt_OperativeFlight_Legs.Flight_ID=opflight.Flight_ID
+	WHERE 
+	    opflight.FlightKey= #{flightKey} AND cast(Flt_OperativeFlight_Legs.DateSTD as date)= cast(#{flightOriginDate} as date ) 
+	    and FlightBoardPoint=#{tenantId}
+	</select> -->
+	 
+</mapper>

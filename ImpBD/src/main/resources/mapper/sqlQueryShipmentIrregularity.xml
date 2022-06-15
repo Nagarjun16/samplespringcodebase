@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentIrregularityMapper">
+
+	<resultMap id="ShipmentIrregularityResultMap"
+		type="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel">
+		<id column="ShipmentNumber" property="shipmentNumber" />
+		<id column="TransactionSequenceNo" property="transactionSequenceNumber" />
+		<id column="ShipmentDate" property="shipmentdate" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="CargoIrregularityCode" property="cargoIrregularityCode" />
+		<result column="Pieces" property="piece" />
+		<result column="Weight" property="weight" />
+		<result column="IrregularityRemarks" property="irregularityRemarks" />
+	</resultMap>
+
+	<sql id="ShipmentIrregularity_Base_Column_List">
+		ShipmentNumber, TransactionSequenceNo, ShipmentDate,
+		Flight_ID,
+		CargoIrregularityCode,
+		Pieces, Weight, IrregularityRemarks
+	</sql>
+	<select id="sqlGetShipmentIrregularity" parameterType="map"
+		resultMap="ShipmentIrregularityResultMap">
+		select
+		<include refid="ShipmentIrregularity_Base_Column_List" />
+		from 
+			Shipment_Irregularity
+		where 
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate} and
+			Flight_ID =	#{flightId} and
+			CargoIrregularityCode = #{cargoIrregularityCode}
+			<if test = 'hawbNumber != null and hawbNumber !=""'>
+				and HouseNumber = #{hawbNumber}
+			</if>
+	</select>
+
+	<insert id="sqlInsertShipmentIrregularity"
+		parameterType="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel">
+		insert into Shipment_Irregularity(
+				ShipmentNumber,
+				TransactionSequenceNo,
+				ShipmentDate,
+				Flight_ID,
+				CargoIrregularityCode,
+				Pieces,
+				Weight,
+				IrregularityRemarks,
+				FlightSegmentId,
+				CreatedUser_Code,
+				Created_DateTime,
+				LastUpdatedUser_Code,
+				LastUpdated_DateTime
+				<if test ='hawbNumber != null and hawbNumber !=""'>
+				  ,HouseNumber
+				</if>
+			)values(
+				#{shipmentNumber},
+				#{transactionSequenceNumber},
+				#{shipmentdate},
+				#{flightId},
+				#{cargoIrregularityCode},
+				#{piece},
+				#{weight},
+				#{irregularityRemarks},
+				#{flightSegmentId},
+				#{createdBy},
+				#{createdOn},
+				#{modifiedBy},
+				#{modifiedOn}
+				<if test ='hawbNumber != null and hawbNumber !=""'>
+				  ,#{hawbNumber}
+				</if>
+			)			
+	</insert>
+
+	<delete id="sqlDeleteShipmentIrregularity" parameterType="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel">
+		delete from Shipment_Irregularity 
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			Flight_ID = #{flightId} and 
+			CargoIrregularityCode = #{cargoIrregularityCode}
+	</delete>
+	
+	<select id="sqlCheckShipmentManifestedPiecesMatchesWithHouseBreakDownIrregularityPieces"
+			parameterType="com.ngen.cosys.impbd.shipment.irregularity.model.ShipmentIrregularityModel"
+			resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case	
+				when isnull(#{manifestPieces}, 0) > (PieceInfo.BreakDownPieces + PieceInfo.MissingIrregularityPIeces - PieceInfo.FoundIrregularityPIeces) then 
+				1
+			else
+				0
+			end as PiecesNotMatching
+		from(select
+			isnull((select Imp_ShipmentVerification.BreakDownPieces			
+				from Imp_ShipmentVerification inner join
+					Shipment_Master
+						on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId
+				where Imp_ShipmentVerification.FlightId = #{flightId} and 
+					Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+					cast(Shipment_Master.ShipmentDate  as date) = cast(#{shipmentdate} as date)),0) as BreakDownPieces,
+			isnull((select sum(Shipment_Irregularity.Pieces) 
+				from Shipment_Irregularity 
+				where Shipment_Irregularity.CargoIrregularityCode = 'MSCA' and 
+					Shipment_Irregularity.Flight_ID = #{flightId} and
+					Shipment_Irregularity.ShipmentNumber = #{shipmentNumber} and
+					Shipment_Irregularity.ShipmentDate = cast(#{shipmentdate} as date)), 0) as MissingIrregularityPIeces,
+			isnull((select sum(Shipment_Irregularity.Pieces) 
+				from Shipment_Irregularity 
+				where Shipment_Irregularity.CargoIrregularityCode = 'FDCA' and 
+					Shipment_Irregularity.Flight_ID = #{flightId} and
+					Shipment_Irregularity.ShipmentNumber = #{shipmentNumber} and
+					Shipment_Irregularity.ShipmentDate = cast(#{shipmentdate} as date)), 0) as FoundIrregularityPIeces
+		)PieceInfo
+
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ICSOperativeFlightBatchJob">
+
+	<select id="fetchOperativeFlightDetails" parameterType="Map"
+		resultType="com.ngen.cosys.model.OperativeFlightModel">
+		SELECT 'INSERT' as operationalDirection, opf.carrierCode as flightCarrier,
+		REPLACE(LTRIM(REPLACE(opf.flightNumber,'0',' ')),' ','0') as flightNumber,
+		opf_legs.flightboardpoint as boardPoint,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN 'OU' ELSE 'IN' END AS flightType,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS DATE) ELSE CAST(opf_legs.datesta AS DATE) END AS flightDate,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS TIME) ELSE CAST(opf_legs.datesta AS TIME) END AS flightTime,
+		(
+			SELECT flt_operativeflight_LEGS.FlightOffPoint + ', ' FROM flt_operativeflight, flt_operativeflight_LEGS 
+			WHERE flt_operativeflight.flight_id = flt_operativeflight_LEGS.flight_id
+			AND flt_operativeflight.flight_id = opf.flight_id 
+			ORDER BY flt_operativeflight_LEGS.FlightSegmentOrder FOR XML path('')
+		) AS offPointsCSV 
+		FROM flt_operativeflight opf INNER JOIN flt_operativeflight_LEGS opf_legs
+		ON opf.flight_id = opf_legs.flight_id WHERE opf_legs.datestd BETWEEN getDate()
+		AND DATEADD(DD,(select ParameterValueNum from App_SystemParameters where ParameterCode='ICS_FLT_DAY_RANGE'),getDate())
+		OR opf_legs.datesta BETWEEN getDate()
+		AND DATEADD(DD,(select ParameterValueNum from App_SystemParameters where ParameterCode='ICS_FLT_DAY_RANGE'),getDate()) ORDER BY flightDate       
+			
+	</select>
+	
+	<select id="fetchOperativeFlightDetailsAdochPush" parameterType="java.util.Map"
+		resultType="com.ngen.cosys.model.OperativeFlightModel">
+		
+		SELECT 'INSERT' as operationalDirection, opf.carrierCode as flightCarrier,
+		REPLACE(LTRIM(REPLACE(opf.flightNumber,'0',' ')),' ','0') as flightNumber,
+		opf_legs.flightboardpoint as boardPoint,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN 'OU' ELSE 'IN' END AS flightType,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS DATE) ELSE CAST(opf_legs.datesta AS DATE) END AS flightDate,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS TIME) ELSE CAST(opf_legs.datesta AS TIME) END AS flightTime,
+		(
+		SELECT flt_operativeflight_LEGS.FlightOffPoint + ', ' FROM flt_operativeflight, flt_operativeflight_LEGS 
+		WHERE flt_operativeflight.flight_id = flt_operativeflight_LEGS.flight_id
+		AND flt_operativeflight.flight_id = opf.flight_id 
+		ORDER BY flt_operativeflight_LEGS.FlightSegmentOrder FOR XML path('')
+		) AS offPointsCSV 
+		FROM flt_operativeflight opf INNER JOIN flt_operativeflight_LEGS opf_legs
+		ON opf.flight_id = opf_legs.flight_id WHERE opf.created_datetime >= #{param}
+		and opf.lastUpdated_DateTime is null 
+		and opf.CreatedUser_Code not in ('RX','ARINC','BATCHUSER') 
+		UNION ALL 
+		Select 'INSERT' as operationalDirection, opf.carrierCode as flightCarrier,
+		REPLACE(LTRIM(REPLACE(opf.flightNumber,'0',' ')),' ','0') as flightNumber,
+		opf_legs.flightboardpoint as boardPoint,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN 'OU' ELSE 'IN' END AS flightType,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS DATE) ELSE CAST(opf_legs.datesta AS DATE) END AS flightDate,
+		CASE opf_legs.flightboardpoint WHEN #{tenantAirport} THEN CAST(opf_legs.datestd AS TIME) ELSE CAST(opf_legs.datesta AS TIME) END AS flightTime,
+		(
+		SELECT flt_operativeflight_LEGS.FlightOffPoint + ', ' FROM flt_operativeflight, flt_operativeflight_LEGS 
+		WHERE flt_operativeflight.flight_id = flt_operativeflight_LEGS.flight_id
+		AND flt_operativeflight.flight_id = opf.flight_id 
+		ORDER BY flt_operativeflight_LEGS.FlightSegmentOrder FOR XML path('')
+		) AS offPointsCSV 
+		FROM flt_operativeflight opf INNER JOIN flt_operativeflight_LEGS opf_legs
+		ON opf.flight_id = opf_legs.flight_id WHERE 
+		  opf.lastUpdated_DateTime is not null and opf.lastupdated_DateTime >=   
+		convert(datetime, CONVERT(datetimeoffset, #{param}) 
+		AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))
+		and opf.CreatedUser_Code not in ('RX','ARINC','BATCHUSER') 
+                      		
+	</select>
+	
+	<select id="fetchSystemParamDateTime" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select Created_DateTime from App_SystemParameters where ParameterCode='ICS_FLIGHT_ADHOC_JOB_START_DATE_TIME'		
+	</select>
+	
+	<update id="updateSystemParamCreatedDateTime">
+       <![CDATA[
+         UPDATE App_SystemParameters
+         SET Created_DateTime = getDate()
+         where ParameterCode='ICS_FLIGHT_ADHOC_JOB_START_DATE_TIME'
+       ]]>
+     </update>
+	
+</mapper>

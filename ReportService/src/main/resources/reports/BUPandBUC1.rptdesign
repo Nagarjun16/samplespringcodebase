@@ -1,0 +1,3512 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.2.v201410272105 Build &lt;4.4.2.v20150217-1805></property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="tenantAirportCode" id="188">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Month" id="189">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Year" id="190">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="Carrier" id="191">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="ImportSQL" id="112">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ATA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ATA</text-property>
+                    <text-property name="heading">ATA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CarrierCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CarrierCode</text-property>
+                    <text-property name="heading">CarrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightNumber</text-property>
+                    <text-property name="heading">FlightNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <text-property name="heading">ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalWeight</text-property>
+                    <text-property name="heading">TotalWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">IntactBUP</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">IntactBUP</text-property>
+                    <text-property name="heading">IntactBUP</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">IntactBUC</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">IntactBUC</text-property>
+                    <text-property name="heading">IntactBUC</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NonIntact</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">NonIntact</text-property>
+                    <text-property name="heading">NonIntact</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">Carrier</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_7</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ATA</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">CarrierCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">FlightNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">TotalWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">IntactBUP</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">IntactBUC</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">NonIntact</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ATA</property>
+                    <property name="nativeName">ATA</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">CarrierCode</property>
+                    <property name="nativeName">CarrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">FlightNumber</property>
+                    <property name="nativeName">FlightNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">TotalWeight</property>
+                    <property name="nativeName">TotalWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">IntactBUP</property>
+                    <property name="nativeName">IntactBUP</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">IntactBUC</property>
+                    <property name="nativeName">IntactBUC</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">NonIntact</property>
+                    <property name="nativeName">NonIntact</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[--import
+WITH 
+Flt AS (Select leg.Flight_ID FlightId, Flt.CarrierCode, Flt.FlightNumber, Flt.FlightKey, Leg.DateSTA, Leg.DateATA,
+Flt.FlightOriginDate  InboundFlightOriginDate,flt.FlightType  InboundFlightType,leg.DateETA,
+               leg.AircraftType, leg.FlightBoardPoint InboundFlightBoardPoint,
+			   case when AcTyp.AircraftBodyType='N' then 'NARROW' else 'WIDE' end InboundAircraftBodyType
+         From Flt_OperativeFlight Flt
+		 INNER JOIN Flt_OperativeFlight_Legs leg ON leg.Flight_ID = Flt.Flight_ID
+		 LEFT JOIN Mst_AircraftType AcTyp ON leg.AircraftType= AcTyp.AircraftType
+		 WHERE Leg.FlightOffPoint = ?     
+		   AND ( (Flt.carriercode in ('MU','CK') AND cast(Leg.DATESTA as date) >= '11-DEC-2018')
+			      OR (Flt.carriercode in ('VJ','PN','RX') AND cast(Leg.DATESTA as date) >= '27-DEC-2018')
+				  OR (Flt.carriercode in ('TG','BR','FJ','LO') AND cast(Leg.DATESTA as date) >= '03-JAN-2019')
+				  OR (Flt.carriercode in ('BG','SL','OD','JT','ID','HU','GX','5J','3U') AND cast(Leg.DATESTA as date) >= '26-FEB-2019')
+				  OR (Flt.carriercode in ('CZ','CV','LX','MF','NS','OZ','QZ','Z2','ZH','FD','AK','CA','JL','HO')	AND cast (Leg.DATESTA as date) >= '19-MAR-2019')
+				  OR (Flt.carriercode in ('AI','7L','9W','PR','IX','BI','EY','ET','BS','SV','BL','HY') AND cast (Leg.DATESTA as date) >= '27-MAR-2019')
+				  OR (Flt.carriercode = '3K' AND cast (Leg.DATESTA as date) BetWeen '27-MAR-2019' And '28-MAR-2019')
+				  OR (Flt.carriercode In ('PX','VN') AND cast (Leg.DATESTA as date) BetWeen '27-MAR-2019' And '14-APR-2019')
+				  OR (Flt.carriercode = 'UA' AND cast(Leg.DATESTA as date)  >= '30-APR-2019')
+				  OR (Flt.carriercode = 'TK' AND cast(Leg.DATESTA as date)  >= '09-MAY-2019')				  
+				  OR (Flt.carriercode In ('NH','NQ') AND cast(Leg.DATESTA as date)  >= '15-MAY-2019') 
+				  OR (Flt.carriercode = 'CX' AND cast(Leg.DATESTA as date)  >= '21-MAY-2019')
+				  OR (Flt.carriercode = 'KE' AND cast(Leg.DATESTA as date)  >= '28-MAY-2019')	
+				  OR (Flt.carriercode = 'VN' AND cast(Leg.DATESTA as date)  >= '04-JUN-2019')
+				  OR (Flt.carriercode = '3K' AND cast(Leg.DATESTA as date)  >= '11-JUN-2019')
+				  OR (Flt.carriercode = 'KZ' AND cast(Leg.DATESTA as date)  >= '12-JUN-2019')	
+				  OR (Flt.carriercode = 'FX' AND cast(Leg.DATESTA as date)  >= '18-JUN-2019')	
+				  OR (Flt.carriercode = 'RU' AND cast(Leg.DATESTA as date)  >= '25-JUN-2019')
+				  OR (Flt.carriercode In ('TH','N7') AND cast(Leg.DATESTA as date)  >= '02-JUL-2019')	
+				   OR ( Flt.carriercode = 'LH' AND Cast(Leg.datesta AS DATE) >= '11-JUL-2019' ) 
+				   OR ( Flt.carriercode = '8K' AND Cast(Leg.datesta AS DATE) >= '16-JUL-2019' ) 
+				   OR ( Flt.carriercode = '3S' AND Cast(Leg.datesta AS DATE) >= '19-JUL-2019' ) 
+				   OR ( Flt.carriercode = 'JQ' AND Cast(Leg.datesta AS DATE) >= '29-JUL-2019' ) 
+				   OR ( Flt.carriercode = 'QF' AND Cast(Leg.datesta AS DATE) >= '29-JUL-2019' ) 				  
+				)
+		    AND month(leg.DateSTA )=?	 and  Year(leg.DateSTA )=?  and Flt.CarrierCode = ?
+),
+FInSum AS (Select ShpVer.FlightId, ShpVer.ShipmentId, Sum(ShpVer.BreakDownPieces) Pieces, Sum(ShpVer.BreakDownWeight) Weight,
+               Max(ShpVer.CreatedDateTime) FrtInDate
+          from Imp_ShipmentVerification ShpVer
+		  Where IsNull(ShpVer.BreakDownPieces,0) > 0
+		Group By ShpVer.FlightId, ShpVer.ShipmentId
+),
+FOutSum AS (Select FrtOut.FlightId, FrtOut.ShipmentId, Sum(FrtOut.Pieces) Pieces, Sum(FrtOut.Weight) Weight
+			from shipment_freightOut FrtOut
+		Group By FrtOut.FlightId, FrtOut.ShipmentId
+),
+DO As (Select FrtOut.FlightId, FrtOut.ShipmentId, IsNull(FrtOut.ShipmentLocation,FrtOut.WarehouseLocation) Location, 
+				   Sum(FrtOut.Pieces) Pieces, Sum(FrtOut.Weight) Weight,
+				   Max(FrtOut.DeliveryRequestIssuedOn) PODate, Dlv.DeliveryOrderNo DeliveryOrderNo, 
+				   Max(FrtOut.DeliveredOn) DeliveryDate,
+				   Dlv.CustomerCode, cus.CustomerShortName CustomerName
+			from shipment_freightOut FrtOut 
+			Inner Join Imp_Delivery Dlv On Dlv.ShipmentId = FrtOut.ShipmentId 
+			                            And Dlv.ImpDeliveryId = FrtOut.DeliveryOrderNo
+			                           --And IsNULL(dlv.Status,'#') = 'COMPLETED'
+			Inner Join Customer_master cus on cus.CustomerCode = Dlv.CustomerCode
+			Group By FrtOut.FlightId, FrtOut.ShipmentId, IsNull(FrtOut.ShipmentLocation,FrtOut.WarehouseLocation), 
+			         Dlv.DeliveryOrderNo, Dlv.CustomerCode, cus.CustomerShortName
+			Union All
+            Select FrtOut.FlightId, FrtOut.ShipmentId, IsNull(FrtOut.ShipmentLocation,FrtOut.WarehouseLocation) Location, 
+				   Sum(FrtOut.Pieces) Pieces, Sum(FrtOut.Weight) Weight,
+				   Max(FrtOut.DeliveryRequestIssuedOn) PODate, Dlv.DeliveryOrderNo DeliveryOrderNo, 
+				   Max(FrtOut.DeliveredOn) DlvDate,
+				   'IXX' CustomerCode, Dlv.CustomerCode CustomerName
+			from shipment_freightOut FrtOut 
+			Inner Join Imp_Delivery Dlv On Dlv.ShipmentId = FrtOut.ShipmentId And Dlv.ImpDeliveryId = FrtOut.DeliveryOrderNo
+			                            --And dlv.Status = 'COMPLETED' 
+										And Dlv.CustomerCode Not IN (select CustomerCode From Customer_master)
+			Group By FrtOut.FlightId, FrtOut.ShipmentId, IsNull(FrtOut.ShipmentLocation,FrtOut.WarehouseLocation), 
+			         Dlv.DeliveryOrderNo,  CustomerCode, Dlv.CustomerCode
+),
+FinDO AS (Select FInSum.FlightId, FInSum.ShipmentId, FInSum.FrtInDate, 
+                 DO.Location, DO.Pieces, DO.Weight, DO.PODate, DO.DeliveryOrderNo, DO.DeliveryDate,
+                 DO.CustomerCode, DO.CustomerName
+            From FInSum 
+			Inner Join FOutSum On FOutSum.FlightId = FInSum.FlightId 
+			                   And FOutSum.ShipmentId = FInSum.ShipmentId
+							   And FOutSum.Weight <= FInSum.Weight
+			Inner Join Do On Do.FlightId = FOutSum.FlightId
+			              And Do.ShipmentId = FOutSum.ShipmentId
+			Union All
+			Select FInSum.FlightId, FInSum.ShipmentId, FInSum.FrtInDate, 
+                 '' Location, FInSum.Pieces, FInSum.Weight, '' PODate, '' DeliveryOrderNo, '' DeliveryDate,
+                 '' CustomerCode, '' CustomerName
+            From FInSum 
+			Inner Join Flt On flt.FlightId = FInSum.FlightId
+			Where Not Exists (Select 1 From FOutSum Where FOutSum.FlightId = FInSum.FlightId 
+													  And FOutSum.ShipmentId = FInSum.ShipmentId)
+			Union All
+			Select	FInSum.FlightId, FInSum.ShipmentId, FInSum.FrtInDate, '' Location, (FInSum.Pieces-FOutSum.Pieces) Pieces, 
+			       (FInSum.Weight-FOutSum.Weight) Weight, 
+			       '' PODate, '' DeliveryOrderNo, '' DeliveryDate,
+                   '' CustomerCode, ''CustomerName
+            From FInSum 
+			Inner Join FOutSum On FOutSum.FlightId = FInSum.FlightId 
+			                   And FOutSum.ShipmentId = FInSum.ShipmentId
+							   And FOutSum.Weight <= FInSum.Weight
+							   And (FInSum.Weight-FOutSum.Weight) > 0
+			Union All
+			Select FInSum.FlightId, FInSum.ShipmentId, Max(FInSum.FrtInDate), Max(DO.Location) Location, 
+			       Max(FInSum.Pieces) Pieces, Max(FInSum.Weight) Weight, 
+			       Max(DO.PODate) PODate, Max(DO.DeliveryOrderNo) DeliveryOrderNo, Max(DO.DeliveryDate) DeliveryDate, 
+				   Max(DO.CustomerCode) CustomerCode, Max(DO.CustomerName) CustomerName
+            From FInSum 
+			Inner Join FOutSum On FOutSum.FlightId = FInSum.FlightId 
+			                   And FOutSum.ShipmentId = FInSum.ShipmentId
+							   And FOutSum.Weight > FInSum.Weight
+			Left Join Do On Do.FlightId = FOutSum.FlightId
+			              And Do.ShipmentId = FOutSum.ShipmentId
+			Group By FInSum.FlightId, FInSum.ShipmentId
+),
+FOutSHC AS (select Shc.FlightId, Shc.ShipmentId, Shc.Location, 
+                   Shc.DeliveryOrderNo,                     										
+                  STRING_AGG(Shc.SpecialHandlingCode,',') SpecialHandlingCode,														
+			      Max(CASE WHEN SpecialHandlingCode IN ('RCX','REX','RXB','RXB','RXC','RXD',
+														'RXE','RXG','RXS','RFG','RNG','RPG',
+														'RFL','RFS','RSC','RFW','ROX','ROP',
+														'RPB','RIS','RRW','RRY','RCM','RSB',
+														'RMD','RLI','RLM','RCL','DGR','DGD',
+														'RGX','RRE','ROP','RDS',
+														'RCS','RDG','RXE','RXG')				
+					   THEN 1 ELSE 0 END) DGR,									
+				  Max(CASE WHEN Shc.SpecialHandlingCode IN ('PHC','PES','PEF','EAT','PEP','FRI','FRO','LHO','PEM','PER','PIL')										
+					   THEN 1 ELSE 0 END) PER,									
+                  Max(CASE WHEN Shc.SpecialHandlingCode IN ('BUP') THEN 1 ELSE 0 END) BUP,														
+				  Max(CASE WHEN Shc.SpecialHandlingCode IN ('RAC') THEN 1 ELSE 0 END) EXP,
+				  Max(CASE WHEN SpecialHandlingCode in ('BUC') THEN 1 ELSE 0 END) BUC,
+				   Max(CASE WHEN SpecialHandlingCode in ('INT') THEN 1 ELSE 0 END) IntactFlag
+		     from (Select  b.FlightId, b.ShipmentId, IsNull(b.ShipmentLocation,b.WarehouseLocation) location, c.DeliveryOrderNo,
+			               a.SpecialHandlingCode
+			        From shipment_freightoutShc a
+						Inner Join shipment_freightout b On b.ShipmentFreightOutId = a.ShipmentFreightOutId
+						Inner Join Imp_Delivery c On c.ShipmentId = b.ShipmentId 
+							And c.ImpDeliveryId = b.DeliveryOrderNo
+							Group By b.FlightId,  b.ShipmentId, IsNull(b.ShipmentLocation,b.WarehouseLocation), c.DeliveryOrderNo,
+							a.SpecialHandlingCode
+						) Shc						
+		     Group By Shc.FlightId, Shc.ShipmentId, Shc.Location, Shc.DeliveryOrderNo
+),
+FInOut As (Select FinDO.FlightId, FinDO.ShipmentId, FinDO.FrtInDate, 
+                  FinDO.Location, FinDO.Pieces, FinDO.Weight, FinDO.PODate, FinDO.DeliveryOrderNo, 
+                  FinDO.DeliveryDate, FinDO.CustomerCode, FinDO.CustomerName, FOutSHC.SpecialHandlingCode, 
+				  FOutSHC.DGR, FOutSHC.PER, FOutSHC.BUP, FOutSHC.EXP,FOutSHC.BUC,FOutSHC.IntactFlag
+			From FinDO
+			Left Join FOutSHC On FOutSHC.FlightId    = FinDO.FlightId 
+			                  And FOutSHC.ShipmentId = FinDO.ShipmentId 
+			                  And IsNull(FOutSHC.Location,'#')        = IsNull(FinDO.Location,'#')
+			                  And IsNull(FOutSHC.DeliveryOrderNo,'#') = IsNull(FinDO.DeliveryOrderNo,'#')
+),
+TTH AS (select bkgDtl.FlightId, bkg.ShipmentNumber, bkg.ShipmentDate, 
+               Max(bkgDtl.transfertype) TransferType 
+				  
+		     from Exp_ShipmentFlightBookingDetail bkgDtl
+			Inner Join Exp_ShipmentBooking bkg On bkg.BookingId = bkgDtl.BookingId
+			 Where IsNull(bkgDtl.BookingCancellationFlag,0) = 0
+			 group by bkgDtl.FlightId, bkg.ShipmentNumber, bkg.ShipmentDate
+),
+CneAgt AS (select sc.ShipmentId, sc.CustomerCode ConsigneeCode, sc.CustomerName ConsigneeName, 
+                  cm.CustomerCode AgentCode, cm.CustomerShortName AgentName
+			 from Shipment_MasterCustomerInfo sc
+			 Left Join Customer_master cm On cm.Customer_ID = sc.AppointedAgent
+			 			where sc.CustomerType = 'CNE'
+
+			
+), 
+
+Shipper AS (
+       select sc.ShipmentId, sc.CustomerCode  ShipperCode, sc.CustomerName ShipperName 
+                 
+			 from Shipment_MasterCustomerInfo sc
+			 Left Join Customer_master cm On cm.Customer_ID = sc.AppointedAgent
+			where sc.CustomerType = 'SHP'
+),
+SHCMst AS (select mst.ShipmentId, STRING_AGG(SpecialHandlingCode,',') SpecialHandlingCode,														
+			      Max(CASE WHEN SpecialHandlingCode IN ('RCX','REX','RXB','RXB','RXC','RXD',
+														'RXE','RXG','RXS','RFG','RNG','RPG',
+														'RFL','RFS','RSC','RFW','ROX','ROP',
+														'RPB','RIS','RRW','RRY','RCM','RSB',
+														'RMD','RLI','RLM','RCL','DGR','DGD',
+														'RGX','RRE','ROP','RDS',
+														'RCS','RDG','RXE','RXG')
+						   THEN 1 ELSE 0 END) DGR,								
+				  Max(CASE WHEN SpecialHandlingCode IN ('PHC','PES','PEF','EAT','PEP','FRI','FRO','LHO','PEM','PER','PIL')										
+						   THEN 1 ELSE 0 END) PER,								
+				  Max(CASE WHEN SpecialHandlingCode = 'BUP' THEN 1 ELSE 0 END) BUP,										
+				  Max(CASE WHEN SpecialHandlingCode = 'RAC' THEN 1 ELSE 0 END) EXP,
+				  Max(CASE WHEN SpecialHandlingCode = 'BUC' THEN 1 ELSE 0 END) BUC,
+				  Max(CASE WHEN SpecialHandlingCode in ('INT') THEN 1 ELSE 0 END) IntactFlag
+			 from Shipment_MasterSHC shc											
+	   Inner Join Shipment_Master mst On mst.ShipmentId = shc.ShipmentId													
+		 Group By mst.ShipmentId
+),
+FinData As (Select flt.DateSTA DateATA, 
+flt.DateETA,
+Flt.FlightId,
+flt.InboundAircraftBodyType,
+Flt.InboundFlightBoardPoint,
+flt.InboundFlightOriginDate,
+flt.InboundFlightType,
+sm.ShipmentNumber,
+sm.ShipmentId,
+sm.ShipmentDate,
+sm.shipmentType,
+Shipper.ShipperCode,
+Shipper.ShipperName,
+convert(varchar(16),flt.DateSTA,120) STADateTime, 
+car.CarrierShortName,
+
+
+																		
+				flt.CarrierCode ArrivalFlightCarrier,  flt.FlightNumber ArrivalFlightNumber, 														
+				SubString(sm.ShipmentNumber,1,3) AWBPrefix, SubString(sm.ShipmentNumber,4,8) AWBNumber, 
+				sm.Origin, sm.Destination, 	
+				convert(varchar(20),DATEADD(hour,8,FInOut.FrtInDate),120) FreightInDateTime,	
+				CASE WHEN (FInOut.DGR = 1 OR SHCMst.DGR = 1) 
+				     THEN 'Y' ELSE 'N' END DGR, 										
+				CASE WHEN (FInOut.PER = 1 OR SHCMst.PER = 1) 
+				     THEN 'Y' ELSE 'N' END PERISHABLES, 											
+				CASE WHEN (FInOut.BUP = 1 OR SHCMst.BUP = 1) 
+				     THEN 'Y' ELSE 'N' END "BUP OR NON", 											
+				CASE WHEN (FInOut.EXP = 1 OR SHCMst.EXP = 1) 
+				     THEN 'Y' ELSE 'N' END EXPRESS,	
+					 CASE WHEN (FInOut.BUC = 1 OR SHCMst.BUC = 1) 
+				     THEN 'Y' ELSE 'N' END BUC,	
+					 CASE WHEN (FInOut.IntactFlag = 1 OR SHCMst.IntactFlag = 1) 
+				     THEN 'Y' ELSE 'N' END IntactFlag,	
+					 
+				 --DONumber, 
+				-- DOPrintDateTime,
+				IsNull(SHCMst.SpecialHandlingCode,'.') SpecialHandlingCode,
+				IsNull(CneAgt.AgentCode,'.')  IssuingAgentCode, 
+				IsNull(CneAgt.AgentName,'.')   IssuingAgentName,										
+				--'.' PickOrderDateTime, 										
+				IsNull(CneAgt.ConsigneeName,'.') ConsigneeName,
+				IsNull(CneAgt.ConsigneeCode,'.') ConsigneeCode,
+				TTH.TransferType TransferType,
+				'N' Transhipment,										
+				FInOut.Weight SumWeight, FInOut.Pieces SumPieces, 										
+				IsNull(sm.NatureOfGoodsDescription,'.') NOG, 										
+			CASE WHEN (FInOut.PER = 1 OR SHCMst.PER = 1) THEN 'COOLPORT'										
+				 WHEN (FInOut.EXP = 1 OR SHCMst.EXP = 1) THEN 'EXPRESS'									
+				 WHEN Car.CarrierCode IN ('SQ','MI','TR','N7','TH','RU','8K','3S','NZ')	THEN 'SQ Import'								
+				 ELSE 'OAL Import' End CostCentre, 								
+				CAST(DATEADD(hour,8, FInOut.FrtInDate) AS Date) FreightIn,										
+				IsNull(FInOut.Location,'.') Location,  
+				  Case When Substring(FInOut.Location,1,3) In (select UldType from Uld_UldType)
+				       Then Substring(FInOut.Location,1,3) Else 'BULK' End UlDType,
+				  Case When Substring(FInOut.Location,1,3) In (select UldType from Uld_UldType)
+				       Then Substring(FInOut.Location,4,10) Else '.' End UlDNumber,					
+				flt.AircraftType AircraftType,
+				IsNull(CONVERT(VARCHAR(16),DATEADD(hour,8,FInOut.DeliveryDate),120),'.') FreightOutDateTime
+				
+
+			from Shipment_Master sm
+			Inner Join FInOut On FInOut.ShipmentId = sm.ShipmentId
+			Inner Join Flt On Flt.FlightId = FInOut.FlightId
+			Inner Join Mst_carrier Car On Car.CarrierCode = Flt.CarrierCode			  			  
+			Left  Join TTH ON TTH.flightId       = FInOut.FlightId
+							AND TTH.ShipmentNumber = sm.ShipmentNumber	
+							AND TTH.ShipmentDate   = sm.ShipmentDate										
+			Left  Join SHCMst ON SHCMst.ShipmentId  = FInOut.ShipmentId
+			Left  Join CneAgt ON CneAgt.ShipmentId  = FInOut.ShipmentId
+			
+			Left  Join Shipper ON Shipper.ShipmentId  = FInOut.ShipmentId
+			
+			where sm.Destination   = ?
+			  And sm.ShipmentType != 'MAIL'											
+			  And sm.CancelledOn IS NULL
+
+
+		Union All
+		Select flt.DateSTA DateATA ,
+		flt.DateETA,
+		Flt.FlightId,
+flt.InboundAircraftBodyType,
+Flt.InboundFlightBoardPoint,
+flt.InboundFlightOriginDate,
+flt.InboundFlightType,
+sm.ShipmentNumber,
+sm.ShipmentId,
+sm.ShipmentDate,
+sm.shipmentType,
+Shipper.ShipperCode,
+Shipper.ShipperName,
+convert(varchar(16),flt.DateSTA,120) STADateTime, 
+car.CarrierShortName,
+flt.CarrierCode ArrivalFlightCarrier, flt.FlightNumber ArrivalFlightNumber, 														
+SubString(sm.ShipmentNumber,1,3) AWBPrefix, SubString(sm.ShipmentNumber,4,8) AWBNumber, 
+sm.Origin, 
+sm.Destination, 
+IsNull(convert(varchar(20),DATEADD(hour,8,FInSum.FrtInDate),120),'.')	FreightInDateTime,
+CASE WHEN SHCMst.DGR = 1 
+	 THEN 'Y' ELSE 'N' END DGR, 											
+CASE WHEN SHCMst.PER = 1 
+	 THEN 'Y' ELSE 'N' END PERISHABLES, 											
+CASE WHEN SHCMst.BUP = 1 
+	 THEN 'Y' ELSE 'N' END "BUP OR NON", 											
+CASE WHEN SHCMst.EXP = 1 
+	 THEN 'Y' ELSE 'N' END EXPRESS,
+	 CASE WHEN SHCMst.BUC = 1 
+	 THEN 'Y' ELSE 'N' END BUC,	
+	 CASE WHEN SHCMst.IntactFlag = 1
+				     THEN 'Y' ELSE 'N' END IntactFlag,	
+					 
+	 			
+				 --DONumber, 
+			-- DOPrintDateTime,
+	
+IsNull(SHCMst.SpecialHandlingCode,'.') SpecialHandlingCode,
+IsNull(CneAgt.AgentCode,'.')  IssuingAgentCode, 
+IsNull(CneAgt.AgentName,'.')   IssuingAgentName,										
+--'.' PickOrderDateTime, 										
+IsNull(CneAgt.ConsigneeName,'.') ConsigneeName,
+IsNull(CneAgt.ConsigneeCode,'.') ConsigneeCode,
+TTH.TransferType TransferType, 
+											
+'Y' Transhipment,										
+FInSum.Weight SumWeight, 
+FInSum.Pieces SumPieces, 
+IsNull(sm.NatureOfGoodsDescription,'.') NOG, 										
+CASE WHEN SHCMst.PER = 1 THEN 'COOLPORT'										
+	 WHEN SHCMst.EXP = 1 THEN 'EXPRESS'									
+	 WHEN Car.CarrierCode IN ('SQ','MI','TR','N7','TH','RU','8K','3S','NZ')	THEN 'SQ Import'								
+ELSE 'OAL Import' End CostCentre, 
+CAST(FInSum.FrtInDate AS Date) FreightIn,										
+'.' Location,  
+'.' UlDType, 
+'.' UlDNumber,
+flt.AircraftType AircraftType,
+IsNull(CONVERT(VARCHAR(16),DATEADD(hour,8,FInSum.FrtInDate),120),'.') FreightOutDateTime
+			
+
+			from Shipment_Master sm
+			Inner Join FInSum On FInSum.ShipmentId = sm.ShipmentId
+			Inner Join Flt On Flt.FlightId = FInSum.FlightId
+			Inner Join Mst_carrier Car On Car.CarrierCode = Flt.CarrierCode			  			  
+			Left  Join TTH ON TTH.flightId         = FInSum.FlightId
+							AND TTH.ShipmentNumber = sm.ShipmentNumber	
+							AND TTH.ShipmentDate   = sm.ShipmentDate										
+			Left  Join SHCMst ON SHCMst.ShipmentId     = FInSum.ShipmentId
+			Left  Join CneAgt ON CneAgt.ShipmentId     = FInSum.ShipmentId
+			
+			Left  Join Shipper ON Shipper.ShipmentId    = FInSum.ShipmentId
+			
+			
+			where sm.Origin       != ?
+			  And sm.Destination  != ?
+			  And sm.ShipmentType != 'MAIL'											
+			  And sm.CancelledOn IS NULL
+)
+Select 
+format( DateATA) as ATA,
+ArrivalFlightCarrier	as	CarrierCode 	,
+ArrivalFlightNumber	as	FlightNumber 	,
+ShipmentNumber	as	ShipmentNumber 	,
+SumWeight	as	TotalWeight 	,
+case when "BUP OR NON"='Y' and IntactFlag ='Y' then SumWeight else 0 end as IntactBUP,
+case when BUC='Y' and IntactFlag ='Y' then SumWeight else 0 end as IntactBUC,
+case when  IntactFlag ='N' then SumWeight else 0 end as NonIntact
+from finData order by DateATA;
+
+
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ATA</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ATA</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ATA</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Carrier</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Carrier</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Carrier</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightNumber</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>5</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>5</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentNumber</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>TotalWeight</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>TotalWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>TotalWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>intactBUP</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>intactBUP</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>intactBUP</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>intactBUC</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>intactBUC</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>intactBUC</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>nonIntact</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>nonIntact</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>nonIntact</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="ExportSQL" id="113">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ATA</property>
+                    <property name="alias">ATA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ATA</text-property>
+                    <text-property name="heading">ATA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">carrierCode</property>
+                    <property name="alias">carrierCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">carrierCode</text-property>
+                    <text-property name="heading">carrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightNumber</property>
+                    <property name="alias">FlightNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightNumber</text-property>
+                    <text-property name="heading">FlightNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="alias">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <text-property name="heading">ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalWeight</property>
+                    <property name="alias">TotalWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalWeight</text-property>
+                    <text-property name="heading">TotalWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">IntactBup</property>
+                    <property name="alias">IntactBup</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">IntactBup</text-property>
+                    <text-property name="heading">IntactBup</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">IntactBuc</property>
+                    <property name="alias">IntactBuc</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">IntactBuc</text-property>
+                    <text-property name="heading">IntactBuc</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NonIntact</property>
+                    <property name="alias">NonIntact</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">NonIntact</text-property>
+                    <text-property name="heading">NonIntact</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">Month</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_7</property>
+                    <property name="paramName">Year</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_8</property>
+                    <property name="paramName">Carrier</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">8</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ATA</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">carrierCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">FlightNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">TotalWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">IntactBup</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">IntactBuc</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">NonIntact</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ATA</property>
+                    <property name="nativeName">ATA</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">carrierCode</property>
+                    <property name="nativeName">carrierCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">FlightNumber</property>
+                    <property name="nativeName">FlightNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">TotalWeight</property>
+                    <property name="nativeName">TotalWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">IntactBup</property>
+                    <property name="nativeName">IntactBup</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">IntactBuc</property>
+                    <property name="nativeName">IntactBuc</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">NonIntact</property>
+                    <property name="nativeName">NonIntact</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">0</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[--EXPORT
+with Flight AS (
+SELECT leg.flight_id FlightId, Flt.carriercode, Flt.flightnumber, 
+	       Flt.flightkey, Leg.datestd, Leg.dateatd, 
+		   Flt.FlightOriginDate,
+		   Leg.datesta, leg.aircrafttype,
+		   Leg.FlightOffPoint, 
+		   case when Flt.flightType='P' then 'PAX' else 'CAO' end OutboundFlightType,
+case when AcTyp.AircraftBodyType='N' then 'NARROW' else 'WIDE' end OutboundAircraftBodyType,
+ Leg.DateETD,
+ leg.DateATA,
+ Flt.Flight_ID
+  
+    FROM   flt_operativeflight Flt 
+    INNER JOIN flt_operativeflight_legs leg ON leg.flight_id = Flt.flight_id 
+	 Inner JOIN Mst_AircraftType AcTyp ON leg.AircraftType = AcTyp.AircraftType
+    WHERE  Leg.flightboardpoint = ?
+    AND    ( ( Flt.carriercode IN ( 'MU', 'CK' ) AND Cast(Leg.datestd AS DATE) >= '11-DEC-2018' ) 
+			   OR ( Flt.carriercode IN ( 'VJ', 'PN', 'RX' ) AND Cast(Leg.datestd AS DATE) >= '27-DEC-2018' ) 
+			   OR ( Flt.carriercode IN ( 'TG', 'BR', 'FJ', 'LO' ) AND Cast(Leg.datestd AS DATE) >= '03-JAN-2019' ) 
+			   OR ( Flt.carriercode IN ( 'BG', 'SL', 'OD', 'JT', 'ID', 'HU', 'GX', '5J', '3U' ) 
+					AND Cast(Leg.datestd AS DATE) >= '26-FEB-2019' ) 
+			   OR ( Flt.carriercode IN ( 'CZ', 'CV', 'LX', 'MF', 'NS', 'OZ', 'QZ', 'Z2', 'ZH', 'FD', 
+			                             'AK', 'CA', 'JL', 'HO' ) 
+					AND Cast (Leg.datestd AS DATE) >= '19-MAR-2019' ) 
+			   OR ( Flt.carriercode IN ( 'AI', '7L', '9W', 'PR', 'IX', 'BI', 'EY', 'ET', 'BS', 'SV', 
+			                             'BL', 'HY' ) 
+					AND Cast (Leg.datestd AS DATE) >= '27-MAR-2019' ) 
+			   OR ( Flt.carriercode = '3K' AND Cast (Leg.datestd AS DATE) BETWEEN '27-MAR-2019' AND '28-MAR-2019' ) 
+			   OR ( Flt.carriercode IN ( 'PX', 'VN' ) AND Cast (Leg.datestd AS DATE) 
+			                                              BETWEEN '27-MAR-2019' AND '14-APR-2019' ) 
+			   OR ( Flt.carriercode = 'UA' AND Cast(Leg.datestd AS DATE) >= '30-APR-2019' ) 
+			   OR ( Flt.carriercode = 'TK'  AND Cast(Leg.datestd AS DATE) >= '09-MAY-2019' ) 
+			   OR ( Flt.carriercode IN ( 'NH', 'NQ' ) AND Cast(Leg.datestd AS DATE) >= '15-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'CX' AND Cast(Leg.datestd AS DATE) >= '21-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'KE' AND Cast(Leg.datestd AS DATE) >= '28-MAY-2019' ) 
+			   OR ( Flt.carriercode = 'VN' AND Cast(Leg.datestd AS DATE) >= '04-JUN-2019' ) 
+			   OR ( Flt.carriercode = '3K' AND Cast(Leg.datestd AS DATE) >= '11-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'KZ' AND Cast(Leg.datestd AS DATE) >= '12-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'FX' AND Cast(Leg.datestd AS DATE) >= '18-JUN-2019' ) 
+			   OR ( Flt.carriercode = 'RU' AND Cast(Leg.datestd AS DATE) >= '25-JUN-2019' ) 
+			   OR ( Flt.carriercode IN ( 'TH', 'N7' ) AND Cast(Leg.datestd AS DATE) >= '02-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'LH' AND Cast(Leg.datestd AS DATE) >= '11-JUL-2019' ) 
+			   OR ( Flt.carriercode = '8K' AND Cast(Leg.datestd AS DATE) >= '16-JUL-2019' ) 
+			   OR ( Flt.carriercode = '3S' AND Cast(Leg.datestd AS DATE) >= '19-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'JQ' AND Cast(Leg.datestd AS DATE) >= '29-JUL-2019' ) 
+			   OR ( Flt.carriercode = 'QF' AND Cast(Leg.datestd AS DATE) >= '29-JUL-2019' ) 
+			)
+), 
+Acceptance AS (
+
+       SELECT doc.ShipmentNumber, ShipmentDate,doc.AcceptanceStartedOn, doc.StartWeighingInitiatedOn, doc.HandlingArea, doc.RCARStatus RcarTypeCode,
+                  svc.ServiceNumber,doc.ChargeCode ChargeCode,doc.AwbPouch PouchIndicator, doc.AcceptedDateTime DocumentAcceptanceDate  
+				     from exp_EAcceptanceDocumentInformation Doc   
+       INNER JOIN exp_eacceptanceserviceinformation svc ON svc.serviceinformationid = doc.serviceinformationid
+	   Where IsNull(Doc.Status,'OPEN') Not In ('OPEN','REJECTED','RETURNED')
+), 
+Booking AS (
+       SELECT bkgDtl.flightid, bkg.shipmentnumber, bkg.shipmentdate, Min(FlightSegmentId) FlightSegmentId,
+              Max(bkgDtl.transfertype) TransferType 
+       FROM   exp_shipmentbooking bkg 
+       INNER JOIN exp_shipmentflightbookingdetail bkgDtl ON bkg.bookingid = bkgDtl.bookingid 
+       AND bkgDtl.flightboardpoint = ?
+	   And BookingStatusCode != 'XX'
+	   Group By bkgDtl.flightid, bkg.shipmentnumber, bkg.shipmentdate,bkgDtl.transfertype
+), 
+MstSHC AS (
+       SELECT mst.shipmentid, String_agg(specialhandlingcode, '/') SpecialHandlingCode, 
+              Max(CASE WHEN specialhandlingcode IN ( 'RCX', 'REX', 'RXB', 'RXB', 
+                                                    'RXC', 'RXD', 'RXE', 'RXG', 
+                                                    'RXS', 'RFG', 'RNG', 'RPG', 
+                                                    'RFL', 'RFS', 'RSC', 'RFW', 
+                                                    'ROX', 'ROP', 'RPB', 'RIS', 
+                                                    'RRW', 'RRY', 'RCM', 'RSB', 
+                                                    'RMD', 'RLI', 'RLM', 'RCL', 
+                                                    'DGR', 'DGD', 'RGX', 'RRE', 
+                                                    'ROP', 'RDS', 'RCS', 'RDG', 
+                                                    'RXE', 'RXG' ) THEN 1 
+                      ELSE 0 END) DGR, 
+              Max(CASE WHEN specialhandlingcode IN ( 'PHC', 'PES', 'PEF', 'EAT', 'PEP', 'FRI', 'FRO', 'LHO', 
+                                                    'PEM', 'PER', 'PIL' ) THEN 1 ELSE 0 END) PER, 
+			  Max(CASE WHEN specialhandlingcode IN ( 'BUP' ) THEN 1 ELSE 0 END) BUP, 
+			  Max(CASE WHEN specialhandlingcode IN ( 'RAC' ) THEN 1 ELSE 0 END) EXP,
+			    Max(CASE WHEN SpecialHandlingCode IN ('BUC') THEN 1 ELSE 0 END) BUC ,
+				 Max(CASE WHEN SpecialHandlingCode IN ('INT') THEN 1 ELSE 0 END) IntactFlag   
+       FROM   shipment_mastershc shc 
+       INNER JOIN shipment_master mst ON mst.shipmentid = shc.shipmentid 
+       GROUP  BY mst.shipmentid
+), 
+FrtOut AS (
+       SELECT flightid, shipmentid, assigneduldtrolley, 
+			 Sum(pieces) pieces, Sum(weight) weight, Max(Dateadd(hour, 8, createddatetime)) CreatedDateTime 
+         FROM   shipment_freightout
+	   Group By flightid, shipmentid, assigneduldtrolley
+), 
+FrtOutSHC AS (
+       SELECT flightid, shipmentid, assigneduldtrolley, SpecialHandlingCode, 
+			  Max(DGR) DGR, Max(PER) PER, Max(BUP) BUP, Max(EXP) EXP,max(BUC) BUC,MAx(IntactFlag) IntactFlag
+		FROM   shipment_freightout Frt 
+		INNER JOIN (Select  shipmentfreightoutid, String_agg(specialhandlingcode, '/') SpecialHandlingCode,
+							Max(CASE WHEN specialhandlingcode IN ('RCX', 'REX', 'RXB', 'RXB', 
+																'RXC', 'RXD', 'RXE', 'RXG', 
+																'RXS', 'RFG', 'RNG', 'RPG', 
+																'RFL', 'RFS', 'RSC', 'RFW', 
+																'ROX', 'ROP', 'RPB', 'RIS', 
+																'RRW', 'RRY', 'RCM', 'RSB', 
+																'RMD', 'RLI', 'RLM', 'RCL', 
+																'DGR', 'DGD', 'RGX', 'RRE', 
+																'ROP', 'RDS', 'RCS', 'RDG', 
+																'RXE', 'RXG' ) THEN 1 ELSE 0 END) DGR, 
+							Max(CASE WHEN specialhandlingcode IN ('PHC', 'PES', 'PEF', 'EAT', 
+																	   'PEP', 'FRI', 'FRO', 'LHO', 
+																	   'PEM', 'PER', 'PIL' ) THEN 1 ELSE 0 END) PER, 
+							Max(CASE WHEN specialhandlingcode IN ( 'BUP' ) THEN 1 ELSE 0 END) BUP, 
+							Max(CASE WHEN specialhandlingcode IN ( 'RAC' ) THEN 1 ELSE 0 END) EXP,
+							Max(CASE WHEN SpecialHandlingCode IN ('BUC') THEN 1 ELSE 0 END) BUC ,
+							 Max(CASE WHEN SpecialHandlingCode IN ('INT') THEN 1 ELSE 0 END) IntactFlag  
+					From shipment_freightoutshc 
+					Group by shipmentfreightoutid) Shc ON Shc.shipmentfreightoutid = Frt.shipmentfreightoutid 
+		GROUP  BY flightid, shipmentid, assigneduldtrolley,SpecialHandlingCode
+), 
+FrtOutInf AS (
+       SELECT FrtOut.flightid, FrtOut.shipmentid, FrtOut.assigneduldtrolley, 
+			Case When Len(FrtOut.assigneduldtrolley) > 8
+			          And Right(FrtOut.assigneduldtrolley,3) In (Select CarrierCode From  mst_carrier) 
+			     Then Substring(FrtOut.assigneduldtrolley,1,3)
+				 When Len(FrtOut.assigneduldtrolley) > 8 
+				      And Right(FrtOut.assigneduldtrolley,2) In (Select CarrierCode From  mst_carrier) 
+			     Then Substring(FrtOut.assigneduldtrolley,1,3)
+				 Else 'BULK' End uldtype, 
+			Case When Len(FrtOut.assigneduldtrolley) > 8
+			          And Right(FrtOut.assigneduldtrolley,3) In (Select CarrierCode From  mst_carrier) 
+			     Then Substring(FrtOut.assigneduldtrolley,4,(Len(FrtOut.assigneduldtrolley)-6))
+				 When Len(FrtOut.assigneduldtrolley) > 8
+				      And Right(FrtOut.assigneduldtrolley,2) In (Select CarrierCode From  mst_carrier) 
+			     Then Substring(FrtOut.assigneduldtrolley,4,(Len(FrtOut.assigneduldtrolley)-5))
+				 When FrtOut.assigneduldtrolley = 'BULK' Then Substring(FrtOut.assigneduldtrolley,5,6)
+				 Else Substring(FrtOut.assigneduldtrolley,3,6) End uldnumber, 
+		    FrtOut.pieces, 
+			FrtOut.weight, FrtOutSHC.specialhandlingcode, FrtOutSHC.dgr, FrtOutSHC.BUC,FrtOutSHC.IntactFlag ,
+			FrtOutSHC.per, FrtOutSHC.bup, FrtOutSHC.exp, 
+			FrtOut.createddatetime,
+			case when right(FrtOut.assigneduldtrolley,3) in (select carriercode from mst_carrier ) then right(FrtOut.assigneduldtrolley,3)
+     when right(FrtOut.assigneduldtrolley,2) in (select carriercode from mst_carrier ) then right(FrtOut.assigneduldtrolley,2)
+     end ULDCarrierCode
+		
+       FROM FrtOut 
+       LEFT JOIN FrtOutSHC ON FrtOutSHC.flightid = FrtOut.flightid 
+			  AND FrtOutSHC.shipmentid = FrtOut.shipmentid 
+			  AND FrtOutSHC.assigneduldtrolley = FrtOut.assigneduldtrolley
+),
+Agent AS (
+       SELECT shipmentid, customercode, customername 
+       FROM   shipment_mastercustomerinfo 
+       WHERE  customertype = 'AGT'
+), 
+ConSign AS (
+       SELECT shipmentid, customercode, customername 
+       FROM   shipment_mastercustomerinfo 
+       WHERE  customertype = 'CNE'
+), 
+Shipper AS (
+       SELECT shipmentid, customercode, customername 
+       FROM   shipment_mastercustomerinfo 
+       WHERE  customertype = 'SHP'
+),
+
+Query AS (
+    SELECT Isnull( CONVERT(VARCHAR(16), Dateadd(hour, 8, Acceptance.startweighinginitiatedon), 120), '.') 
+			AS "FREIGHT IN DATE (DATE CARGO ARRIVE)",
+			Uld_UldType.ldType,
+			Isnull(car.carriershortname, '.') CarrierShortName, 
+			Flight.carriercode OutboundCarrierCode, 
+			Flight.flightnumber OutboundFlightNumber, 
+			Cast(Flight.datestd AS DATE) DepartureDate, 
+			Substring(sm.shipmentnumber, 1, 3) awbPrefix,
+			Substring(sm.shipmentnumber, 4, 8) awbNumber, 
+				 CASE WHEN FrtOutInf.DGR = 1 THEN 1 
+          WHEN MstSHC.DGR = 1 THEN 1 ELSE 0 END DGFLAG,  
+     CASE WHEN FrtOutInf.PER = 1 THEN 1  
+          WHEN MstSHC.PER = 1 THEN 1 ELSE 0 END PhcFLAG,  
+     CASE WHEN FrtOutInf.BUP = 1 THEN 1  
+          WHEN MstSHC.BUP = 1 THEN 1 ELSE 0 END BUPFLAG,
+     CASE WHEN FrtOutInf.BUC = 1 THEN 1  
+          WHEN MstSHC.BUC = 1 THEN 1 ELSE 0 END BUCFLAG, 
+     CASE WHEN FrtOutInf.EXP = 1 THEN 1            
+          WHEN MstSHC.EXP = 1 THEN 1 ELSE 0 END ECCFLAG,
+     CASE WHEN FrtOutInf.IntactFlag = 1 THEN 1            
+          WHEN MstSHC.IntactFlag = 1 THEN 1 ELSE 0 END IntactFlag, 
+		       sm.ShipmentType,
+               sm.ShipmentDate,
+			   sm.ShipmentNumber, 
+			        sm.ShipmentId,
+
+					    Flight.FlightOriginDate OutboundFlightOriginDate,
+  Flight.FlightOffPoint,
+  Flight.OutboundFlightType,
+   Flight.OutboundAircraftBodyType,
+    Flight.DateSTA,
+                 Flight.DateATD,
+                  Flight.DateETD,
+                  Flight.DateATA,
+     Flight.DateSTD,
+     Flight.FlightID,
+
+
+	  Acceptance.HandlingArea,
+     Acceptance.RcarTypeCode,
+    Acceptance.ChargeCode,
+   Acceptance.PouchIndicator,
+   Acceptance.DocumentAcceptanceDate,
+   case when (select count(1) from Com_AWBStockDetails where AWBNumber=sm.ShipmentNumber)>0 then 'Y' else 'N' end awbStock ,
+
+
+
+			Isnull(FrtOutInf.specialhandlingcode,Isnull(MstSHC.specialhandlingcode, '.')) SpecialHandlingCode, 
+			--Isnull(Shipper.customername, IsNull(Agent.customername,'.')) ShipperName, 
+			-------------------------------------------------------------
+			--Isnull(Agent.customername, IsNull(ConSign.customername,'.')) IssuingAgentName, 
+			--Isnull(Agent.customercode, IsNull(ConSign.customercode,'.')) IssuingAgentCode, 
+			--ConSign.customername ConsigneeName,
+			--ConSign.customercode ConsigneeCode,
+
+			---------------------------------------------------------------
+
+			--Case When Booking.transfertype = 1 Then 'Y' Else 'N' End TTHTYPE, 
+			Booking.TransferType,
+
+			 --t_TYPE.transfertype,
+			CASE WHEN sm.origin != ? AND sm.destination != ? THEN 'Y' ELSE 'N' END TranshipmentIndicator, 
+			sm.origin Origin,
+			sm.PartShipment PartShipmentIndicator,
+			sm.destination Destination, 
+			IsNull(FrtOutInf.weight,0) Weight, 
+			IsNull(FrtOutInf.pieces,0) Piece, 
+			IsNull(sm.natureofgoodsdescription,'.') NatureOfGoodsDescription, 
+			CASE WHEN FrtOutInf.per = 1 THEN 'COOLPORT' 
+				  WHEN MstSHC.per = 1 THEN 'COOLPORT' 
+				  WHEN FrtOutInf.exp = 1 THEN 'EXPRESS' 
+				  WHEN MstSHC.exp = 1 THEN 'EXPRESS' 
+				  WHEN Car.carriercode IN ( 'SQ', 'MI', 'TR', 'N7', 'TH', 'RU', '8K', '3S', 'NZ' ) THEN 'T5 Hub Export' 
+		    ELSE 'OAL Export' END CostCentre, 
+			--IsNull(CONVERT(VARCHAR(16), Flight.datestd, 120),'.') DateSTD, 
+			--IsNull(CONVERT(VARCHAR(16), Flight.datesta, 120),'.') DateSTA, 
+			--IsNull(Acceptance.rcarstatus,'.') "KC/UC", 
+			IsNull(FrtOutInf.uldtype,'.') UldType, 
+			IsNull(FrtOutInf.uldnumber,'.') ULDNumber, 
+			FrtOutInf.ULDCarrierCode,
+			FrtOutInf.assigneduldtrolley ULDTrolleyNumber ,
+			CASE  WHEN len(FrtOutInf.AssignedUldTrolley ) > 7 THEN 'ULD' ELSE 'LOOSE'END as  ContainerType,
+			IsNull(Flight.aircrafttype,'.') OutboundAircraftType, 
+			IsNull(Acceptance.servicenumber,'.') EAcceptanceControlForm, 
+			IsNull(CONVERT(VARCHAR(16), Dateadd(hour,8,Acceptance.AcceptanceStartedOn), 120),'.') EAcceptanceDateTime, 
+			IsNull(CONVERT(VARCHAR(16), Dateadd(hour,8,FrtOutInf.createddatetime), 120),'.') FreightOutDateTime 
+    FROM FrtOutInf
+	Inner Join Flight ON Flight.flightid = FrtOutInf.flightid
+	INNER JOIN mst_carrier Car ON Car.carriercode = Flight.carriercode
+	Inner Join shipment_master sm On sm.ShipmentId = FrtOutInf.ShipmentId	 
+	Left JOIN Booking ON Booking.shipmentnumber = sm.shipmentnumber 
+	AND Booking.shipmentdate = sm.shipmentdate 
+	AND Booking.flightid = FrtOutInf.flightid
+    Left JOIN Acceptance ON Acceptance.shipmentnumber = sm.shipmentnumber And Acceptance.ShipmentDate = sm.ShipmentDate
+	LEFT JOIN MstSHC ON MstSHC.shipmentid = sm.shipmentid 
+	left join Uld_UldType on Uld_UldType.UldType = FrtOutInf.UldType
+    or Substring(Uld_UldType.UldType,1,2) like concat(Substring(FrtOutInf.UldType,1,2),'[0-9]')
+	
+    WHERE  
+	sm.shipmenttype != 'MAIL' AND
+	 sm.cancelledon IS NULL 
+	And sm.Destination != ?
+	AND Month(Flight.datestd ) = ? and Year(Flight.datestd ) = ?  and Flight.carriercode = ? )
+SELECT 
+ format(DateSTD) ATA,OutboundCarrierCode carrierCode,OutboundFlightNumber  FlightNumber,ShipmentNumber,Weight TotalWeight,
+
+case when BUPFLAG=1 and IntactFlag=1 then Weight else 0 end as IntactBup,
+
+case when BUCFLAG=1 and IntactFlag=1 then Weight else 0 end as IntactBuc,
+case when IntactFlag=0 then Weight else 0 end as NonIntact
+         
+FROM   Query
+ order by DateSTD;
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>outDate</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>outDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>outDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>departure</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>departure</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>departure</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>number</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>5</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>number</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>number</design:label>
+            <design:formattingHints>
+              <design:displaySize>5</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentNumber</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>totalWeight</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>totalWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>totalWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>intactBup</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>intactBup</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>intactBup</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>intactBuc</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>intactBuc</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>intactBuc</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>nonIntact</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>38</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>nonIntact</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>nonIntact</design:label>
+            <design:formattingHints>
+              <design:displaySize>40</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <joint-data-set name="Data Set" id="114">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ImportSQL::ShipmentNumber</property>
+                    <property name="alias">ImportSQL::ShipmentNumber</property>
+                    <text-property name="displayName">ImportSQL::ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::ShipmentNumber</property>
+                    <property name="alias">ExportSQL::ShipmentNumber</property>
+                    <text-property name="displayName">ExportSQL::ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::TotalWeight</property>
+                    <property name="alias">ExportSQL::TotalWeight</property>
+                    <text-property name="displayName">ExportSQL::TotalWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::IntactBUC</property>
+                    <property name="alias">IntactBUC</property>
+                    <text-property name="displayName">ImportSQL::IntactBUC</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::IntactBuc</property>
+                    <property name="alias">IntactBuc</property>
+                    <text-property name="displayName">ExportSQL::IntactBuc</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::NonIntact</property>
+                    <property name="alias">ExportSQL::NonIntact</property>
+                    <text-property name="displayName">ExportSQL::NonIntact</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::ATA</property>
+                    <property name="alias">ExportSQL::ATA</property>
+                    <text-property name="displayName">ExportSQL::ATA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::FlightNumber</property>
+                    <property name="alias">ImportSQL::FlightNumber</property>
+                    <text-property name="displayName">ImportSQL::FlightNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::carrierCode</property>
+                    <property name="alias">carrierCode</property>
+                    <text-property name="displayName">ExportSQL::carrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::CarrierCode</property>
+                    <property name="alias">CarrierCode</property>
+                    <text-property name="displayName">ImportSQL::CarrierCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::IntactBUP</property>
+                    <property name="alias">IntactBUP</property>
+                    <text-property name="displayName">ImportSQL::IntactBUP</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::IntactBup</property>
+                    <property name="alias">IntactBup</property>
+                    <text-property name="displayName">ExportSQL::IntactBup</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::NonIntact</property>
+                    <property name="alias">ImportSQL::NonIntact</property>
+                    <text-property name="displayName">ImportSQL::NonIntact</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::ATA</property>
+                    <property name="alias">ImportSQL::ATA</property>
+                    <text-property name="displayName">ImportSQL::ATA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ExportSQL::FlightNumber</property>
+                    <property name="alias">ExportSQL::FlightNumber</property>
+                    <text-property name="displayName">ExportSQL::FlightNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImportSQL::TotalWeight</property>
+                    <property name="alias">ImportSQL::TotalWeight</property>
+                    <text-property name="displayName">ImportSQL::TotalWeight</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">ImportSQL::param_1</property>
+                    <property name="dataType">string</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_2</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_3</property>
+                    <property name="dataType">integer</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_4</property>
+                    <property name="dataType">string</property>
+                    <property name="position">4</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_5</property>
+                    <property name="dataType">string</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_6</property>
+                    <property name="dataType">string</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::param_7</property>
+                    <property name="dataType">string</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_1</property>
+                    <property name="dataType">string</property>
+                    <property name="position">8</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_2</property>
+                    <property name="dataType">string</property>
+                    <property name="position">9</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_3</property>
+                    <property name="dataType">string</property>
+                    <property name="position">10</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_4</property>
+                    <property name="dataType">string</property>
+                    <property name="position">11</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_5</property>
+                    <property name="dataType">string</property>
+                    <property name="position">12</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_6</property>
+                    <property name="dataType">string</property>
+                    <property name="position">13</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_7</property>
+                    <property name="dataType">integer</property>
+                    <property name="position">14</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::param_8</property>
+                    <property name="dataType">string</property>
+                    <property name="position">15</property>
+                    <property name="isOptional">false</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData"/>
+            <simple-property-list name="dataSets">
+                <value>ImportSQL</value>
+                <value>ExportSQL</value>
+            </simple-property-list>
+            <list-property name="joinConditions">
+                <structure>
+                    <property name="joinType">full-out</property>
+                    <property name="joinOperator">eq</property>
+                    <property name="leftDataSet">ImportSQL</property>
+                    <property name="rightDataSet">ExportSQL</property>
+                    <expression name="leftExpression">dataSetRow["ShipmentNumber"]</expression>
+                    <expression name="rightExpression">dataSetRow["ShipmentNumber"]</expression>
+                </structure>
+            </list-property>
+        </joint-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Airlines" id="182">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">CarrierShortName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CarrierShortName</text-property>
+                    <text-property name="heading">CarrierShortName</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">Carrier</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">1</property>
+                    <property name="allowNull">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">CarrierShortName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">CarrierShortName</property>
+                    <property name="nativeName">CarrierShortName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select CarrierShortName from Mst_Carrier where CarrierCode = ?]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <DataSetParameters>
+    <parameter>
+      <design:ParameterDefinition>
+        <design:inOutMode>In</design:inOutMode>
+        <design:attributes>
+          <design:identifier>
+            <design:name></design:name>
+            <design:position>1</design:position>
+          </design:identifier>
+          <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+          <design:precision>3</design:precision>
+          <design:scale>0</design:scale>
+          <design:nullability>NotNullable</design:nullability>
+        </design:attributes>
+      </design:ParameterDefinition>
+    </parameter>
+  </DataSetParameters>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CarrierCode</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CarrierCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CarrierCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CarrierShortName</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>65</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CarrierShortName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CarrierShortName</design:label>
+            <design:formattingHints>
+              <design:displaySize>65</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CarrierFullName</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CarrierFullName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CarrierFullName</design:label>
+            <design:formattingHints>
+              <design:displaySize>1000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AssistedCarrierFlag</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AssistedCarrierFlag</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AssistedCarrierFlag</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>GroundHandlerCode</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>32</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>GroundHandlerCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>GroundHandlerCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>32</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DLSWeightUnit</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DLSWeightUnit</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DLSWeightUnit</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AirlinePrintFlag</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AirlinePrintFlag</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AirlinePrintFlag</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>UCMType</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>UCMType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>UCMType</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CargoIqFlag</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CargoIqFlag</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CargoIqFlag</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightType</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightType</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DG_BulkShipment</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DG_BulkShipment</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DG_BulkShipment</design:label>
+            <design:formattingHints>
+              <design:displaySize>4</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DG_NotBulkStartDate</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>91</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DG_NotBulkStartDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DG_NotBulkStartDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DG_NotBulkEndtDate</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>91</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DG_NotBulkEndtDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DG_NotBulkEndtDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CreatedUser_Code</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CreatedUser_Code</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CreatedUser_Code</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Created_DateTime</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Created_DateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Created_DateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>LastUpdatedUser_Code</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>LastUpdatedUser_Code</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>LastUpdatedUser_Code</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>LastUpdated_DateTime</design:name>
+              <design:position>17</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>LastUpdated_DateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>LastUpdated_DateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>IataFlag</design:name>
+              <design:position>18</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>IataFlag</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>IataFlag</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>IncludeVolumeInFFM</design:name>
+              <design:position>19</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>-7</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>IncludeVolumeInFFM</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>IncludeVolumeInFFM</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2"/>
+    </page-setup>
+    <body>
+        <grid id="15">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="dataSet">Airlines</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">CarrierShortName</property>
+                    <text-property name="displayName">CarrierShortName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CarrierShortName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="16"/>
+            <row id="17">
+                <cell id="18">
+                    <data id="183">
+                        <property name="textAlign">center</property>
+                        <property name="resultSetColumn">CarrierShortName</property>
+                    </data>
+                </cell>
+            </row>
+            <row id="19">
+                <cell id="20">
+                    <grid id="212">
+                        <column id="213"/>
+                        <column id="214"/>
+                        <row id="215">
+                            <cell id="216">
+                                <label id="218">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="textAlign">right</property>
+                                    <text-property name="text">bill.cargo.handled</text-property>
+                                </label>
+                            </cell>
+                            <cell id="217">
+                                <text-data id="219">
+                                    <property name="textAlign">left</property>
+                                    <expression name="valueExpr">params["month"].value+" "+params["year"].value</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <table id="21">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ImportSQL::ATA</property>
+                    <text-property name="displayName">ImportSQL::ATA</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportSQL::ATA"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CarrierCode</property>
+                    <text-property name="displayName">ImportSQL::CarrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CarrierCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::FlightNumber</property>
+                    <text-property name="displayName">ImportSQL::FlightNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportSQL::FlightNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::ShipmentNumber</property>
+                    <text-property name="displayName">ImportSQL::ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportSQL::ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::TotalWeight</property>
+                    <text-property name="displayName">ImportSQL::TotalWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportSQL::TotalWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">IntactBUP</property>
+                    <text-property name="displayName">ImportSQL::IntactBUP</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["IntactBUP"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">IntactBUC</property>
+                    <text-property name="displayName">ImportSQL::IntactBUC</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["IntactBUC"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">ImportSQL::NonIntact</property>
+                    <text-property name="displayName">ImportSQL::NonIntact</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportSQL::NonIntact"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::ATA</property>
+                    <text-property name="displayName">ExportSQL::ATA</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ExportSQL::ATA"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">carrierCode</property>
+                    <text-property name="displayName">ExportSQL::carrierCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["carrierCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::FlightNumber</property>
+                    <text-property name="displayName">ExportSQL::FlightNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ExportSQL::FlightNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::ShipmentNumber</property>
+                    <text-property name="displayName">ExportSQL::ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ExportSQL::ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::TotalWeight</property>
+                    <text-property name="displayName">ExportSQL::TotalWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ExportSQL::TotalWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">IntactBup</property>
+                    <text-property name="displayName">ExportSQL::IntactBup</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["IntactBup"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">IntactBuc</property>
+                    <text-property name="displayName">ExportSQL::IntactBuc</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["IntactBuc"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">ExportSQL::NonIntact</property>
+                    <text-property name="displayName">ExportSQL::NonIntact</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ExportSQL::NonIntact"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+            </list-property>
+            <column id="67"/>
+            <column id="68"/>
+            <column id="69"/>
+            <column id="70"/>
+            <column id="71"/>
+            <column id="72"/>
+            <column id="73"/>
+            <column id="74"/>
+            <column id="75"/>
+            <column id="76"/>
+            <column id="77"/>
+            <column id="78"/>
+            <column id="79"/>
+            <column id="80"/>
+            <header>
+                <row id="95">
+                    <cell id="96">
+                        <property name="colSpan">7</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="110">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">warehouse.import</text-property>
+                        </label>
+                    </cell>
+                    <cell id="103">
+                        <property name="colSpan">7</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="111">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">warehouse.export</text-property>
+                        </label>
+                    </cell>
+                </row>
+                <row id="22">
+                    <property name="backgroundColor">#666699</property>
+                    <cell id="23">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="81">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.in.date</text-property>
+                        </label>
+                    </cell>
+                    <cell id="24">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="82">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.arrival</text-property>
+                        </label>
+                    </cell>
+                    <cell id="25">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="83">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="26">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="84">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.totalweight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="27">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="85">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.intact.bup</text-property>
+                        </label>
+                    </cell>
+                    <cell id="28">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="86">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.intact.buc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="29">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="87">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.non.intact</text-property>
+                        </label>
+                    </cell>
+                    <cell id="30">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="88">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.out.date</text-property>
+                        </label>
+                    </cell>
+                    <cell id="31">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="89">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.departure</text-property>
+                        </label>
+                    </cell>
+                    <cell id="32">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="90">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="33">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="91">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.totalweight</text-property>
+                        </label>
+                    </cell>
+                    <cell id="34">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="92">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.intact.bup</text-property>
+                        </label>
+                    </cell>
+                    <cell id="35">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="93">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.intact.buc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="36">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="94">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.non.intact</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="37">
+                    <cell id="38">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="192">
+                            <property name="resultSetColumn">ImportSQL::ATA</property>
+                        </data>
+                    </cell>
+                    <cell id="39">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="193">
+                            <property name="resultSetColumn">CarrierCode</property>
+                        </data>
+                    </cell>
+                    <cell id="40">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="194">
+                            <property name="resultSetColumn">ImportSQL::FlightNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="41">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="198">
+                            <property name="resultSetColumn">ImportSQL::TotalWeight</property>
+                        </data>
+                    </cell>
+                    <cell id="42">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="195">
+                            <property name="resultSetColumn">IntactBUP</property>
+                        </data>
+                    </cell>
+                    <cell id="43">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="196">
+                            <property name="resultSetColumn">IntactBuc</property>
+                        </data>
+                    </cell>
+                    <cell id="44">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="197">
+                            <property name="resultSetColumn">IntactBUP</property>
+                        </data>
+                    </cell>
+                    <cell id="45">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="199">
+                            <property name="resultSetColumn">ExportSQL::ATA</property>
+                        </data>
+                    </cell>
+                    <cell id="46">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="200">
+                            <property name="resultSetColumn">carrierCode</property>
+                        </data>
+                    </cell>
+                    <cell id="47">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="201">
+                            <property name="resultSetColumn">ExportSQL::FlightNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="48">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="202">
+                            <property name="resultSetColumn">ExportSQL::TotalWeight</property>
+                        </data>
+                    </cell>
+                    <cell id="49">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="203">
+                            <property name="resultSetColumn">IntactBup</property>
+                        </data>
+                    </cell>
+                    <cell id="50">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="204">
+                            <property name="resultSetColumn">IntactBuc</property>
+                        </data>
+                    </cell>
+                    <cell id="51">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="205">
+                            <property name="resultSetColumn">ExportSQL::NonIntact</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="52">
+                    <cell id="53">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="144">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.subTotal</text-property>
+                        </label>
+                    </cell>
+                    <cell id="54">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="55">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="56">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="57">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="58">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="59">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="60">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="178">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">g.subTotal</text-property>
+                        </label>
+                    </cell>
+                    <cell id="61">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="62">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="63">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="64">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="65">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="66">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                </row>
+                <row id="129">
+                    <cell id="130">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="145">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.per.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="131">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="132">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="133">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="134">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="135">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="136">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="137">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="179">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.per.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="138">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="139">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="140">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="141">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="142">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="143">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                </row>
+                <row id="146">
+                    <cell id="147">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="161">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.dgr.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="148">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="149">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="150">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="151">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="152">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="153">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="154">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="180">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.dgr.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="155">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="156">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="157">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="158">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="159">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="160">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                </row>
+                <row id="162">
+                    <cell id="163">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="177">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.non.phc.dgr.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="164">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="165">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="166">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="167">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="168">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="169">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="170">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="181">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <text-property name="text">billing.non.phc.dgr.total</text-property>
+                        </label>
+                    </cell>
+                    <cell id="171">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="172">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="173">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="174">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="175">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                    <cell id="176">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                    </cell>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

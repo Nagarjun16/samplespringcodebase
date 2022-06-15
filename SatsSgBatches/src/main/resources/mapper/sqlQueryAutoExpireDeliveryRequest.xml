@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoExpireDeliveryRequestBatchJobMapper">
+	
+	<select id="sqlGetDeliveryRequestsForExpiry"
+		resultType="com.ngen.cosys.application.model.AutoExpireDeliveryRequestModel" >
+		select
+			Imp_DeliveryRequest.ImpDeliveryRequestId as deliveryRequestId,
+			Imp_DeliveryRequest.DeliveryRequestOrderNo as deliveryRequestOrderNo,
+			Shipment_Master.ShipmentNumber as shipmentNumber,
+			Shipment_Master.ShipmentDate as shipmentDate,
+			Shipment_Master.ShipmentId as shipmentId
+		from
+			Imp_DeliveryRequest	inner join
+			Shipment_Master	
+				on Imp_DeliveryRequest.ShipmentId = Shipment_Master.ShipmentId
+		where 
+			upper(Status) in ('COMPLETED', 'PENDING', 'DRAFT') and
+			datediff(HOUR, isNull(DeliveryRequestCompletedOn,DeliveryRequestedOn), getdate()) > 
+											(select CAST(ParameterValueNum AS INTEGER) from App_SystemParameters where ParameterCode = 'AUTO_EXPIRE_DELIVERY_REQUEST')
+			and not exists(
+				select
+					null
+				from
+					Imp_Delivery
+				where
+					Imp_Delivery.ImpDeliveryRequestId = Imp_DeliveryRequest.ImpDeliveryRequestId
+			)
+	</select>
+	
+	<update id="sqlUpdateNullInventoryDeliveryRequest"
+		parameterType="com.ngen.cosys.application.model.AutoExpireDeliveryRequestModel">
+		<![CDATA[
+			update
+				Shipment_Inventory
+			set
+				DeliveryRequestOrderNo = NULL,
+				DeliveryRequestIssuedBy = NULL,	
+				DeliveryRequestIssuedOn = NULL,
+				LastUpdatedUser_Code = 'AUTOBATCHJOB',
+				LastUpdated_DateTime = getdate()
+			where 
+				Shipment_ID = #{shipmentId} and
+				DeliveryRequestOrderNo = #{deliveryRequestId}				
+		]]>
+	</update>
+	
+	<update id="sqlUpdateAutoExpireDeliveryRequest"
+		parameterType="com.ngen.cosys.application.model.AutoExpireDeliveryRequestModel">
+		<![CDATA[
+			update
+				Imp_DeliveryRequest
+			set
+				status = 'EXPIRED',
+				LastUpdatedUserCode = 'AUTOBATCHJOB',
+				LastUpdatedDateTime = getdate()
+			where 
+				ImpDeliveryRequestId = #{deliveryRequestId}
+		]]>
+	</update>
+		
+</mapper>

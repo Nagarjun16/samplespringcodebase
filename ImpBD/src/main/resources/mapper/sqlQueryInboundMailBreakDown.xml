@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InboundMailBreakDown">
+	<select id="flightdetailmailbreakdown"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel"
+		resultType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel">
+		<!-- SELECT CarrierCode as carrierCode,Flight_ID as flightId, FlightKey 
+			as flightKey, FlightOriginDate as flightDate FROM Flt_OperativeFlight where 
+			FlightKey=#{flightKey} AND FlightOriginDate=#{flightDate} -->
+		select Flt_OperativeFlight.CarrierCode as
+		carrierCode,Flt_OperativeFlight.Flight_ID as flightId,
+		Flt_OperativeFlight.FlightKey as flightKey,
+		Flt_OperativeFlight_Legs.DateSTA as flightDate,
+		Flt_OperativeFlight_Legs.DateSTA as staDate,
+		Flt_OperativeFlight_Legs.DateSTA as sta,
+		Flt_OperativeFlight_Legs.FlightBoardPoint as boardingPoint,
+		Flt_OperativeFlight_Legs.FlightOffPoint as offPoint
+		from
+		Flt_OperativeFlight
+		INNER JOIN Flt_OperativeFlight_Legs ON
+		Flt_OperativeFlight.Flight_ID=Flt_OperativeFlight_Legs.Flight_ID
+		where
+		Flt_OperativeFlight.FlightKey=#{flightKey}
+		and
+		CAST(Flt_OperativeFlight_Legs.DateSTA AS date)= cast(#{flightDate} as
+		date) AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+	</select>
+	<select id="getflightdetailmailbreakdown"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel"
+		resultType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel">
+		<!-- select top 1 Flt.CarrierCode as carrierCode, Flt.Flight_ID as flightId, 
+			Flt.FlightKey as flightKey, Legs.DateSTA as flightDate from Imp_InboundContainers 
+			ULD INNER JOIN Flt_OperativeFlight Flt ON ULD.IncomingFlightId=Flt.Flight_ID 
+			INNER JOIN Flt_OperativeFlight_Legs Legs ON Flt.Flight_ID=Legs.Flight_ID 
+			LEFT OUTER JOIN Imp_FlightEvents Evt ON Flt.Flight_Id = Evt.FlightId and 
+			Evt.MailBreakDownCompletedAt is null where ULD.ULDNumber= #{uldNumber} ORDER 
+			BY Legs.DateSTA DESC; -->
+
+		select top 1 Imp_RampCheckIn.ULDNumber,
+		Flt_OperativeFlight.Flight_ID
+		as flightId,
+		Flt_OperativeFlight.FlightKey as flightKey,
+		Flt_OperativeFlight_Legs.DateSTA flightDate
+		from Imp_RampCheckIn
+		INNER JOIN Flt_OperativeFlight ON
+		Imp_RampCheckIn.FlightId=Flt_OperativeFlight.Flight_ID
+		INNER JOIN
+		Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_Id =
+		Flt_OperativeFlight_Legs.Flight_ID
+		Where
+		Imp_RampCheckIn.ULDNumber=#{uldNumber} AND
+		Flt_OperativeFlight_Legs.FlightOffPoint=#{tenantAirport} order by
+		Imp_RampCheckIn.CreatedDateTime DESC;
+
+
+
+
+	</select>
+
+	<select id="getmailbreakdownworkinglist"
+		resultMap="inboundmailbreakdownworkinglistcollection"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel">
+		SELECT DISTINCT
+			Imp_ShipmentVerification.FlightId as flightId,
+			Imp_ShipmentVerification.BreakDownPieces as pieces,
+			Imp_ShipmentVerification.BreakDownWeight as weight,
+			Shipment_Master.ShipmentId as shipmentId,
+			Shipment_Master.ShipmentNumber as shipmentNumber,
+			Shipment_Master.Origin as origin,
+			Shipment_Master.Destination as destination,
+			Shipment_HouseInformation.DispatchNumber as dispatchNumber,
+			Shipment_HouseInformation.Number as mailBagNumber,
+			Shipment_HouseInformation.ReceptacleNumber as receptacleNumber,
+			Shipment_HouseInformation.RegisteredIndicator as registered,
+			Shipment_HouseInformation.OriginOfficeExchange as originOfficeExchange,
+			Shipment_HouseInformation.DestinationOfficeExchange as destinationOfficeExchange,
+			Shipment_HouseInformation.NextDestination as nextDestination,
+			Shipment_Inventory.ShipmentLocation as shipmentLocation ,
+			Shipment_Inventory.WarehouseLocation as warehouseLocation,
+			Shipment_HouseInformation.Pieces as individualPieces,
+			Shipment_HouseInformation.weight as individualWeight,
+			Shipment_Remarks.ShipmentRemarks as remarks,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber as uldNumber,
+			Shipment_MasterRoutingInfo.Carrier as transferCarrierFrom
+		from
+			Imp_ShipmentVerification  inner join 
+			Shipment_Master  
+				on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join 
+			Shipment_HouseInformation  
+				on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId inner join 
+			Imp_BreakDownULDTrolleyInfo  
+				on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join 
+			Imp_BreakDownStorageInfo 
+				on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId inner join 
+			Imp_BreakDownHouseInfo
+				on Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId = Imp_BreakDownHouseInfo.ImpBreakDownStorageInfoId and
+					Shipment_HouseInformation.Number = Imp_BreakDownHouseInfo.HouseNumber left join
+			Shipment_InventoryHouse 
+				on Shipment_HouseInformation.ShipmentHouseId = Shipment_InventoryHouse.ShipmentHouseId left join 
+			Shipment_Inventory 
+				on Shipment_InventoryHouse.ShipmentInventoryId = Shipment_Inventory.ShipmentInventory_Id left join
+			Shipment_MasterRoutingInfo 
+			    on Shipment_Master.ShipmentId = Shipment_MasterRoutingInfo.ShipmentId left join 
+			Shipment_Remarks  
+				on Shipment_Master.ShipmentId = Shipment_Remarks.ShipmentId
+			where
+			Imp_ShipmentVerification.FlightId = #{flightId} and 
+			Shipment_HouseInformation.ShipmentType='MAIL'
+		<if test="dispatchNumber != null and dispatchNumber !=''">
+			and Shipment_HouseInformation.DispatchNumber = #{dispatchNumber}
+		</if>
+	</select>
+	<resultMap
+		type="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel"
+		id="inboundmailbreakdownworkinglistcollection">
+		<id property="flightId" column="flightId" />
+		<result property="uldNumber" column="uldNumber" />
+		<collection property="workingListShipmentInfo" javaType="List" ofType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownWorkingListShipmentInfo">
+		<id property="shipmentId" column="shipmentId"/>
+		<result property="shipmentNumber" column="shipmentNumber"/>
+		<result property="origin" column="origin"/>
+		<result property="destination" column="destination"/>
+		<result property="dispatchNumber" column="dispatchNumber"/>
+		<result property="shipmentLocation" column="shipmentLocation"/>
+		<result property="warehouseLocation" column="warehouseLocation"/>
+		<collection property="shipments" javaType="List"
+			ofType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+			<result property="shipmentId" column="shipmentId" />
+			<result property="origin" column="origin" />
+			<result property="destination" column="destination" />
+			<result property="pieces" column="pieces" />
+			<result property="weight" column="weight" />
+			<result property="dispatchNumber" column="dispatchNumber" />
+			<result property="mailBagNumber" column="mailBagNumber" />
+			<result property="receptacleNumber" column="receptacleNumber" />
+			<result property="registered" column="registered" />
+			<result property="originOfficeExchange"
+				column="originOfficeExchange" />
+			<result property="destinationOfficeExchange"
+				column="destinationOfficeExchange" />
+			<result property="nextDestination" column="nextDestination"/>
+			<result property="individualPieces" column="individualPieces" />
+			<result property="individualWeight" column="individualWeight" />
+			<result property="remarks" column="remarks" />
+			<result property="shipmentLocation" column="shipmentLocation" />
+			<result property="warehouseLocation"
+				column="warehouseLocation" />
+			<result property="transferCarrierFrom"
+				column="transferCarrierFrom" />
+		</collection>
+		</collection>
+		
+	</resultMap>
+
+	<select id="getmailbreakdown"
+		resultMap="inboundmailbreakdowncollection"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel">
+		with hseInvLoc as (
+		select distinct ShpInv.Shipment_ID,
+		ShpInv.ShipmentInventory_Id
+		shipmentInventoryId,
+		ShpInvHse.ShipmentHouseId shipmentHouseId
+		,
+		ShpInvHse.ShipmentInventoryHouseId shipmentInventoryHouseId
+		,ShpInv.ShipmentLocation,
+		ShpInv.WarehouseLocation,ShpInvHse.Pieces,ShpInvHse.Weight
+		from
+		Shipment_Inventory ShpInv
+		inner JOIN Shipment_InventoryHouse ShpInvHse
+		ON ShpInv.ShipmentInventory_Id = ShpInvHse.ShipmentInventoryId )
+		SELECT DISTINCT
+		FltSeg.DateSTA as dateSTA
+		, ImpShpVer.FlightId as
+		flightId
+		, ImpShpVer.ImpShipmentVerificationId as
+		impShipmentVerificationId
+		, ShpHse.Pieces as breakDownPieces
+		,
+		ShpHse.OriginOfficeExchange as originOfficeExchange
+		,
+		ShpHse.DestinationOfficeExchange as destinationOfficeExchange
+		,
+		ShpHse.NextDestination as nextDestination
+		, ShpHse.MailCategory as
+		mailCategory
+		, ShpHse.Weight as weight
+		, ShpHse.Number as mailBagNumber
+		, ShpHse.MailSubCategory as mailSubType
+		, ShpHse.DispatchYear as
+		dispatchYear
+		, ShpHse.DispatchNumber as dispatchNumber
+		,
+		ShpHse.ReceptacleNumber as receptacleNumber
+		,
+		ShpHse.RegisteredIndicator as registered
+		, ShpHse.LastBagIndicator as
+		lastBag
+		, ShpHse.ShipmentId as shipmentId
+		, ShpHse.ShipmentHouseId as
+		shipmentHouseId
+		, ImpBrkDwnUld.ULDTrolleyNumber as uldNumber
+		,
+		ShpMst.ShipmentNumber as shipmentNumber
+		, ShpMst.ShipmentDate as
+		shipmentDate
+		, ShpMst.Pieces as pieces
+		, ShpMst.Weight as weight
+		,
+		hseInvLoc.ShipmentLocation as shipmentLocation
+		,
+		hseInvLoc.shipmentInventoryId
+		, hseInvLoc.shipmentInventoryHouseId
+		,
+		hseInvLoc.WarehouseLocation as
+		warehouseLocation
+		,
+		ImpBrkDwnUld.ImpBreakDownULDTrolleyInfoId as
+		impBreakDownULDTrolleyInfoId
+		, ImpBrkDwnLoc.ImpBreakDownStorageInfoId
+		as impBreakDownStorageInfoId
+		, ImpBrkDwnHse.ImpBreakDownHouseInfoId as
+		impBreakDownHouseInfoId
+		, ShpRtg.Carrier as transferCarrierFrom
+		,
+		ShpMst.MailCategory as mailCategory,
+		CASE
+		WHEN
+		embrg.Embargo IS NOT NULL
+		THEN 'YES' ELSE 'NO'
+		END as embargoFlag
+		,hseInvLoc.Pieces as invPcs
+		,
+		hseInvLoc.Weight as invWgt
+		from Imp_ShipmentVerification ImpShpVer
+		INNER JOIN
+		Imp_BreakDownULDTrolleyInfo ImpBrkDwnUld ON
+		ImpShpVer.ImpShipmentVerificationId =
+		ImpBrkDwnUld.ImpShipmentVerificationId
+		LEFT JOIN
+		Imp_BreakDownStorageInfo ImpBrkDwnLoc ON
+		ImpBrkDwnUld.ImpBreakDownULDTrolleyInfoId =
+		ImpBrkDwnLoc.ImpBreakDownULDTrolleyInfoId
+		LEFT JOIN
+		Imp_BreakDownHouseInfo ImpBrkDwnHse ON
+		ImpBrkDwnLoc.ImpBreakDownStorageInfoId =
+		ImpBrkDwnHse.ImpBreakDownStorageInfoId
+		INNER JOIN Shipment_Master
+		ShpMst ON ImpShpVer.ShipmentId = ShpMst.ShipmentId
+		INNER JOIN
+		Shipment_HouseInformation ShpHse ON ShpMst.ShipmentId =
+		ShpHse.ShipmentId AND ImpBrkDwnHse.HouseNumber = ShpHse.Number
+		LEFT
+		JOIN hseInvLoc ON hseInvLoc.Shipment_ID = ShpMst.ShipmentId and
+		hseInvLoc.ShipmentHouseId = ShpHse.ShipmentHouseId
+		LEFT OUTER JOIN
+		Flt_OperativeFlight Flt ON Flt.Flight_ID = ImpShpVer.FlightId
+		LEFT
+		OUTER JOIN Flt_OperativeFlight_Segments FltSeg ON FltSeg.Flight_ID =
+		Flt.Flight_ID AND FltSeg.FlightOffPoint = #{tenantAirport}
+		LEFT OUTER JOIN
+		Shipment_MasterRoutingInfo ShpRtg ON ShpRtg.ShipmentId =
+		ShpMst.ShipmentId
+		LEFT OUTER JOIN Airmail_EmbargoFailure embrg on
+		embrg.ShipmentId= ShpMst.ShipmentId
+		WHERE ImpShpVer.FlightId=
+		#{flightId}
+		AND ShpMst.ShipmentType = 'MAIL'
+		AND FltSeg.FlightOffPoint =
+		#{tenantAirport}
+		<if test="uldNumber != null and uldNumber !=''">
+			AND ImpBrkDwnUld.ULDTrolleyNumber = #{uldNumber}
+		</if>
+	</select>
+	<select id="getmailbagnumbercount"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_HouseInformation
+		where Number
+		=
+		#{mailBagNumber}
+	</select>
+	<select id="countShipment"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select count (*) from Shipment_MasterRoutingInfo
+		where
+		ShipmentId=#{shipmentId}
+	</select>
+
+	<select id="checkMailBreakDownCompleted"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		SELECT Count(MailBreakDownCompletedBy) from
+		Imp_FlightEvents where flightId=#{flightId}
+	</select>
+
+	<update id="sqlUpdateMasterRouting"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		update Shipment_MasterRoutingInfo
+		set FromPoint =
+		#{tenantAirport},Carrier = #{outgoingCarrier}
+		where
+		ShipmentId=#{shipmentId}
+	</update>
+	<insert id="sqlInsertMasterRouting"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		INSERT INTO Shipment_MasterRoutingInfo
+		(ShipmentId
+		,FromPoint
+		,Carrier
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentId},
+		#{tenantAirport},
+		#{outgoingCarrier},
+		#{createdBy},
+		#{createdOn})
+	</insert>
+	<select id="sqlCheckOutgoingCarrier"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		SELECT Count(ShipmentId) FROM Shipment_MasterRoutingInfo
+		WHERE ShipmentId=#{shipmentId}
+
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel"
+		id="inboundmailbreakdowncollection">
+		<id property="flightId" column="flightId" />
+
+		<collection property="shipments" javaType="List"
+			ofType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+			<result property="originOfficeExchange"
+				column="originOfficeExchange" />
+			<result property="dateSTA" column="dateSTA" />
+			<result property="destinationOfficeExchange"
+				column="destinationOfficeExchange" />
+			<result property="nextDestination" column="nextDestination" />
+			<result property="mailCategory" column="mailCategory" />
+			<result property="weight" column="weight" />
+			<result property="mailBagNumber" column="mailBagNumber" />
+			<result property="mailSubType" column="mailSubType" />
+			<result property="dispatchYear" column="dispatchYear" />
+			<result property="dispatchNumber" column="dispatchNumber" />
+			<result property="receptacleNumber" column="receptacleNumber" />
+			<result property="registered" column="registered" />
+			<result property="lastBag" column="lastBag" />
+			<result property="shipmentId" column="shipmentId" />
+			<result property="uldNumber" column="uldNumber" />
+			<result property="shipmentNumber" column="shipmentNumber" />
+			<result property="shipmentDate" column="shipmentDate" />
+			<result property="shipmentLocation" column="shipmentLocation" />
+			<result property="warehouseLocation"
+				column="warehouseLocation" />
+			<result property="transferCarrierFrom"
+				column="transferCarrierFrom" />
+			<result property="pieces" column="pieces" />
+			<result property="breakDownPieces" column="breakDownPieces" />
+			<result property="impShipmentVerificationId"
+				column="impShipmentVerificationId" />
+			<result property="shipmentHouseId" column="shipmentHouseId" />
+			<result property="shipmentInventoryId"
+				column="shipmentInventoryId" />
+			<result property="shipmentInventoryHouseId"
+				column="shipmentInventoryHouseId" />
+			<result property="impBreakDownULDTrolleyInfoId"
+				column="impBreakDownULDTrolleyInfoId" />
+			<result property="impBreakDownStorageInfoId"
+				column="impBreakDownStorageInfoId" />
+			<result property="impBreakDownHouseInfoId"
+				column="impBreakDownHouseInfoId" />
+			<result property="outgoingCarrier"
+				column="transferCarrierFrom" />
+			<result property="embargoFlag" column="embargoFlag" />
+			<result property="invPcs" column="invPcs" />
+			<result property="invWgt" column="invWgt" />
+		</collection>
+	</resultMap>
+
+	<update id="updateShipmentVerificationOnBreakDownPieces"
+		parameterType="java.math.BigInteger">
+		update Imp_ShipmentVerification
+		set BreakDownPieces =
+		(#{breakDownPieces} - 1)
+		where
+		ImpShipmentVerificationId =
+		#{impShipmentVerificationId}
+	</update>
+
+
+	<update id="updateShipmentInventoryPieces"
+		parameterType="java.math.BigInteger">
+		update Shipment_Inventory
+		set Pieces = (#{pieces} - 1)
+		where
+		ShipmentInventory_Id = #{shipmentInventoryId}
+	</update>
+
+	<delete id="deleteShipmentVerification"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Imp_ShipmentVerification where
+		ImpShipmentVerificationId = #{impShipmentVerificationId}
+	</delete>
+
+	<delete id="deleteShipmentHouseVerification"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Shipment_HouseInformation where
+		ShipmentHouseId =
+		#{shipmentHouseId}
+	</delete>
+
+	<delete id="deleteShipmentInventory"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Shipment_Inventory where
+		ShipmentInventory_Id =
+		#{shipmentInventoryId}
+	</delete>
+
+	<delete id="deleteShipmentInventorySHCInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Shipment_InventorySHC where
+		ShipmentInventoryId =
+		#{shipmentInventoryId}
+	</delete>
+
+	<delete id="deleteShipmentInventoryHouse"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Shipment_InventoryHouse where
+		ShipmentInventoryHouseId =
+		#{shipmentInventoryHouseId}
+	</delete>
+
+	<delete id="deleteShipmentBreakDownTrolleyInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		<!-- delete from Imp_BreakDownULDTrolleyInfo where ImpBreakDownULDTrolleyInfoId 
+			= #{impBreakDownULDTrolleyInfoId} and ImpShipmentVerificationId = #{impShipmentVerificationId} -->
+		delete from Imp_BreakDownULDTrolleyInfo where
+		ImpShipmentVerificationId = #{impShipmentVerificationId}
+	</delete>
+
+	<delete id="deleteShipmentStorageInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		<!-- delete from Imp_BreakDownStorageInfo where ImpBreakDownStorageInfoId 
+			= #{impBreakDownStorageInfoId} -->
+		delete from Imp_BreakDownStorageInfo where
+		ImpBreakDownULDTrolleyInfoId = #{impBreakDownULDTrolleyInfoId}
+	</delete>
+
+	<delete id="deleteShipmentStorageSHCInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		delete from Imp_BreakDownStorageSHCInfo where
+		ImpBreakDownStorageInfoId =
+		#{impBreakDownStorageInfoId}
+	</delete>
+
+
+	<delete id="deleteShipmentHouseInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		<!-- delete from Imp_BreakDownHouseInfo where ImpBreakDownHouseInfoId = 
+			#{impBreakDownHouseInfoId} -->
+		delete from Imp_BreakDownHouseInfo where ImpBreakDownStorageInfoId =
+		#{impBreakDownStorageInfoId}
+	</delete>
+
+	<select id="getBreakDownPieces"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.math.BigInteger">
+		select BreakDownPieces from Imp_ShipmentVerification where
+		ShipmentId=
+		#{shipmentId}
+	</select>
+
+	<select id="getInventoryPieces"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.math.BigInteger">
+
+		select Pieces pieces from shipment_inventory
+		where
+		Shipment_ID =
+		#{shipmentId}
+		and Flight_ID = #{flightId}
+		<if test="shipmentLocation != null || shipmentLocation != ''">
+			and ShipmentLocation = #{shipmentLocation}
+		</if>
+		<if test="warehouseLocation != null || warehouseLocation != ''">
+			and WarehouseLocation = #{warehouseLocation}
+		</if>
+
+	</select>
+
+	<select id="getShipmentHouseId"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.math.BigInteger">
+		SELECT ShipmentHouseId FROM Shipment_Houseinformation WHERE
+		Number =
+		#{mailBagNumber} AND ShipmentId = #{shipmentId} AND
+		ShipmentType =
+		#{type}
+	</select>
+
+	<select id="selectCountFromAirmailEmbargoFailure"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		SELECT COUNT(1) FROM Airmail_EmbargoFailure WHERE
+		ShipmentId = #{shipmentId}
+		AND ShipmentHouseId = #{shipmentHouseId}
+	</select>
+
+	<insert id="insertIntoAirmailEmbargoFaliure"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel">
+		INSERT INTO Airmail_EmbargoFailure
+		(ShipmentId
+		,ShipmentHouseId
+		,Embargo
+		,Bypass
+		,BypassReason
+		,CreatedUserCode
+		,CreatedDateTime
+		)
+		VALUES
+		(#{shipmentId}
+		,#{shipmentHouseId}
+		,1
+		,0
+		,''
+		,#{createdBy}
+		,#{createdOn})
+
+	</insert>
+	<select id="getShipmentMailType"
+		parameterType="java.lang.String" resultType="java.lang.String">
+
+		SELECT
+		AdministrationSubGroupDetailDescription FROM
+		Mst_CodeAdministration_SubGroupDetails mstCodeAdmnDtl
+		WHERE
+		mstCodeAdmnDtl.AdministrationSubGroupCode='MailType' AND
+		mstCodeAdmnDtl.AdministrationSubGroupDetailCode=#{mailSubType}
+
+	</select>
+	<update id="updateShipmentMasterComplete"
+		parameterType="java.math.BigInteger">
+		update shipment_master
+		set CompleteShipment = 1
+		where
+		exists (select
+		max(ReceptacleNumber),sum(Shipment_Master.Pieces)
+		from
+		Shipment_HouseInformation join Shipment_Master
+		on
+		Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+		where Shipment_HouseInformation.lastbagindicator = 1 and
+		Shipment_HouseInformation.ReceptacleNumber != '___'
+		and
+		Shipment_HouseInformation.ShipmentId = #{shipmentId}
+		having
+		convert(int,max(ReceptacleNumber))=sum(Shipment_Master.Pieces))
+		and
+		Shipment_Master.ShipmentId= #{shipmentId}
+	</update>
+
+	<select id="getPiecesAndWeightForShipmentVerification"
+		parameterType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel"
+		resultType="com.ngen.cosys.impbd.shipment.verification.model.ShipmentVerificationModel">
+		Select BreakDownPieces as breakDownPieces,BreakDownWeight
+		as breakDownWeight from Imp_ShipmentVerification
+		where FlightId =
+		#{flightId} and ShipmentId = #{shipmentId}
+	</select>
+
+	<select id="getPiecesAndWeightForStorageInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel"
+		resultType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		SELECT Pieces as pieces, Weight as weight from
+		Imp_BreakDownStorageInfo where ImpBreakDownULDTrolleyInfoId =
+		#{impArrivalManifestULDId}
+		and (ShipmentLocation = #{shipmentLocation}
+		or WarehouseLocation =
+		#{warehouseLocation})
+	</select>
+	<select id="getPiecesAndWeightForShipmentInventory"
+		parameterType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel"
+		resultType="com.ngen.cosys.impbd.shipment.breakdown.model.InboundBreakdownShipmentInventoryModel">
+		SELECT Pieces as pieces, Weight as weight from Shipment_Inventory
+		where Shipment_ID = #{shipmentId}
+		<choose>
+			<when test="shipmentLocation!= null and shipmentLocation!= ''">
+				and ShipmentLocation = #{shipmentLocation}
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation!= null and warehouseLocation!= ''">
+				and WarehouseLocation = #{warehouseLocation}
+			</when>
+		</choose>
+		and Flight_ID=#{flightId}
+	</select>
+	<select id="checkShipmentHouseInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_HouseInformation where
+		shipmentId=#{shipmentId}
+	</select>
+	<select id="fetchInvHseInfo"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_InventoryHouse where
+		ShipmentInventoryId=#{shipmentInventoryId}
+	</select>
+	<delete id="deleteInvntryShc">
+		delete Shipment_InventorySHC where
+		ShipmentInventoryId=#{shipmentInventoryId}
+	</delete>
+	<delete id="deleteInvntry">
+		delete Shipment_Inventory where
+		Shipment_ID=#{shipmentId} and
+		ShipmentInventory_Id=#{shipmentInventoryId}
+	</delete>
+	<delete id="deletebreakdownHouseInfo">
+		delete Imp_BreakDownHouseInfo where
+		ImpBreakDownHouseInfoId = #{impBreakDownHouseInfoId}
+	</delete>
+	<update id="updateBreakdownStorageInfo">
+		update Imp_BreakDownStorageInfo
+		set
+		Pieces=Pieces-#{invPcs},Weight=Weight-#{invWgt}
+		where
+		ImpBreakDownStorageInfoId=#{impBreakDownStorageInfoId}
+	</update>
+	<select id="fetchBreakdownStorageInfoPieceWeight"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select
+		Case
+		when Pieces=0 and Weight=0
+		then 0
+		else 1
+		end as
+		BreakdownStoragePieceWeight
+		from Imp_BreakDownStorageInfo
+		where
+		ImpBreakDownStorageInfoId=#{impBreakDownStorageInfoId}
+	</select>
+	<delete id="deleteBreakdownStorageShcInfo">
+		delete Imp_BreakDownStorageSHCInfo where
+		ImpBreakDownStorageInfoId=#{impBreakDownStorageInfoId}
+	</delete>
+	<delete id="deleteBreakdownStorageInfo">
+		delete Imp_BreakDownStorageInfo where
+		ImpBreakDownStorageInfoId=#{impBreakDownStorageInfoId}
+	</delete>
+	<delete id="deleteBreakdownTrolleyInfo">
+		delete Imp_BreakDownULDTrolleyInfo where
+		ImpBreakDownULDTrolleyInfoId=#{impBreakDownULDTrolleyInfoId}
+	</delete>
+	<delete id="deletePermanentShipmentVerification">
+		delete Imp_ShipmentVerification where
+		ImpShipmentVerificationId=#{impShipmentVerificationId}
+	</delete>
+	<update id="updateShipmentVerificationinfo">
+		update Imp_ShipmentVerification
+		set
+		BreakDownPieces=BreakDownPieces-#{invPcs},BreakDownWeight=BreakDownWeight-#{invWgt}
+		where ImpShipmentVerificationId=#{impShipmentVerificationId}
+	</update>
+	<delete id="deleteShpHseInf">
+		delete Shipment_HouseInformation WHERE
+		ShipmentHouseId=#{shipmentHouseId} and ShipmentId=#{shipmentId}
+	</delete>
+	<delete id="deleteShipmentMasterRoutingInfo">
+		delete Shipment_MasterRoutingInfo where
+		ShipmentId=#{shipmentId}
+	</delete>
+	<delete id="deletePermanentShipmentMaster">
+		delete Shipment_Master where ShipmentId=#{shipmentId}
+	</delete>
+	<delete id="deleteInventoryHouse">
+		delete Shipment_InventoryHouse WHERE
+		ShipmentInventoryId=#{shipmentInventoryId} and
+		ShipmentHouseId=#{shipmentHouseId}
+	</delete>
+	<update id="updateInventoryPieceWeight">
+		update Shipment_Inventory
+		set
+		Pieces=Pieces-#{invPcs},Weight=Weight-#{invWgt}
+		where
+		ShipmentInventory_Id=#{shipmentInventoryId} and
+		Shipment_ID=#{shipmentId}
+	</update>
+	<select id="getPieceWeightInventryCheck"
+		parameterType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownShipmentModel"
+		resultType="java.lang.Integer">
+		select
+		Case
+		when pieces=0 and Weight=0
+		then 0
+		else 1
+		end as
+		pieceWeightInvt
+		from shipment_inventory
+		where
+		ShipmentInventory_Id=#{shipmentInventoryId}
+		and
+		Shipment_ID=#{shipmentId}
+	</select>
+	<select id="getContentCode" parameterType="java.lang.String" resultType="com.ngen.cosys.impbd.mail.breakdown.model.InboundMailBreakDownModel">
+	<![CDATA[
+	select	
+		top 1
+		Uld_UldMaster.ContentCode,
+		Flt_OperativeFlight.FlightKey,
+		Exp_FlightEvents.FlightCompletedAt,
+		(select
+			count(1)
+		from
+			Shipment_Master inner join
+			Shipment_Inventory
+				on Shipment_Master.ShipmentId = Shipment_Inventory.Shipment_ID
+		where
+			Shipment_Inventory.ShipmentLocation = #{shipmentLocation} and
+			Shipment_Master.ShipmentType <> 'MAIL' and
+			not exists(
+				select
+					null
+				from
+					Shipment_MasterSHC
+				where
+					Shipment_MasterSHC.SpecialHandlingCode <> 'MAL' and
+					Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId
+									)) cargoCount
+	from 
+		Uld_UldMaster left join
+		Exp_AssignedULDTrolleyToFlight
+			on Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber left join
+		Exp_FlightEvents
+			on Exp_AssignedULDTrolleyToFlight.FlightId = Exp_FlightEvents.FlightId left join
+		Flt_OperativeFlight
+			on Exp_AssignedULDTrolleyToFlight.FlightId = Flt_OperativeFlight.Flight_ID
+	where
+		UldKey = #{shipmentLocation}
+		order by Exp_AssignedULDTrolleyToFlight.CreatedDateTime desc
+	]]>
+	</select>
+	<select id="getLoadedSHC" parameterType="java.lang.String"
+			resultType="java.lang.Integer">
+			SELECT COUNT(*)
+			FROM 
+			Exp_AssignedULDTrolleyToFlight INNER JOIN Flt_OperativeFlight_Segments
+			ON Flt_OperativeFlight_Segments.FlightSegmentId = Exp_AssignedULDTrolleyToFlight.FlightSegmentId
+			INNER JOIN Flt_OperativeFlight ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID
+			INNER JOIN Exp_FlightEvents	ON Exp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Exp_LoadedShipmentInfo ON Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+			INNER JOIN Shipment_Master ON Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+			LEFT JOIN Exp_LoadedShipmentSHCInfo ON Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId = Exp_LoadedShipmentInfo.LoadedShipmentInfoId
+			WHERE 
+			Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = #{shipmentLocation} 
+			AND 
+			Exp_AssignedULDTrolleyToFlight.ContentCode = 'M' 
+			AND 
+			Exp_FlightEvents.FlightDepartedOn IS NULL
+			AND Exp_LoadedShipmentSHCInfo.SpecialHandlingCode != 'MAL'
+	</select>
+	<select id="getUldContainerdestination" parameterType="com.ngen.cosys.impbd.mail.breakdown.model.UldDestinationRequest"
+			resultType="com.ngen.cosys.impbd.mail.breakdown.model.UldDestinationEntry">
+		select UldKey as uldKey, ContainerDestination as containerDestination
+		FROM Uld_UldMaster
+		<where>
+			UldKey IN 
+			<foreach item="uldKey" collection="uldKeys" separator="," open="(" close=")">
+		        #{uldKey}
+		    </foreach>
+		</where>
+	</select>
+	
+	<select id="checkContainerDestinationForBreakDown" parameterType="java.lang.String" resultType="java.lang.String">
+	Select ContainerDestination From Uld_UldMaster Where UldKey = #{shipmentLocation}
+	</select>
+	
+	<select id="getBreakDownStoragePiecesInfo" resultType="java.math.BigInteger">
+	Select Pieces from Imp_BreakDownStorageInfo Where ImpBreakDownStorageInfoId = #{impBreakDownStorageInfoId}
+	</select>
+	<select id="getShpVerPiecesInfo" resultType="java.math.BigInteger">
+	Select BreakDownPieces from Imp_ShipmentVerification Where ImpShipmentVerificationId = #{impShipmentVerificationId}
+	</select>
+	
+	<select id="sqlGetAlreadyBrokenDownBagCount" resultType="java.lang.Integer" >		
+	select 
+		count(*) 
+	from 
+		Shipment_HouseInformation 
+	where 
+		Number = #{mailBagNumber} and
+		Pieces = #{pieces} and 
+		Weight = #{formattedWeight}
+	</select>
+	
+</mapper>

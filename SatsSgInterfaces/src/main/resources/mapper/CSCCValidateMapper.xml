@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ngen.cosys.cscc.dao.ValidateDao">
+
+    <select id="validateAwbNo" resultType="java.time.LocalDateTime">
+        select top 1 shipmentDate
+        from shipment_master
+        where shipmentNumber = #{awbNo}
+    </select>
+
+    <select id="validateUldNo" resultType="java.lang.String">
+        select top 1 'Y'
+        from uld_uldMaster
+        where uldKey = #{uldNo}
+    </select>
+
+    <select id="validateFlight" parameterType="java.util.Map" resultType="java.time.LocalDateTime">
+        select top 1 a.flightOriginDate
+        from flt_operativeFlight a inner join flt_operativeFlight_legs b
+        on a.flight_id = b.flight_id and a.flightKey = #{flightNo}
+        <if test="inOutFlag == 'I'.toString()">
+            cast(b.dateSTA as Date) = #{flightDate}
+            b.flightOffPoint = 'SIN'
+        </if>
+        <if test="inOutFlag == 'E'.toString()">
+            cast(b.dateSTD as Date)= #{flightDate}
+            b.flightBoardPoint = 'SIN'
+        </if>
+    </select>
+
+    <select id="getAppErrorMessage" resultType="String">
+        select top 1 ErrorCodeDescription
+        from App_ErrorMessage
+        where ErrorCode = #{errorCode}
+          and ApplicationLabelLocaleValue = #{local}
+    </select>
+
+    <select id="getCSCCDateRangeValue" resultType="java.lang.Long">
+        select C.Attribute1
+        from Mst_CodeAdministration_Group a
+                 INNER JOIN Mst_CodeAdministration_SubGroup b on a.AdministrationGroupCode = b.AdministrationGroupCode
+                 INNER JOIN Mst_CodeAdministration_SubGroupDetails c
+                            on b.AdministrationSubGroupCode = c.AdministrationSubGroupCode
+        where a.AdministrationGroupCode = 'CSCC_Interface'
+          AND B.AdministrationSubGroupCode = #{subGroupCode}
+          AND C.AdministrationSubGroupDetailCode = 'Hours'
+    </select>
+</mapper>

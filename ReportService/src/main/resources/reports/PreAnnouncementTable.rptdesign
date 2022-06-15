@@ -1,0 +1,2754 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="tenantId" id="120">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">sin</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="flightId" id="121">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">812200</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="screenFunction" id="122">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">CARGO</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="dateSTA" id="123">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">2020-08-18T00:00:00</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="flightKey" id="124">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">SQ0037</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="user" id="565">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="567">
+            <property name="valueType">static</property>
+            <property name="isRequired">true</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="concealValue">false</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="98">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="99">
+            <property name="nullsOrdering">nulls lowest</property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">SourceOfInformation</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">SourceOfInformation</text-property>
+                    <text-property name="heading">SourceOfInformation</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ImpInboundContainersId</property>
+                    <property name="alias">ImpInboundContainersId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ImpInboundContainersId</text-property>
+                    <text-property name="heading">ImpInboundContainersId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">incomingFlightId</property>
+                    <property name="alias">incomingFlightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">incomingFlightId</text-property>
+                    <text-property name="heading">incomingFlightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">uldNumber</property>
+                    <property name="alias">uldNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">uldNumber</text-property>
+                    <text-property name="heading">uldNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">uldStatus</property>
+                    <property name="alias">uldStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">uldStatus</text-property>
+                    <text-property name="heading">uldStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">board</property>
+                    <property name="alias">board</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">board</text-property>
+                    <text-property name="heading">board</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">dest</property>
+                    <property name="alias">dest</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">dest</text-property>
+                    <text-property name="heading">dest</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">phc</property>
+                    <property name="alias">phc</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">phc</text-property>
+                    <text-property name="heading">phc</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">tth</property>
+                    <property name="alias">tth</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">tth</text-property>
+                    <text-property name="heading">tth</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">per</property>
+                    <property name="alias">per</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">per</text-property>
+                    <text-property name="heading">per</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">val</property>
+                    <property name="alias">val</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">val</text-property>
+                    <text-property name="heading">val</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">con</property>
+                    <property name="alias">con</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">con</text-property>
+                    <text-property name="heading">con</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">shc</property>
+                    <property name="alias">shc</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">shc</text-property>
+                    <text-property name="heading">shc</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">outgoingFlt</property>
+                    <property name="alias">outgoingFlt</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">outgoingFlt</text-property>
+                    <text-property name="heading">outgoingFlt</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">pchsDes</property>
+                    <property name="alias">pchsDes</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">pchsDes</text-property>
+                    <text-property name="heading">pchsDes</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">handlingMode</property>
+                    <property name="alias">handlingMode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">handlingMode</text-property>
+                    <text-property name="heading">handlingMode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">WHSDest</property>
+                    <property name="alias">WHSDest</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">WHSDest</text-property>
+                    <text-property name="heading">WHSDest</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">remarks</property>
+                    <property name="alias">remarks</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">remarks</text-property>
+                    <text-property name="heading">remarks</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">contentCode</property>
+                    <property name="alias">contentCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">contentCode</text-property>
+                    <text-property name="heading">contentCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">connectingFlightId</property>
+                    <property name="alias">connectingFlightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">connectingFlightId</text-property>
+                    <text-property name="heading">connectingFlightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">announcementSourceType</property>
+                    <property name="alias">announcementSourceType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">announcementSourceType</text-property>
+                    <text-property name="heading">announcementSourceType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">uldLoadedWith</property>
+                    <property name="alias">uldLoadedWith</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">uldLoadedWith</text-property>
+                    <text-property name="heading">uldLoadedWith</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">handlingAreaCode</property>
+                    <property name="alias">handlingAreaCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">handlingAreaCode</text-property>
+                    <text-property name="heading">handlingAreaCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">warehouseHandlingInstructions</property>
+                    <property name="alias">warehouseHandlingInstructions</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">warehouseHandlingInstructions</text-property>
+                    <text-property name="heading">warehouseHandlingInstructions</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">manualFlag</property>
+                    <property name="alias">manualFlag</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">manualFlag</text-property>
+                    <text-property name="heading">manualFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">manualUpdateFlag</property>
+                    <property name="alias">manualUpdateFlag</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">manualUpdateFlag</text-property>
+                    <text-property name="heading">manualUpdateFlag</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightSegmentOrder</property>
+                    <property name="alias">FlightSegmentOrder</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FlightSegmentOrder</text-property>
+                    <text-property name="heading">FlightSegmentOrder</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ContentCodeSortingOrder</property>
+                    <property name="alias">ContentCodeSortingOrder</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ContentCodeSortingOrder</text-property>
+                    <text-property name="heading">ContentCodeSortingOrder</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ULDPart1</property>
+                    <property name="alias">ULDPart1</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ULDPart1</text-property>
+                    <text-property name="heading">ULDPart1</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ULDPart2</property>
+                    <property name="alias">ULDPart2</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ULDPart2</text-property>
+                    <text-property name="heading">ULDPart2</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ULDPart3</property>
+                    <property name="alias">ULDPart3</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ULDPart3</text-property>
+                    <text-property name="heading">ULDPart3</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">SourceOfInformationSortingOrder</property>
+                    <property name="alias">SourceOfInformationSortingOrder</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">SourceOfInformationSortingOrder</text-property>
+                    <text-property name="heading">SourceOfInformationSortingOrder</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_9</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_10</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_11</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">2</property>
+                    <property name="position">4</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">5</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">6</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">7</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_12</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">8</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_13</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">9</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_14</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">10</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">flightId</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">11</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">12</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_7</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">13</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_8</property>
+                    <property name="paramName">screenFunction</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">14</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">SourceOfInformation</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">ImpInboundContainersId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">incomingFlightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">uldNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">uldStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">board</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">dest</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">phc</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">tth</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">per</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">val</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">con</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">shc</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">outgoingFlt</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">pchsDes</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">handlingMode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">WHSDest</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">remarks</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">contentCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">connectingFlightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">announcementSourceType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">22</property>
+                        <property name="name">uldLoadedWith</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">23</property>
+                        <property name="name">handlingAreaCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">24</property>
+                        <property name="name">warehouseHandlingInstructions</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">25</property>
+                        <property name="name">manualFlag</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">26</property>
+                        <property name="name">manualUpdateFlag</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">27</property>
+                        <property name="name">FlightSegmentOrder</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">28</property>
+                        <property name="name">ContentCodeSortingOrder</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">29</property>
+                        <property name="name">ULDPart1</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">30</property>
+                        <property name="name">ULDPart2</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">31</property>
+                        <property name="name">ULDPart3</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">32</property>
+                        <property name="name">SourceOfInformationSortingOrder</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">SourceOfInformation</property>
+                    <property name="nativeName">SourceOfInformation</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">ImpInboundContainersId</property>
+                    <property name="nativeName">ImpInboundContainersId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">incomingFlightId</property>
+                    <property name="nativeName">incomingFlightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">uldNumber</property>
+                    <property name="nativeName">uldNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">uldStatus</property>
+                    <property name="nativeName">uldStatus</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">board</property>
+                    <property name="nativeName">board</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">dest</property>
+                    <property name="nativeName">dest</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">phc</property>
+                    <property name="nativeName">phc</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">tth</property>
+                    <property name="nativeName">tth</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">per</property>
+                    <property name="nativeName">per</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">val</property>
+                    <property name="nativeName">val</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">con</property>
+                    <property name="nativeName">con</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">shc</property>
+                    <property name="nativeName">shc</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">outgoingFlt</property>
+                    <property name="nativeName">outgoingFlt</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">pchsDes</property>
+                    <property name="nativeName">pchsDes</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">handlingMode</property>
+                    <property name="nativeName">handlingMode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">WHSDest</property>
+                    <property name="nativeName">WHSDest</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">remarks</property>
+                    <property name="nativeName">remarks</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">contentCode</property>
+                    <property name="nativeName">contentCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">connectingFlightId</property>
+                    <property name="nativeName">connectingFlightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">announcementSourceType</property>
+                    <property name="nativeName">announcementSourceType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">22</property>
+                    <property name="name">uldLoadedWith</property>
+                    <property name="nativeName">uldLoadedWith</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">23</property>
+                    <property name="name">handlingAreaCode</property>
+                    <property name="nativeName">handlingAreaCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">24</property>
+                    <property name="name">warehouseHandlingInstructions</property>
+                    <property name="nativeName">warehouseHandlingInstructions</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">25</property>
+                    <property name="name">manualFlag</property>
+                    <property name="nativeName">manualFlag</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">26</property>
+                    <property name="name">manualUpdateFlag</property>
+                    <property name="nativeName">manualUpdateFlag</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">-7</property>
+                </structure>
+                <structure>
+                    <property name="position">27</property>
+                    <property name="name">FlightSegmentOrder</property>
+                    <property name="nativeName">FlightSegmentOrder</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">28</property>
+                    <property name="name">ContentCodeSortingOrder</property>
+                    <property name="nativeName">ContentCodeSortingOrder</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">29</property>
+                    <property name="name">ULDPart1</property>
+                    <property name="nativeName">ULDPart1</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">30</property>
+                    <property name="name">ULDPart2</property>
+                    <property name="nativeName">ULDPart2</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">31</property>
+                    <property name="name">ULDPart3</property>
+                    <property name="nativeName">ULDPart3</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">32</property>
+                    <property name="name">SourceOfInformationSortingOrder</property>
+                    <property name="nativeName">SourceOfInformationSortingOrder</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[--id="getAnnoucementTable"
+select
+        *
+from(  
+        select  containers.SourceOfInformation,
+            containers.ImpInboundContainersId as ImpInboundContainersId, 
+containers.IncomingFlightId as incomingFlightId, 
+containers.ULDNumber as uldNumber, 
+containers.UldStatus as uldStatus, 
+containers.Origin as board, 
+containers.Destination as dest, 
+case 
+when containers.PHCFlag=1 then 'Y'
+when conSHC.shc IS NULL then 'N' 
+when (conSHC.shc like '%COL%' 
+       OR conSHC.shc like '%CRT%' 
+       OR conSHC.shc like '%ERT%' 
+       OR conSHC.shc like '%FRO%' 
+       OR conSHC.shc like '%PEF%' 
+       OR conSHC.shc like '%PEM%' 
+       OR conSHC.shc like '%PEP%'
+       OR conSHC.shc like '%PER%'
+       OR conSHC.shc like '%PES%'
+       OR conSHC.shc like '%PIL%'  
+       OR conSHC.shc like '%PPH%'
+       OR conSHC.shc like '%THC%') AND ManualUpdate=0 then 'Y'
+else 'N'
+end phc,
+iif(containers.TransferType='TTH','Y','N') as tth, 
+iif(conSHC.shc like '%COL%' 
+OR conSHC.shc like '%CRT%' 
+OR conSHC.shc like '%ERT%' 
+OR conSHC.shc like '%FRO%' 
+OR conSHC.shc like '%PEF%' 
+OR conSHC.shc like '%PEM%' 
+OR conSHC.shc like '%PEP%'
+OR conSHC.shc like '%PER%'
+OR conSHC.shc like '%PES%'
+OR conSHC.shc like '%PIL%'  
+OR conSHC.shc like '%PPH%'
+OR conSHC.shc like '%THC%'
+,'Y','N') as per, 
+iif(conSHC.shc like '%VAL%','Y','N') as val, 
+containers.ContentCode as con,
+conSHC.shc shc,
+concat((
+select flightkey from Flt_OperativeFlight opt, Flt_OperativeFlight_Legs leg 
+where opt.Flight_ID = containers.connectingFlightId and opt.Flight_ID = leg.Flight_ID and leg.FlightBoardPoint = ?
+), IIF(containers.connectingFlightId is null,'','/'),
+UPPER((
+select DateSTD from Flt_OperativeFlight_Legs leg 
+where Flight_ID = containers.connectingFlightId and leg.FlightBoardPoint = ?))
+) outgoingFlt,
+containers.ICSOutputLocation as pchsDes, 
+containers.HandlingMode as handlingMode,
+containers.WarehouseDestination as WHSDest, 
+containers.HandlingInstructionForRamp remarks,
+containers.ContentCode as contentCode,  
+containers.ConnectingFlightId as connectingFlightId,
+SourceOfInformation AS announcementSourceType,
+LoadedWith AS uldLoadedWith,
+HandlingAreaCode AS handlingAreaCode,
+HandlingInstructionForWarehouse AS warehouseHandlingInstructions,
+CapturedManual AS manualFlag,
+ManualUpdate as manualUpdateFlag,
+(select
+Flt_OperativeFlight_Segments.FlightSegmentOrder
+from
+Flt_OperativeFlight_Segments
+where
+Flt_OperativeFlight_Segments.FlightBoardPoint = containers.Origin and
+Flt_OperativeFlight_Segments.Flight_ID = containers.IncomingFlightId and
+Flt_OperativeFlight_Segments.FlightOffPoint = ?
+) as FlightSegmentOrder,
+isnull(Uld_ContentCodes.SortingOrder, 2) as ContentCodeSortingOrder,
+substring(containers.ULDNumber, 0, 4) as ULDPart1,
+substring(substring(containers.ULDNumber, 4, 12), 0, patindex('%[a-zA-Z]%', substring(containers.ULDNumber, 4, 12))) as ULDPart2,
+substring(substring(containers.ULDNumber, 4, 12), patindex('%[A-Za-z]%', substring(containers.ULDNumber, 4, 12)), 12) as ULDPart3,
+case 
+	when SourceOfInformation = 'MANUAL' then
+        998
+    when SourceOfInformation = 'AM' then
+        999
+    when SourceOfInformation = 'FFM' then
+        1000
+    else
+        1003
+    end as SourceOfInformationSortingOrder
+        from 
+            Imp_InboundContainers containers inner join
+            Flt_OperativeFlight opt
+                    on containers.IncomingFlightId = opt.Flight_ID inner join
+            Uld_ContentCodes
+                    on containers.ContentCode = Uld_ContentCodes.ContentCode
+                      left join (          
+                      select 
+                             distinct
+                             ImpInboundContainersId,
+                             string_agg(Imp_InboundContainersSHC.SpecialHandlingCode, ' ') shc
+                             --Mst_SpecialHandlingCode.SpecialHandlingPriority
+                      from
+                             Imp_InboundContainersSHC inner join 
+                             Mst_SpecialHandlingCode
+                                    on Imp_InboundContainersSHC.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode inner join
+                             Mst_AssociateSHCByHandlingGroup 
+                                    on Imp_InboundContainersSHC.SpecialHandlingCode=Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join 
+                             Mst_SHCHandlingGroup 
+                                    on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                      where
+                             Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PRN' 
+                             group by ImpInboundContainersId
+                      ) conSHC on conSHC.ImpInboundContainersId = containers.ImpInboundContainersId
+        where  
+            IncomingFlightId = ?
+                                and SourceOfInformation in ('FFM','AM','MANUAL')
+            AND (ISNULL(?, '') = '' 
+                      OR ((? = 'MAIL' AND (containers.handlingAreaCode in ('T1','EHUB','AFT1') or containers.ContentCode= 'M')) 
+                      OR (? = 'CARGO' AND (containers.handlingAreaCode  NOT IN ('T1', 'EHUB', 'AFT1') OR containers.handlingAreaCode is null))))
+                                    
+)PreannouncementInfo   
+
+
+UNION  
+
+
+select
+        *
+from(   
+        select containers.SourceOfInformation,
+            containers.ImpInboundContainersId as ImpInboundContainersId, 
+containers.IncomingFlightId as incomingFlightId, 
+containers.ULDNumber as uldNumber, 
+containers.UldStatus as uldStatus, 
+containers.Origin as board, 
+containers.Destination as dest, 
+case 
+when containers.PHCFlag=1 then 'Y'
+when conSHC.shc IS NULL then 'N' 
+when (conSHC.shc like '%COL%' 
+       OR conSHC.shc like '%CRT%' 
+       OR conSHC.shc like '%ERT%' 
+       OR conSHC.shc like '%FRO%' 
+       OR conSHC.shc like '%PEF%' 
+       OR conSHC.shc like '%PEM%' 
+       OR conSHC.shc like '%PEP%'
+       OR conSHC.shc like '%PER%'
+       OR conSHC.shc like '%PES%'
+       OR conSHC.shc like '%PIL%'  
+       OR conSHC.shc like '%PPH%'
+       OR conSHC.shc like '%THC%') AND ManualUpdate=0 then 'Y'
+else 'N'
+end phc,
+iif(containers.TransferType='TTH','Y','N') as tth, 
+iif(conSHC.shc like '%COL%' 
+OR conSHC.shc like '%CRT%' 
+OR conSHC.shc like '%ERT%' 
+OR conSHC.shc like '%FRO%' 
+OR conSHC.shc like '%PEF%' 
+OR conSHC.shc like '%PEM%' 
+OR conSHC.shc like '%PEP%'
+OR conSHC.shc like '%PER%'
+OR conSHC.shc like '%PES%'
+OR conSHC.shc like '%PIL%'  
+OR conSHC.shc like '%PPH%'
+OR conSHC.shc like '%THC%'
+,'Y','N') as per, 
+iif(conSHC.shc like '%VAL%','Y','N') as val, 
+containers.ContentCode as con,
+conSHC.shc shc,
+concat((
+select flightkey from Flt_OperativeFlight opt, Flt_OperativeFlight_Legs leg 
+where opt.Flight_ID = containers.connectingFlightId and opt.Flight_ID = leg.Flight_ID and leg.FlightBoardPoint = ?
+), IIF(containers.connectingFlightId is null,'','/'),
+UPPER((
+select DateSTD from Flt_OperativeFlight_Legs leg 
+where Flight_ID = containers.connectingFlightId and leg.FlightBoardPoint = ?))
+) outgoingFlt,
+containers.ICSOutputLocation as pchsDes, 
+containers.HandlingMode as handlingMode,
+containers.WarehouseDestination as WHSDest, 
+containers.HandlingInstructionForRamp remarks,
+containers.ContentCode as contentCode,  
+containers.ConnectingFlightId as connectingFlightId,
+SourceOfInformation AS announcementSourceType,
+LoadedWith AS uldLoadedWith,
+HandlingAreaCode AS handlingAreaCode,
+HandlingInstructionForWarehouse AS warehouseHandlingInstructions,
+CapturedManual AS manualFlag,
+ManualUpdate as manualUpdateFlag,
+(select
+Flt_OperativeFlight_Segments.FlightSegmentOrder
+from
+Flt_OperativeFlight_Segments
+where
+Flt_OperativeFlight_Segments.FlightBoardPoint = containers.Origin and
+Flt_OperativeFlight_Segments.Flight_ID = containers.IncomingFlightId and
+Flt_OperativeFlight_Segments.FlightOffPoint = ?
+) as FlightSegmentOrder,
+isnull(Uld_ContentCodes.SortingOrder, 2) as ContentCodeSortingOrder,
+substring(containers.ULDNumber, 0, 4) as ULDPart1,
+substring(substring(containers.ULDNumber, 4, 12), 0, patindex('%[a-zA-Z]%', substring(containers.ULDNumber, 4, 12))) as ULDPart2,
+substring(substring(containers.ULDNumber, 4, 12), patindex('%[A-Za-z]%', substring(containers.ULDNumber, 4, 12)), 12) as ULDPart3,
+case 
+    when SourceOfInformation = 'UCM' then
+        1001
+    when SourceOfInformation = 'CPM' then
+        1002
+    else
+        1003
+    end as SourceOfInformationSortingOrder
+        from 
+            Imp_InboundContainers containers inner join
+            Flt_OperativeFlight opt
+                    on containers.IncomingFlightId = opt.Flight_ID inner join
+            Uld_ContentCodes
+                    on containers.ContentCode = Uld_ContentCodes.ContentCode
+                      left join (          
+                      select 
+                             distinct
+                             ImpInboundContainersId,
+                             string_agg(Imp_InboundContainersSHC.SpecialHandlingCode, ' ') shc
+                             --Mst_SpecialHandlingCode.SpecialHandlingPriority
+                      from
+                             Imp_InboundContainersSHC inner join 
+                             Mst_SpecialHandlingCode
+                                    on Imp_InboundContainersSHC.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode inner join
+                             Mst_AssociateSHCByHandlingGroup 
+                                    on Imp_InboundContainersSHC.SpecialHandlingCode=Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join 
+                             Mst_SHCHandlingGroup 
+                                    on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+                      where
+                             Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'PRN' 
+                             group by ImpInboundContainersId
+                      ) conSHC on conSHC.ImpInboundContainersId = containers.ImpInboundContainersId
+        where  
+            IncomingFlightId = ?
+                               and SourceOfInformation in ('UCM','CPM')  
+            AND (ISNULL(?, '') = '' 
+                      OR ((? = 'MAIL' AND (containers.handlingAreaCode in ('T1','EHUB','AFT1') or containers.ContentCode= 'M')) 
+                      OR (? = 'CARGO' AND (containers.handlingAreaCode  NOT IN ('T1', 'EHUB', 'AFT1') OR containers.handlingAreaCode is null))))
+)PreannouncementInfo              
+    order by
+            SourceOfInformationSortingOrder,
+        ContentCodeSortingOrder,
+        FlightSegmentOrder,
+        ULDPart1,
+        ULDPart2,
+        ULDPart3   
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ImpInboundContainersId</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ImpInboundContainersId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ImpInboundContainersId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>incomingFlightId</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>incomingFlightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>incomingFlightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>uldNumber</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>11</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>uldNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>uldNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>uldStatus</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>uldStatus</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>uldStatus</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>board</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>board</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>board</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>dest</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>dest</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>dest</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>phc</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>phc</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>phc</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>tth</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>tth</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>tth</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>per</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>per</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>per</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>val</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>val</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>val</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>con</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>con</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>con</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>shc</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>shc</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>shc</design:label>
+            <design:formattingHints>
+              <design:displaySize>8000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>outgoingFlt</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>outgoingFlt</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>outgoingFlt</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>pchsDes</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>12</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>pchsDes</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>pchsDes</design:label>
+            <design:formattingHints>
+              <design:displaySize>12</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>handlingMode</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>handlingMode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>handlingMode</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>WHSDest</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>WHSDest</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>WHSDest</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>remarks</design:name>
+              <design:position>17</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>132</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>remarks</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>remarks</design:label>
+            <design:formattingHints>
+              <design:displaySize>132</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>contentCode</design:name>
+              <design:position>18</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>contentCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>contentCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>connectingFlightId</design:name>
+              <design:position>19</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>connectingFlightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>connectingFlightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set1" id="116">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">flightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">flightId</text-property>
+                    <text-property name="heading">flightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">flight</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flight</text-property>
+                    <text-property name="heading">flight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DateSTA</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DateSTA</text-property>
+                    <text-property name="heading">DateSTA</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">flightkey</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flightkey</text-property>
+                    <text-property name="heading">flightkey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">flightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flightDate</text-property>
+                    <text-property name="heading">flightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">dateTime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">dateTime</text-property>
+                    <text-property name="heading">dateTime</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">printDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">printDate</text-property>
+                    <text-property name="heading">printDate</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">dateSTA</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">91</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">flightKey</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">3</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">flightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">flight</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">DateSTA</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">flightkey</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">flightDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">dateTime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">printDate</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">flightId</property>
+                    <property name="nativeName">flightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">flight</property>
+                    <property name="nativeName">flight</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">DateSTA</property>
+                    <property name="nativeName">DateSTA</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">flightkey</property>
+                    <property name="nativeName">flightkey</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">flightDate</property>
+                    <property name="nativeName">flightDate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">dateTime</property>
+                    <property name="nativeName">dateTime</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">printDate</property>
+                    <property name="nativeName">printDate</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[SELECT
+  flt.Flight_ID flightId,
+  flt.FlightKey flight,
+  leg.DateSTA,
+  flt.FlightKey flightkey,
+  leg.DateSTA flightDate,
+ 
+ -- CONCAT(flt.FlightKey,' / ',UPPER(FORMAT(leg.DateSTA, 'ddMMMyyyy', 'en-US'))) flightDate,
+  UPPER(leg.DateSTA) dateTime,
+  UPPER(FORMAT((select convert
+              (datetime,SWITCHOFFSET(converT(datetimeoffset,getDate()),(SELECT current_utc_offset
+               FROM   sys.time_zone_info
+               WHERE  NAME =
+              (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))))),'ddMMMyyyy HHmm')) as printDate
+FROM
+  Flt_OperativeFlight flt,
+  Flt_OperativeFlight_Legs leg
+where
+  flt.flight_id = leg.Flight_ID
+  and cast(leg.DateSTA as date) = cast(? as date)
+  and flt.FlightKey = ?
+  and FlightOffPoint = ?]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flightId</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flight</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flight</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DateSTA</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DateSTA</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DateSTA</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>flightDate</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>flightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>flightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>dateTime</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>dateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>dateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <page-header>
+                <grid id="136">
+                    <property name="width">7.9in</property>
+                    <property name="dataSet">Data Set1</property>
+                    <list-property name="boundDataColumns">
+                        <structure>
+                            <property name="name">flightId</property>
+                            <text-property name="displayName">flightId</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["flightId"]</expression>
+                            <property name="dataType">decimal</property>
+                        </structure>
+                        <structure>
+                            <property name="name">flight</property>
+                            <text-property name="displayName">flight</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["flight"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">DateSTA</property>
+                            <text-property name="displayName">DateSTA</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["DateSTA"]</expression>
+                            <property name="dataType">date-time</property>
+                        </structure>
+                        <structure>
+                            <property name="name">flightDate</property>
+                            <text-property name="displayName">flightDate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["flightDate"]</expression>
+                            <property name="dataType">date</property>
+                            <property name="allowExport">true</property>
+                        </structure>
+                        <structure>
+                            <property name="name">dateTime</property>
+                            <text-property name="displayName">dateTime</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["dateTime"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">printDate</property>
+                            <text-property name="displayName">printDate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["printDate"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">flightkey</property>
+                            <text-property name="displayName">flightkey</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["flightkey"]+"/"</expression>
+                            <property name="dataType">string</property>
+                            <property name="allowExport">true</property>
+                        </structure>
+                        <structure>
+                            <property name="name">flightDate_1</property>
+                            <text-property name="displayName">flightDate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["flightDate"]</expression>
+                            <property name="dataType">date-time</property>
+                        </structure>
+                    </list-property>
+                    <column id="574">
+                        <property name="width">0.8916666666666667in</property>
+                    </column>
+                    <column id="137">
+                        <property name="width">1.0666666666666667in</property>
+                    </column>
+                    <column id="138">
+                        <property name="width">2.6333333333333333in</property>
+                    </column>
+                    <column id="139">
+                        <property name="width">2.183333333333333in</property>
+                    </column>
+                    <column id="563">
+                        <property name="width">1.125in</property>
+                    </column>
+                    <row id="140">
+                        <cell id="573">
+                            <data id="578">
+                                <property name="textAlign">right</property>
+                                <property name="resultSetColumn">flightkey</property>
+                            </data>
+                        </cell>
+                        <cell id="141">
+                            <data id="579">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.DateDataItemEventHandler</property>
+                                <property name="resultSetColumn">flightDate</property>
+                            </data>
+                        </cell>
+                        <cell id="144">
+                            <label id="145">
+                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="fontWeight">normal</property>
+                                <property name="textAlign">center</property>
+                                <text-property name="text">imp.pre.announcement</text-property>
+                            </label>
+                        </cell>
+                        <cell id="146">
+                            <data id="564">
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="textAlign">center</property>
+                                <property name="resultSetColumn">printDate</property>
+                            </data>
+                        </cell>
+                        <cell id="562">
+                            <data id="566">
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="textAlign">left</property>
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">user</property>
+                                        <expression name="expression" type="javascript">params["user"]</expression>
+                                        <property name="dataType">string</property>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">user</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+            </page-header>
+            <page-footer>
+                <grid id="125">
+                    <property name="width">7.84375in</property>
+                    <column id="126">
+                        <property name="width">7.427083333333333in</property>
+                    </column>
+                    <column id="127">
+                        <property name="width">0.14583333333333334in</property>
+                    </column>
+                    <column id="128">
+                        <property name="width">0.2708333333333333in</property>
+                    </column>
+                    <row id="129">
+                        <cell id="130">
+                            <auto-text id="131">
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="textAlign">right</property>
+                                <property name="type">page-number</property>
+                            </auto-text>
+                        </cell>
+                        <cell id="132">
+                            <text id="133">
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="textAlign">left</property>
+                                <property name="contentType">plain</property>
+                                <text-property name="content"><![CDATA[/]]></text-property>
+                            </text>
+                        </cell>
+                        <cell id="134">
+                            <auto-text id="135">
+                                <property name="fontFamily">"Courier New"</property>
+                                <property name="type">total-page</property>
+                            </auto-text>
+                        </cell>
+                    </row>
+                </grid>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <table id="19">
+            <property name="borderBottomStyle">none</property>
+            <property name="borderLeftStyle">none</property>
+            <property name="borderRightStyle">none</property>
+            <property name="borderTopStyle">none</property>
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ImpInboundContainersId</property>
+                    <text-property name="displayName">ImpInboundContainersId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImpInboundContainersId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">incomingFlightId</property>
+                    <text-property name="displayName">incomingFlightId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["incomingFlightId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">uldNumber</property>
+                    <text-property name="displayName">uldNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["uldNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">uldStatus</property>
+                    <text-property name="displayName">uldStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["uldStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">board</property>
+                    <text-property name="displayName">board</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["board"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">dest</property>
+                    <text-property name="displayName">dest</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["dest"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">phc</property>
+                    <text-property name="displayName">phc</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["phc"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">tth</property>
+                    <text-property name="displayName">tth</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["tth"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">per</property>
+                    <text-property name="displayName">per</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["per"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">val</property>
+                    <text-property name="displayName">val</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["val"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">con</property>
+                    <text-property name="displayName">con</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["con"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">shc</property>
+                    <text-property name="displayName">shc</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["shc"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">outgoingFlt</property>
+                    <text-property name="displayName">outgoingFlt</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["outgoingFlt"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">pchsDes</property>
+                    <text-property name="displayName">pchsDes</text-property>
+                    <expression name="expression" type="javascript">if (dataSetRow["pchsDes"]== null) { '' }&#13;
+   else {&#13;
+     function wrap(longStr,width)&#13;
+      { &#13;
+       length = longStr.length;&#13;
+      if(length &lt;= width) &#13;
+          return longStr;&#13;
+      return (longStr.substring(0, width) + "\n" + wrap(longStr.substring(width, length), width)); }         &#13;
+ &#13;
+ &#13;
+     wrap(dataSetRow["pchsDes"], 4 );&#13;
+ &#13;
+       }</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">handlingMode</property>
+                    <text-property name="displayName">handlingMode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["handlingMode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">WHSDest</property>
+                    <text-property name="displayName">WHSDest</text-property>
+                    <expression name="expression" type="javascript">if (dataSetRow["WHSDest"]== null) { '' }&#13;
+   else {&#13;
+     function wrap(longStr,width)&#13;
+      { &#13;
+       length = longStr.length;&#13;
+      if(length &lt;= width) &#13;
+          return longStr;&#13;
+      return (longStr.substring(0, width) + "\n" + wrap(longStr.substring(width, length), width)); }         &#13;
+ &#13;
+ &#13;
+     wrap(dataSetRow["WHSDest"], 4 );&#13;
+ &#13;
+       }</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">remarks</property>
+                    <text-property name="displayName">remarks</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["remarks"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">contentCode</property>
+                    <text-property name="displayName">contentCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["contentCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">connectingFlightId</property>
+                    <text-property name="displayName">connectingFlightId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["connectingFlightId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">TotalNoOfUlds</property>
+                    <text-property name="displayName">TotalNoOfUlds</text-property>
+                    <property name="dataType">integer</property>
+                    <property name="aggregateFunction">COUNT</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">dataSetRow["ImpInboundContainersId"]</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="68">
+                <property name="width">1in</property>
+            </column>
+            <column id="69">
+                <property name="width">0.35in</property>
+            </column>
+            <column id="70">
+                <property name="width">0.35in</property>
+            </column>
+            <column id="71">
+                <property name="width">0.35in</property>
+            </column>
+            <column id="72">
+                <property name="width">0.2in</property>
+            </column>
+            <column id="73">
+                <property name="width">0.2in</property>
+            </column>
+            <column id="74">
+                <property name="width">0.2in</property>
+            </column>
+            <column id="75">
+                <property name="width">0.2in</property>
+            </column>
+            <column id="76">
+                <property name="width">0.2in</property>
+            </column>
+            <column id="77">
+                <property name="width">1in</property>
+            </column>
+            <column id="78">
+                <property name="width">1.36in</property>
+            </column>
+            <column id="79">
+                <property name="width">0.4791666666666667in</property>
+            </column>
+            <column id="80">
+                <property name="width">0.7604166666666666in</property>
+            </column>
+            <column id="81">
+                <property name="width">0.4270833333333333in</property>
+            </column>
+            <column id="82">
+                <property name="width">0.8in</property>
+            </column>
+            <header>
+                <row id="20">
+                    <property name="borderBottomStyle">none</property>
+                    <property name="borderLeftStyle">none</property>
+                    <property name="borderRightStyle">none</property>
+                    <property name="borderTopStyle">none</property>
+                    <cell id="21">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="83">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.uld.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="22">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="84">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.uld.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="23">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="85">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">flight.brd</text-property>
+                        </label>
+                    </cell>
+                    <cell id="24">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="86">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">customs.des</text-property>
+                        </label>
+                    </cell>
+                    <cell id="25">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="87">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.phc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="26">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="88">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.tth</text-property>
+                        </label>
+                    </cell>
+                    <cell id="27">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="89">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.label.per&#13;
+</text-property>
+                        </label>
+                    </cell>
+                    <cell id="28">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="90">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.val</text-property>
+                        </label>
+                    </cell>
+                    <cell id="29">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="92">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.con</text-property>
+                        </label>
+                    </cell>
+                    <cell id="30">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="91">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <text-property name="text">warehouse.shc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="31">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="93">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <text-property name="text">import.flts.outgoing</text-property>
+                        </label>
+                    </cell>
+                    <cell id="32">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="94">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.pchsdes</text-property>
+                        </label>
+                    </cell>
+                    <cell id="33">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="97">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.break.nonbreak</text-property>
+                        </label>
+                    </cell>
+                    <cell id="34">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="95">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">import.whs.dest</text-property>
+                        </label>
+                    </cell>
+                    <cell id="35">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <label id="96">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <text-property name="text">import.remarks.caps</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="36">
+                    <property name="borderBottomStyle">none</property>
+                    <property name="borderLeftStyle">none</property>
+                    <property name="borderRightStyle">none</property>
+                    <property name="borderTopStyle">none</property>
+                    <cell id="37">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="111">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">uldNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="38">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="112">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">uldStatus</property>
+                        </data>
+                    </cell>
+                    <cell id="39">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="100">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">board</property>
+                        </data>
+                    </cell>
+                    <cell id="40">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="102">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">dest</property>
+                        </data>
+                    </cell>
+                    <cell id="41">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="107">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="resultSetColumn">phc</property>
+                        </data>
+                    </cell>
+                    <cell id="42">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="110">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">tth</property>
+                        </data>
+                    </cell>
+                    <cell id="43">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="106">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">per</property>
+                        </data>
+                    </cell>
+                    <cell id="44">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="113">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">val</property>
+                        </data>
+                    </cell>
+                    <cell id="45">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="101">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="resultSetColumn">con</property>
+                        </data>
+                    </cell>
+                    <cell id="46">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="109">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">shc</property>
+                        </data>
+                    </cell>
+                    <cell id="47">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="119">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">outgoingFlt</property>
+                        </data>
+                    </cell>
+                    <cell id="48">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="105">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">pchsDes</property>
+                        </data>
+                    </cell>
+                    <cell id="49">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="103">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">handlingMode</property>
+                        </data>
+                    </cell>
+                    <cell id="50">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="114">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">WHSDest</property>
+                        </data>
+                    </cell>
+                    <cell id="51">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <data id="108">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="borderBottomStyle">none</property>
+                            <property name="borderLeftStyle">none</property>
+                            <property name="borderRightStyle">none</property>
+                            <property name="borderTopStyle">none</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">remarks</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="544">
+                    <property name="height">0.2152777777777778in</property>
+                    <cell id="545"/>
+                    <cell id="546"/>
+                    <cell id="547"/>
+                    <cell id="548"/>
+                    <cell id="549"/>
+                    <cell id="550"/>
+                    <cell id="551"/>
+                    <cell id="552"/>
+                    <cell id="553"/>
+                    <cell id="554"/>
+                    <cell id="555"/>
+                    <cell id="556"/>
+                    <cell id="557"/>
+                    <cell id="558"/>
+                    <cell id="559"/>
+                </row>
+                <row id="526">
+                    <cell id="527">
+                        <property name="colSpan">6</property>
+                        <property name="rowSpan">1</property>
+                        <label id="568">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <text-property name="text">import.totaluld.number.report</text-property>
+                        </label>
+                    </cell>
+                    <cell id="533">
+                        <property name="colSpan">9</property>
+                        <property name="rowSpan">1</property>
+                        <text-data id="543">
+                            <property name="fontFamily">"Courier New"</property>
+                            <expression name="valueExpr">row["TotalNoOfUlds"]</expression>
+                            <property name="contentType">html</property>
+                        </text-data>
+                    </cell>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

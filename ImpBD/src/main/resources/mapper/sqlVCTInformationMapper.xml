@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="VCTInformationDetails">
+	
+
+
+
+	<resultMap
+		type="com.ngen.cosys.impbd.vctinformation.model.VCTInformation"
+		id="VCTDetails">
+		<result property="CargoPickupScheduleId"
+			column="CargoPickupScheduleId" />
+			<result property="type"
+			column="type" />
+		<result property="vctNumber" column="ScheduleNumber" />
+		<result property="vctDate" column="ScheduleDate" />
+		<result property="vehicleRegistrationNumber"
+			column="VehicleRegNumber" />
+		<result property="driverName" column="DriverName" />
+		<result property="driverMobileNumber" column="DriverContactNo" />
+		<result property="driverLicenseNumber" column="DriverLicenseNo" />
+		<result property="driverAadharCard"
+			column="DriverIdentityNumber" />
+		<result property="vtNumberOfPieces" column="CargoPieces" />
+		<result property="vtGrossWeight" column="CargoGrossWeight" />
+		<result property="agentCode" column="AgentCode" />
+		<result property="shc" column="SHC" />
+		<result property="vctInDoorNumber" column="AllocatedDockInNumber" />
+		<result property="vctOutDoorNumber" column="AllocatedDockOutNumber" />
+		<result property="vctOutRemarks" column="VehicleExitRemarks" />
+		<result property="vctInRemarks" column="VehicleEntryRemarks" />
+		<collection property="vctShipmentInformationlist"
+			ofType="com.ngen.cosys.impbd.vctinformation.model.VCTShipmentInformationModel"
+			select="selectvctShipmentInformationlist"
+			column="ScheduleNumber">
+		</collection>
+
+
+
+	</resultMap>
+	<select id="getVctInformationList" resultMap="VCTDetails"
+		parameterType="com.ngen.cosys.impbd.vctinformation.model.VCTInformation">
+		select
+		'Import' as type,
+		ImpCargoPickupScheduleId as CargoPickupScheduleId,
+		ScheduleNumber,
+		ScheduleDate ,
+		ExpectedArrivalDt,
+		VehicleRegNumber,
+		DriverId,
+		DriverName,
+		DriverContactNo,
+		DriverLicenseNo,
+		DriverIdentityNumber,
+		CargoPieces,
+		CargoGrossWeight,
+		AgentCode,
+		SHC,
+		VehicleEntryTime,
+		VehicleExitTime,
+		AllocatedDockInNumber,
+		AllocatedDockOutNumber,
+		VehicleExitRemarks,
+		VehicleEntryRemarks
+		from
+		Imp_CargoPickupSchedule
+		where
+		ScheduleNumber = #{vctNumber}
+		<if test="vctDate != null ">
+			and cast( ScheduleDate as
+		date) = cast(#{vctDate} as date) 
+		</if>
+
+
+
+		union
+
+
+
+		select
+		'Export' as type,
+		ExpCargoDropScheduleId as CargoPickupScheduleId ,
+		ScheduleNumber,
+		ScheduleDate ,
+		ExpectedArrivalDt,
+		VehicleRegNumber,
+		DriverId,
+		DriverName,
+		DriverContactNo,
+		DriverLicenseNo,
+		DriverIdentityNumber,
+		CargoPieces,
+		CargoGrossWeight,
+		AgentCode,
+		SHC,
+		VehicleEntryTime,
+		VehicleExitTime,
+		AllocatedDockInNumber,
+		AllocatedDockOutNumber,
+		VehicleExitRemarks,
+		VehicleEntryRemarks
+		from
+		Exp_CargoDropSchedule
+		where
+		ScheduleNumber = #{vctNumber}
+		<if test="vctDate != null">
+			and cast( ScheduleDate as
+		date) = cast(#{vctDate} as date) 
+		</if>
+
+
+
+	</select>
+	<select id="selectvctShipmentInformationlist"
+		resultType="com.ngen.cosys.impbd.vctinformation.model.VCTShipmentInformationModel">
+		
+		 select 	
+		shipmentNumber as awbNumber,
+		HouseNumber  as hawbNumber,	
+		InvoiceNumber as	tspNumber,
+		InvoiceDt  as tspDate,
+		CustomsExportDocumentNumber as number,	
+		CustomsExportDocumentDt as date,
+		CustomsDeclaredValue as value,
+		CustomsExportDocumentPeices as	totalPieces,	
+		CustomsExportDocumentWeight as	totalWeight,
+		Remarks as remarks
+		 from Exp_CargoDropList where
+		Exp_CargoDropList.ExpCargoDropScheduleId=( SELECT ExpCargoDropScheduleId 
+											  FROM Exp_CargoDropSchedule
+											 WHERE ScheduleNumber = #{scheduleNumber})
+		
+		union
+		
+		select 
+		shipmentNumber as awbNumber,
+		HouseNumber  as hawbNumber,
+		InvoiceNumber as	tspNumber,
+		InvoiceDt as tspDate,
+		CustomsImportDocumentNumber as number,
+		getdate() as date,
+		CustomsDeclaredValue as value,
+		AWBPeices as totalPieces,
+		AWBWeight AS totalWeight,
+		Remarks as remarks	
+	    from Imp_CargoPickupList where
+		Imp_CargoPickupList.IMPCargoPickupScheduleId=( SELECT ImpCargoPickupScheduleId 
+											  FROM Imp_CargoPickupSchedule
+											 WHERE ScheduleNumber = #{scheduleNumber})
+	</select>
+
+
+	<update id="saveVctInformationListImportVctIn"
+		parameterType="com.ngen.cosys.impbd.vctinformation.model.VCTInformation">
+		update Imp_CargoPickupSchedule
+		set
+		VehicleEntryTime = #{vehicleEntryTime},	
+		AllocatedDockInNumber= #{vctInDoorNumber},
+		VehicleEntryRemarks= #{vctInRemarks},
+
+		LastUpdatedUserCode =#{createdBy},
+		LastUpdatedDateTime=getDate()
+		where
+		Imp_CargoPickupSchedule.ScheduleNumber = #{vctNumber} and cast( Imp_CargoPickupSchedule.ScheduleDate as
+		date) = cast(#{vctDate} as date)
+	</update>
+	
+	<update id="saveVctInformationListImportVctOut"
+		parameterType="com.ngen.cosys.impbd.vctinformation.model.VCTInformation">
+		update Imp_CargoPickupSchedule
+		set
+		VehicleExitTime = #{vehicleExitTime},		
+		AllocatedDockOutNumber= #{vctOutDoorNumber},		
+		VehicleExitRemarks= #{vctOutRemarks},
+		LastUpdatedUserCode =#{createdBy},
+		LastUpdatedDateTime=getDate()
+		where
+		Imp_CargoPickupSchedule.ScheduleNumber = #{vctNumber} and cast( Imp_CargoPickupSchedule.ScheduleDate as
+		date) = cast(#{vctDate} as date)
+	</update>
+	
+	<update id="saveVctInformationListExportVctIn"
+		parameterType="com.ngen.cosys.impbd.vctinformation.model.VCTInformation">
+		update Exp_CargoDropSchedule
+		set	
+		VehicleEntryTime = #{vehicleEntryTime},
+		AllocatedDockInNumber= #{vctInDoorNumber},
+		VehicleEntryRemarks= #{vctInRemarks},
+		LastUpdatedUserCode =#{createdBy},
+		LastUpdatedDateTime=getDate()
+		where
+		Exp_CargoDropSchedule.ScheduleNumber = #{vctNumber} and cast( Exp_CargoDropSchedule.ScheduleDate as
+		date) = cast(#{vctDate} as date)
+	</update>
+	<update id="saveVctInformationListExportVctOut"
+		parameterType="com.ngen.cosys.impbd.vctinformation.model.VCTInformation">
+		update Exp_CargoDropSchedule
+		set	
+		VehicleExitTime = #{vehicleExitTime},	
+		AllocatedDockOutNumber= #{vctOutDoorNumber},
+		VehicleExitRemarks= #{vctOutRemarks},
+		LastUpdatedUserCode =#{createdBy},
+		LastUpdatedDateTime=getDate()
+		where
+		Exp_CargoDropSchedule.ScheduleNumber = #{vctNumber} and cast( Exp_CargoDropSchedule.ScheduleDate as
+		date) = cast(#{vctDate} as date)
+	</update>
+
+</mapper>

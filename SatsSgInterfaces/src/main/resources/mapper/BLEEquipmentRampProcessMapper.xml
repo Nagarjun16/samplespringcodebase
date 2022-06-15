@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BLEEquipmentRampProcessMapper">
+
+	<!-- Fetch PDMasterID Based On palletDollyId -->
+	<select id="isPalletDollyExistSqlId" 
+		parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel"	resultType="java.lang.String">
+			SELECT TOP (1) PDMasterId
+			FROM Mst_PDInventory
+			WHERE PdNumber = #{palletDolley}
+	</select>
+	
+	
+	
+	<!-- Fetch TripInfoID Based On palletDollyId -->
+	<select id="getTripInfoIdBasedOnPD" 
+		parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel" resultType="java.lang.String">
+			SELECT Equipment_Release_Trip_Info.EquipmentRequestReleaseTripInfoId
+			FROM Equipment_Release_Trip_Info
+			INNER JOIN Equipment_Release_Info
+				ON Equipment_Release_Trip_Info.EquipmentRequestReleaseTripInfoId = Equipment_Release_Info.EquipmentRequestReleaseTripInfoId
+			INNER JOIN Equipment_Request_Release_Details
+				ON Equipment_Request_Release_Details.EquipmentReleaseInfoId = Equipment_Release_Info.EquipmentRequestReleaseTripInfoId
+			INNER JOIN Equipment_Request
+				ON Equipment_Request.EquipmentRequestId = Equipment_Request_Release_Details.EquipmentRequestId
+					AND Equipment_Request.STATUS = 'SERVICING'
+			WHERE pdnumber = #{palletDolley}
+	</select>
+
+	<!--  Update Equipment_Release_Trip_Info Only For stage = EQUIPMENT & moveType = OU -->
+	<update id="updateRampProcessForRAMPOUTID"
+		parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel">
+			UPDATE Equipment_Release_Trip_Info
+			SET GateExitDateTime = #{eventTime}
+			WHERE EquipmentRequestReleaseTripInfoId = #{tripInfoId}
+	</update>
+	
+	<!-- Get PDMasterID based On palletDollyId-->	
+	<select id="getPDMasterIdBasedOnPDId" 
+		parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel" resultType="java.lang.String">
+			select PDMasterId from Mst_PDInventory where pdNumber=#{palletDolley}
+	</select>
+	
+	<!-- Insert Record For Both IN and OU -->
+	<insert id="insertPDInOutMovementId" parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel">
+		INSERT INTO PD_PDInOutMovements (
+			PDMasterId,
+			MovementType,
+			MovementStage,
+			EquipmentRequestReleaseTripInfoId,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			Gate
+			)
+     VALUES
+           (#{pdMasterId},
+           upper(#{moveType}),
+           upper(#{stage}),
+           #{tripInfoId},
+           'SYSTEM',
+           getDate(),
+           'SYSTEM',
+           getDate(),
+           #{gate})
+	</insert>
+	
+
+	
+		<!--  Update Equipment_Release_Trip_Info Only For stage = EQUIPMENT & moveType = OU -->
+	<update id="updateReturnPD"
+		parameterType="com.ngen.cosys.ics.model.BLEEquipmentRampProcessRequestModel">
+			UPDATE Equipment_Release_Trip_Info
+			SET GateExitDateTime = #{eventTime}
+			WHERE EquipmentRequestReleaseTripInfoId = #{tripInfoId}
+	</update>
+	
+	
+</mapper>

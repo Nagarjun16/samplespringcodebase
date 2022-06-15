@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="createCN46">
+
+	<select id="getFlightId" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46"
+		resultType="java.math.BigInteger">		
+		select isNull((select distinct fltOpFlt.Flight_ID
+		from Flt_OperativeFlight fltOpFlt inner join Flt_OperativeFlight_Legs fltOpFltLeg on fltOpFlt.Flight_ID=fltOpFltLeg.Flight_ID
+		where
+		fltOpFlt.FlightKey =
+		#{flightKey}
+		and Cast(fltOpFltLeg.DateSTA as Date)
+		= #{flightDate}  AND fltOpFltLeg.FlightOffPoint = #{tenantAirport}
+		UNION
+		select distinct fltOpFlt.Flight_ID
+		from Flt_OperativeFlight fltOpFlt inner join Flt_OperativeFlight_Legs fltOpFltLeg on fltOpFlt.Flight_ID=fltOpFltLeg.Flight_ID
+		where
+		fltOpFlt.FlightKey =
+		#{flightKey}
+		and Cast(fltOpFltLeg.DateSTD as Date)
+		= #{flightDate}  AND fltOpFltLeg.FlightBoardPoint = #{tenantAirport}),0) as flightId
+	</select>
+
+	<select id="searchCN46Details" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46"
+		resultMap="cn46SearchDetails">
+		select
+		q1.AirmailManifestId as airmailManifestId,
+		q1.segmentid as segmentId,
+		q1.flightid as flightId,
+		q1.Observations as
+		observations,
+		q1.AdministrationOfOriginOfMails as adminOfOriginOfMails,
+		q1.AirportOfLoading as airportOfLoading,
+		q1.AirportOfOffloading as
+		airportOfOffLoading,
+		q1.DestinationOffice as destinationOffice,
+		q2.AirmailManifestShipmentId as airmailManifestShipmentId,
+		q2.ULDTrolleyNumber as
+		uldNumber,
+		q2.DN as mailNumber,
+		q2.OriginOfficeExchange as
+		originOfficeExchange,
+		q2.DestinationOfficeExchange as
+		destinationOfficeExchange,
+		q2.AirportOfTranshipment as
+		airportOfTranshipment,
+		q2.AirportOfOffloading as airportOfOffloading,
+		q2.LetterPost as
+		letterPost,
+		q2.EMS as ems,
+		q2.DateOfDispactch as dateOfDispactch,
+		q2.CP as cp,
+		q2.OtherItems as otherItems,
+		q2.Remarks as remarks,
+		q2.GrossWeight as
+		weight,
+		q1.OutgoingFlightId as outgoingFlightId,
+		flt_operativeflight.flightKey as outgoingFlightKey,
+		flt_operativeflight_Legs.DateSTD as outgoingFlightDate
+		from
+		Airmail_Manifest as q1
+		left join
+		Airmail_ManifestShipment as
+		q2
+		on q1.AirmailManifestId =
+		q2.AirmailManifestId
+		left join flt_operativeflight on flt_operativeflight.flight_id = q1.OutgoingFlightId
+		left join flt_operativeflight_Legs on flt_operativeflight.flight_id = flt_operativeflight_Legs.Flight_Id
+		where
+		q1.FlightId =
+		#{flightId}
+		and q1.SegmentId = #{segmentId}
+		<if test="trolleyNumber != null">
+			and q2.ULDTrolleyNumber = #{trolleyNumber}
+		</if>
+	</select>
+
+	<resultMap id="cn46SearchDetails" type="com.ngen.cosys.shipment.mail.model.CreateCN46">
+		<id column="airmailManifestId" property="airmailManifestId" />
+		<id column="segmentId" property="segmentId"/>
+		<result column="flightId" property="flightId"/>
+		<result column="observations" property="observations" />
+		<result column="adminOfOriginOfMails" property="adminOfOriginOfMails" />
+		<result column="airportOfLoading" property="airportOfLoading" />
+		<result column="airportOfOffLoading" property="airportOfOffLoading" />
+		<result column="destinationOffice" property="destinationOffice" />
+		<result column="outgoingFlightId" property="outgoingFlightId"/>
+		<result column="outgoingFlightKey" property="outgoingFlightKey"/>
+		<result column="outgoingFlightDate" property="outgoingFlightDate"/>
+		<collection property="cn46Details" javaType="List"
+			ofType="com.ngen.cosys.shipment.mail.model.CN46Details">
+			<result property="airmailManifestShipmentId" column="airmailManifestShipmentId" />
+			<result property="uldNumber" column="uldNumber" />
+			<result property="mailNumber" column="mailNumber" />
+			<result property="originOfficeExchange" column="originOfficeExchange" />
+			<result property="destinationOfficeExchange" column="destinationOfficeExchange" />
+			<result property="airportOfTranshipment" column="airportOfTranshipment" />
+			<result property="airportOfOffloading" column="airportOfOffloading" />
+			<result property="letterPost" column="letterPost" />
+			<result property="dateOfDispactch" column="dateOfDispactch" />
+			<result property="cp" column="cp" />
+			<result property="ems" column="ems"/>
+			<result property="otherItems" column="otherItems" />
+			<result property="remarks" column="remarks" />
+			<result property="weight" column="weight" />
+		</collection>
+	</resultMap>
+
+	<select id="checkFlightAndSegmentId" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46"
+		resultType="java.lang.Integer">
+		select count(*) from Airmail_Manifest
+		where FlightId =
+		#{flightId}
+		and SegmentId = #{segmentId}
+	</select>
+
+	<insert id="insertCN46" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46"
+		keyProperty="airmailManifestId" keyColumn="AirmailManifestId">
+		INSERT INTO Airmail_Manifest
+		(FlightId
+		,SegmentId
+		,AirportOfLoading
+		,AirportOfOffloading
+		,DestinationOffice
+		,AdministrationOfOriginOfMails
+		,Observations
+		,CreatedUserCode
+		,CreatedDateTime
+		,OutgoingFlightId)
+		VALUES
+		(#{flightId}
+		,#{segmentId}
+		,#{airportOfLoading}
+		,#{airportOfOffLoading}
+		,#{destinationOffice}
+		,#{adminOfOriginOfMails}
+		,#{observations}
+		,#{createdBy}
+		,#{createdOn}
+		,#{outgoingFlightId})
+	</insert>
+
+	<insert id="insertCN46Details" parameterType="com.ngen.cosys.shipment.mail.model.CN46Details"
+		keyProperty="airmailManifestShipmentId" keyColumn="AirmailManifestShipmentId">
+		INSERT INTO
+		Airmail_ManifestShipment
+		(AirmailManifestId
+		,DN
+		,ULDTrolleyNumber
+		,GrossWeight
+		,OriginOfficeExchange
+		,DestinationOfficeExchange
+		,AirportOfTranshipment
+		,AirportOfOffloading
+		,DateOfDispactch
+		,LetterPost
+		,CP
+		,EMS
+		,OtherItems
+		,Remarks
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{manifestId}
+		,#{mailNumber}
+		,#{uldNumber}
+		,#{weight}
+		,#{originOfficeExchange}
+		,#{destinationOfficeExchange}
+		,#{airportOfTranshipment}
+		,#{airportOfOffloading}
+		,#{dateOfDispactch}
+		,#{letterPost}
+		,#{cp}
+		,#{ems}
+		,#{otherItems}
+		,#{remarks}
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<update id="updateAirmailManifest" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46">
+		UPDATE
+		Airmail_Manifest
+		SET
+		AirportOfLoading = #{airportOfLoading}
+		,AirportOfOffloading = #{airportOfOffLoading}
+		,DestinationOffice =
+		#{destinationOffice}
+		,AdministrationOfOriginOfMails =
+		#{adminOfOriginOfMails}
+		,Observations = #{observations}
+		,OutgoingFlightId = #{outgoingFlightId}
+		where
+		AirmailManifestId = (select AirmailManifestId from Airmail_Manifest
+		where FlightId = #{flightId} and SegmentId = #{segmentId})
+	</update>
+
+	<update id="updateAirmailManifestShipment" parameterType="com.ngen.cosys.shipment.mail.model.CN46Details">
+		UPDATE
+		Airmail_ManifestShipment
+		SET
+		DN = #{mailNumber}
+		,ULDTrolleyNumber =
+		#{uldNumber}
+		,GrossWeight = #{weight}
+		,OriginOfficeExchange =
+		#{originOfficeExchange}
+		,DestinationOfficeExchange =
+		#{destinationOfficeExchange}
+		,AirportOfTranshipment =
+		#{airportOfTranshipment}
+		,AirportOfOffloading = #{airportOfOffloading}
+		,DateOfDispactch = #{dateOfDispactch}
+		,LetterPost = #{letterPost}
+		,CP =
+		#{cp}
+		,EMS = #{ems}
+		,OtherItems = #{otherItems}
+		,Remarks = #{remarks}
+		where
+		AirmailManifestShipmentId = #{airmailManifestShipmentId}
+	</update>
+
+	<select id="checkDnNumber" parameterType="com.ngen.cosys.shipment.mail.model.CN46Details"
+		resultType="java.lang.Integer">
+		select count(*) from Airmail_ManifestShipment
+		where DN =
+		#{mailNumber}
+	</select>
+	
+	<delete id="deleteAirmailManifestShipments" parameterType="com.ngen.cosys.shipment.mail.model.CN46Details">
+	delete airmail_manifestshipment where AirmailManifestShipmentId = #{airmailManifestShipmentId}
+	</delete>
+	
+	<select id="checkDNExistance" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46" resultType="java.lang.Integer">
+	select count(*) from Airmail_ManifestShipment where AirmailManifestId = #{airmailManifestId}
+	</select>
+	
+	<delete id="deleteManifestForAFlight" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46">
+	delete airmail_manifest where AirmailManifestId = #{airmailManifestId}
+	</delete>
+	
+	<select id="getOutgoingFlightIdForCn46" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46" resultType="java.math.BigInteger">
+	  select Flt_OperativeFlight.Flight_Id from Flt_OperativeFlight inner join Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id
+	  where Flt_OperativeFlight.FlightKey = #{outgoingFlightKey} and cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{outgoingFlightDate} as date) and Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+	</select>
+	
+	<select id="getSegmentName" parameterType="com.ngen.cosys.shipment.mail.model.CreateCN46" resultType="java.lang.String">
+		select concat(FlightBoardPoint,'-',FlightOffPoint)
+			from Flt_OperativeFlight_Segments where FlightSegmentId = #{segmentId}
+	</select>
+	
+</mapper>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentRemarksMapper">
+
+	<resultMap id="ShipmentRemarksMap"
+		type="com.ngen.cosys.impbd.shipment.remarks.model.ShipmentRemarksModel">		
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentdate" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="RemarkType" property="remarkType" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="ShipmentRemarks" property="shipmentRemarks" />
+	</resultMap>
+
+	<sql id="ShipmentRemarks_Base_Column_List">		
+		ShipmentNumber,
+		ShipmentDate,
+		ShipmentId,
+		RemarkType,
+		Flight_ID, 
+		ShipmentRemarks,
+		ShipmentType,
+		CreatedUser_Code,
+		Created_DateTime,
+		LastUpdatedUser_Code,
+		LastUpdated_DateTime
+	</sql>
+	
+	<select id="sqlGetShipmentRemarks"
+		parameterType="com.ngen.cosys.impbd.shipment.remarks.model.ShipmentRemarksModel"
+		resultMap="ShipmentRemarksMap">
+		select
+		<include refid="ShipmentRemarks_Base_Column_List" />
+		from
+		Shipment_Remarks
+		where
+		Flight_ID = #{flightId}
+		<choose>
+			<when test="shipmentId != null">
+				AND ShipmentId like #{shipmentId}
+			</when>
+			<when test="shipmentNumber != null and shipmentdate != null">
+				AND (ShipmentNumber = #{shipmentNumber} and ShipmentDate = #{shipmentdate})
+			</when>
+			<otherwise>
+				AND 1=1
+			</otherwise>
+		</choose>
+			AND RemarkType = #{remarkType}
+	</select>
+
+
+	<insert id="sqlInsertShipmentRemarks"
+		parameterType="com.ngen.cosys.impbd.shipment.remarks.model.ShipmentRemarksModel">
+		insert into Shipment_Remarks(
+			<include refid="ShipmentRemarks_Base_Column_List" />
+		)values(
+				#{shipmentNumber},
+				#{shipmentdate},
+				#{shipmentId},
+				#{remarkType},
+				#{flightId},
+				#{shipmentRemarks},
+				#{shipmentType},
+				#{createdBy},
+				#{createdOn},
+				#{modifiedBy},
+				#{modifiedOn}
+		)
+	</insert>
+
+</mapper>

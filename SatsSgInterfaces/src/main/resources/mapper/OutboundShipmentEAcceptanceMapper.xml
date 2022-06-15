@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AEDCustomsMapper">
+
+	<select id="CheckSenton"
+		parameterType="com.ngen.cosys.aed.model.GhaMawbNoRequestModel"
+		resultType="long">
+		select
+			case 
+				when SentOn is null then 
+					1 
+				else 
+				0 end
+		from
+			Event_OutboundShipmentStartCargoAcceptanceStore
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate=#{shipmentDate}
+	</select>
+	
+	<select id="shipmentDate"
+		resultType="java.lang.String" parameterType="java.lang.String">
+		select Top(1) shipmentDate
+		from shipment_master where
+		ShipmentNumber=#{shipmentNumber}
+	</select>
+
+	<select id="getShipmentNumber"
+		parameterType="java.math.BigInteger" 
+		resultType="java.lang.String">
+		select 
+			ShipmentNumber
+		from 
+			Shipment_Master 
+		where
+			ShipmentId = #{shipmentId}
+	</select>
+	
+	<select id="getInspectionOutcome"
+		parameterType="java.math.BigInteger" resultType="com.ngen.cosys.aed.model.RcarScreenModel">
+		select 
+			ReasonForRejection AS reason,
+			ShipmentNumber as awbNumber 
+		from 
+			Exp_Screening 
+		where 
+			ScreeningFlightId = #{shipmentId} 
+		order by 
+			created_datetime desc
+	</select>
+
+
+	<select id="getSumOfWeightForMAWBno"
+		parameterType="Map" 
+		resultType="com.ngen.cosys.aed.model.RcarScreenModel">
+		select
+			sum(inv.Weight) finalizeWeight,
+			sum(ilog.TotalGrossWeight) totalGrossWeight
+		from 
+			Exp_eAcceptanceDocumentInformation info inner join
+			Exp_eAcceptanceWeighing weighing
+				on weighing.DocumentInformationId = info.DocumentInformationId inner join
+			Shipment_Inventory inv
+				on inv.WeighingId = weighing.WeighingId left join
+			interface_incomingaedmessagelog ilog 
+				on ilog.ShipmentNumber = info.ShipmentNumber and 
+					ilog.TotalGrossWeight is not null
+		where
+			inv.Shipment_ID=#{shipmentId} and
+			info.Status not in ('REJECTED', 'RETURNED')
+		group by
+			info.DocumentInformationId           
+	</select>
+
+
+	<resultMap id="flightDetails"
+		type="com.ngen.cosys.aed.model.FlightSchedule">
+		<result property="flightNo" column="flightKey" />
+		<result property="flightDepartDateTime" column="flightOriginDate" />
+	</resultMap>
+
+	<select id="getFlightDetails"
+		parameterType="java.math.BigInteger" 
+		resultMap="flightDetails">
+		select
+			flightKey,
+			flightOriginDate 
+		from 
+			Flt_OperativeFlight
+		where
+			flight_Id=#{flightId}
+	</select>
+
+	<resultMap id="sipmentDetails"
+		type="com.ngen.cosys.aed.model.MawbDeatails">
+		<result property="recordIndicator" column="RegisteredIndicator" />
+		<result property="mawbNo" column="shipmentNumber" />
+	</resultMap>
+
+	<select id="getSipmentDetails"
+		parameterType="java.math.BigInteger" 
+		resultMap="sipmentDetails">
+		select
+			shipmentNumber,
+			(case when RegisteredIndicator=1 then
+				'Y' else 'N'
+			end) as RegisteredIndicator
+		from 
+			shipment_master 
+		where
+			shipmentId=#{shipmentId}
+	</select>
+	
+	<select id="getOutboundShipmnetSumOfDeclaredWaightForGha"
+		parameterType="com.ngen.cosys.aed.model.ScSumofWtGhaResposeModel" 
+		resultType="int">
+		select
+			count(AedMessageLogId)
+		from 
+			Interface_IncomingAEDMessageLog 
+		where
+			ShipmentNumber=#{details.mawbNo} and 
+			MessageType='AD2'
+	</select>
+	
+	<update id="updateOutboundShipmnetSumOfDeclaredWaightForGha" 
+		parameterType="com.ngen.cosys.aed.model.ScSumofWtGhaResposeModel">
+		update 
+			Interface_IncomingAEDMessageLog
+		set
+			MessageId=#{header.messageId},
+			TotalGrossWeight=#{details.sumTotalGrossWt},
+			ScTolerancePecentage=#{details.scPecentTollerence},
+			LastUpdatedUserCode=#{modifiedBy},
+			LastUpdatedDateTime=#{modifiedOn}
+		where 
+			ShipmentNumber=#{details.mawbNo} and 
+			MessageType='AD2'
+	</update>
+
+	<insert id="saveOutboundShipmnetSumOfDeclaredWaightForGha"
+		parameterType="com.ngen.cosys.aed.model.ScSumofWtGhaResposeModel"
+		keyProperty="aedMessageLogId" keyColumn="AedMessageLogId"
+		useGeneratedKeys="true">
+		insert into Interface_IncomingAEDMessageLog(
+			MessageType,
+			MessageId,
+			SendDateTime,
+			RecordIndicator,
+			ShipmentNumber,
+			ShipmentDate,
+			TotalGrossWeight,
+			TotalGrossWeightUOM,
+			ScTolerancePecentage,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			'AD2',
+			#{header.messageId},
+			#{header.sendDateTime},
+			#{indicator},
+			#{details.mawbNo},
+			#{details.shipmentDate},
+			#{details.sumTotalGrossWt},
+			#{details.sumTotalGrossWtUom},
+			#{details.scPecentTollerence},
+			'CUSTOMS',
+			getDate()
+		)
+	</insert>
+	
+	<select id="getOutboundShipmnetInspectionRemarks"
+		parameterType="com.ngen.cosys.aed.model.ScSumofWtGhaResposeModel" 
+		resultType="long">
+		select
+		  top(1) AedMessageLogId
+		from 
+			Interface_IncomingAEDMessageLog 
+		where
+		  ShipmentNumber=#{details.mawbNo} and 
+		  MessageType='AD3'
+	</select>
+	
+	<insert id="saveOutboundShipmnetInspectionRemarks"
+		parameterType="com.ngen.cosys.aed.model.ScSumofWtGhaResposeModel"
+		keyProperty="aedMessageLogId" keyColumn="AedMessageLogId"
+		useGeneratedKeys="true">
+		insert into Interface_IncomingAEDMessageLog(
+			MessageType,
+			MessageId,
+			SendDateTime,
+			ShipmentNumber,
+			PermitNumber,
+			ShipmentDate,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			'AD3',
+			#{header.messageId},
+			#{header.sendDateTime},
+			#{details.mawbNo},
+			#{details.permitNo},
+			#{details.shipmentDate},
+			'CUSTOMS',
+			getDate()
+		)
+	</insert>
+	
+	<update id="updateOutboundShipmnetListOfRemarks" parameterType="com.ngen.cosys.aed.model.ScInspecRmkGhaInspectInd">
+	    update 
+			Interface_IncomingAEDMessageRemarks
+		set
+			InspectIndicatorGha=#{indicatorToGha},
+			LastUpdatedUserCode='CUSTOMS',
+			LastUpdatedDateTime=getDate()
+		where 
+			AedMessageLogId=#{aedMessageLogId}
+	</update>
+
+	<insert id="saveOutboundShipmnetListOfRemarks"
+		parameterType="com.ngen.cosys.aed.model.ScInspecRmkGhaInspectInd"
+		keyProperty="aedMessageRemarksId" 
+		keyColumn="AedMessageRemarksId"
+		useGeneratedKeys="true">
+		INSERT INTO Interface_IncomingAEDMessageRemarks(
+			AedMessageLogId,
+			RemarksToGHA,
+			InspectIndicatorGha,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{aedMessageLogId},
+			#{remarksToGha},
+			#{indicatorToGha},
+			'CUSTOMS',
+			getDate()
+		)
+	</insert>
+
+	<update id="updateStartCargoAcceptanceSentOnDetails"
+		parameterType="com.ngen.cosys.events.payload.OutboundShipmentStartCargoAcceptanceStoreEvent">
+		update Event_OutboundShipmentStartCargoAcceptanceStore
+		set 
+			SentOn=getDate()
+		WHERE 
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updatedOutGoingInterFaceLog"
+		parameterType="java.lang.String">
+		update Interface_OutgoingMessageLog 
+		set
+			LastUpdatedUserCode='CUSTOMS',
+			LastUpdatedDateTime=getDate(),
+			Status='SENT'
+		where 
+			InterfaceOutgoingMessageLogId=#{id}
+	</update>
+
+    
+	<select id="getExemption"
+		parameterType="java.math.BigInteger" 
+		resultType="java.lang.String">
+		select top(1)
+	    	Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailDescription
+		from 
+	   	 Mst_CodeAdministration_Group inner join 
+	   	 Mst_CodeAdministration_SubGroup 
+	   	 	on Mst_CodeAdministration_Group.AdministrationGroupCode=Mst_CodeAdministration_SubGroup.AdministrationGroupCode left join 
+	   	 Mst_CodeAdministration_SubGroupDetails 
+	   	 	on Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode=Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode left join 
+	   	 Shipment_MasterCustomerinfo 
+	   	 	on Shipment_MasterCustomerinfo.CustomerCode = Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode and
+				Shipment_MasterCustomerinfo.CustomerType = 'AGT'
+	where 
+	    Mst_CodeAdministration_Group.AdministrationGroupCode='AED' and  
+		ShipmentId = #{shipmentId}
+	</select>
+   
+   <select id="getExemptionCodeFromLocalAuthority"
+		parameterType="java.math.BigInteger" resultType="java.lang.String">
+		select
+			Exp_eAcceptanceLocalAuthDetails.ExemptionCode
+		from
+			Exp_eAcceptanceLocalAuthInformation INNER JOIN
+			Exp_eAcceptanceLocalAuthDetails 
+				ON Exp_eAcceptanceLocalAuthDetails.LocalAuthorityInfoId = Exp_eAcceptanceLocalAuthInformation.LocalAuthorityInfoId INNER JOIN
+			Exp_eAcceptanceDocumentInformation 
+				ON Exp_eAcceptanceDocumentInformation.DocumentInformationId = Exp_eAcceptanceLocalAuthInformation.DocumentInformationId INNER JOIn
+			Shipment_Master 
+				ON Exp_eAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber AND
+					Exp_eAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate 
+		where
+			Shipment_Master.ShipmentId = #{shipmentId} and 
+			Exp_eAcceptanceLocalAuthInformation.Type='EC'	
+   </select>
+   
+   <select id="getOutboundFlightShipments"
+		parameterType="Map" 
+		resultType="com.ngen.cosys.aed.model.RcarScreenModel">
+		select
+			Shipment_Master.shipmentId as shipmentId,
+			Shipment_Master.ShipmentNumber as awbNuber,
+			Shipment_Master.Origin as origin,
+			Shipment_Master.Destination as destination,
+			(case 
+				when Shipment_Master.RegisteredIndicator = 1 then
+					'Y' 
+				else 
+					'N' end) as registeredIndicator
+		from
+			Exp_Manifest inner join 
+			Exp_ManifestULDInfo 
+				on Exp_ManifestULDInfo.ManifestId=Exp_Manifest.ManifestId INNER JOIN
+			Exp_ManifestShipmentInfo 
+				ON Exp_ManifestShipmentInfo.ManifestUldInfoId=Exp_ManifestULDInfo.ManifestUldInfoId INNER JOIN 
+			Shipment_Master 
+				ON Shipment_Master.ShipmentId=Exp_ManifestShipmentInfo.ShipmentId
+		where 
+			Exp_Manifest.FlightId = #{param} and
+			Shipment_Master.ShipmentType not in ('MAIL') and
+			Shipment_Master.Origin= #{tenantAirport} and
+			not exists(
+				select
+					null
+				from
+					Shipment_MasterSHC inner join
+					Mst_AssociateSHCByHandlingGroup
+					 on Shipment_MasterSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+					Mst_SHCHandlingGroup
+					 on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode in ('COU', 'MAL','MHC')
+			)
+		group by
+			Shipment_Master.ShipmentId, 
+			Shipment_Master.ShipmentNumber,
+			Shipment_Master.Origin,
+			Shipment_Master.Destination,
+			Shipment_Master.RegisteredIndicator
+		order by
+			Shipment_Master.ShipmentNumber	
+   </select>
+   
+    <select id="getStatusOfStartAcceptance"
+		parameterType="java.lang.String" resultType="java.lang.String">		
+		select 
+			Top(1) StartWeighingInitiatedOn 
+		from 
+			Exp_eAcceptanceDocumentInformation 
+		where 
+			ShipmentNumber = #{shipmentNumber}
+   </select>
+   
+   <select id="sqlGetAEDShipmentInfo"
+	   	parameterType="java.math.BigInteger"
+	   	resultType="Map">
+   		select
+			ShipmentNumber,
+			ShipmentDate
+		from
+			Shipment_Master
+		where
+			ShipmentId = #{shipmentId}
+   </select>
+   
+     <select id="sqlGetAEDFlightInfo"
+	   	parameterType="Map"
+	   	resultType="Map">   		
+		select
+			Flt_OperativeFlight.CarrierCode,
+			Flt_OperativeFlight.FlightNumber,
+			Flt_OperativeFlight_Legs.DateSTD as FlightDate
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+		where	
+			Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} and
+			Flt_OperativeFlight.Flight_ID = #{param}
+   </select>
+
+	<select id="sqlCheckShipmentCanSubmitToCustoms"
+		parameterType="Map"
+		resultType="java.lang.Boolean">
+		select
+			case 
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Shipment_Master 
+		where
+			Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+			cast(Shipment_Master.ShipmentDate as date) = (select 
+																cast(max(Shipment_DateInfo.ShipmentDate) as date) 
+															from 
+																Shipment_DateInfo 
+															where 
+																Shipment_DateInfo.ShipmentNumber = Shipment_Master.ShipmentNumber) and
+			Shipment_Master.ShipmentType not in ('MAIL', 'CBV', 'UCB') and
+			not exists(
+				select
+					null
+				from
+					Shipment_MasterSHC inner join
+					Mst_AssociateSHCByHandlingGroup
+					 on Shipment_MasterSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+					Mst_SHCHandlingGroup
+					 on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+				where
+					Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId and
+					Mst_SHCHandlingGroup.SHCHandlingGroupCode  in ('COU', 'MAL','MHC')
+			)
+	</select>
+
+	<select id="getFlightInfoForLogger" parameterType="Map" resultType="com.ngen.cosys.events.esb.connector.logger.payload.OutgoingMessageLog">
+		select 
+			Flt_operativeFlight.CarrierCode ,
+			Flt_operativeFlight.FlightNumber flightNumber,
+			Flt_operativeFlight.FlightOriginDate
+		from  
+			Exp_eAcceptanceDocumentInformation inner join
+			Flt_operativeFlight
+				on Exp_eAcceptanceDocumentInformation.FirstBookedFlight = Flt_operativeFlight.FlightKey inner join
+			Flt_OperativeFlight_Legs
+				on Flt_operativeFlight.FLight_ID = Flt_OperativeFlight_Legs.FLight_ID and 
+					cast(Exp_eAcceptanceDocumentInformation.FirstBookedFlightDate as date) = cast(Flt_OperativeFlight_Legs.DateSTD as date) and
+					Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		where  
+			Exp_eAcceptanceDocumentInformation.ShipmentNumber = #{shipmentNumber} and  
+			Exp_eAcceptanceDocumentInformation.ShipmentDate=#{shipmentDate}
+	</select>
+	
+</mapper>

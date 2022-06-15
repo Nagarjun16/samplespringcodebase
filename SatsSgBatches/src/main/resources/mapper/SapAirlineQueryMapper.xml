@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+
+<mapper namespace="SapAirlineQueryMapper">
+	<select id="fetchInvoiceSalesEntryMaster"
+		parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.ARInvoiceSalesEntryMaster">
+		<![CDATA[
+		select receiptNumber DocNum,ReceiptDate DocDate,
+		ReceiptDate DocDueDate, ReceiptDate TaxDate,
+		customerCode CardCode, 'INR'
+		DocCur, 'GST TAX INVOICE' TransactionType, 
+		isnull(Billing_Payment.PaymentRemarks,'') comments,
+		'CARGO'
+		Department, '' ShipToCode, 'NA' DiscPrcnt, '' PayToCode, 'NA'
+		CtlAccount, 'PAYMENT' U_Dtype,
+		SalesTaxSysPostingAckNo U_ACKNO,
+		SalesTaxSysPostingAckDate U_ACKDATE, SalesTaxPostingRefInfo
+		U_QRCODE,
+		SalesTaxSysPostingRefNo U_IRN,
+		SalesTaxPostingRefInfo U_SIGNEDINVOICE, 'B2B'
+		U_BPTYPE from Billing_PaymentReceipt inner join
+		Billing_PaymentReceiptPosting
+		on
+		Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		inner join customer_master on customer_master.Customer_ID=Billing_PaymentReceipt.CustomerId
+		inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+		where Billing_PaymentReceipt.PaymentReceiptId in  
+		]]>
+		<foreach item="item" collection="ids" open="(" separator="," close=")">#{item}</foreach>
+		<![CDATA[
+		 and Billing_PaymentReceipt.ReceiptDate <= #{delaytime} and
+		SalesTaxSysPostingRefNo is not null
+		]]>
+	</select>
+	<select id="fetchInvoiceSalesEntryMasterIds"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		select
+		Billing_PaymentReceipt.PaymentReceiptId
+		from
+		Billing_PaymentReceipt
+		inner join Billing_PaymentReceiptPosting
+		on
+		Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		where DocumentType in ('INVOICE') and 
+		Billing_PaymentReceipt.ReceiptDate  <= #{delaytime} and
+		Billing_PaymentReceiptPosting.SalesTaxSysPostingRefNo is not
+		null and
+		(Billing_PaymentReceiptPosting.FinSysPostingStatus is null or
+		Billing_PaymentReceiptPosting.FinSysPostingStatus!='POSTED')
+		]]>
+	</select>
+	<select id="fetchCreditNoteIds"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		select
+              Billing_PaymentReceipt.PaymentReceiptId
+              from
+              Billing_PaymentReceipt
+              inner join Billing_PaymentReceiptPosting
+              on
+       Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+              where DocumentType in ('CREDIT NOTE','AC') 
+               and Billing_PaymentReceipt.ReceiptDate  <= #{delaytime} 
+               and Billing_PaymentReceiptPosting.SalesTaxSysPostingStatus not in ('Error','Pending') 
+               and (Billing_PaymentReceiptPosting.FinSysPostingStatus is null or
+              Billing_PaymentReceiptPosting.FinSysPostingStatus!='POSTED')
+
+		]]>
+	</select>
+	<select id="fetchDebitNoteIds"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="java.lang.Integer">
+		<![CDATA[
+		select
+              Billing_PaymentReceipt.PaymentReceiptId
+              from
+              Billing_PaymentReceipt
+              inner join Billing_PaymentReceiptPosting
+              on
+       Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+              where DocumentType in ('DEBIT NOTE','AD')  
+              and Billing_PaymentReceipt.ReceiptDate <= #{delaytime} 
+              and Billing_PaymentReceiptPosting.SalesTaxSysPostingStatus not in ('Error','Pending') 
+              and (Billing_PaymentReceiptPosting.FinSysPostingStatus is null or
+              Billing_PaymentReceiptPosting.FinSysPostingStatus!='POSTED')
+
+		]]>
+	</select>
+	
+	<select id="fetchInvoiceSalesEntryChild"
+		parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.ARInvoiceSalesEntryChild">
+	<![CDATA[
+		SELECT ReceiptNumber parentKey,Billing_PaymentReceipt.PaymentReceiptId,
+		sum(isNull(Billing_ChargeEntryBillPaid.ChargeableQuantity,0)) quantity,
+		'INR' currency,'NA' discountPercent,'BLR' location_Name,
+		sum(isNull(Billing_ChargeEntryBillPaid.BillPaidAmount,0)) unitPrice, 'CARGO' department,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_ChargeEntry.TaxComp1Code)tx1,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_ChargeEntry.TaxComp2Code)tx2,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_ChargeEntry.TaxComp3Code)tx3,
+		isnull(FInSysChargeCode,'NA') itemCode,
+		'' airline
+		FROM Billing_PaymentReceipt INNER JOIN
+		Billing_Payment
+		ON Billing_PaymentReceipt.PaymentReceiptId = Billing_Payment.PaymentReceiptId INNER JOIN
+		Billing_ChargeEntryBillPaid
+		ON Billing_PaymentReceipt.PaymentReceiptId = Billing_ChargeEntryBillPaid.PaymentReceiptId INNER JOIN
+		Billing_ChargeEntry
+		ON Billing_ChargeEntryBillPaid.ChargeEntryId = Billing_ChargeEntry.ChargeEntryId LEFT JOIN
+		Billing_ChargePostConfiguration
+		ON Billing_ChargePostConfiguration.BillingChargeCodeId=Billing_ChargeEntry.ChargeCodeId
+		WHERE Billing_PaymentReceipt.PaymentReceiptId in  ]]><foreach item="item" collection="ids" open="(" separator="," close=")">#{item}</foreach><![CDATA[   and Billing_PaymentReceipt.ReceiptDate <= #{delaytime}
+		group by
+		ReceiptNumber,Billing_PaymentReceipt.PaymentReceiptId,Billing_ChargeEntry.TaxComp1Code,
+		Billing_ChargeEntry.TaxComp2Code,Billing_ChargeEntry.TaxComp3Code,FInSysChargeCode
+	]]>
+	</select>
+	<select id="getSAPSpecialCode" resultType="java.lang.String">
+		<![CDATA[
+		SELECT	ParameterValueChar
+			  FROM	App_SystemParameters
+			 WHERE	ParameterCode = 'SAP_SPECIAL_CODE'
+			   AND 	ParameterStatusFlag = 'Y'
+			   AND 	StartDate <= GETDATE() 
+			   AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+			   ]]>
+	</select>
+	<select id="getSAPDelayHour" resultType="java.lang.String">
+		<![CDATA[
+		SELECT	ParameterValueChar
+			  FROM	App_SystemParameters
+			 WHERE	ParameterCode = 'SAP_DELAY_HOUR'
+			   AND 	ParameterStatusFlag = 'Y'
+			   AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+			   ]]>
+	</select>
+	<update id="sqlSetInvoiceSalesEntryStatus" parameterType="java.lang.String">
+		<![CDATA[
+			UPDATE 	Billing_PaymentReceiptPosting
+			SET		FinSysPostingStatus = 'POSTED',
+					FinSysPostingDate = GETDATE()
+			WHERE	PaymentReceiptId in  ${value}
+		]]>
+	</update>
+	<select id="fetchDebitNoteMaster"
+		parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+	resultType="com.ngen.cosys.billing.sap.airline.model.ARInvoiceCreditDebitNoteMaster">
+	<![CDATA[
+		SELECT distinct Billing_PaymentReceipt.PaymentReceiptId, 'DEBIT NOTE' DocumentType, DocumentNumber docNum, DocumentDate docDate,  DocumentDate docDueDate, DocumentDate taxDate, 
+		customer_master.CustomerCode cardCode, 'INR' docCur, 'GST TAX INVOICE' transactionType,
+		isnull(Billing_Payment.PaymentRemarks,'') comments,
+		'BLR' series, 'CH' slpCode,
+		'CARGO' department, '' shipToCode, 'NA' discPrcnt, '' payToCode, 'NA' ctlAccount, 'PAYMENT' dType, 
+		SalesTaxSysPostingAckNo u_ACKNO, SalesTaxSysPostingAckDate u_ACKDATE, SalesTaxPostingRefInfo u_QRCODE,
+		SalesTaxSysPostingRefNo u_IRN, SalesTaxPostingRefInfo U_SIGNEDINVOICE,  'B2B' u_BPTYPE 
+		FROM 
+		Billing_PaymentReceipt inner join Billing_PaymentReceiptPosting
+		on Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		inner join customer_master 
+		on customer_master.customer_id=Billing_PaymentReceipt.customerid
+		inner join billing_customerInfo on customer_master.customer_id=billing_customerInfo.customerId
+		inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+		where Billing_PaymentReceipt.PaymentReceiptId in  ]]><foreach item="item" collection="ids" open="(" separator="," close=")">#{item}</foreach><![CDATA[   and Billing_PaymentReceipt.ReceiptDate <= #{delaytime} and 
+		Billing_PaymentReceiptPosting.SalesTaxSysPostingStatus not in ('Error','Pending')
+		 and (FinSysPostingStatus is null or FinSysPostingStatus!='POSTED')
+		]]>
+
+	</select>
+		<select id="fetchCreditNoteMaster"
+		parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.ARInvoiceCreditDebitNoteMaster">
+	<![CDATA[
+	SELECT distinct Billing_PaymentReceipt.PaymentReceiptId, 'CREDIT NOTE' DocumentType, DocumentNumber docNum, DocumentDate docDate,  DocumentDate docDueDate, DocumentDate taxDate, 
+	customer_master.CustomerCode cardCode, 'INR' docCur, 'GST CREDIT NOTE' transactionType,
+	isnull(Billing_Payment.PaymentRemarks,'') comments,
+	'BLR' series, 'CH' slpCode,
+	'CARGO' department, '' shipToCode, 'NA' discPrcnt, '' payToCode, 'NA' ctlAccount, 'SERVICE' dType, 
+	ReferenceDocumentNumber originalRefNo, 
+	(select bpr.DocumentDate from Billing_PaymentReceipt bpr where bpr.documentNumber=Billing_PaymentReceipt.ReferenceDocumentNumber) originalRefDate,
+	SalesTaxSysPostingAckNo u_ACKNO, SalesTaxSysPostingAckDate u_ACKDATE, SalesTaxPostingRefInfo u_QRCODE,
+	SalesTaxSysPostingRefNo u_IRN, 'B2B' u_BPTYPE ,SalesTaxPostingRefInfo U_SIGNEDINVOICE
+	FROM 
+	Billing_PaymentReceipt inner join Billing_PaymentReceiptPosting
+	on Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+ 	inner join customer_master 
+	on customer_master.customer_id=Billing_PaymentReceipt.customerid
+	inner join billing_customerInfo on customer_master.customer_id=billing_customerInfo.customerId
+	inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+	where Billing_PaymentReceipt.PaymentReceiptId in  ]]>
+	<foreach item="item" collection="ids" open="(" separator="," close=")">#{item}</foreach>
+	<![CDATA[   and Billing_PaymentReceipt.ReceiptDate <= #{delaytime} and  
+	Billing_PaymentReceiptPosting.SalesTaxSysPostingStatus not in ('Error','Pending') and 
+	(FinSysPostingStatus is null or FinSysPostingStatus!='POSTED')
+	]]>
+	</select>
+	<select id="fetchCreditDebitNoteChild"
+		parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"  
+		resultType="com.ngen.cosys.billing.sap.airline.model.ARInvoiceCreditDebitNoteChild">
+		<![CDATA[
+		SELECT ReceiptNumber parentKey,Billing_PaymentReceipt.PaymentReceiptId,
+		count(PaymentCreditDebitNoteEntryId) quantity,
+		'INR' currency,'NA' discountPercent,'BLR' location_Name,
+		sum(Billing_PaymentCreditDebitNoteEntry.EntryCreditOrDebitAmount) unitPrice,
+		'CARGO' department,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_PaymentCreditDebitNoteEntry.TaxComp1Code)tx1,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_PaymentCreditDebitNoteEntry.TaxComp2Code)tx2,
+		(select FinSysTaxCode from Mst_SalesTaxTypes where SalesTaxType=Billing_PaymentCreditDebitNoteEntry.TaxComp3Code)tx3,
+		isnull(Billing_ChargePostConfiguration.FinSysChargeCode,'NA') itemCode,
+		'NA' Airline
+		FROM Billing_PaymentReceipt inner join Billing_PaymentCreditDebitNoteEntry
+		on Billing_PaymentCreditDebitNoteEntry.PaymentCreditDebitNoteId= Billing_PaymentReceipt.PaymentReceiptId
+		and Billing_PaymentReceipt.DocumentType in ('CREDIT NOTE','DEBIT NOTE','AD','AC')
+		INNER JOIN
+		Billing_ChargeCode
+		ON Billing_PaymentCreditDebitNoteEntry.ChargeCodeId = Billing_ChargeCode.BillingChargeCodeId LEFT JOIN
+		Billing_ChargePostConfiguration
+		ON Billing_ChargePostConfiguration.BillingChargeCodeId=Billing_ChargeCode.BillingChargeCodeId
+		WHERE Billing_PaymentReceipt.PaymentReceiptId in]]>
+		<foreach item="item"  collection="ids" open="(" separator="," close=")">#{item}</foreach>
+		<![CDATA[  and Billing_PaymentReceipt.ReceiptDate <= #{delaytime}
+		group by
+		ReceiptNumber,Billing_PaymentReceipt.PaymentReceiptId,
+		Billing_PaymentCreditDebitNoteEntry.TaxComp1Code,
+		Billing_PaymentCreditDebitNoteEntry.TaxComp2Code,Billing_PaymentCreditDebitNoteEntry.TaxComp3Code,Billing_ChargePostConfiguration.FinSysChargeCode
+	]]>
+	</select>
+	<select id="fetchIncomingPaymentBankTransfer"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.IncomingPaymentBankTransfer">
+	<![CDATA[
+		SELECT DocumentNumber DocNum,'CUSTOMER' DocType, DocumentDate DocDate, DocumentDate TaxDate, DocumentDate DueDate,
+		customer_master.CustomerCode CardCode, customer_master.BillingAddress billToAddress, '1010202004-BLR-CH' transferAccount,
+		DocumentAmount TransferSum, '' tdsAccount,'' tdsAmt,'INR' DocCurrency, DocumentDate transferDate, DocumentNumber transferReference,
+		'NA' counterReference, 'BLR' series, 'NA' bpAct, 'PAYMENT' U_Dtype, 'CARGO' department, 'CH' u_LOB,
+		Billing_PaymentReceipt.PaymentReceiptId
+		FROM
+		Billing_PaymentReceipt inner join Billing_PaymentReceiptPosting
+		on Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+		and PaymentMode='NETBANKING'
+		inner join customer_master
+		on customer_master.customer_id=Billing_PaymentReceipt.customerid
+		inner join billing_customerInfo on customer_master.customer_id=billing_customerInfo.customerId
+		where (FinSysPostingStatus is null or FinSysPostingStatus!='POSTED')
+		and Billing_PaymentReceipt.DocumentType='TOPUP' and Billing_PaymentReceipt.ReceiptDate <= #{delaytime}
+
+	]]>
+	</select>
+	<select id="fetchIncomingPaymentCASH"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.IncomingPaymentCASH">
+	<![CDATA[
+		SELECT DocumentNumber DocNum,'CUSTOMER' DocType, DocumentDate DocDate, DocumentDate TaxDate, DocumentDate DueDate,
+		customer_master.CustomerCode CardCode,
+		case when customer_master.CustomerCode='IXX' THEN 'WALK IN CUSTOMER'
+		WHEN customer_master.CustomerCode='EXX' THEN 'WALK IN CUSTOMER' ELSE customer_master.BillingAddress end as billToAddress,
+		'1010201002-BLR-CH' cashAccount ,
+		DocumentAmount cashSum, 'INR' docCurrency,
+		'NA' counterReference, 'BLR' series, '' bpAct, 'PAYMENT' U_Dtype, 'CARGO' department, 'CH' u_LOB,
+		Billing_PaymentReceipt.PaymentReceiptId
+		from
+		Billing_PaymentReceipt inner join
+		Billing_PaymentReceiptPosting
+		on Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+		and PaymentMode='CASH'
+		inner join customer_master
+		on customer_master.customer_id=Billing_PaymentReceipt.customerid
+		inner join billing_customerInfo on customer_master.customer_id=billing_customerInfo.customerId
+		where (FinSysPostingStatus is null or FinSysPostingStatus!='POSTED')
+		and Billing_PaymentReceipt.DocumentType='TOPUP' and Billing_PaymentReceipt.ReceiptDate <= #{delaytime}
+
+
+	]]>
+	</select>
+	<select id="fetchIncomingPaymentCheque"
+	parameterType="com.ngen.cosys.billing.sap.airline.model.SapCSVRequest"
+		resultType="com.ngen.cosys.billing.sap.airline.model.IncomingPaymentCheque">
+	<![CDATA[
+		SELECT DocumentNumber DocNum,'CUSTOMER' DocType, DocumentDate DocDate, DocumentDate TaxDate, DocumentDate DueDate,
+		customer_master.CustomerCode CardCode,
+		customer_master.BillingAddress billToAddress,
+		'1010202004-BLR-CH' chequeAccount ,
+		DocumentAmount chequeSum, '' tdsAccount, '' tdsAmt, 'INR' docCurrency,
+		'NA' counterReference, 'BLR' series, '' bpAct, 'PAYMENT' U_Dtype, 'CARGO' department, 'CH' u_LOB,
+		transactionReferenceNumber chqNum,
+		Billing_PaymentReceipt.PaymentReceiptId
+		FROM
+		Billing_PaymentReceipt inner join Billing_PaymentReceiptPosting
+		on Billing_PaymentReceipt.PaymentReceiptId=Billing_PaymentReceiptPosting.PaymentReceiptId
+		inner join Billing_Payment on Billing_Payment.PaymentReceiptId=Billing_PaymentReceipt.PaymentReceiptId
+		and PaymentMode='CHQ_DD'
+		inner join customer_master
+		on customer_master.customer_id=Billing_PaymentReceipt.customerid
+		inner join billing_customerInfo on customer_master.customer_id=billing_customerInfo.customerId
+		where (FinSysPostingStatus is null or FinSysPostingStatus!='POSTED')
+		and Billing_PaymentReceipt.DocumentType='TOPUP' and Billing_PaymentReceipt.ReceiptDate <= #{delaytime}
+
+	]]>
+	</select>
+</mapper>

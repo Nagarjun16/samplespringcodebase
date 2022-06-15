@@ -1,0 +1,1358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="TranshipmentByAWB">
+
+	<insert id="insertTranshipmentAWB"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB"
+		useGeneratedKeys="true" keyColumn="TransTransferManifestByAwbId" keyProperty="transTransferManifestByAwbId">
+		insert into Transhipment_TransferManifestByAWB(
+			CarrierCodeFrom,
+			CarrierCodeTo, 
+			TRMNumber,
+			HandlingTerminalCode,
+			AirlineNumber, 
+			IssuedBy, 
+			IssuedDate,
+			CancellationReason, 
+			CancelledBy,
+			FinalizedFlag,
+			FinalizedBy, 
+			FinalizedDate, 
+			PrintedFlag,
+			PrintedBy,
+			PrintedDate, 
+			RePrintedFlag,
+			RePrintedBy,
+			RePrintedDate,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{carrierCodeFrom},
+			#{carrierCodeTo}, 
+			upper(#{trmNumber}),
+			#{handlingTerminalCode},
+			#{airlineNumber}, 
+			#{issuedBy},
+			#{issuedDate},
+			#{cancellationReason}, 
+			#{cancelledBy}, 
+			#{finalizedFlag},
+			#{createdBy},
+			getdate(), 
+			#{printedFlag},
+			#{printedBy}, 
+			#{printedDate},
+			#{rePrintedFlag},
+			#{rePrintedBy},
+			#{rePrintedDate},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+	<insert id="insertTranshipmentAWBInfo"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		useGeneratedKeys="true" keyColumn="TransTransferManifestByAWBInfoId" keyProperty="transTransferManifestByAWBInfoId">
+		insert into Transhipment_TransferManifestByAWBInfo (
+			TransTransferManifestByAwbId,
+			InboundFlightId,
+			InboundFlightHandler,
+			Origin,
+			Destination,
+			Pieces,
+			Weight,
+			WeightUnitCode,
+			NatureOfGoodsDescription,
+			Remarks,
+			ShipmentNumber,
+			ShipmentDate,
+			CreatedUserCode,
+			CreatedDateTime,
+			TransactionSequenceNumber
+		)values(
+			#{transTransferManifestByAwbId},
+			(select 
+					Flt_OperativeFlight.Flight_ID
+				from
+					Flt_OperativeFlight inner join 
+					Flt_OperativeFlight_Legs 
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID											
+				where 
+					Flt_OperativeFlight.FlightKey = #{inboundFlightNumber} and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{inboundFlightDate} as date)),
+			#{inboundFlightHandler},
+			#{origin},
+			#{destination},
+			#{pieces},
+			#{weight},
+			#{weightUnitCode},
+			#{natureOfGoodsDescription},
+			#{remarks},
+			#{shipmentNumber},
+			#{shipmentDate},
+			#{createdBy},
+			#{createdOn},
+			(select
+					(case when MAX(TransactionSequenceNumber) is null then 
+						0 
+					else 
+						MAX(TransactionSequenceNumber) + 1 
+					end ) TransactionSequenceNumber 
+				from
+					Transhipment_TransferManifestByAWBInfo 
+				where
+					TransTransferManifestByAwbId = #{transTransferManifestByAwbId})
+		)
+	</insert>
+
+	<insert id="insertTranshipmentAWBSHC"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBSHC"
+		useGeneratedKeys="true" keyColumn="TransTransferManifestByAWBInfoSHCId" keyProperty="transTransferManifestByAWBInfoSHCId">
+		insert into Transhipment_TransferManifestByAWBSHC(
+			TransTransferManifestByAWBInfoId, 
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)values(
+			#{transTransferManifestByAWBInfoId},
+			#{specialHandlingCode},
+			#{createdBy},
+			#{createdOn}
+		)
+	</insert>
+
+	<update id="updateTranshipmentAWB"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		update Transhipment_TransferManifestByAWB
+		set
+			HandlingTerminalCode = #{handlingTerminalCode},
+			AirlineNumber = #{airlineNumber},
+			IssuedBy = #{issuedBy},
+			CancellationReason = #{cancellationReason},
+			CancelledBy = #{cancelledBy},
+			FinalizedFlag = #{finalizedFlag},
+			FinalizedBy = #{createdBy},
+			FinalizedDate = #{finalizedDate},
+			PrintedFlag = #{printedFlag},
+			PrintedBy = #{printedBy},
+			PrintedDate = #{printedDate},
+			RePrintedFlag = #{rePrintedFlag},
+			RePrintedBy = #{rePrintedBy},
+			RePrintedDate = #{rePrintedDate},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			TransTransferManifestByAwbId = #{transTransferManifestByAwbId}
+	</update>
+
+	<update id="updateTranshipmentAWBForMobile"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		update Transhipment_TransferManifestByAWB
+		set
+			RejectionReason = #{rejectionReason},
+			HandoverTo = #{handoverTo},
+			SignatureOfReceiver = #{signatureOfReceiver},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where 
+			TransTransferManifestByAwbId = #{transTransferManifestByAwbId}
+	</update>
+	
+	<update id="updateTranshipmentAWBInfo"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		update Transhipment_TransferManifestByAWBInfo
+		set
+			InboundFlightId = 
+				(select 
+					Flt_OperativeFlight.Flight_ID
+				from
+					Flt_OperativeFlight inner join 
+					Flt_OperativeFlight_Legs 
+ 						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+				where 
+					Flt_OperativeFlight.FlightKey = #{inboundFlightNumber} and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{inboundFlightDate} as date)),
+				InboundFlightHandler = #{inboundFlightHandler},
+				Origin = #{origin},
+				Destination = #{destination},
+				Pieces = #{pieces},
+				Weight = #{weight},
+				WeightUnitCode = #{weightUnitCode},
+				NatureOfGoodsDescription = #{natureOfGoodsDescription},
+				Remarks = #{remarks},
+				ShipmentNumber = #{shipmentNumber},
+				ShipmentDate = #{shipmentDate},
+				LastUpdatedUserCode = #{modifiedBy},
+				LastUpdatedDateTime = #{modifiedOn}			
+		where 
+			TransTransferManifestByAWBInfoId = #{transTransferManifestByAWBInfoId}
+	</update>
+
+	<delete id="deleteTranshipmentAWB"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		delete from Transhipment_TransferManifestByAWB 
+		where 
+			CarrierCodeFrom = #{carrierCodeFrom} and 
+			CarrierCodeTo = #{carrierCodeTo} and 
+			TRMNumber = upper(#{TRMNumber})
+	</delete>
+
+	<delete id="deleteTranshipmentAWBInfo"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Transhipment_TransferManifestByAWBInfo where TransTransferManifestByAWBInfoId = #{transTransferManifestByAWBInfoId}
+	</delete>
+
+	<delete id="deleteTranshipmentAWBSHC"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Transhipment_TransferManifestByAWBSHC where TransTransferManifestByAWBInfoId = #{transTransferManifestByAWBInfoId}
+	</delete>
+
+	<resultMap id="AWBResultMap"
+		type="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		<id column="CarrierCodeFrom"  property="carrierCodeFrom" />
+		<id column="CarrierCodeTo"  property="carrierCodeTo" />
+		<id column="TRMNumber"  property="trmNumber" />
+		<result column="TransTransferManifestByAwbId" property="transTransferManifestByAwbId" />
+		<result column="HandlingTerminalCode" property="handlingTerminalCode" />
+		<result column="AirlineNumber"  property="airlineNumber" />
+		<result column="IssuedBy"  property="issuedBy" />
+		<result column="IssuedDate" property="issuedDate" />
+		<result column="CancellationReason" property="cancellationReason" />
+		<result column="CancelledBy"  property="cancelledBy" />
+		<result column="FinalizedFlag" property="finalizedFlag" />
+		<result column="FinalizedBy"  property="finalizedBy" />
+		<result column="FinalizedDate" property="finalizedDate" />
+		<result column="PrintedFlag" property="printedFlag" />
+		<result column="PrintedBy"  property="printedBy" />
+		<result column="PrintedDate" property="printedDate" />
+		<result column="RePrintedFlag" property="rePrintedFlag" />
+		<result column="RePrintedBy"  property="rePrintedBy" />
+		<result column="RePrintedDate" property="rePrintedDate" />
+		<result column="CreatedUserCode"  property="createdBy" />
+		<result column="tenantAirport" property="tenantAirport" />
+		<result column="RejectionReason" property="rejectionReason" />
+		<result column="HandoverTo" property="handoverTo" />
+		<result column="SignatureOfReceiver" property="signatureOfReceiver" />		
+		<collection 
+			select="selectAWBInfo" 
+			property="awbInfoList"
+			ofType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+			javaType="list"
+			column="{transTransferManifestByAwbId=TransTransferManifestByAwbId,tenantAirport=tenantAirport,trmNumber=TRMNumber,airlineNumber=AirlineNumber}"/>
+	</resultMap>
+	
+	<sql id="AWB_Column_List">
+		CarrierCodeFrom, 
+		CarrierCodeTo, 
+		upper(TRMNumber) TRMNumber,
+		TransTransferManifestByAwbId,
+		HandlingTerminalCode,
+		AirlineNumber,
+		IssuedBy, 
+		IssuedDate, 
+		CancellationReason, 
+		CancelledBy, 
+		FinalizedFlag,
+		FinalizedBy, 
+		FinalizedDate, 
+		PrintedFlag, 
+		PrintedBy, 
+		PrintedDate,
+		RePrintedFlag, 
+		RePrintedBy,
+		RePrintedDate, 
+		CreatedUserCode,
+		CreatedDateTime,
+		#{tenantAirport} as tenantAirport,
+		RejectionReason,
+		HandoverTo,
+		SignatureOfReceiver
+	</sql>
+	<select id="selectAWB"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBSearch"
+		resultMap="AWBResultMap">
+		select
+		<include refid="AWB_Column_List" />
+		from Transhipment_TransferManifestByAWB
+		<where>
+			1 = 1
+			<if test="issueDateFrom != null and issueDateTo != null">
+				and IssuedDate between #{issueDateFrom} AND #{issueDateTo}
+			</if>
+			<if test="carrierCodeFrom != null">
+				AND CarrierCodeFrom = #{carrierCodeFrom}
+			</if>
+			<if test="carrierCodeTo != null">
+				AND CarrierCodeTo = #{carrierCodeTo}
+			</if>
+			<if test="trmNumber != null">
+				AND TRMNumber = upper(#{trmNumber})
+			</if>
+			<if test="airlineNumber != null">
+				AND AirlineNumber = #{airlineNumber}
+			</if>
+			<if test="shipmentNumber != null">
+				and exists(
+					select
+						null
+					from
+						Transhipment_TransferManifestByAWBInfo
+					where
+						Transhipment_TransferManifestByAWBInfo.ShipmentNumber = #{shipmentNumber} and
+						Transhipment_TransferManifestByAWBInfo.ShipmentDate = #{shipmentDate} and
+						Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId						
+				)
+			</if>
+		</where>
+	</select>
+
+	<resultMap id="AWBInfoResultMap"
+		type="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		<id column="TransTransferManifestByAwbId" property="transTransferManifestByAwbId" />
+		<result column="TransTransferManifestByAWBInfoId" property="transTransferManifestByAWBInfoId" />
+		<result column="InboundFlightNumber" property="inboundFlightNumber" />
+		<result column="InboundFlightDate" property="inboundFlightDate" />
+		<result column="InboundFlightHandler" property="inboundFlightHandler" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="AwbDestination" property="awbDestination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+		<result column="Remarks" property="remarks" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="CreatedUserCode" property="createdBy" />
+		<result column="InboundFlightId" property="inboundFlightId" />
+		<result column="TransactionSequenceNumber" property="transactionSequenceNumber" />
+		<result column="TRMNumber" property="trmNumber" />
+		<result column="AirlineNumber"  property="airlineNumber" />
+		<collection 
+			select="selectAWBSHC" 
+			property="shcList"
+			ofType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBSHC"
+			javaType="list"
+			column="transTransferManifestByAWBInfoId=TransTransferManifestByAWBInfoId" />
+	</resultMap>
+		
+	<select id="selectAWBInfo" resultMap="AWBInfoResultMap">
+	<![CDATA[
+		select
+			Flt_OperativeFlight.FlightKey InboundFlightNumber,
+			Flt_OperativeFlight_Legs.DateSTA InboundFlightDate,
+			Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId,
+			Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAWBInfoId, 
+			Transhipment_TransferManifestByAWBInfo.InboundFlightHandler, 
+			Transhipment_TransferManifestByAWBInfo.Origin,
+			Transhipment_TransferManifestByAWBInfo.Destination, 
+			Transhipment_TransferManifestByAWBInfo.Pieces, 
+			Transhipment_TransferManifestByAWBInfo.Weight, 
+			Transhipment_TransferManifestByAWBInfo.WeightUnitCode,
+			Transhipment_TransferManifestByAWBInfo.NatureOfGoodsDescription,
+			Transhipment_TransferManifestByAWBInfo.Remarks, 
+			Shipment_Master.Destination as AwbDestination,
+			Shipment_Master.ShipmentNumber, 
+			Shipment_Master.ShipmentDate, 
+			Shipment_Master.ShipmentId, 
+			Transhipment_TransferManifestByAWBInfo.CreatedUserCode,
+			Transhipment_TransferManifestByAWBInfo.CreatedDateTime, 
+			Transhipment_TransferManifestByAWBInfo.TransactionSequenceNumber, 
+			Transhipment_TransferManifestByAWBInfo.InboundFlightId,
+			upper(#{trmNumber}) TRMNumber,
+			upper(#{airlineNumber}) AirlineNumber,
+			case
+				when (select 
+							count(1) 
+						from
+							Exp_EAcceptanceDocumentInformation
+						where
+							Exp_EAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber and
+							Exp_EAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate and
+							Exp_EAcceptanceDocumentInformation.Status not in ('REJECTED', 'RETURNED')) > 0 then
+					isnull((select
+								sum(Shipment_Inventory.Pieces)
+							from
+								Shipment_Inventory
+							where
+								Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId), 0) + 
+					isnull((select
+								sum(Shipment_FreightOut.Pieces)
+							from
+								Shipment_FreightOut
+							where
+								Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId), 0)
+				else
+					isnull((select
+								sum(Shipment_Inventory.Pieces)
+							from
+								Shipment_Inventory
+							where
+								((Shipment_Inventory.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID) OR			
+									(Shipment_Inventory.InboundFlightId = Flt_OperativeFlight_Legs.Flight_ID)) and
+								Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId), 0) + 
+					isnull((select
+								sum(Shipment_FreightOut.Pieces)
+							from
+								Shipment_FreightOut
+							where					
+								Shipment_FreightOut.InboundFlightId = Flt_OperativeFlight_Legs.Flight_ID and
+								Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId), 0)
+				end as InventoryPieces		
+			
+		from 
+			Shipment_Master inner join				
+			Transhipment_TransferManifestByAWBInfo 
+				on Shipment_Master.ShipmentNumber = Transhipment_TransferManifestByAWBInfo.ShipmentNumber and
+					Shipment_Master.ShipmentDate = Transhipment_TransferManifestByAWBInfo.ShipmentDate left join
+			Flt_OperativeFlight 
+				on Transhipment_TransferManifestByAWBInfo.InboundFlightId = Flt_OperativeFlight.Flight_ID left join 
+			Flt_OperativeFlight_Legs 
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		where		
+			Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId = #{transTransferManifestByAwbId}
+	]]>	
+	</select>
+
+	<resultMap id="AWBSHCResultMap"
+		type="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBSHC">
+		<id column="TransTransferManifestByAWBInfoId" property="transTransferManifestByAWBInfoId" />
+		<id column="SpecialHandlingCode"  property="specialHandlingCode" />
+		<result column="TransTransferManifestByAWBInfoSHCId" property="transTransferManifestByAWBInfoSHCId" />
+	</resultMap>
+	
+	<sql id="AWBSHC_Column_List">
+		TransTransferManifestByAWBInfoId, 
+		SpecialHandlingCode,
+		TransTransferManifestByAWBInfoSHCId
+	</sql>
+	
+	<select id="selectAWBSHC" parameterType="map" resultMap="AWBSHCResultMap">
+		select
+		<include refid="AWBSHC_Column_List" />
+		from 
+			Transhipment_TransferManifestByAWBSHC
+		where
+			TransTransferManifestByAWBInfoId = #{transTransferManifestByAWBInfoId}
+	</select>
+
+	<select id="getAWBCountBaseOnCarrierCodeFrom"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB"
+		resultType="java.lang.String">
+	<![CDATA[
+		select
+		    right('000000'+ cast(isnull(max(TRMInfo.TRMNumber), 0) + 1 as varchar), 6) as result
+		from(
+			select 	
+				right('000000'+ substring(Transhipment_TransferManifestByAWB.TRMNumber, len(CarrierCodeFrom) + 1, 
+						len(Transhipment_TransferManifestByAWB.TRMNumber)), 6) as TRMNumber
+			from 
+				Transhipment_TransferManifestByAWB 
+			where 
+				CarrierCodeFrom = #{carrierCodeFrom}
+		)TRMInfo
+	]]>
+	</select>
+
+	<select id="getShipmentDetail"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+	<![CDATA[
+  		with  TranshipmentData as (
+			select  
+				Flt_OperativeFlight.FlightKey inboundFlightNumber,
+				0 as exportDataFlag,
+				isnull((select
+							sum(Shipment_Irregularity.pieces)
+						from
+							Shipment_Irregularity
+						where
+							Shipment_Irregularity.shipmentNumber = Shipment_Master.ShipmentNumber and 
+							Shipment_Irregularity.ShipmentDate = Shipment_Master.ShipmentDate and
+							Shipment_Irregularity.Flight_ID = Imp_ShipmentVerification.FlightId and 
+							Shipment_Irregularity.CargoIrregularityCode = 'MSCA'),0) as irregularityPieces,
+				(isnull(sum(Shipment_Inventory.Pieces),0) + isnull(sum(Shipment_FreightOut.Pieces), 0)) as inventoryPieces,
+				cast(Flt_OperativeFlight_Legs.DateSTA as date) inboundFlightDate,
+				(isnull(sum(Shipment_Inventory.Pieces),0) + isnull(sum(Shipment_FreightOut.Pieces), 0)) as pieces,
+		        (isnull(sum(Shipment_Inventory.Weight),0) + isnull(sum(Shipment_FreightOut.Weight), 0)) as weight,
+				(select
+						string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId) as shcs,
+		        Flt_OperativeFlight.Flight_ID inboundFlightId,
+		        RoutingInfo.NextPoint destination,          
+				(select GroundHandlerCode from Mst_Carrier where carriercode = RoutingInfo.NextCarrier) inboundFlightHandler,
+				isnull(Shipment_Master.WeightUnitCode, 'K') weightUnitCode,
+				Shipment_Master.NatureOfGoodsDescription as natureOfGoodsDescription,
+				Shipment_Master.Destination as awbDestination,
+				Shipment_Master.Origin as origin                                                         
+			 from 
+				Shipment_Master inner join
+				Shipment_Inventory
+					on Shipment_Master.ShipmentId = Shipment_inventory.Shipment_ID and 
+						Shipment_Inventory.TRMNumber is null inner join
+				Flt_OperativeFlight
+					on ((Shipment_Inventory.Flight_ID = Flt_OperativeFlight.Flight_ID) OR
+							(Shipment_Inventory.InboundFlightId = Flt_OperativeFlight.Flight_ID)) inner join
+				Flt_OperativeFlight_Legs 
+		 			on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join 
+				Imp_ShipmentVerification
+					on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId and
+						Flt_OperativeFlight.Flight_ID = Imp_ShipmentVerification.FlightId left join
+				Shipment_FreightOut
+					on Shipment_Master.ShipmentId = Shipment_FreightOut.ShipmentId and 
+						Shipment_FreightOut.TRMNumber is null and
+						Imp_ShipmentVerification.FlightId = Shipment_FreightOut.InboundFlightId left join
+				(select
+						RouteInfo.ShipmentId,
+						RouteInfo.NextPoint,
+						RouteInfo.NextCarrier,
+						RouteInfo.ShipmentMasterRoutingId
+					from(
+						select	
+							Shipment_Master.ShipmentId,
+							Shipment_MasterRoutingInfo.FromPoint as AirportCityCode,
+							Shipment_MasterRoutingInfo.Carrier as CarrierCode,
+							Shipment_MasterRoutingInfo.ShipmentMasterRoutingId,
+							LEAD(Shipment_MasterRoutingInfo.FromPoint , 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextPoint,
+							LEAD(Shipment_MasterRoutingInfo.Carrier, 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextCarrier
+						from 
+							Shipment_Master inner join
+							Shipment_MasterRoutingInfo
+								on Shipment_Master.ShipmentId = Shipment_MasterRoutingInfo.ShipmentId
+						where
+							Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+							Shipment_Master.ShipmentDate = cast(#{shipmentDate} as date)
+						)RouteInfo
+					where
+						RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+						RouteInfo.NextPoint <> '0'   
+				)RoutingInfo
+					on Shipment_Master.ShipmentId = RoutingInfo.ShipmentId
+			where 
+				Shipment_Master.ShipmentNumber = #{shipmentNumber} and  
+				Shipment_Master.ShipmentDate = cast(#{shipmentDate} as date) and 
+				Shipment_Master.Origin NOT IN ( #{tenantAirport}, #{tenantCity}) and 
+				Shipment_Master.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) and 
+				(Shipment_Master.DocumentReceivedOn is not null OR Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and 
+				not exists (
+					select
+						null 
+					from 
+						Transhipment_TransferManifestByAWBInfo inner join
+						Transhipment_TransferManifestByAWB 
+							on Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId
+					where			
+						Transhipment_TransferManifestByAWBInfo.InboundFlightId = Imp_ShipmentVerification.FlightId and
+						Transhipment_TransferManifestByAWBInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						Transhipment_TransferManifestByAWBInfo.ShipmentDate = Shipment_Master.ShipmentDate and 
+						Transhipment_TransferManifestByAWB.CancelledBy is null and
+						Transhipment_TransferManifestByAWB.FinalizedBy is null and
+						Transhipment_TransferManifestByAWB.CarrierCodeTo = #{recievingCarrier}
+				)
+		]]>
+		
+				<if test="inboundFlightId != null">
+					and Flt_OperativeFlight.Flight_ID = #{inboundFlightId}
+				</if>
+		<![CDATA[
+			group by
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Imp_ShipmentVerification.FlightId,
+				Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight.Flight_ID,
+				Flt_OperativeFlight_Legs.DateSTA,
+				Flt_OperativeFlight.GroundHandlerCode,
+				Shipment_Master.WeightUnitCode,
+				Shipment_Master.NatureOfGoodsDescription,
+				RoutingInfo.NextPoint,
+				RoutingInfo.NextCarrier
+		union
+			select  
+				Flt_OperativeFlight.FlightKey inboundFlightNumber,
+				0 as exportDataFlag,
+				isnull((select
+							sum(Shipment_Irregularity.pieces)
+						from
+							Shipment_Irregularity
+						where
+							Shipment_Irregularity.shipmentNumber = Shipment_Master.ShipmentNumber and 
+							Shipment_Irregularity.ShipmentDate = Shipment_Master.ShipmentDate and
+							Shipment_Irregularity.Flight_ID = Imp_ShipmentVerification.FlightId and 
+							Shipment_Irregularity.CargoIrregularityCode = 'MSCA'),0) as irregularityPieces,
+				isnull(sum(Shipment_FreightOut.Pieces), 0) as inventoryPieces,
+				cast(Flt_OperativeFlight_Legs.DateSTA as date) inboundFlightDate,
+				isnull(sum(Shipment_FreightOut.Pieces), 0) as pieces,
+		        isnull(sum(Shipment_FreightOut.Weight), 0) as weight,
+				(select
+						string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+					from
+						Shipment_MasterSHC
+					where
+						Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId) as shcs,
+		        Flt_OperativeFlight.Flight_ID inboundFlightId,
+		        RoutingInfo.NextPoint destination,          
+				(select GroundHandlerCode from Mst_Carrier where carriercode = RoutingInfo.NextCarrier) inboundFlightHandler,
+				isnull(Shipment_Master.WeightUnitCode, 'K') weightUnitCode,
+				Shipment_Master.NatureOfGoodsDescription as natureOfGoodsDescription,
+				Shipment_Master.Destination as awbDestination,
+				Shipment_Master.Origin as origin                                                         
+			 from 
+				Shipment_Master inner join
+				Shipment_FreightOut
+					on Shipment_Master.ShipmentId = Shipment_FreightOut.ShipmentId and
+						Shipment_FreightOut.TRMNumber is null inner join
+				Flt_OperativeFlight
+					on Shipment_FreightOut.InboundFlightId = Flt_OperativeFlight.Flight_ID inner join
+				Flt_OperativeFlight_Legs 
+		 			on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+						Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join 
+				Imp_ShipmentVerification
+					on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId and
+						Flt_OperativeFlight.Flight_ID = Imp_ShipmentVerification.FlightId left join
+				(select
+						RouteInfo.ShipmentId,
+						RouteInfo.NextPoint,
+						RouteInfo.NextCarrier,
+						RouteInfo.ShipmentMasterRoutingId
+					from(
+						select	
+							Shipment_Master.ShipmentId,
+							Shipment_MasterRoutingInfo.FromPoint as AirportCityCode,
+							Shipment_MasterRoutingInfo.Carrier as CarrierCode,
+							Shipment_MasterRoutingInfo.ShipmentMasterRoutingId,
+							LEAD(Shipment_MasterRoutingInfo.FromPoint , 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextPoint,
+							LEAD(Shipment_MasterRoutingInfo.Carrier, 1,0) OVER (ORDER BY ShipmentMasterRoutingId) AS NextCarrier
+						from 
+							Shipment_Master inner join
+							Shipment_MasterRoutingInfo
+								on Shipment_Master.ShipmentId = Shipment_MasterRoutingInfo.ShipmentId
+						where
+							Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+							Shipment_Master.ShipmentDate = cast(#{shipmentDate} as date)
+						)RouteInfo		
+					where
+						RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+						RouteInfo.NextPoint <> '0'   
+				)RoutingInfo
+					on Shipment_Master.ShipmentId = RoutingInfo.ShipmentId
+			where 
+				Shipment_Master.ShipmentNumber = #{shipmentNumber} and  
+				Shipment_Master.ShipmentDate = cast(#{shipmentDate} as date) and 
+				Shipment_Master.Origin NOT IN ( #{tenantAirport}, #{tenantCity}) and 
+				Shipment_Master.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) and 
+				(Shipment_Master.DocumentReceivedOn is not null OR Imp_ShipmentVerification.DocumentReceivedFlag = 1 OR Imp_ShipmentVerification.PhotoCopyAwbFlag = 1) and 
+				not exists (
+					select
+						null 
+					from 
+						Transhipment_TransferManifestByAWBInfo inner join
+						Transhipment_TransferManifestByAWB 
+							on Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId
+					where			
+						Transhipment_TransferManifestByAWBInfo.InboundFlightId = Imp_ShipmentVerification.FlightId and
+						Transhipment_TransferManifestByAWBInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+						Transhipment_TransferManifestByAWBInfo.ShipmentDate = Shipment_Master.ShipmentDate and 
+						Transhipment_TransferManifestByAWB.CancelledBy is null and
+						Transhipment_TransferManifestByAWB.FinalizedBy is null and
+						Transhipment_TransferManifestByAWB.CarrierCodeTo = #{recievingCarrier}
+				)
+		]]>			
+				<if test="inboundFlightId != null">
+					and Flt_OperativeFlight.Flight_ID = #{inboundFlightId}
+				</if>
+		<![CDATA[
+			group by
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Destination,
+				Shipment_Master.Origin,
+				Imp_ShipmentVerification.FlightId,
+				Flt_OperativeFlight.FlightKey,
+				Flt_OperativeFlight.Flight_ID,
+				Flt_OperativeFlight_Legs.DateSTA,
+				Flt_OperativeFlight.GroundHandlerCode,
+				Shipment_Master.WeightUnitCode,
+				Shipment_Master.NatureOfGoodsDescription,
+				RoutingInfo.NextPoint,
+				RoutingInfo.NextCarrier
+		union
+			select 
+				top 1 
+				null as inboundFlightNumber,
+				1 as exportDataFlag,
+				0 as irregularityPieces,
+				Exp_eAcceptanceDocumentInformation.Piece as inventoryPieces,
+				null as inboundFlightDate,
+				Exp_eAcceptanceDocumentInformation.Piece as pieces,
+				Exp_eAcceptanceDocumentInformation.Weight as weight,
+				(select
+						string_agg(Exp_eAcceptanceDocumentInfoSHC.SpecialHandlingCode, ' ')
+					from
+						Exp_eAcceptanceDocumentInfoSHC
+				where
+					Exp_eAcceptanceDocumentInfoSHC.DocumentInformationId = Exp_eAcceptanceDocumentInformation.DocumentInformationId
+				) as shcs,
+				null as inboundFlightId,
+				Exp_eAcceptanceDocumentInformation.Destination destination,
+				(select GroundHandlerCode from mst_carrier where carriercode = #{recievingCarrier} ) as inboundFlightHandler,
+				'K' as weightUnitCode,
+				Exp_eAcceptanceDocumentInformation.NatureOfGoodsDescription as natureOfGoodsDescription,
+				Exp_eAcceptanceDocumentInformation.Destination as awbDestination,
+				Exp_eAcceptanceDocumentInformation.Origin as origin
+			from 
+				Exp_eAcceptanceDocumentInformation
+			where
+				Exp_eAcceptanceDocumentInformation.ShipmentNumber = #{shipmentNumber} and
+				Exp_eAcceptanceDocumentInformation.ShipmentDate = cast(#{shipmentDate} as date) and 
+				not exists (
+					select 
+						null 
+					from
+						Transhipment_TransferManifestByAWBInfo inner join
+						Transhipment_TransferManifestByAWB 
+							on Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId
+				where
+					Transhipment_TransferManifestByAWBInfo.ShipmentNumber = Exp_eAcceptanceDocumentInformation.ShipmentNumber and 
+					Transhipment_TransferManifestByAWBInfo.ShipmentDate = Exp_eAcceptanceDocumentInformation.ShipmentDate and 
+					Transhipment_TransferManifestByAWB.CancelledBy is null and
+					Transhipment_TransferManifestByAWB.FinalizedBy is null and
+					Transhipment_TransferManifestByAWB.CarrierCodeTo = #{recievingCarrier})
+		) 
+		select 
+			inboundFlightNumber,
+			exportDataFlag,
+			irregularityPieces,
+			inventoryPieces,
+			inboundFlightDate,
+			shcs,
+			inboundFlightId,
+			destination,
+			awbDestination,
+			origin,
+			inboundFlightHandler,
+			isnull(weightUnitCode, 'K') weightUnitCode,
+			natureOfGoodsDescription,
+			pieces,
+			weight
+		from 
+			TranshipmentData
+  	]]>
+	</select>
+
+	<select id="fetchTranshipmentDetails"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="java.lang.Integer">
+		select count(*) from Transhipment_TransferManifestByAWBInfo where TransTransferManifestByAWBId = #{transTransferManifestByAwbId}
+	</select>
+
+	<delete id="deleteTRMNumberRecord"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Transhipment_TransferManifestByAWB where TransTransferManifestByAWBId = #{transTransferManifestByAwbId}
+	</delete>
+
+	<select id="checkEachTrmNumber"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="java.lang.Integer">
+		select 
+			count(1) 
+		from 
+			Transhipment_TransferManifestByAWBInfo inner join
+			Transhipment_TransferManifestByAWB 
+				on Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentDate} and
+			Transhipment_TransferManifestByAWB.CarrierCodeTo = #{recievingCarrier}
+			<if test="inboundFlightNumber != null">
+			 and inboundFlightid = 
+				(select 
+					Flt_OperativeFlight.Flight_ID 
+				from
+					Flt_OperativeFlight inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+				where
+					Flt_OperativeFlight.FlightKey = #{inboundFlightNumber} and
+					cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{inboundFlightDate} as date) and
+					Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				)			
+			</if> 
+			and 
+			Transhipment_TransferManifestByAWB.CancelledBy is null and
+			Transhipment_TransferManifestByAWB.FinalizedBy is null
+	</select>
+
+	<select id="fetchCarrierName" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select top 1 CarrierShortName from Mst_Carrier where CarrierCode = #{carrierCode}
+	</select>
+
+	<select id="checkTRMAlreadyExists" parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+		select 
+			case 
+				when count(TRMNumber) > 0 then 
+					1 
+				else 
+					0 end
+		from
+			Transhipment_TransferManifestByAWB 
+		where 
+			TRMNumber = #{param}
+	</select>
+
+	<select id="getShipmentIdFromShipmentMaster"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="java.math.BigInteger">
+		select ShipmentId from Shipment_Master where ShipmentNumber = #{shipmentNumber} and ShipmentDate=#{shipmentDate}
+	</select>
+
+	<insert id="insertDataToFreightOutFromInventory"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		insert into Shipment_FreightOut(
+			ShipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			WarehouseLocation,
+			FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			Locked,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			CreatedUserCode,
+			CreatedDateTime,
+			ReferenceDetails,
+			Abandoned,
+			ActualWeightWeighed,
+			ChargeableLocationType,
+			TRMNumber,
+			InboundFlightId
+		)
+		select 
+			Shipment_ID as ShipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			WarehouseLocation,
+			Flight_ID FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			#{terminal},
+			0,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			#{createdBy},
+			#{createdOn},
+			ShipmentInventory_Id ReferenceDetails,
+			0,
+			0,
+			ChargeableLocationType,
+			upper(#{trmNumber}),
+			Flight_ID InboundFlightId
+		FROM 
+			Shipment_Inventory
+		where 
+			Shipment_Id = #{shipmentId}
+			<if test="inboundFlightId != null">
+				and Shipment_Inventory.Flight_ID = #{inboundFlightId}
+			</if>			
+	</insert>
+
+	<select id="getShipmentInventoryIds" resultType="java.math.BigInteger"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		select 
+			ShipmentInventory_Id 
+		from 
+			Shipment_Inventory 
+		where 
+			Shipment_Id = #{shipmentId}
+			<if test="inboundFlightId != null">
+					and Shipment_Inventory.Flight_ID = #{inboundFlightId}
+			</if>	
+	</select>
+
+	<select id="getShipmentFreightOutIds" resultType="java.math.BigInteger"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		select 
+			ShipmentFreightOutId 
+		from 
+			Shipment_FreightOut 
+		where 
+			ShipmentId = #{shipmentId} and			
+			TRMNumber = upper(#{trmNumber})
+			<if test="inboundFlightId != null">
+				and Shipment_FreightOut.FlightId = #{inboundFlightId}
+			</if>			
+	</select>
+	
+	<insert id="insertIntoFreightOutSHC"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		insert into Shipment_FreightOutSHC(
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			ShipmentFreightOutId
+		)
+		select
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn},
+			#{shipmentFreightOutId}
+		from 
+			Shipment_InventorySHC
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId} and 
+			not exists(
+				select
+					null
+				from
+					Shipment_FreightOutSHC
+				where
+					ShipmentFreightOutId = #{shipmentFreightOutId}
+			)
+	</insert>
+	
+	<insert id="insertIntoFreightOutHouse"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		insert into Shipment_FreightOutHouse(
+			ShipmentFreightOutId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)
+		select 
+			#{shipmentFreightOutId},
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			#{createdBy},
+			#{createdOn}
+		from 
+			Shipment_InventoryHouse
+		where 
+			ShipmentInventoryId = #{shipmentInventoryId} and
+			not exists(
+				select
+					null
+				from
+					Shipment_FreightOutHouse
+				where
+					ShipmentFreightOutId = #{shipmentFreightOutId}
+			)
+	</insert>
+
+	<delete id="deleteShipmentInventoryHouseData"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Shipment_InventoryHouse where ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+
+	<delete id="deleteShipmentInventorySHCData"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Shipment_InventorySHC where ShipmentInventoryId = #{shipmentInventoryId}
+	</delete>
+
+	<delete id="deleteDataShipmentInventory"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		delete from Shipment_Inventory 
+		where Shipment_ID = #{shipmentId}
+				<if test="inboundFlightId != null">
+					and Shipment_Inventory.Flight_ID = #{inboundFlightId}
+				</if>
+	</delete>
+
+	<select id="CheckDataExistsInventory" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		select 
+			count(1) 
+		from 
+			Shipment_Inventory 
+		where 
+			Shipment_ID = #{shipmentId}
+			<if test="inboundFlightId != null">
+				and Shipment_Inventory.Flight_ID = #{inboundFlightId}
+			</if>	
+	</select>
+
+	<select id="CheckDataExistsFreightOut" resultType="java.lang.Integer"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		select 
+			count(1) 
+		from 
+			Shipment_FreightOut 
+		where 
+			ShipmentId = #{shipmentId} and
+			TRMNumber = upper(#{trmNumber})
+			<if test="inboundFlightId != null and inboundFlightHandler == 'DNATA'">
+				and Shipment_FreightOut.FlightId = #{inboundFlightId}
+			</if>	
+			<if test="inboundFlightId != null and inboundFlightHandler == 'SATS'">
+				and Shipment_FreightOut.InboundFlightId = #{inboundFlightId}
+			</if>			
+	</select>
+
+	<select id="checkRoutingExists"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="java.lang.Integer">
+		select 
+			count(1) 
+		from 
+			Shipment_MasterRoutingInfo 
+		where
+			ShipmentId = (
+				select 
+					ShipmentId 
+				from 
+					Shipment_Master 
+				where
+					ShipmentNumber = #{shipmentNumber} and 
+					ShipmentDate = #{shipmentDate}
+				)
+		and carrier = #{recievingCarrier}
+	</select>
+
+	<insert id="insertDataFreightOutToInventory"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		insert into Shipment_Inventory(
+			Shipment_ID,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			WarehouseLocation,
+			Flight_ID,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			Locked,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			ReferenceDetails,
+			Abandoned,
+			ActualWeightWeighed,
+			ChargeableLocationType,
+			CreatedUser_Code,
+			Created_DateTime
+		)
+		select
+			ShipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			WarehouseLocation,
+			FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			#{terminal},
+			Locked,
+			LockReason,
+			LockedBy,
+			HoldRemarks,
+			DeliveryRequestOrderNo,
+			DeliveryRequestIssuedBy,
+			DeliveryRequestIssuedOn,
+			DeliveryOrderNo,
+			DeliveredOn,
+			DeliveredBy,
+			null,
+			Abandoned,
+			ActualWeightWeighed,
+			ChargeableLocationType,
+			#{createdBy},
+			getdate()
+		from 
+			Shipment_FreightOut
+		where 
+			ShipmentId = #{shipmentId} and
+			TRMNumber = upper(#{trmNumber})
+			<if test="inboundFlightId != null">
+				and Shipment_FreightOut.FlightId = #{inboundFlightId}
+			</if>
+	</insert>
+
+	<insert id="insertFreightOutShcDataToInventoryShc">
+		insert into Shipment_InventorySHC(
+			ShipmentInventoryId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime
+		)
+		select 
+			#{shipmentInventoryId},
+			SpecialHandlingCode,
+			#{createdBy},
+			getdate()
+		from 
+			Shipment_FreightOutSHC 
+		where
+			ShipmentFreightOutId = #{shipmentFreightOutId}
+	</insert>
+
+	<insert id="insertFreightOutHouseDataToInventoryHouse">
+		insert into Shipment_InventoryHouse(
+			ShipmentInventoryId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)
+		select 
+			#{shipmentInventoryId},
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			#{createdBy},
+			getdate()
+		from 
+			Shipment_FreightOutHouse 
+		where
+			ShipmentFreightOutId = #{shipmentFreightOutId}
+	</insert>
+
+	<delete id="deleteFreightOutHouseData">
+		delete from Shipment_FreightOutHouse where ShipmentFreightOutId = #{shipmentFreightOutId}
+	</delete>
+	
+	<delete id="deleteFreightOutSHCData">
+		delete from Shipment_FreightOutSHC where ShipmentFreightOutId = #{shipmentFreightOutId}
+	</delete>
+	
+	<delete id="deleteDataFreightOut">
+		delete from Shipment_FreightOut where ShipmentId = #{shipmentId} and TRMNumber = upper(#{trmNumber})
+		<if test="inboundFlightId != null">
+			and Shipment_FreightOut.FlightId = #{inboundFlightId}
+		</if>
+	</delete>
+
+	<update id="changeCarrierShipmentMaster"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		update Shipment_Master 
+		set 
+			CarrierCode = #{recievingCarrier},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn}
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="changeCarrierShipmentMasterUnfinalize"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		update Shipment_Master 
+		set 
+			CarrierCode = #{transferCarrier},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = #{modifiedOn} 
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentDate}
+	</update>	
+	
+	<select id="sqlGetTranshipmentTransferManifestInventoryDetailForImport"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		<![CDATA[
+		select
+			Shipment_Master.ShipmentId as shipmentId,
+			Shipment_Inventory.ShipmentInventory_Id as shipmentInventoryId,
+			Shipment_Inventory.Pieces as pieces,
+			Shipment_Inventory.Weight as weight,
+			0 shipmentFreightOutId
+		from 
+			Shipment_Inventory inner join
+			Shipment_Master
+				on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId inner join
+			Flt_OperativeFlight
+				on (Shipment_Inventory.Flight_ID = Flt_OperativeFlight.Flight_ID
+						or Shipment_Inventory.InboundFlightId = Flt_OperativeFlight.Flight_ID) inner join
+			Flt_OperativeFlight_Legs
+				on 	Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+		where 
+			Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+			Shipment_Master.ShipmentDate  = #{shipmentDate} and		
+			Shipment_Inventory.TRMNumber is null and
+			Flt_OperativeFlight.FlightKey = #{inboundFlightNumber} and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{inboundFlightDate} as date) and
+			Shipment_Master.Origin NOT IN ( #{tenantAirport}, #{tenantCity}) and
+			Shipment_Master.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+		union
+		select
+			Shipment_Master.ShipmentId as shipmentId,
+			0 shipmentInventoryId,
+			Shipment_FreightOut.Pieces as pieces,
+			Shipment_FreightOut.Weight as weight,
+			Shipment_FreightOut.ShipmentFreightOutId as shipmentFreightOutId
+		from 
+			Shipment_FreightOut inner join
+			Shipment_Master
+				on Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId inner join
+			Flt_OperativeFlight
+				on Shipment_FreightOut.InboundFlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs
+				on 	Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+		where 
+			Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+			Shipment_Master.ShipmentDate  = #{shipmentDate} and		
+			Shipment_FreightOut.TRMNumber is null and
+			Flt_OperativeFlight.FlightKey = #{inboundFlightNumber} and
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = cast(#{inboundFlightDate} as date) and
+			Shipment_Master.Origin NOT IN ( #{tenantAirport}, #{tenantCity}) and
+			Shipment_Master.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+	]]>
+	</select>
+	
+	<select id="sqlGetTranshipmentTransferManifestInventoryDetailForExport"
+		parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo"
+		resultType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+	<![CDATA[
+		select
+			Shipment_Master.ShipmentId as shipmentId,
+			Shipment_Inventory.ShipmentInventory_Id as shipmentInventoryId,
+			Shipment_Inventory.Pieces as pieces,
+			Shipment_Inventory.Weight as weight,
+			0 shipmentFreightOutId
+		from 
+			Shipment_Inventory inner join
+			Shipment_Master
+				on Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+		where 
+			Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+			Shipment_Master.ShipmentDate  = #{shipmentDate} and		
+			Shipment_Inventory.TRMNumber is null and
+			Shipment_Master.Origin IN ( #{tenantAirport}, #{tenantCity})
+		union
+		select
+			Shipment_Master.ShipmentId as shipmentId,
+			0 shipmentInventoryId,
+			Shipment_FreightOut.Pieces as pieces,
+			Shipment_FreightOut.Weight as weight,
+			Shipment_FreightOut.ShipmentFreightOutId as shipmentFreightOutId
+		from 
+			Shipment_FreightOut inner join
+			Shipment_Master
+				on Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId
+		where 
+			Shipment_Master.ShipmentNumber = #{shipmentNumber} and
+			Shipment_Master.ShipmentDate  = #{shipmentDate} and		
+			Shipment_FreightOut.TRMNumber is null and
+			Shipment_Master.Origin IN ( #{tenantAirport}, #{tenantCity})
+	]]>
+	</select>
+	
+	<update id="sqlUpdateTranshipmentTransferManifestShipmentInventoryWithTrmNumber"
+			parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		update Shipment_Inventory
+	    set
+			TRMNumber = upper(#{trmNumber}) 
+		where
+			Shipment_ID = #{shipmentId} and
+			ShipmentInventory_Id = #{shipmentInventoryId} and
+			TRMNumber is null			
+	</update>
+		
+	<update id="sqlUpdateTranshipmentTransferManifestShipmentFreightOutWithTrmNumber"
+			parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWBInfo">
+		update Shipment_FreightOut
+	    set
+			TRMNumber = #{trmNumber}
+		where
+			ShipmentId = #{shipmentId} and
+			ShipmentFreightOutId = #{shipmentFreightOutId} and
+			TRMNumber is null
+	</update>
+	
+	<update id="sqlUpdateInventorywithTrmNumberAsNull"
+			parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		update Shipment_Inventory
+	    set
+			TRMNumber = NULL 
+		 where  TRMNumber =  #{trmNumber}
+		 and Shipment_ID	 =  #{shipmentId}
+	</update>
+	
+	<update id="sqlUpdateShipmentFreightOutwithTrmNumberAsNull"
+			parameterType="com.ngen.cosys.transhipment.model.TranshipmentTransferManifestByAWB">
+		update Shipment_FreightOut
+	    set
+			TRMNumber = NULL
+		 where  TRMNumber =  #{trmNumber}	
+		 and ShipmentId  =  #{shipmentId}
+	</update>
+	
+	<select id="sqlGetHandlerForRespectiveCarrier"
+		parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select 
+		    GroundHandlerCode 
+		from 
+		    Mst_Carrier  
+	    where 
+	        Mst_Carrier.CarrierCode = #{CarrierCodeTo}
+	</select>
+	
+	<select id="sqlGetTrmCancellationReasonValue" 
+		parameterType="java.lang.String"
+		resultType="java.lang.String">
+	<![CDATA[
+		select 
+			TOP 1 Description as 'desc' 
+		From
+			Mst_Reason 
+		where
+			Purpose = 'TRMCANCELLATION' and
+			ReasonCode = #{param}
+	]]>	
+	</select>
+</mapper>

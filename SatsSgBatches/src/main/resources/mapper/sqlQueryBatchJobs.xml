@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="BatchJobMapper">
+
+	<resultMap 
+		type="com.ngen.cosys.scheduler.model.BatchJobModel" 
+		id="BatchJobResultMap">
+		<id column="JobId" property="jobId" />
+		<result column="JobName" property="jobName" />
+		<result column="JobGroup" property="jobGroup" />
+		<result column="CronExpression" property="cronExpression" />
+		<result column="JobClazz" property="jobClazz" />
+		<result column="Active" property="active" />
+		<collection property="jobDataMap" 
+					select="sqlGetBatchJobDataMap" 
+					column="jobId=JobId"/>
+	</resultMap>
+
+	<select id="sqlGetBatchJob"
+		resultMap="BatchJobResultMap">
+		select
+			JobId,
+			JobName,
+			JobGroup,
+			CronExpression,
+			JobClazz,
+			Active
+		from
+			App_BatchJobs
+	</select>
+	
+	<resultMap 
+		type="com.ngen.cosys.scheduler.model.BatchJobDataMapModel" 
+		id="BatchJobModelDataResultMap">
+		<id column="JobId" property="jobId" />
+		<id column="JobDataMapId" property="jobDataMapId" />
+		<result column="DataKey" property="key" />
+		<result column="DataValue" property="value" />
+	</resultMap>
+
+	<select id="sqlGetBatchJobDataMap" 
+		parameterType="com.ngen.cosys.scheduler.model.BatchJobModel"
+		resultMap="BatchJobModelDataResultMap">
+		select
+			JobId,
+			JobDataMapId,
+			DataKey,
+			DataValue
+		from
+			App_BatchJobsDataMap
+		where
+			JobId = #{jobId}
+	</select>
+	
+	<update id="sqlUpdateMessageStatus" parameterType="com.ngen.cosys.scheduler.model.BatchJobModel">
+		UPDATE Interface_IncomingESBMessageLog
+		SET status = 'INITIATED'
+		WHERE status = 'PROCESSING'
+		AND CreatedDateTime > CONVERT(DATETIME, CONVERT(DATETIMEOFFSET,
+								CONVERT(DATETIMEOFFSET, #{datetoUpdate} AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))
+							AT TIME ZONE 'UTC'))
+		AND MessageType in 
+		<foreach item="item" collection="messages" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	<update id="sqlUpdateMessageCreatedDateTime" parameterType="com.ngen.cosys.scheduler.model.BatchJobModel">
+		UPDATE Interface_IncomingESBMessageLog
+		SET CreatedDateTime = getdate()
+		WHERE status = 'INITIATED'
+		AND CreatedDateTime > CONVERT(DATETIME, CONVERT(DATETIMEOFFSET,
+								CONVERT(DATETIMEOFFSET, #{datetoUpdate} AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))
+							AT TIME ZONE 'UTC'))
+		AND MessageType in 
+		<foreach item="item" collection="messages" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	<delete id="sqlDeleteFiredTriggers" parameterType="com.ngen.cosys.scheduler.model.BatchJobModel">
+		delete from qrtz_fired_triggers 
+		where entry_id= (select top 1 entry_id from qrtz_fired_triggers where trigger_name = #{jobName})
+	</delete>
+
+	<update id="sqlUpdateTriggerState" parameterType="com.ngen.cosys.scheduler.model.BatchJobModel">
+		update qrtz_triggers set Trigger_state = 'WAITING' where job_name = #{jobName}
+	</update>
+
+</mapper>

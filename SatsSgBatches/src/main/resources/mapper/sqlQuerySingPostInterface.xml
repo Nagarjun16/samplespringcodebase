@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SingpostMapper">
+	<select id="fetchBagReceivingStatus" parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.satssg.singpost.model.MailBagRequestModel">
+		<!-- select 
+			Eaccp.Number as recpID,
+			Eaccp.CreatedDateTime as bagStatusDateTime,
+			case when Legs.DateSTD is not null then Flt.FlightKey end as flightNumber, 
+			Legs.DateSTD as flightDate,
+			shpmst.ShipmentId shipmentId,
+			shpmst.ShipmentNumber shipmentNumber,
+			shpmst.CarrierCode carriercode
+		from
+	  	  	Exp_eAcceptanceHouseInformation Eaccp
+			left outer join Exp_ShipmentBooking ShpBook on
+			ShpBook.ShipmentNumber=Eaccp.Number
+			inner join Shipment_Master shpmst on SUBSTRING(ShpBook.ShipmentNumber,1,20)=shpmst.ShipmentNumber
+			left outer join Exp_ShipmentFlightBookingDetail ShpBookFlt on
+			ShpBookFlt.BookingId = ShpBook.BookingId and
+			ShpBookFlt.BookingStatusCode ='UU'
+			left outer join Flt_OperativeFlight Flt on Flt.Flight_id =	ShpBookFlt.FlightId
+			left outer join Flt_OperativeFlight_Legs Legs on Flt.Flight_id =Legs.Flight_id 
+			and Legs.FlightBoardPoint = 'SIN'
+		where
+		    Eaccp.Type='MAIL'
+			and	Eaccp.CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE(); -->
+			With bookingDetail as (SELECT Exp_ShipmentBooking.ShipmentNumber as bookedMailBags,Shipment_Master.CarrierCode, Shipment_Master.ShipmentId, Shipment_Master.ShipmentNumber,
+			Flt_OperativeFlight.FlightKey,Flt_OperativeFlight_Legs.DateSTD  FROM Shipment_Master Inner Join Exp_ShipmentBooking ON Shipment_Master.ShipmentNumber = Substring(Exp_ShipmentBooking.ShipmentNumber,1,20)
+			INNER JOIN Exp_ShipmentFlightBookingDetail ON Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId 
+			INNER  JOIN Flt_OperativeFlight  on Flt_OperativeFlight.Flight_id =	Exp_ShipmentFlightBookingDetail.FlightId
+			INNER  JOIN Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_id =Flt_OperativeFlight_Legs.Flight_id
+			AND Exp_ShipmentFlightBookingDetail.BookingStatusCode='UU' AND Shipment_Master.ShipmentType='MAIL')
+
+			SELECT Number recpID,CreatedDateTime bagStatusDateTime,
+			bookingDetail.FlightKey flightNumber,bookingDetail.DateSTD flightDate,
+			bookingDetail.ShipmentId shipmentId,
+			bookingDetail.ShipmentNumber shipmentNumber,
+			bookingDetail.CarrierCode carriercode
+			FROM Exp_eAcceptanceHouseInformation 
+			LEFT JOIN bookingDetail ON bookingDetail.bookedMailBags = Exp_eAcceptanceHouseInformation.NUMBER 
+			WHERE Exp_eAcceptanceHouseInformation.TYPE = 'MAIL' AND CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+			UNION
+			SELECT Number recpID,CreatedDateTime bagStatusDateTime,
+			bookingDetail.FlightKey flightNumber,bookingDetail.DateSTD flightDate,
+			bookingDetail.ShipmentId shipmentId,
+			bookingDetail.ShipmentNumber shipmentNumber,
+			bookingDetail.CarrierCode carriercode  
+			FROM Exp_OuthouseAcceptanceHouseInformation 
+			LEFT JOIN bookingDetail ON bookingDetail.bookedMailBags = Exp_OuthouseAcceptanceHouseInformation.NUMBER 
+			WHERE Exp_OuthouseAcceptanceHouseInformation.TYPE = 'MAIL' AND CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE()
+	</select>
+
+	<select id="fetchHandoverToDNATAStatus" parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.satssg.singpost.model.MailBagRequestModel">
+		select 
+			OutHseAcp.Number as recpID, 
+			OutHseAcp.CreatedDateTime as bagStatusDateTime, 
+			FlightKey as flightNumber, 
+			FlightDate as flightDate,
+			shpmst.ShipmentId shipmentId,
+			shpmst.ShipmentNumber shipmentNumber,
+			shpmst.CarrierCode carriercode
+		from 
+			Exp_OuthouseAcceptanceHouseInformation  OutHseAcp 
+			inner join Shipment_Master shpmst on SUBSTRING(OutHseAcp.Number,1,20)=shpmst.ShipmentNumber
+		where 
+			OutHseAcp.Type='MAIL' AND Deliverd = 1
+	     	and ISNULL(OutHseAcp.LastUpdatedDateTime,OutHseAcp.CreatedDateTime) between DATEADD(mi,-5,getdate())
+			AND getdate();  
+	</select>
+
+	<select id="fetchFlightTouchDownStatus" parameterType="Map"
+		resultType="com.ngen.cosys.satssg.singpost.model.FlightTouchDown">
+		select
+			Hse.Number recpID,
+			Flt.FlightKey flightNumber,
+			Hse.CreatedDateTime as bagStatusDateTime,
+			ISNULL(Legs.DateATA,Legs.DateSTA) flightTouchDownDateTime,
+			shp.ShipmentId shipmentId,
+			shp.ShipmentNumber shipmentNumber,
+			shp.CarrierCode carriercode
+		from
+			Imp_FlightEvents Evt
+			INNER JOIN Flt_OperativeFlight Flt ON Evt.FlightId=Flt.Flight_ID
+			INNER JOIN Flt_OperativeFlight_Legs Legs ON Legs.Flight_ID=Flt.Flight_ID
+			AND Legs.FlightOffPoint = #{tenantAirport}
+			INNER JOIN Imp_ShipmentVerification ShpVfc ON Evt.FlightId =
+			ShpVfc.FlightId
+			INNER JOIN Shipment_Master shp ON ShpVfc.ShipmentId =shp.ShipmentId AND
+			shp.ShipmentType ='MAIL'
+			INNER JOIN Shipment_HouseInformation Hse ON Shp.ShipmentId = Hse.ShipmentId
+		where			
+		    Hse.CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE();
+
+	</select>
+	
+	<select id="fetchOffloadStatus" parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.satssg.singpost.model.MailBagRequestModel">
+		select  
+			OffLd.Number as recpID,
+		    OffLd.Created_DateTime as bagStatusDateTime, 
+			shpmst.shipmentid shipmentId,
+			shpmst.ShipmentNumber shipmentNumber,
+			shpmst.CarrierCode carriercode,
+		    Flt.FlightKey as flightNumber,
+			Segs.DateSTD as flightDate
+		from 
+			Exp_OffloadShipmentHouseInfo OffLd
+			inner join Exp_OffloadShipmentInfo OfdShp on OfdShp.ExpOffloadShipmentInfoId = OffLd.ExpOffloadShipmentInfoId
+			inner join Shipment_Master shpmst on shpmst.ShipmentId=OfdShp.ShipmentId
+			left outer join Exp_OffloadULDInfo OfdUld on OfdUld.ExpOffloadULDInfoId = OfdShp.ExpOffloadULDInfoId 
+		    left outer join Flt_OperativeFlight_Segments Segs on Segs.FlightSegmentId = OfdUld.FlightSegmentId
+			left outer join Flt_OperativeFlight Flt on Flt.Flight_id = Segs.Flight_id
+		where 
+	        OffLd.Type='MAIL' and
+			OffLd.Created_DateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE();
+	</select>
+	
+	<select id="fetchBagHandoverToAirline" parameterType="java.lang.Object"
+		resultType="com.ngen.cosys.satssg.singpost.model.MailBagRequestModel">
+		<!-- select 
+			LdSHInfo.Number recpID,  
+			LdSHInfo.CreatedDateTime as bagStatusDateTime, 
+			shpmst.shipmentId shipmentId,
+			shpmst.ShipmentNumber shipmentNumber,
+			shpmst.CarrierCode carriercode,
+			Flt.FlightKey as flightNumber, 
+			Segs.DateSTD as flightDate,
+			Flt.Flight_ID as flightId,
+			AsUldToFlt.ULDTrolleyNumber as manifetsedUld
+  		from 
+  			Exp_ManifestShipmentHouseInfo LdSHInfo 
+		    inner  join Exp_LoadedShipmentInfo LdInfo on LdInfo.LoadedShipmentInfoId=LdSHInfo.ManifestShipmentInfoId
+			inner join shipment_master shpmst  on shpmst.shipmentid=LdInfo.shipmentid
+		    left outer join Exp_AssignedULDTrolleyToFlight AsUldToFlt on AsUldToFlt.AssUldTrolleyId = LdInfo.AssUldTrolleyId
+		    left outer join Flt_OperativeFlight_Segments Segs on Segs.FlightSegmentId = AsUldToFlt.FlightSegmentId
+		    left outer join Exp_Manifest expMnfst on expMnfst.FlightId = Segs.Flight_id
+            left outer join Flt_OperativeFlight Flt on Flt.Flight_id = expMnfst.FlightId
+	    where 
+	    	
+	        LdSHInfo.Type='MAIL' and
+			LdSHInfo.CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE(); -->
+			select 
+			ManHseInfo.Number recpID,  
+			ManHseInfo.CreatedDateTime as bagStatusDateTime, 
+			shpmst.shipmentId shipmentId,
+			shpmst.ShipmentNumber shipmentNumber,
+			shpmst.CarrierCode carriercode,
+			Flt.FlightKey as flightNumber, 
+			Segs.DateSTD as flightDate,
+			Flt.Flight_ID as flightId,
+			ManUld.ULDNumber as manifetsedUld
+  		from 
+  			Exp_ManifestShipmentHouseInfo ManHseInfo 
+		    inner  join Exp_ManifestShipmentInfo ManShpInfo on ManShpInfo.ManifestShipmentInfoId=ManHseInfo.ManifestShipmentInfoId
+			inner join shipment_master shpmst  on shpmst.shipmentid=ManShpInfo.shipmentid
+		    inner join Exp_ManifestULDInfo ManUld on ManUld.ManifestUldInfoId = ManShpInfo.ManifestUldInfoId
+			inner join Exp_Manifest Man on Man.ManifestId = ManUld.ManifestId
+		    inner join Flt_OperativeFlight_Segments Segs on Segs.FlightSegmentId = Man.FlightSegmentId
+            inner join Flt_OperativeFlight Flt on Flt.Flight_id = Segs.Flight_Id
+	    where 
+	    	shpmst.ShipmentType='MAIL' and
+			ManHseInfo.CreatedDateTime between DATEADD(mi,-5,getdate())
+			AND GETDATE();
+	</select>
+	
+	<select id="logDataIntoAirmailEventTable" parameterType="com.ngen.cosys.satssg.singpost.model.MailBagRequestModel">
+	INSERT INTO Event_AirmailStatusStore
+           (InterfaceType
+			,SourceTriggerType
+			,EventType
+			,ContainerMailbagSequence
+			,MailbagNumber
+			,ShipmentId   
+			,ShipmentNumber
+			,ManifestedUldKey
+			,CarrierCode
+			,FlightId
+			,TenantId
+			,Status
+			,TransferredDate
+			,CreatedBy
+			,CreatedOn)
+     VALUES
+           ('SINGPOST'
+           ,'SINGPOST'
+           ,#{bagStatus}
+           ,1
+           ,#{recpID}
+           ,#{shipmentId}
+           ,#{shipmentNumber}
+           ,#{manifetsedUld}
+           ,#{carriercode}
+           ,#{flightId}
+           ,#{tenantAirport}
+           ,'CREATED'
+           ,GetDate()
+           ,'MANUAL'
+           ,GetDate())
+	</select>
+
+</mapper>

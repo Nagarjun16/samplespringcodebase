@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BreakDownTracingMapper">
+		
+	<!--  Place the Tracing function select queries -->
+	
+	<resultMap id="tracingFlightInfo"
+		type="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightModel">
+		<id column="Flight_ID" property="flightId" />
+		<result column="flightkey" property="flightkey"/>
+		<result column="DateSTA" property="sta"/>			
+		<result column="ShipmentNumber" property="shipmentNumber"/>
+		<result column="ShipmentDate" property="shipmentDate"/>
+		<result column="ULDNumber" property="uldNumber"/>
+		<result column="segment" property="segment"/>	
+		 <!-- <collection property="segmentData" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightSegmentModel"
+			select="sqlGetTracingSegmentInfo" column="flightId=Flight_ID,shipmentNumber=ShipmentNumber,shipmentDate=ShipmentDate,uldNumber=ULDNumber" />  -->
+			<collection property="shipments" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel"
+			select="sqlGetShipmentInULD" column="flightId=Flight_ID,shipmentNumber=ShipmentNumber,shipmentdate=ShipmentDate,uldNumber=ULDNumber,flightSegmentId=flightSegmentId" /> 
+			<collection property="uldData" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingUldModel"
+			select="sqlGetULDData" column="shipmentNumber=ShipmentNumber,shipmentDate=ShipmentDate,uldNumber=ULDNumber,segmentId=Flight_ID,flightSegmentId=flightSegmentId"/> 
+	</resultMap>
+	
+	 <resultMap id="tracingSegmentInfo"
+		type="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightSegmentModel">
+		<id column="Flight_ID" property="flightId" />		
+		<result column="FlightBoardPoint" property="boardingPoint" />
+		<result column="FlightOffPoint" property="offPoint" />
+		<result column="FlightSegmentId" property="segmentId" />
+		<result column="ShipmentNumber" property="shipmentNumber"/>
+		<result column="ShipmentDate" property="shipmentDate"/>
+		<result column="ULDNumber" property="uldNumber"/>		 		
+		<collection property="uldData" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingUldModel"
+			select="sqlGetULDData" column="shipmentNumber=ShipmentNumber,shipmentDate=ShipmentDate,uldNumber=ULDNumber,segmentId=Flight_ID"/> 
+		<collection property="looseShipment" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel"
+			select="sqlGetLooseCargo" column="shipmentNumber=ShipmentNumber,shipmentdate=ShipmentDate,shipmentId=Flight_ID,uldNumber=ULDNumber,segmentId=FlightSegmentId"/>
+	</resultMap>
+	
+	<resultMap id="tracingULDInfo"
+		type="com.ngen.cosys.impbd.tracing.model.BreakDownTracingUldModel">
+		<!-- <id column="Shipmentid" property="shipmentId" /> -->		
+		<id column="FlightId" property="segmentId" />
+		<result column="ULDNumber" property="uldNumber" />
+		<!-- <result column="DamagedFlag" property="uldDamage" />
+		<result column="Intact" property="intactContainer" />
+		<result column="BreakDownStartedAt" property="breakDownStartDate" />
+		<result column="BreakDownEndedAt" property="breakDownEndDate" />
+		<result column="CreatedUserCode" property="breakDownDoneBy" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="HandlingMode" property="handlingMode" /> -->
+		<result column="uldLocationDetails" property="uldLocationDetails" />
+		<result column="flightSegmentId" property="flightSegmentId" />
+						
+		<!-- <collection property="shipmentInULD" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel"
+			select="sqlGetShipmentInULD" column="segmentId=FlightId,shipmentId=Shipmentid,shipmentNumber=ShipmentNumber,shipmentdate=ShipmentDate,uldNumber=ULDNumber" /> -->
+	</resultMap>
+	
+	<resultMap id="tracingShipmentInfo"
+		type="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel">
+		<id column="Shipmentid" property="shipmentId" />		
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentdate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoods" />
+		<result column="WarehouseLocation" property="warehouseLocation" />
+		<result column="ShipmentLocation" property="shipmentLocation" />
+		<result column="HandlingAreaCode" property="handlingTerminal" />
+		<result column="HandCarry" property="handCarry" />
+		<result column="locationPieces" property="pieces" />
+		<result column="locationWeight" property="weight" />
+		<result column="SHC" property="shc" />	
+		<result column="IrregularityCode" property="irregularityCode" />
+		<result column="IrregularityPieces" property="irregularityPiece" />
+		<result column="segmentId" property="segmentId" />
+		<result column="HAWBNumber" property="hawbNumber" />
+		<!--<result column="flightSegmentId" property="flightSegmentId" />  -->
+		<!-- <result column="OffloadedFlag" property="offLoadedFlag" />
+		<result column="SurplusFlag" property="surplusFlag" /> -->
+		<!-- <result column="uldNumber" property="uldNumber" /> -->
+		<result column="Piece" property="manifestPieces" />
+		<result column="Weight" property="manifestWeight" />
+		<result column="DamagedPieces" property="damagePieces" />
+		<result column="flightSegmentId" property="flightSegmentId" />
+		<collection property="locationInfo" javaType="List"
+			ofType="com.ngen.cosys.impbd.tracing.model.ShipmentLocationDetails"
+			select="sqlGetShipmentLocationDetails" column="shipmentId=Shipmentid,flightID=segmentId,HAWBNumber=HAWBNumber" />		
+	</resultMap>
+	
+	<select id="sqlGetTracingFlightInfo"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightModel"
+		resultMap="tracingFlightInfo">		
+		select
+			F1.Flight_ID,
+			F1.FlightKey,
+			F1.FlightNumber,
+			CAST(F2.DateSTA as DATE) as DateSTA,
+			F2.DateETA,F2.DateATA,
+			F2.AircraftRegCode,
+			#{shipmentNumber} AS ShipmentNumber, 
+			CAST(#{shipmentDate} AS DATE) AS ShipmentDate,
+			#{uldNumber} AS ULDNumber,
+			#{segment} as segment
+		 <choose>
+			<when test="flightSegmentId != null and flightSegmentId != ''">
+			 ,#{flightSegmentId} as flightSegmentId
+			</when>
+			<when test="flightSegmentId == null or flightSegmentId == ''">
+			 ,0 as flightSegmentId
+			</when>
+			
+			</choose>
+			
+		from 
+			Flt_OperativeFlight F1 inner join 
+			Flt_OperativeFlight_Legs F2 
+				on F1.Flight_ID = F2.Flight_ID 
+		
+		where
+			F1.FlightKey = #{flightNumber} and	
+			CAST( F2.DateSTA as date) = #{flightDate} and
+			F2.FlightOffPoint = #{tenantAirport}
+	</select>
+	
+	<select id="sqlGetTracingSegmentInfo"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightModel"
+		resultMap="tracingSegmentInfo">		
+		select 
+			Flight_ID,
+			FlightBoardPoint,
+			FlightOffPoint,
+			FlightSegmentOrder,
+			FlightSegmentId,
+			#{shipmentNumber} AS ShipmentNumber,																				
+			CAST(#{shipmentDate} AS DATE) AS ShipmentDate,
+			#{uldNumber} AS ULDNumber
+		from 
+			Flt_OperativeFlight_Segments inner join 
+			Imp_ArrivalManifestByFlight 
+				on Imp_ArrivalManifestByFlight.Flightid = Flt_OperativeFlight_Segments.Flight_ID
+		where 
+			Flight_ID=#{flightId} and FlightOffPoint = #{tenantAirport} 
+		order by 
+			FlightSegmentOrder desc
+	</select>
+	
+	<select id="sqlGetULDData"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingUldModel"
+		resultMap="tracingULDInfo">
+			With BreakDownULDTrolleyInfo AS(
+			select
+				#{segmentId} FlightId,
+				case when (Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = 'Bulk') then
+					'Bulk'
+				else
+					Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber
+				end ULDTrolleyNumber,				
+				Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId
+			from
+				Imp_BreakDownULDTrolleyInfo
+			where
+				(Imp_BreakDownULDTrolleyInfo.Intact = 0 OR Imp_BreakDownULDTrolleyInfo.Intact is null) and
+				Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId in (
+					select
+						Imp_ShipmentVerification.ImpShipmentVerificationId
+					from
+						Imp_ShipmentVerification
+					where
+						Imp_ShipmentVerification.FlightId = #{segmentId}
+				)
+			group by
+				Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,				
+				Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId
+		)select distinct
+			Imp_ShipmentVerification.FlightId,						
+			BreakDownULDTrolleyInfo.ULDTrolleyNumber uldNumber,		
+			(select 
+					TRIM(', ' From STRING_AGG(cast(brokeDownPieces.locationDetails as varchar(max)), ' ')) as locationDetails
+				from(
+					select
+						isnull(Imp_BreakDownStorageInfo.ShipmentLocation,Imp_BreakDownStorageInfo.WarehouseLocation) + '/' + cast((Imp_BreakDownStorageInfo.Pieces) as varchar)  + ',' locationDetails
+					from	
+						Shipment_Master inner join Imp_ShipmentVerification on Imp_ShipmentVerification.Shipmentid = Shipment_Master.Shipmentid 
+						inner join
+						Imp_BreakDownULDTrolleyInfo on Imp_ShipmentVerification.ImpShipmentverificationid = Imp_BreakDownULDTrolleyInfo.ImpShipmentverificationid
+						inner join Imp_BreakDownStorageInfo on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId= Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId
+					where
+						Imp_ShipmentVerification.FlightId = #{segmentId} and
+						Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = BreakDownULDTrolleyInfo.ULDTrolleyNumber
+						<choose>
+							<when test="shipmentNumber!= null and shipmentNumber!= ''">
+				 				 and Shipment_Master.ShipmentNumber = #{shipmentNumber} and Shipment_Master.ShipmentDate = #{shipmentDate}				
+							</when>
+								<when test="uldNumber!= null and uldNumber!= ''">
+									and Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = #{uldNumber}				
+								</when>
+						</choose>
+						) 
+				brokeDownPieces)  uldLocationDetails
+		from
+			Shipment_Master inner join Imp_ShipmentVerification on Imp_ShipmentVerification.Shipmentid = Shipment_Master.Shipmentid
+			inner join BreakDownULDTrolleyInfo on Imp_ShipmentVerification.FlightId = BreakDownULDTrolleyInfo.FlightId 
+			and Imp_ShipmentVerification.ImpShipmentVerificationId = BreakDownULDTrolleyInfo.ImpShipmentVerificationId
+			inner join
+                Imp_ArrivalManifestByFlight AMBF on AMBF.Flightid = Imp_ShipmentVerification.Flightid  inner join                    
+                        Imp_ArrivalManifestBySegment  AMBS on AMBS.ImpArrivalManifestByFlightId =  AMBF.ImpArrivalManifestByFlightId
+						 inner join
+                        Imp_ArrivalManifestULD AMU on AMBS.ImpArrivalManifestBySegmentId  = AMU.ImpArrivalManifestBySegmentId   inner join               
+                        Imp_ArrivalManifestShipmentInfo AMSI on (AMSI.ImpArrivalManifestULDId = AMU.ImpArrivalManifestULDId
+                        and AMSI.ShipmentNumber = Shipment_Master.ShipmentNumber and AMSI.ShipmentDate = Shipment_Master.ShipmentDate)
+		where
+			Imp_ShipmentVerification.FlightId = #{segmentId}
+			<if test="flightSegmentId != null and flightSegmentId != '' and flightSegmentId != 0">
+             and AMBS.flightSegmentId = #{flightSegmentId}
+            </if>	
+			<choose>
+			<when test="shipmentNumber!= null and shipmentNumber!= ''">
+				  and Shipment_Master.ShipmentNumber = #{shipmentNumber} and Shipment_Master.ShipmentDate = #{shipmentDate}				
+			</when>
+			<when test="uldNumber!= null and uldNumber!= ''">
+					and BreakDownULDTrolleyInfo.ULDTrolleyNumber = #{uldNumber}				
+				</when>
+		</choose> 
+		group by AMBS.flightSegmentId,
+		Imp_ShipmentVerification.FlightId,
+		BreakDownULDTrolleyInfo.ULDTrolleyNumber
+		
+			
+	</select> 
+	
+	<select id="sqlGetShipmentInULD"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel"
+		resultMap="tracingShipmentInfo">		   
+	With shipmentInfo AS(
+        SELECT DISTINCT
+            SHMPV.FlightId as FlightId,
+            AMBS.flightSegmentId,
+            SM.ShipmentId,
+            SM.ShipmentNumber,
+            SM.ShipmentDate,
+            SM.Origin,
+            SM.Destination,
+            SM.NatureOfGoodsDescription,           
+            BDUT.HandCarry,
+            BDUT.HandlingAreaCode,
+            SHIR.CargoIrregularityCode as IrregularityCode,
+            SHIR.Pieces as IrregularityPieces,           
+            AMSI.Piece,
+            AMSI.Weight,
+            CDI.SubEntityKey  as HAWBNumber,
+                       
+            (select
+                sum(DamagedPieces)
+            from
+                com_DamageInfo inner join com_DamageLineitems on com_DamageInfo.DamageInfoId = com_DamageLineitems.DamageInfoId
+            where   
+                com_DamageInfo.Flightid = #{flightId} and com_DamageInfo.Entitykey = SM.ShipmentNumber and com_DamageInfo.EntityDate = SM.ShipmentDate) as DamagedPieces
+       
+        FROM
+            Shipment_Master SM inner join
+            Imp_ShipmentVerification SHMPV
+                on (SM.shipmentid = SHMPV.shipmentid ) inner join   
+            Imp_BreakDownULDTrolleyInfo BDUT on
+                (BDUT.ImpShipmentVerificationId =SHMPV.ImpShipmentVerificationId)  left Join
+            Shipment_Irregularity SHIR
+                on (SHIR.ShipmentNumber = SM.ShipmentNumber and SHMPV.Flightid = SHIR.Flight_ID) left join
+                Imp_ArrivalManifestByFlight AMBF on AMBF.Flightid = SHMPV.Flightid
+                left join                    
+                        Imp_ArrivalManifestBySegment  AMBS on AMBS.ImpArrivalManifestByFlightId =  AMBF.ImpArrivalManifestByFlightId  inner join
+                        Imp_ArrivalManifestULD AMU on AMBS.ImpArrivalManifestBySegmentId  = AMU.ImpArrivalManifestBySegmentId   inner join               
+                        Imp_ArrivalManifestShipmentInfo AMSI on (AMSI.ImpArrivalManifestULDId = AMU.ImpArrivalManifestULDId
+                        and AMSI.ShipmentNumber = SM.ShipmentNumber and AMSI.ShipmentDate = SM.ShipmentDate)
+                        left join com_DamageInfo CDI on (CDI.Entitykey = SM.ShipmentNumber and CDI.EntityDate = SM.ShipmentDate)
+        where
+                SHMPV.FlightId = #{flightId}
+                and AMBF.FlightId = #{flightId}
+            <if test="flightSegmentId != null and flightSegmentId != '' and flightSegmentId != 0">
+             and AMBS.flightSegmentId = #{flightSegmentId}
+            </if>
+        <choose>
+            <when test="shipmentNumber!= null and shipmentNumber!= ''">
+                  and SM.ShipmentNumber = #{shipmentNumber} and SM.ShipmentDate = #{shipmentdate}               
+            </when>
+            <when test="uldNumber!= null and uldNumber!= ''">
+                    and BDUT.ULDTrolleyNumber = #{uldNumber}               
+                </when>
+        </choose>
+        and (SM.HandledByMasterHouse='M' or SM.HandledByMasterHouse is null or SM.HandledByMasterHouse = '')
+        group by
+            SM.ShipmentNumber,
+            AMBS.flightSegmentId,
+            SM.Origin,
+            SM.Destination,
+            SM.NatureOfGoodsDescription,
+            SHMPV.FlightId ,
+            SM.ShipmentId,
+            SM.ShipmentNumber,
+            SM.ShipmentDate,       
+            BDUT.HandCarry,   
+            BDUT.HandlingAreaCode,               
+            SHIR.CargoIrregularityCode,           
+            SHIR.Pieces,           
+            BDUT.ULDTrolleyNumber,
+            AMSI.Piece,
+            AMSI.Weight,
+            CDI.SubEntityKey
+            
+	UNION
+
+ 
+
+		SELECT DISTINCT
+            SHMPV.FlightId as FlightId,
+            AMBS.flightSegmentId,
+            SM.ShipmentId,
+            SM.ShipmentNumber,
+            SM.ShipmentDate,
+            SM.Origin,
+            SM.Destination,
+            SH.NatureOfGoodsDescription,           
+            BDUT.HandCarry,
+            BDUT.HandlingAreaCode,
+            SHIR.CargoIrregularityCode as IrregularityCode,
+            SHIR.Pieces as IrregularityPieces,           
+            AMSI.Piece,
+            AMSI.Weight,
+            SH.Number  as HAWBNumber,
+                       
+            (select
+                sum(DamagedPieces)
+            from
+                com_DamageInfo inner join com_DamageLineitems on com_DamageInfo.DamageInfoId = com_DamageLineitems.DamageInfoId
+            where   
+                com_DamageInfo.Flightid = #{flightId} and com_DamageInfo.Entitykey = SM.ShipmentNumber and 
+                com_DamageInfo.EntityDate = SM.ShipmentDate and com_DamageInfo.SubEntitykey=SH.Number) as DamagedPieces
+       
+        FROM
+            Shipment_Master SM inner join
+            Shipment_HouseInformation SH on SH.ShipmentId=SM.ShipmentId
+            inner join
+            Imp_ShipmentVerification SHMPV
+                on (SM.shipmentid = SHMPV.shipmentid ) inner join   
+            Imp_BreakDownULDTrolleyInfo BDUT on
+                (BDUT.ImpShipmentVerificationId =SHMPV.ImpShipmentVerificationId)  left Join
+            Shipment_Irregularity SHIR
+                on (SHIR.ShipmentNumber = SM.ShipmentNumber and SHIR.HouseNumber=SH.Number and 
+                    SHMPV.Flightid = SHIR.Flight_ID) left join
+                Imp_ArrivalManifestByFlight AMBF on AMBF.Flightid = SHMPV.Flightid
+                left join                    
+                        Imp_ArrivalManifestBySegment  AMBS on AMBS.ImpArrivalManifestByFlightId =  AMBF.ImpArrivalManifestByFlightId  inner join
+                        Imp_ArrivalManifestULD AMU on AMBS.ImpArrivalManifestBySegmentId  = AMU.ImpArrivalManifestBySegmentId   inner join               
+                        Imp_ArrivalManifestShipmentInfo AMSI on (AMSI.ImpArrivalManifestULDId = AMU.ImpArrivalManifestULDId
+                        and AMSI.ShipmentNumber = SM.ShipmentNumber and AMSI.ShipmentDate = SM.ShipmentDate)
+                        left join com_DamageInfo CDI on (CDI.Entitykey = SM.ShipmentNumber and CDI.EntityDate = SM.ShipmentDate and CDI.SubEntitykey=SH.Number)
+        where
+                SHMPV.FlightId = #{flightId}
+                and AMBF.FlightId = #{flightId}
+            <if test="flightSegmentId != null and flightSegmentId != '' and flightSegmentId != 0">
+             and AMBS.flightSegmentId = #{flightSegmentId}
+            </if>
+        <choose>
+            <when test="shipmentNumber!= null and shipmentNumber!= ''">
+                  and SM.ShipmentNumber = #{shipmentNumber} and SM.ShipmentDate = #{shipmentdate}               
+            </when>
+            <when test="uldNumber!= null and uldNumber!= ''">
+                    and BDUT.ULDTrolleyNumber = #{uldNumber}               
+                </when>
+        </choose>
+        and SM.HandledByMasterHouse='H'
+        group by
+            SM.ShipmentNumber,
+            AMBS.flightSegmentId,
+            SM.Origin,
+            SM.Destination,
+            SH.NatureOfGoodsDescription,
+            SHMPV.FlightId ,
+            SM.ShipmentId,
+            SM.ShipmentNumber,
+            SM.ShipmentDate,       
+            BDUT.HandCarry,   
+            BDUT.HandlingAreaCode,               
+            SHIR.CargoIrregularityCode,           
+            SHIR.Pieces,           
+            BDUT.ULDTrolleyNumber,
+            AMSI.Piece,
+            AMSI.Weight,
+            SH.Number         
+            )select
+        shipmentInfo.shipmentId,
+        shipmentInfo.ShipmentNumber,
+        shipmentInfo.ShipmentDate,
+        shipmentInfo.origin,
+        shipmentInfo.destination,
+        shipmentInfo.NatureOfGoodsDescription,       
+        shipmentInfo.IrregularityCode,
+        shipmentInfo.IrregularityPieces,
+        sum(shipmentInfo.Piece) as Piece,
+        sum(shipmentInfo.Weight) as Weight,
+        shipmentInfo.HandlingAreaCode,
+        shipmentInfo.HandCarry,
+        shipmentInfo.DamagedPieces,
+        #{flightId} as segmentId,
+        shipmentInfo.flightSegmentId as flightSegmentId,
+        shipmentInfo.HAWBNumber
+        from
+         shipmentInfo
+            Group By
+            shipmentInfo.flightSegmentId,
+            shipmentInfo.shipmentId,
+            shipmentInfo.ShipmentNumber,
+        shipmentInfo.ShipmentDate,
+        shipmentInfo.origin,
+        shipmentInfo.destination,
+        shipmentInfo.NatureOfGoodsDescription,       
+        shipmentInfo.IrregularityCode,
+        shipmentInfo.IrregularityPieces,
+        shipmentInfo.HandlingAreaCode,
+        shipmentInfo.HandCarry,
+        shipmentInfo.DamagedPieces,
+        shipmentInfo.HAWBNumber
+	</select>
+	
+	<select id="sqlGetLooseCargo"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingShipmentModel"
+		resultMap="tracingShipmentInfo">		    
+		SELECT 
+			SHMPV.FlightId as FlightId,
+			SM.ShipmentId,
+			SM.ShipmentNumber,
+			SM.ShipmentDate,
+			SM.Origin,
+			SM.Destination,
+			SM.NatureOfGoodsDescription,	
+			BDSI.WarehouseLocation,
+			BDSI.ShipmentLocation,	
+			BDSI.Pieces as locationPieces,
+			BDSI.Weight as locationWeight,
+			BDUT.HandCarry,
+			BDUT.HandlingAreaCode,
+			SHIR.CargoIrregularityCode as IrregularityCode,
+			SHIR.Pieces as IrregularityPieces,
+			BDSHC.shcs as SHC,
+			AMSI.OffloadedFlag,
+			AMSI.SurplusFlag,
+			BDUT.ULDTrolleyNumber as uldNumber,
+			AMSI.Piece,
+			AMSI.Weight
+		FROM
+			Imp_ShipmentVerification SHMPV inner join	
+			Shipment_Master SM 
+				on SM.ShipmentId = SHMPV.ShipmentId left join
+			Imp_BreakDownULDTrolleyInfo BDUT 
+				on BDUT.ImpShipmentVerificationId = SHMPV.ImpShipmentVerificationId inner join
+			Imp_BreakDownStorageInfo BDSI 
+				on BDUT.ImpBreakDownULDTrolleyInfoId = BDSI.ImpBreakDownULDTrolleyInfoId left join 
+			(
+				select outerSHC.ImpBreakDownStorageInfoid, 
+					substring(
+							(
+									Select ' '+innerSHC.SpecialHandlingCode  AS [text()]
+									From Imp_BreakDownStorageSHCInfo as innerSHC
+									Where innerSHC.ImpBreakDownStorageInfoid = outerSHC.ImpBreakDownStorageInfoid
+									ORDER BY innerSHC.ImpBreakDownStorageInfoid
+									For XML PATH ('')
+							), 2, 1000) as shcs
+				from 
+					Imp_BreakDownStorageSHCInfo as outerSHC
+				group by 
+					outerSHC.ImpBreakDownStorageInfoid
+		        ) BDSHC 
+					on BDSI.ImpBreakDownStorageInfoid = BDSHC.ImpBreakDownStorageInfoid Left Join
+			Shipment_Irregularity SHIR 
+				on SHIR.ShipmentNumber = SM.ShipmentNumber left join
+			Imp_ArrivalManifestByFlight
+				on  Imp_ArrivalManifestByFlight.FlightId = SHMPV.Flightid left join
+			Imp_ArrivalManifestBySegment AMBS 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = AMBS.ImpArrivalManifestByFlightId left join 
+			Imp_ArrivalManifestULD AMU 
+				on AMBS.ImpArrivalManifestBySegmentId = AMU.ImpArrivalManifestBySegmentId and
+					AMU.ULDNumber is null left join 
+			Imp_ArrivalManifestShipmentInfo AMSI 
+				on AMSI.ShipmentNumber = SM.ShipmentNumber and 
+					AMSI.ShipmentDate = SM.ShipmentDate and 
+					AMU.ImpArrivalManifestULDId=AMSI.ImpArrivalManifestULDId
+		where 
+			BDUT.ULDTrolleyNumber Like 'b%' and SHMPV.Flightid = #{shipmentId}
+		<choose>
+			<when test="shipmentNumber!= null and shipmentNumber!= ''">
+				  and SM.ShipmentNumber = #{shipmentNumber} and SM.ShipmentDate = #{shipmentdate}				
+			</when>
+		</choose>				
+		group by
+			SM.ShipmentNumber,
+			SM.Origin,
+			SM.Destination,
+			SM.NatureOfGoodsDescription,
+			SHMPV.FlightId ,
+			SM.ShipmentId,
+			SM.ShipmentNumber,
+			SM.ShipmentDate,		
+			BDUT.HandCarry,	
+			BDUT.HandlingAreaCode,	
+			BDSI.WarehouseLocation,
+			BDSI.ShipmentLocation,	
+			SHIR.CargoIrregularityCode,
+			BDSI.Pieces,
+			BDSI.Weight,
+			SHIR.CargoIrregularityCode,
+		    SHIR.Pieces,
+			BDSHC.shcs,
+			AMSI.OffloadedFlag,
+		    AMSI.SurplusFlag,
+		    BDUT.ULDTrolleyNumber,
+		    AMSI.Piece,
+			AMSI.Weight
+	</select>
+	
+	<select id="sqlGetULDCount"
+		parameterType="com.ngen.cosys.impbd.tracing.model.BreakDownTracingFlightSegmentModel"
+		resultType="java.math.BigInteger">
+		select count(1) from(
+			select 
+				distinct Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber
+			from 
+				Flt_OperativeFlight_Segments inner join
+				Imp_ShipmentVerification
+					on Flt_OperativeFlight_Segments.Flight_ID = Imp_ShipmentVerification.FlightId inner join
+				Shipment_Master
+					on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId inner join
+				Imp_BreakDownULDTrolleyInfo
+					on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId
+			where 
+				Flt_OperativeFlight_Segments.FlightSegmentid = #{segmentId}
+				<choose>
+					<when test="shipmentNumber!= null and shipmentNumber!= ''">				  
+					  	and Shipment_Master.ShipmentNumber = #{shipmentNumber} 
+					  	and Shipment_Master.ShipmentDate = #{shipmentDate}				
+					</when>
+					<when test="uldNumber!= null and uldNumber!= ''">
+					  	and Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber=#{uldNumber}				
+					</when>
+				</choose>
+		) BreakDownULDCount		 
+	</select>
+	
+	<!-- <select id="sqlGetShipmentLocationDetails"
+	parameterType="com.ngen.cosys.impbd.tracing.model.ShipmentLocationDetails"
+	resultType="com.ngen.cosys.impbd.tracing.model.ShipmentLocationDetails">
+	select
+	ShipmentLocation,
+	Imp_Breakdownstorageinfo.Pieces,
+	WarehouseLocation,
+	shcinfo.shc as shc
+	from
+	Shipment_Master inner join imp_ShipmentVerification on Shipment_Master.shipmentid =
+	imp_ShipmentVerification.shipmentid
+	inner join Imp_BreakdownULDtrolleyinfo on
+	Imp_BreakdownULDtrolleyinfo.ImpShipmentVerificationId =
+	imp_ShipmentVerification.ImpShipmentVerificationId
+	inner join Imp_Breakdownstorageinfo on
+	Imp_Breakdownstorageinfo.ImpBreakDownULDTrolleyInfoId =
+	Imp_BreakdownULDtrolleyinfo.ImpBreakDownULDTrolleyInfoId
+	left join
+	((select
+	STRING_AGG(shcinfo.SpecialhandlingCode, ',') as shc,
+	shcInfo.ImpBreakDownStorageInfoId
+	from(
+	select
+	BDSHC.ImpBreakDownStorageInfoId,
+	SpecialhandlingCode
+	from
+	Imp_BreakDownStorageinfo BDSII inner join Imp_BreakdownStorageshcinfo BDSHC on
+	(BDSII.ImpBreakDownStorageInfoId = BDSHC.ImpBreakDownStorageInfoId)
+	where
+	BDSHC.ImpBreakDownStorageInfoId = BDSII.ImpBreakDownStorageInfoId) shcinfo
+	Group By
+	shcInfo.ImpBreakDownStorageInfoId
+	)) as shcinfo
+	on shcinfo.ImpBreakDownStorageInfoId =
+	Imp_Breakdownstorageinfo.ImpBreakDownStorageInfoId
+
+	where
+	Shipment_Master.Shipmentid = #{shipmentId} and imp_ShipmentVerification.Flightid =#{flightID}
+	</select> -->
+	<select id="sqlGetShipmentLocationDetails"
+	parameterType="com.ngen.cosys.impbd.tracing.model.ShipmentLocationDetails"
+	resultType="com.ngen.cosys.impbd.tracing.model.ShipmentLocationDetails">
+select
+    ShipmentLocation,
+    Imp_Breakdownstorageinfo.Pieces,
+    WarehouseLocation,
+    shcinfo.shc as shc,
+    '' HAWBNumber
+    from
+    Shipment_Master inner join imp_ShipmentVerification on Shipment_Master.shipmentid =
+    imp_ShipmentVerification.shipmentid
+    inner join Imp_BreakdownULDtrolleyinfo on
+    Imp_BreakdownULDtrolleyinfo.ImpShipmentVerificationId =
+    imp_ShipmentVerification.ImpShipmentVerificationId
+    inner join Imp_Breakdownstorageinfo on
+    Imp_Breakdownstorageinfo.ImpBreakDownULDTrolleyInfoId =
+    Imp_BreakdownULDtrolleyinfo.ImpBreakDownULDTrolleyInfoId and Imp_Breakdownstorageinfo.ShipmentHouseId is null
+    left join
+    ((select
+    STRING_AGG(shcinfo.SpecialhandlingCode, ',') as shc,
+    shcInfo.ImpBreakDownStorageInfoId
+    from(
+    select
+    BDSHC.ImpBreakDownStorageInfoId,
+    SpecialhandlingCode
+    from
+    Imp_BreakDownStorageinfo BDSII inner join Imp_BreakdownStorageshcinfo BDSHC on
+    (BDSII.ImpBreakDownStorageInfoId = BDSHC.ImpBreakDownStorageInfoId)
+    where
+    BDSHC.ImpBreakDownStorageInfoId = BDSII.ImpBreakDownStorageInfoId) shcinfo
+    Group By
+    shcInfo.ImpBreakDownStorageInfoId
+    )) as shcinfo
+    on shcinfo.ImpBreakDownStorageInfoId =
+    Imp_Breakdownstorageinfo.ImpBreakDownStorageInfoId
+    where
+    Shipment_Master.Shipmentid = #{shipmentId}
+    and imp_ShipmentVerification.Flightid = #{flightID}
+    and (Shipment_Master.HandledByMasterHouse = 'M' or Shipment_Master.HandledByMasterHouse is null)
+UNION
+select
+    ShipmentLocation,
+    Imp_Breakdownstorageinfo.Pieces,
+    WarehouseLocation,
+    shcinfo.shc as shc,
+    Shipment_HouseInformation.Number HAWBNumber
+    from
+    Shipment_Master
+    inner join Shipment_HouseInformation
+        on Shipment_Master.ShipmentId= Shipment_HouseInformation.ShipmentId
+    inner join imp_ShipmentVerification
+        on Shipment_Master.shipmentid = imp_ShipmentVerification.shipmentid
+    inner join Imp_BreakdownULDtrolleyinfo
+        on Imp_BreakdownULDtrolleyinfo.ImpShipmentVerificationId = imp_ShipmentVerification.ImpShipmentVerificationId
+    inner join Imp_Breakdownstorageinfo
+        on Imp_Breakdownstorageinfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakdownULDtrolleyinfo.ImpBreakDownULDTrolleyInfoId
+        and Imp_Breakdownstorageinfo.ShipmentHouseId=Shipment_HouseInformation.ShipmentHouseId
+    left join
+    ((select
+    STRING_AGG(shcinfo.SpecialhandlingCode, ',') as shc,
+    shcInfo.ImpBreakDownStorageInfoId
+    from(
+    select
+    BDSHC.ImpBreakDownStorageInfoId,
+    SpecialhandlingCode
+    from
+    Imp_BreakDownStorageinfo BDSII inner join Imp_BreakdownStorageshcinfo BDSHC on
+    (BDSII.ImpBreakDownStorageInfoId = BDSHC.ImpBreakDownStorageInfoId)
+    where
+    BDSHC.ImpBreakDownStorageInfoId = BDSII.ImpBreakDownStorageInfoId) shcinfo
+    Group By
+    shcInfo.ImpBreakDownStorageInfoId
+    )) as shcinfo
+    on shcinfo.ImpBreakDownStorageInfoId = Imp_Breakdownstorageinfo.ImpBreakDownStorageInfoId
+    where
+    Shipment_Master.Shipmentid = #{shipmentId}
+    and imp_ShipmentVerification.Flightid = #{flightID}
+    and Shipment_Master.HandledByMasterHouse = 'H'
+     <if test="HAWBNumber != null and HAWBNumber != ''">
+              and Shipment_HouseInformation.Number = #{HAWBNumber}
+     </if>
+	</select>
+</mapper>

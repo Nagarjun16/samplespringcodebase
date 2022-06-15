@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BreakDownSummaryMapper">
+
+    <insert id="insertBreakDownTonnageSummaryInfo" parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownTonnageSummaryInfo" useGeneratedKeys="true" keyProperty="tonnageId">
+    insert into Imp_BreakDownTonnageSummaryInfo
+    (
+        ImpBreakDownSummaryId,     
+        CargoType,      
+        DeductableTonnageWeight,      
+        Reason,
+        CreatedUserCode,
+        CreatedDateTime,
+        LastUpdatedUserCode,
+        LastUpdatedDateTime
+        )
+        values(
+        #{summaryId},
+        #{cargoType},
+        #{tonnage},
+        #{remark},
+        #{createdBy},
+		#{createdOn},
+		#{modifiedBy},
+		#{modifiedOn}
+        )       
+  </insert> 
+  
+  
+  
+<resultMap id="summaryFlightInfo"
+		type="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryModel">
+		<id column="Flightid" property="flightId" />			
+		 <collection property="uldInfo" javaType="List"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryUldModel"
+			select="sqlGetBreakdownULDSummary" column="flightId=Flightid" />
+		 <collection property="tonnageHandlingInfo" javaType="List"
+			ofType="com.ngen.cosys.impbd.summary.model.BreakDownSummaryTonnageHandledModel"
+			select="sqlGetTonnageSummary" column="flightId=Flightid" /> 		
+	</resultMap>
+  
+  
+  
+  
+  
+	
+	<resultMap id="summaryULDInfo"
+		type="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryUldModel">
+		<!-- <id column="ImpBreakDownSummaryId" property="summaryId" /> -->
+		<result column="RowNumber" property="rowNumber"/>
+		<result column="Flightid" property="flightId"/>			
+		<result column="ULDTrolleyNumber" property="uldNumber"/>
+		<result column="ContentCode" property="contentCode"/>
+		<result column="HandlingMode" property="handlingMode"/>
+		<result column="ActualWeight" property="actualWeight"/>
+		<result column="ManifestedWeight" property="manifestedWeight"/>
+		<result column="BreakDownStartedAt" property="breakdownStartDataTime"/>
+		<result column="BreakDownEndedAt" property="breakdownEndDataTime"/>
+		<result column="ManifestedWeight" property="manifestedWeight"/>
+		<result column="Difference" property="differece"/>
+		<result column="ServiceContractor" property="sats"/>
+		<result column="CreatedUserCode" property="breakdownStaff"/>		 		 
+	</resultMap>
+	
+	<resultMap id="summaryTonnageInfo"
+		type="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryTonnageHandledModel">
+		<id column="ImpBreakDownSummaryId" property="summaryId" />
+		<result column="RowNumber" property="rowNumber"/>
+		<result column="SHCHandlingGroupCode" property="cargoType"/>
+		<result column="ActualWeight" property="tonnage"/>				
+	</resultMap>
+  
+  
+ 
+  	
+  	<select id="sqlGetBreakdownULDSummary"
+		parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryUldModel"
+		resultMap="summaryULDInfo">	
+		select	
+			ROW_NUMBER() OVER (ORDER BY Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber) AS RowNumber, 
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,			
+			Imp_InboundContainers.HandlingMode,
+			sum(Imp_BreakDownStorageInfo.Weight) ActualWeight,	
+			ArrivalManifestInfo.ManifestedWeight,
+			Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt,
+			Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor,
+			Imp_BreakDownULDTrolleyInfo.CreatedUserCode,
+			(ManifestedWeight-sum(Imp_BreakDownStorageInfo.Weight)) as Difference,	
+			case when
+				(ServiceContractorCustomerInfo.UserLoginCode is not null) then
+				1
+			else
+				0
+			end ServiceContractor,
+			ServiceContractorCustomerInfo.UserFullName ServiceContractorName
+			
+		from 
+ 
+			Imp_ShipmentVerification inner join	Imp_BreakDownULDTrolleyInfo on (Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId and Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber !='Bulk')
+			inner join	Imp_BreakDownStorageInfo on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId =Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId 
+			left join	
+				(
+					select
+						Adm_UserProfile.UserLoginCode,
+						Adm_UserProfile.UserFullName,
+						Customer_Master.CustomerCode
+					from
+						Adm_UserProfile inner join
+						Customer_Master
+							on Adm_UserProfile.Customer_ID = Customer_Master.Customer_ID inner join
+						Customer_Types
+							on Customer_Master.Customer_ID = Customer_Types.Customer_ID and
+								Customer_Types.CustomerTypeCode = 'CNT'
+				)ServiceContractorCustomerInfo
+					on Imp_BreakDownULDTrolleyInfo.CreatedUserCode = ServiceContractorCustomerInfo.UserLoginCode
+			left join 
+				(
+					select
+						Imp_ArrivalManifestByFlight.FlightId,
+						Imp_ArrivalManifestULD.ULDNumber,						
+						sum(Imp_ArrivalManifestShipmentInfo.Piece) ManifestedPieces,
+						sum(Imp_ArrivalManifestShipmentInfo.Weight) ManifestedWeight
+						,ArrivalManifestSHC.SHCHandlingGroupCode
+					from
+						Imp_ArrivalManifestByFlight inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Imp_ArrivalManifestULD 
+							on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId left join
+						(
+							select
+								Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId,
+								Mst_SHCHandlingGroup.SHCHandlingGroupCode
+							from
+							Imp_ArrivalManifestByShipmentSHC inner join
+							Mst_AssociateSHCByHandlingGroup
+								on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+							Mst_SHCHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID and Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode = Mst_SHCHandlingGroup.SHCHandlingGroupCode
+						
+						)ArrivalManifestSHC
+							on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSHC.ImpArrivalManifestShipmentInfoId
+							
+					group by
+						Imp_ArrivalManifestByFlight.FlightId,
+						Imp_ArrivalManifestULD.ULDNumber
+						,ArrivalManifestSHC.SHCHandlingGroupCode						
+				)ArrivalManifestInfo
+					on Imp_ShipmentVerification.FlightId = ArrivalManifestInfo.FlightId and 
+						Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = ArrivalManifestInfo.ULDNumber 
+		left join
+				Imp_InboundContainers on Imp_ShipmentVerification.FlightId = Imp_InboundContainers.IncomingFlightId and 
+				Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = Imp_InboundContainers.ULDNumber 
+	where 
+			Imp_ShipmentVerification.FlightId=#{flightId} and
+			(Imp_BreakDownULDTrolleyInfo.Intact = 0 OR Imp_BreakDownULDTrolleyInfo.Intact is null
+			OR ArrivalManifestInfo.SHCHandlingGroupCode not in ('BUP', 'BUC', 'VAL', 'ECC')
+			)  
+	group by
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,			
+			Imp_InboundContainers.HandlingMode,
+			Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt,
+			Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor,
+			Imp_BreakDownULDTrolleyInfo.CreatedUserCode,
+			ServiceContractorCustomerInfo.UserLoginCode,
+			ServiceContractorCustomerInfo.UserFullName,
+			ArrivalManifestInfo.ManifestedWeight
+	union
+	select	
+			ROW_NUMBER() OVER (ORDER BY Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber) AS RowNumber, 
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,			
+			Imp_BreakDownULDTrolleyInfo.HandlingMode,
+			sum(Imp_BreakDownStorageInfo.Weight) ActualWeight,	
+			ArrivalManifestInfo.ManifestedWeight,
+			Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt,
+			Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor as BreakDownStaffGroup,
+			Imp_BreakDownULDTrolleyInfo.CreatedUserCode,
+			(ManifestedWeight-sum(Imp_BreakDownStorageInfo.Weight)) as Difference,	
+			case when
+				(ServiceContractorCustomerInfo.UserLoginCode is not null) then
+				1
+			else
+				0
+			end ServiceContractor,
+			ServiceContractorCustomerInfo.UserFullName ServiceContractorName
+			
+		from 
+ 
+			Imp_ShipmentVerification inner join	Imp_BreakDownULDTrolleyInfo on (Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId and Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber ='Bulk')
+			inner join	Imp_BreakDownStorageInfo on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId =Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId 
+			left join	
+				(
+					select
+						Adm_UserProfile.UserLoginCode,
+						Adm_UserProfile.UserFullName,
+						Customer_Master.CustomerCode
+					from
+						Adm_UserProfile inner join
+						Customer_Master
+							on Adm_UserProfile.Customer_ID = Customer_Master.Customer_ID inner join
+						Customer_Types
+							on Customer_Master.Customer_ID = Customer_Types.Customer_ID and
+								Customer_Types.CustomerTypeCode = 'CNT'
+				)ServiceContractorCustomerInfo
+					on Imp_BreakDownULDTrolleyInfo.CreatedUserCode = ServiceContractorCustomerInfo.UserLoginCode
+			left join 
+				(
+					select
+						Imp_ArrivalManifestByFlight.FlightId,
+						Imp_ArrivalManifestULD.ULDNumber,						
+						sum(Imp_ArrivalManifestShipmentInfo.Piece) ManifestedPieces,
+						sum(Imp_ArrivalManifestShipmentInfo.Weight) ManifestedWeight
+						,ArrivalManifestSHC.SHCHandlingGroupCode
+					from
+						Imp_ArrivalManifestByFlight inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+						Imp_ArrivalManifestULD 
+							on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId left join
+						(
+							select
+								Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId,
+								Mst_SHCHandlingGroup.SHCHandlingGroupCode
+							from
+							Imp_ArrivalManifestByShipmentSHC inner join
+							Mst_AssociateSHCByHandlingGroup
+								on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+							Mst_SHCHandlingGroup
+								on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID and Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode = Mst_SHCHandlingGroup.SHCHandlingGroupCode
+						
+						)ArrivalManifestSHC
+							on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSHC.ImpArrivalManifestShipmentInfoId
+							
+					group by
+						Imp_ArrivalManifestByFlight.FlightId,
+						Imp_ArrivalManifestULD.ULDNumber
+						,ArrivalManifestSHC.SHCHandlingGroupCode						
+				)ArrivalManifestInfo
+					on Imp_ShipmentVerification.FlightId = ArrivalManifestInfo.FlightId and 
+						Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = 'Bulk' and ArrivalManifestInfo.ULDNUMBER is null
+		
+	where 
+			Imp_ShipmentVerification.FlightId=#{flightId} and
+			(Imp_BreakDownULDTrolleyInfo.Intact = 0 OR Imp_BreakDownULDTrolleyInfo.Intact is null
+			OR ArrivalManifestInfo.SHCHandlingGroupCode not in ('BUP', 'BUC', 'VAL', 'ECC')
+			)  
+	group by
+			Imp_ShipmentVerification.FlightId,
+			Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber,			
+			Imp_BreakDownULDTrolleyInfo.HandlingMode,
+			Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt,
+			Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt,
+			Imp_BreakDownULDTrolleyInfo.ServiceContractor,
+			Imp_BreakDownULDTrolleyInfo.CreatedUserCode,
+			ServiceContractorCustomerInfo.UserLoginCode,
+			ServiceContractorCustomerInfo.UserFullName,
+			ArrivalManifestInfo.ManifestedWeight
+			
+	</select>
+
+<select id="sqlGetTonnageSummary"
+		parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryTonnageHandledModel"
+		resultMap="summaryTonnageInfo">	
+		
+		select distinct
+			F1.RowNumber,
+			F1.FlightId,
+			F1.SHCHandlingGroupCode
+			,sum(F1.ActualWeight) over (partition by F1.SHCHandlingGroupCode) as ActualWeight,
+			F1.remark
+ 		from (
+ 			select 
+			       ROW_NUMBER() OVER (ORDER BY ArrivalManifestInfo.SHCHandlingGroupCode) AS RowNumber, 
+			       Imp_ShipmentVerification.FlightId,
+			       sum(Imp_BreakDownStorageInfo.Weight) ActualWeight,     
+			       ArrivalManifestInfo.ManifestedWeight,
+			       ArrivalManifestInfo.SHCHandlingGroupCode as SHCHandlingGroupCode,
+				   null as remark
+	   
+			from 
+		       Imp_ShipmentVerification inner join
+		       Imp_BreakDownULDTrolleyInfo 
+		              on Imp_ShipmentVerification.ImpShipmentVerificationId = Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId inner join
+		       Imp_BreakDownStorageInfo
+		              on Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId =Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId left join
+		       (
+		              select
+		                      Imp_ArrivalManifestByFlight.FlightId,
+		                      Imp_ArrivalManifestULD.ULDNumber,
+		                      sum(Imp_ArrivalManifestShipmentInfo.Piece) ManifestedPieces,
+		                      sum(Imp_ArrivalManifestShipmentInfo.Weight) ManifestedWeight,
+		                      ArrivalManifestSHC.SHCHandlingGroupCode
+		              from
+		                      Imp_ArrivalManifestByFlight inner join
+		                      Imp_ArrivalManifestBySegment
+		                             on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+		                      Imp_ArrivalManifestULD 
+		                             on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+		                      Imp_ArrivalManifestShipmentInfo
+		                             on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId left join
+		                      (
+		                             select
+		                               Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId,
+		                                    Mst_SHCHandlingGroup.SHCHandlingGroupCode
+		                             from
+		                             Imp_ArrivalManifestByShipmentSHC inner join
+		                             Mst_AssociateSHCByHandlingGroup
+		                                    on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+		                             Mst_SHCHandlingGroup
+		                                    on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+		                      
+		                      )ArrivalManifestSHC
+		                             on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSHC.ImpArrivalManifestShipmentInfoId
+		              group by
+		                      Imp_ArrivalManifestByFlight.FlightId,
+		                      Imp_ArrivalManifestULD.ULDNumber,
+		                      ArrivalManifestSHC.SHCHandlingGroupCode
+		       )ArrivalManifestInfo
+		              on Imp_ShipmentVerification.FlightId = ArrivalManifestInfo.FlightId and 
+		                      Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = ArrivalManifestInfo.ULDNumber left join
+		       Imp_InboundContainers
+		              on Imp_ShipmentVerification.FlightId = Imp_InboundContainers.IncomingFlightId and 
+		                      Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber = Imp_InboundContainers.ULDNumber 
+where
+			Imp_ShipmentVerification.FlightId=#{flightId} and
+	       ArrivalManifestInfo.SHCHandlingGroupCode in ('BUP', 'BUC', 'VAL', 'ECC') 
+group by
+       Imp_ShipmentVerification.FlightId,
+       Imp_BreakDownULDTrolleyInfo.BreakDownStartedAt,
+       Imp_BreakDownULDTrolleyInfo.BreakDownEndedAt,
+       ArrivalManifestInfo.ManifestedWeight,
+       ArrivalManifestInfo.SHCHandlingGroupCode	   
+	union	
+	select	
+			ROW_NUMBER() OVER (ORDER BY CargoType) AS RowNumber, 
+	        Imp_BreakDownSummary.Flightid,
+	        sum(Imp_BreakDownTonnageSummaryInfo.DeductableTonnageWeight) as ActualWeight,     
+	        0 as ManifestedWeight							
+		    ,CargoType as SHCHandlingGroupCode,
+			Imp_BreakDownTonnageSummaryInfo.Reason as remark
+		
+	from
+							Imp_BreakDownTonnageSummaryInfo inner join
+							Imp_BreakDownSummary on Imp_BreakDownTonnageSummaryInfo.ImpBreakDownSummaryId =
+							Imp_BreakDownSummary.ImpBreakDownSummaryId 
+						where 
+							Imp_BreakDownSummary.Flightid = #{flightId}						
+					Group by
+					Imp_BreakDownSummary.Flightid,CargoType,Imp_BreakDownTonnageSummaryInfo.Reason					
+					) F1
+		
+	
+	</select>
+	<insert id="insertBreakDownSummary" parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummary" useGeneratedKeys="true" keyProperty="impBreakDownSummaryId">
+    insert into Imp_BreakDownSummary	
+		(
+			FlightId,
+			FeedbackForStaff,
+			BreakDownStaffGroup,
+			ReasonForWaive,
+			ReasonForDelay,
+			LiquIdatedDamagesWaived,
+			LiquIdatedDamageApplicable,
+			ApprovedLDWaive,
+			ApprovedLDWaiveApprovedBy,
+			ApprovedLDWaiveApprovedOn,
+			ApprovedLDApplicable,
+			ApprovedLDApplicableApprovedBy,
+			ApprovedLDApplicableApprovedOn,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			#{flightId},
+			#{feedbackForStaff},
+			#{breakDownStaffGroup},
+			#{reasonForWaive},
+			#{reasonForDelay},
+			#{liquIdatedDamagesWaived},
+			#{liquIdatedDamageApplicable},
+			#{approvedLDWaive},
+			#{approvedLDWaiveApprovedBy},
+			#{createdOn},
+			#{approvedLDApplicable},
+			#{approvedLDApplicableApprovedBy},
+			#{approvedLDApplicableApprovedOn},
+			#{createdBy},
+			#{createdOn},
+			#{modifiedBy},
+			#{modifiedOn})
+			</insert>
+			
+			
+	<select id="sqlGetFlightDetails"
+		parameterType="com.ngen.cosys.satssg.breakdown.model.FlightDetails"
+		resultType="com.ngen.cosys.satssg.breakdown.model.FlightDetails">
+		<![CDATA[	
+		select
+				FlightCompletedTime as fctTime,
+				isnull(ATAtime,0) as ataTime,
+				Flightid,
+				ManifestedWeight,
+				FlightServiceType,
+				case when (FlightServiceType ='P') then (select ParameterValueNum from App_SystemParameters where ParameterCode='PASSENGERFLIGHT') 
+				when (FlightServiceType ='C' and ManifestedWeight>40) then (select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTgt40') 
+				when (FlightServiceType ='C' and ManifestedWeight<=40) then (select ParameterValueNum from App_SystemParameters where ParameterCode='CARGOFLIGHTlt40') 
+				end stpTime,
+				carrierCode,
+				flightNumber,
+				flightDate					 
+	  from
+				(select 
+							DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, t1.FlightCompletedAt), 0), t1.FlightCompletedAt) as FlightCompletedTime,
+							DATEDIFF(MINUTE, DATEADD(DAY, DATEDIFF(DAY, 0, t3.DateATA), 0), t3.DateATA) as ATAtime,			
+							t1.Flightid
+							,FlightServiceType
+							,Sum(Imp_Arrivalmanifestshipmentinfo.weight)/1000 as ManifestedWeight
+							,t2.CarrierCode as carrierCode
+							,t2.FlightNumber as flightNumber
+							,t3.DateSTA as flightDate
+				from 
+							Imp_FlightEvents as t1 inner join Flt_OperativeFlight t2 on (t1.Flightid=t2.Flight_ID) inner join Flt_OperativeFlight_Legs t3 on (t1.Flightid=t3.Flight_ID)
+							inner join Imp_ArrivalManifestByFlight on (t1.Flightid=Imp_ArrivalManifestByFlight.Flightid)  inner join
+							Imp_ArrivalManifestBySegment on Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+							inner join Imp_ArrivalManifestULD on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+							inner join Imp_Arrivalmanifestshipmentinfo on Imp_Arrivalmanifestshipmentinfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId 
+				where 
+							t1.BreakDownCompletedAt is not null 
+							and t1.DocumentVerificationCompletedAt is not null 
+							and t1.FightClosedAt is  null
+							and t1.FlightCompletedAt is not null
+							and (t2.FlightServiceType ='C' or t2.FlightServiceType ='P')
+							Group by
+							t1.FlightCompletedAt
+							,t3.DateATA
+							,t1.Flightid
+							,FlightServiceType
+							,t2.CarrierCode
+							,t2.FlightNumber
+							,t3.DateSTA)tempdata
+							]]>
+			
+	</select>
+	
+	
+	
+	<update id="updateFlightComplete" parameterType="com.ngen.cosys.satssg.breakdown.model.FlightDetails">
+    update Imp_FlightEvents
+    set     
+    FightClosedAt =GETDATE(),
+    FlightClosedBy =#{createdBy}    
+    where FlightId = #{flightId}
+  </update>
+  
+  <select id="sqlCheckSummaryExists" parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummary"
+		resultType="java.lang.Boolean">
+		select case when count(FlightId) > 0 then 1 else 0 end
+		result
+		from Imp_BreakDownSummary where FlightId = #{flightId}
+	</select>
+	
+	<update id="updateBreakDownSummary" parameterType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummary">
+    update Imp_BreakDownSummary
+    <set>      
+      <if test="feedbackForStaff != null">
+        FeedbackForStaff = #{feedbackForStaff},
+      </if>
+      <if test="breakDownStaffGroup != null">
+        BreakDownStaffGroup = #{breakDownStaffGroup},
+      </if>
+      <if test="reasonForWaive != null">
+        ReasonForWaive = #{reasonForWaive},
+      </if>
+      <if test="reasonForDelay != null">
+        ReasonForDelay = #{reasonForDelay},
+      </if>
+      <if test="liquIdatedDamagesWaived != null">
+        LiquIdatedDamagesWaived = #{liquIdatedDamagesWaived},
+      </if>
+      <if test="liquIdatedDamageApplicable != null">
+        LiquIdatedDamageApplicable = #{liquIdatedDamageApplicable},
+      </if>
+      <if test="approvedLDWaive != null">
+        ApprovedLDWaive = #{approvedLDWaive},
+      </if>
+      <if test="approvedLDWaiveApprovedBy != null">
+        ApprovedLDWaiveApprovedBy = #{approvedLDWaiveApprovedBy},
+      </if>
+      <if test="approvedLDWaiveApprovedOn != null">
+        ApprovedLDWaiveApprovedOn = #{approvedLDWaiveApprovedOn},
+      </if>
+      <if test="approvedLDApplicable != null">
+        ApprovedLDApplicable = #{approvedLDApplicable},
+      </if>
+      <if test="approvedLDApplicableApprovedBy != null">
+        ApprovedLDApplicableApprovedBy = #{approvedLDApplicableApprovedBy},
+      </if>
+      <if test="approvedLDApplicableApprovedOn != null">
+        ApprovedLDApplicableApprovedOn = #{approvedLDApplicableApprovedOn},
+      </if>
+    </set>
+    where FlightId = #{flightId}
+  </update>
+  
+  <select id="sqlGetBDServiceProvider" parameterType="com.ngen.cosys.satssg.breakdown.model.FlightDetails" resultType="com.ngen.cosys.satssg.breakdown.model.BreakDownSummaryProvider">
+		select 
+				ContractorId,
+				CustomerShortName as serviceContractor
+				,LDWaiveApplicablelimit as ExemptTime
+		from
+              Imp_ServiceProvider inner join Customer_Master on
+              Imp_ServiceProvider.ContractorId=Customer_Master.Customer_ID
+              inner join Imp_ShipmentVerification on Imp_ShipmentVerification.Flightid = #{flightId} 
+              inner join Imp_BreakDownULDTrolleyInfo on Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = Imp_ShipmentVerification.ImpShipmentVerificationId 
+              and Imp_BreakDownULDTrolleyInfo.ServiceContractor = Customer_Master.CustomerShortName
+        where
+              Imp_ServiceProvider.FlightKey=#{flightNumber} 
+              and CAST(Imp_ServiceProvider.EffectiveDateFrom as date) =#{flightDate}
+              and LDWaiveApplicable = 1
+              and Carrier =#{carrierCode}
+	</select>
+	
+			
+</mapper>

@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ReviveShipmentMapper">
+
+	<resultMap type="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+		id="ReviveShipmentResultMap">
+		<result column="ShipmentNumber" property="shipmentNumber"/>
+		<result column="ShipmentDate" property="shipmentDate"/>
+		<result column="Pieces" property="freightOutPieces"/>
+		<result column="Weight" property="freightOutWeight"/>
+		<result column="ShipmentFreightOutId" property="freightOutId"/>
+		<result column="FlightId" property="flightId"/>
+		<result column="InboundFlightid" property="inboundFlightId"/>
+		<result column="ShipmentId" property="shipmentId"/>
+		<result column="ReasonForCannotRevive" property="reason"/>
+		<result column="TRMNumber" property="trmNumber"/>
+		<result column="ShipmentType" property="shipmentType"/>
+		<result column="PartSuffix" property="partSuffix" />
+		<result column="ReferenceDetails" property="referenceDetails" />
+        <result column="Origin" property="origin"/>
+		<result column="ShipmentLocation" property="shipmentLocation"/>
+		<result column="WarehouseLocation" property="warehouseLocation"/>
+		<collection property="inventorySHCSList" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.SHC"
+			select="sqlQueryFetchInventorySHCSReviveCase" column="neutralAWBId=ShipmentFreightOutId" />
+	</resultMap>
+
+	<select id="sqlGetReviveShipmentInfo"
+		parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentSummary"
+		resultMap="ReviveShipmentResultMap">
+	<![CDATA[
+		select
+			Shipment_Master.ShipmentNumber,
+			Shipment_Master.ShipmentDate,
+			Shipment_Master.ShipmentType,
+			Shipment_FreightOut.Pieces,
+			Shipment_FreightOut.Weight,
+            Shipment_FreightOut.ShipmentLocation,
+			Shipment_FreightOut.WarehouseLocation,
+			Shipment_FreightOut.ShipmentFreightOutId,
+			Shipment_FreightOut.FlightId,
+			Shipment_FreightOut.InboundFlightid,
+			Shipment_FreightOut.ShipmentId,
+			Shipment_FreightOut.TRMNumber,
+			Shipment_FreightOut.PartSuffix,
+			Shipment_FreightOut.ReferenceDetails,
+            Shipment_Master.Origin,
+			case
+				when (select 
+							count(1)
+						from
+							Exp_LoadedShipmentInfo inner join
+							Exp_AssignedULDTrolleyToFlight
+								on Exp_LoadedShipmentInfo.AssUldTrolleyId = Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+						where
+							Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId and
+							Exp_AssignedULDTrolleyToFlight.FlightId  = Shipment_FreightOut.FlightId and
+							Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Shipment_FreightOut.AssignedUldTrolley
+					) > 0 then 
+						'LOADED'
+			      when (select
+							count(1)
+						from
+							Imp_Delivery
+						where
+							Imp_Delivery.ShipmentId = Shipment_Master.ShipmentId and
+							Imp_Delivery.ImpDeliveryId = Shipment_FreightOut.DeliveryOrderNo
+					) > 0 then
+						'DELIVERED'			
+				
+				else
+					null
+				end ReasonForCannotRevive					
+		from
+			Shipment_FreightOut inner join
+			Shipment_Master
+				on Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId
+		where
+			Shipment_Master.ShipmentNumber = cast(#{shipmentNumber} as varchar) and
+			Shipment_Master.ShipmentDate = cast(#{shipmentDate} as date)
+	]]>
+	</select>
+	<select id="sqlIsSelectedPiecesequaltoTrmPieces"
+		parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+			SELECT CASE 
+	         WHEN #{freightOutPieces} - transhipment_transfermanifestbyawbinfo.pieces!=0 
+				  THEN 0
+	              ELSE 1 
+	       END 
+	FROM   transhipment_transfermanifestbyawb 
+	       INNER JOIN transhipment_transfermanifestbyawbinfo 
+	               ON 
+	       transhipment_transfermanifestbyawb.transtransfermanifestbyawbid = 
+	       transhipment_transfermanifestbyawbinfo.transtransfermanifestbyawbid 
+	       LEFT JOIN shipment_freightout 
+	              ON transhipment_transfermanifestbyawb.trmnumber = 
+	                 shipment_freightout.referencedetails 
+	WHERE  transhipment_transfermanifestbyawbinfo.shipmentnumber = cast(#{shipmentNumber} as varchar) 
+	       AND transhipment_transfermanifestbyawbinfo.shipmentdate = cast(#{shipmentDate} as date) 
+	GROUP  BY transhipment_transfermanifestbyawbinfo.pieces 
+	]]>
+	</select>
+	<insert id="sqlMoveShipmentFromFreightOutToInventory"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+			keyColumn="ShipmentInventory_ID" 
+			keyProperty="shipmentInventoryId"
+			useGeneratedKeys="true">
+	<![CDATA[
+		insert into Shipment_Inventory(
+			Shipment_ID,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			WarehouseLocation,
+			Flight_ID,
+			InboundFlightId,
+			PartSuffix,
+			CreatedUser_Code,
+			Created_DateTime,
+			TRMNumber
+		)values(
+			#{shipmentId},
+			#{shipmentLocation},
+			#{freightOutPieces},
+			#{freightOutWeight},
+			#{warehouseLocation},
+			#{flightId},
+			#{inboundFlightId},
+			#{partSuffix},
+			#{createdBy},
+			#{createdOn},
+			#{trmNumber}
+		)
+	]]>
+	</insert>
+	
+	<insert id="sqlMoveFromFreightOutToShipmentInventoryHouse"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		insert into Shipment_InventoryHouse(
+			ShipmentInventoryId, 
+			ShipmentHouseId, 
+			Pieces, 
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime
+		)
+		select
+			#{shipmentInventoryId} ShipmentInventoryId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			#{createdBy},
+			#{createdOn}
+		from
+			Shipment_FreightOutHouse
+		where
+			ShipmentFreightOutId = #{freightOutId}
+	]]>
+	</insert>
+
+	<insert id="sqlMoveFromFreightOutToShipmentInventorySHC"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		insert into Shipment_InventorySHC(
+			ShipmentInventoryId,
+			SpecialHandlingCode, 
+			CreatedUserCode, 
+			CreatedDateTime
+		)
+		select
+			#{shipmentInventoryId} ShipmentInventoryId,
+			SpecialHandlingCode,
+			#{createdBy},
+			#{createdOn}
+		from
+			Shipment_FreightOutSHC
+		where
+			ShipmentFreightOutId = #{freightOutId}
+	]]>
+	</insert>
+
+	<delete id="sqlDeleteShipmentFromFreightOut"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		delete from Shipment_FreightOut where ShipmentFreightOutId = #{freightOutId}
+	]]>
+	</delete>
+	
+	<delete id="sqlDeleteShipmentFreightOutFromSHC"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		delete from Shipment_FreightOutSHC where ShipmentFreightOutId = #{freightOutId}
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteShipmentFreightOutFromHouse"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		delete from Shipment_FreightOutHouse where ShipmentFreightOutId = #{freightOutId}
+	]]>
+	</delete>
+	
+	<select id="sqlGetTransshipmentInfoAWBOnRevive"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+			resultType="java.math.BigInteger">
+	<![CDATA[
+		select
+			TOP 1 TransTransferManifestByAWBInfoId
+		from
+			Transhipment_TransferManifestByAWB inner join
+			Transhipment_TransferManifestByAWBInfo
+				on Transhipment_TransferManifestByAWB.TransTransferManifestByAwbId = Transhipment_TransferManifestByAWBInfo.TransTransferManifestByAwbId
+		where
+			Transhipment_TransferManifestByAWB.TRMNumber = #{trmNumber} and
+			Transhipment_TransferManifestByAWBInfo.ShipmentNumber = #{shipmentNumber} and
+			Transhipment_TransferManifestByAWBInfo.ShipmentDate = #{shipmentDate} and
+			exists(
+				select
+					1
+				from
+					Mst_Carrier
+				where
+					Mst_Carrier.CarrierCode = Transhipment_TransferManifestByAWB.CarrierCodeTo and
+					Mst_Carrier.GroundHandlerCode = 'DNATA'
+			)
+	]]>
+	</select>
+	
+	<delete id="sqlDeleteTransshipmentInfoAWBOnRevive"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		delete from Transhipment_TransferManifestByAWBInfo where TransTransferManifestByAWBInfoId = #{referenceId}
+	]]>
+	</delete>
+	
+	<delete id="sqlDeleteTransshipmentInfoAWBSHCOnRevive"
+			parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+	<![CDATA[
+		delete from Transhipment_TransferManifestByAWBSHC where TransTransferManifestByAWBInfoId = #{referenceId}
+	]]>
+	</delete>
+	<insert id="sqlInsertReviveRemarks"
+              parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+              keyColumn="ShipmentRemark_Id" 
+              keyProperty="id"
+              useGeneratedKeys="true">
+              insert into Shipment_Remarks
+              (
+                ShipmentNumber,
+                ShipmentId,
+                ShipmentRemarks,
+                RemarkType,
+                ShipmentType,
+                ShipmentDate,
+                CreatedUser_Code,
+                Created_DateTime
+              )
+              VALUES
+              (
+                 #{shipmentNumber},
+                 #{shipmentId},
+                 #{reasonForRevive},
+                 'RVE',
+                 #{shipmentType},
+                 #{shipmentDate},
+                 #{createdBy},
+			     #{createdOn}
+              )
+       </insert>
+       
+       <update id="sqlUpdateShipmentInventoryId"
+		parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+		update Imp_BreakDownStorageinfo
+		set
+			ShipmentInventory_ID = #{shipmentInventoryId},
+			ShipmentLocation=#{shipmentLocation},
+			WarehouseLocation=#{warehouseLocation}
+		where
+			ShipmentInventory_Id = #{referenceDetails}
+	</update>
+	<!-- Newly added queries by Anurag -->
+    <select id="sqlQueryCheckIfInventoryExistsOrNotForReviveCase" 
+       parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+       resultType="java.math.BigInteger">
+       select ShipmentInventory_Id as shipmentInventoryId
+    	from Shipment_Inventory 
+		where 
+    	Shipment_ID = #{shipmentId} 
+    	<if test="origin != tenantAirport and origin != tenantAirport ">
+			and Flight_ID = #{flightId}
+		</if>
+		<choose>
+			<when test="shipmentLocation!= null and shipmentLocation!= '' ">
+			    and ShipmentLocation = UPPER(#{shipmentLocation})  
+			</when>
+		</choose>
+		<choose>
+			<when test="warehouseLocation!= null and warehouseLocation!= ''">
+				and  WarehouseLocation = #{warehouseLocation}
+			</when>
+		</choose>
+     </select>
+	 <update id="sqlQueryMergeShipmentInventoryandUpdatePieceWgt"
+       parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+       update Shipment_Inventory 
+       set Pieces=Pieces + #{freightOutPieces},
+       Weight = Weight + #{freightOutWeight}
+       where ShipmentInventory_Id=#{shipmentInventoryId}
+     </update>
+     <select id="sqlQueryFetchInventorySHCSReviveCase" 
+		parameterType="com.ngen.cosys.shipment.model.SHC"
+		resultType="com.ngen.cosys.shipment.model.SHC">
+		select SpecialHandlingCode as specialHandlingCode FROM	Shipment_FreightOutSHC  WHERE	ShipmentFreightOutId = #{neutralAWBId}
+	</select>
+	<select id="sqlFetchInventorySHCCountReviveCase"
+		parameterType="com.ngen.cosys.shipment.model.SHC"
+		resultType="java.math.BigInteger">
+		 select
+		count(SpecialHandlingCode)
+		from
+		Shipment_InventorySHC
+		where ShipmentInventoryId= #{neutralAWBSHCId} and SpecialHandlingCode = #{specialHandlingCode}
+	</select>
+	<select id="sqlGetTrmAWBinfoId"
+		parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel"
+		resultType="java.math.BigInteger">
+		 select 
+			TransTransferManifestByAwbId
+		from 
+			Transhipment_TransferManifestByAWBInfo inner join Shipment_Master
+			on Shipment_Master.ShipmentNumber=Transhipment_TransferManifestByAWBInfo.ShipmentNumber
+			and Shipment_Master.ShipmentDate=Transhipment_TransferManifestByAWBInfo.ShipmentDate
+		where
+			Shipment_Master.ShipmentId=#{shipmentId} and 
+			Transhipment_TransferManifestByAWBInfo.InboundFlightId=#{inboundFlightId}
+	</select>
+	<update id="sqlupdateTranshipment_TransferManifestByAWB"
+       parameterType="com.ngen.cosys.shipment.revive.model.ReviveShipmentModel">
+       update 
+         Transhipment_TransferManifestByAWB 
+       set 
+       	 FinalizedDate=null,
+       	 FinalizedFlag=0,
+       	 FinalizedBy=null
+       where 
+         TransTransferManifestByAwbId=#{transTransferManifestByAwbId}
+     </update>
+    <!-- end of new queries -->
+</mapper>

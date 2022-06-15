@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoMrsSend">
+
+<select id="communityPortalInvoicePostingUrl"   resultType="java.lang.String">
+	<![CDATA[
+		select ParameterValueChar from App_SystemParameters
+		where ParameterCode = 'BILLING_INTERFACE_API_SERVER'
+	]]>
+	</select>
+	
+	<select id="fetchCreditDebitInvoiceList" resultType="com.ngen.cosys.billing.communityportalinvoiceposting.model.InvoiceRequest">
+	SELECT Top (
+	   select CAST(ParameterValueNum as Integer) from app_systemparameters where ParameterCode=
+	   'BATCHPROCESS_BAIL_COMMUNITYPORTALPUSH_MAXRECORDPERRUN'
+	   ) Billing_PaymentReceipt.ReceiptNumber AS InvoiceNumber, 
+				  Billing_PaymentReceipt.PaymentReceiptId AS InvoiceId
+		,(CASE WHEN (Billing_PaymentReceipt.DocumentType IN ('AC','CREDIT NOTE','TOPUP') ) THEN 'PDCREDIT'
+		       WHEN ( Billing_PaymentReceipt.DocumentType IN ('DEBIT NOTE','AD','INVOICE') )  THEN 'PDDEBIT'
+		END
+		)InvoiceType
+		FROM Billing_PaymentReceiptPosting 
+		INNER JOIN
+		Billing_Payment ON Billing_PaymentReceiptPosting.PaymentReceiptId=Billing_Payment.PaymentReceiptId
+		INNER JOIN
+		Billing_PaymentReceipt ON Billing_Payment.PaymentReceiptId = Billing_PaymentReceipt.PaymentReceiptId
+		WHERE ISNULL(CommunityPortalSyncStatus,'Pending') = 'Pending'
+		AND Billing_PaymentReceiptPosting.CreatedUser_Code !='BIAL'
+		AND (Billing_Payment.PaymentMode = 'PDACCOUNT' OR Billing_PaymentReceipt.DocumentType IN ('TOPUP'))
+		order by Billing_PaymentReceipt.ReceiptDate desc
+	</select>
+	
+	<select id="fetchGSTInvoiceList" resultType="com.ngen.cosys.billing.communityportalinvoiceposting.model.InvoiceRequest">
+	SELECT Top (
+	   select CAST(ParameterValueNum as Integer) from app_systemparameters where ParameterCode=
+	   'BATCHPROCESS_BAIL_COMMUNITYPORTALSALESTAXREFPUSH_MAXRECORDPERRUN'
+	   ) Billing_PaymentReceipt.ReceiptNumber AS InvoiceNumber, 
+	              Billing_PaymentReceipt.PaymentReceiptId AS InvoiceId
+		          ,'GSTINVOICE' InvoiceType
+		FROM Billing_PaymentReceiptPosting INNER JOIN
+		Billing_PaymentReceipt ON Billing_PaymentReceiptPosting.PaymentReceiptId = Billing_PaymentReceipt.PaymentReceiptId
+		WHERE ISNULL(CommunityPortalSalesTaxRefSyncStatus,'Pending') = 'Pending' 
+		AND IIF( Billing_PaymentReceiptPosting.CreatedUser_Code = 'BIAL' , 'POSTED',
+		ISNULL(CommunityPortalSyncStatus,'Pending') )='POSTED'
+		AND SalesTaxSysPostingRefNo IS NOT NULL and SalesTaxSysPostingStatus='Posted'
+
+		AND Billing_PaymentReceipt.DocumentType IN ('DEBIT NOTE','INVOICE', 'CREDIT NOTE')
+		order by Billing_PaymentReceipt.ReceiptDate desc
+	</select>
+	
+	<select id="irpPostingBatchLoopCountLimit"   resultType="java.math.BigInteger">
+	 <![CDATA[
+		select ParameterValueNum from  App_SystemParameters where ParameterCode='IRP_BATCH_POSTING_LOOP_COUNT_LIMIT'
+	 ]]>
+	</select>
+	<update id="sqlUpdateCommunityPortalStatusAndErrorDescForNotPdAccount">
+		update Billing_PaymentReceiptPosting 
+			set CommunityPortalSyncStatus = 'Not Required',
+			CommunityPortalSyncErrorDesc = 'paymentMode is other than PDACCOUNT'
+		where 
+			PaymentReceiptId IN (select Billing_PaymentReceipt.PaymentReceiptId from Billing_PaymentReceipt
+			INNER JOIN
+				Billing_PaymentReceiptPosting ON Billing_PaymentReceiptPosting.PaymentReceiptId = Billing_PaymentReceipt.PaymentReceiptId
+			INNER JOIN
+				Billing_Payment on Billing_PaymentReceipt.PaymentReceiptId = Billing_Payment.PaymentReceiptId
+			where Billing_Payment.PaymentMode != 'PDACCOUNT'
+				AND Billing_PaymentReceipt.DocumentType != 'TOPUP'
+				AND Billing_PaymentReceiptPosting.CommunityPortalSyncStatus = 'Pending'
+			)
+	</update>
+	<update id="sqlUpdateCommunityPortalStatusAndErrorDescForUserBial">
+	    update Billing_PaymentReceiptPosting 
+			set CommunityPortalSyncStatus = 'Not Required',
+			CommunityPortalSyncErrorDesc = 'Transaction is done from BIAL'
+		where CreatedUser_Code ='BIAL'
+			AND CommunityPortalSyncStatus='Pending'
+	</update>
+		
+	</mapper>

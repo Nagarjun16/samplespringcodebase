@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EAWBShipmentDiscrepancyReportMapper">
+
+<select id="fetchCarrier" resultMap="ShipmentsResultMap">
+
+		select distinct CarrierCode from  (select  ABS(shipment_master.Pieces-Shipment_FreightWayBill.Pieces) as pieceDescrepancy , ABS(shipment_master.Weight-Shipment_FreightWayBill.Weight) as weightDescrepancy ,
+			shipment_master.shipmentid,shipment_master.shipmentnumber,shipment_master.CarrierCode from shipment_master inner join Shipment_FreightWayBill on shipment_master.shipmentnumber = Shipment_FreightWayBill.awbnumber
+			inner join Com_CargoProcessingEngineCheckShipmentSuccess on  Com_CargoProcessingEngineCheckShipmentSuccess.ShipmentNumber = shipment_master.ShipmentNumber
+			left join Com_CargoProcessingEngineProcessArea on Com_CargoProcessingEngineProcessArea.ComCargoProcessingEngineProcessAreaId = Com_CargoProcessingEngineCheckShipmentSuccess.ComCargoProcessingEngineProcessAreaId
+			and Com_CargoProcessingEngineProcessArea.ProcessAreaCode='SCN') A  where  A.CarrierCode IS NOT NULL	
+</select>
+<resultMap type="com.ngen.cosys.ScnLyingListModel.ScnLyingListParentModel" id="ShipmentsResultMap">
+ <result column="CarrierCode" property="carrierCode" />
+ <result column="DateSTD" property="flightDate"/>
+ <collection property="shipmentList" javaType="List" ofType="com.ngen.cosys.ScnLyingListModel.ScnLyingListChilModel">
+ <result column="shipmentnumber" property="shipmentnumber" />
+ </collection>
+</resultMap>
+
+<select id="getEmailAddressesForSCNLying" resultType="java.lang.String">
+		   select distinct Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress from Interface_MessageDefinitionByCustomer inner join 
+		   Interface_MessageDefinitionByCustomerCommunication on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId=Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId  INNER JOIN
+		   Interface_MessageDefinitionByCustomerCommunicationAddress ON 
+		   Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId = Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId
+		   where Interface_MessageDefinitionByCustomerCommunication.CommunicationType = 'SCN'  
+		   and Interface_MessageDefinitionByCustomer.CarrierCode = #{carrierCode} 
+		   and (Interface_MessageDefinitionByCustomer.AirportCode = '**' OR Interface_MessageDefinitionByCustomer.AirportCode is null) 
+		   and (Interface_MessageDefinitionByCustomer.CountryCode = '**' OR Interface_MessageDefinitionByCustomer.CountryCode is null )
+		   and (Interface_MessageDefinitionByCustomer.FlightKey = '**' OR  Interface_MessageDefinitionByCustomer.FlightKey is null)
+</select>
+
+
+<select id="getEmailAddressesForDamage" resultType="java.lang.String">
+		   select distinct Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress from Interface_MessageDefinitionByCustomer inner join 
+		   Interface_MessageDefinitionByCustomerCommunication on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId=Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId  INNER JOIN
+		   Interface_MessageDefinitionByCustomerCommunicationAddress ON 
+		   Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId = Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId
+		   where Interface_MessageDefinitionByCustomerCommunication.CommunicationType = #{dmg} 
+		 
+</select>
+</mapper>

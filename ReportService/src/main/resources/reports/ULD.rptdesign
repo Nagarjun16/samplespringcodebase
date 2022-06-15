@@ -1,0 +1,1449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.4.2.v201410272105 Build &lt;4.4.2.v20150217-1805></property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="FlightKey" id="411">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="FlightDate" id="412">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCurrentDateTime" id="427">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="8">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ULDnumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ULDNumber</text-property>
+                    <text-property name="heading">ULDNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Remarks</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Remarks</text-property>
+                    <text-property name="heading">Remarks</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">FlightId</text-property>
+                    <text-property name="heading">FlightId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Content</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Content</text-property>
+                    <text-property name="heading">Content</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DamagedPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">DamagedPieces</text-property>
+                    <text-property name="heading">DamagedPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CreatedUser_Code</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CreatedUser_Code</text-property>
+                    <text-property name="heading">CreatedUser_Code</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightKey</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightKey</text-property>
+                    <text-property name="heading">FlightKey</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">flightDate</text-property>
+                    <text-property name="heading">flightDate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">entityType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">entityType</text-property>
+                    <text-property name="heading">entityType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">WeatherCondition</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">WeatherCondition</text-property>
+                    <text-property name="heading">WeatherCondition</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Severity</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Severity</text-property>
+                    <text-property name="heading">Severity</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Occurrence</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Occurrence</text-property>
+                    <text-property name="heading">Occurrence</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleanserusable</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleanserusable</text-property>
+                    <text-property name="heading">NatureOfDamageBooleanserusable</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleansernonusable</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleansernonusable</text-property>
+                    <text-property name="heading">NatureOfDamageBooleansernonusable</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfDamageBooleannonservicable</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfDamageBooleannonservicable</text-property>
+                    <text-property name="heading">NatureOfDamageBooleannonservicable</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">FlightKey</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">FlightDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">91</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ULDnumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">Remarks</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">FlightId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">Content</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">DamagedPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">CreatedUser_Code</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">FlightKey</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">entityType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">WeatherCondition</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">Severity</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">Occurrence</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">NatureOfDamageBooleanserusable</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">NatureOfDamageBooleansernonusable</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">NatureOfDamageBooleannonservicable</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ULDnumber</property>
+                    <property name="nativeName">ULDNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">Remarks</property>
+                    <property name="nativeName">Remarks</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">FlightId</property>
+                    <property name="nativeName">FlightId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">Content</property>
+                    <property name="nativeName">Content</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">DamagedPieces</property>
+                    <property name="nativeName">DamagedPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">CreatedUser_Code</property>
+                    <property name="nativeName">CreatedUser_Code</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">FlightKey</property>
+                    <property name="nativeName">FlightKey</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">flightDate</property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">91</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">entityType</property>
+                    <property name="nativeName">entityType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">WeatherCondition</property>
+                    <property name="nativeName">WeatherCondition</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">Severity</property>
+                    <property name="nativeName">Severity</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">Occurrence</property>
+                    <property name="nativeName">Occurrence</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">NatureOfDamageBooleanserusable</property>
+                    <property name="nativeName">NatureOfDamageBooleanserusable</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">NatureOfDamageBooleansernonusable</property>
+                    <property name="nativeName">NatureOfDamageBooleansernonusable</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">NatureOfDamageBooleannonservicable</property>
+                    <property name="nativeName">NatureOfDamageBooleannonservicable</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[SELECT DISTINCT
+          Com_DamageInfo.EntityKey as ULDNumber,
+          Com_DamageInfo.Remarks,
+          Com_DamageInfo.FlightId,
+          Com_DamageInfo.Content,
+          Com_DamageLineItems.DamagedPieces,
+          Com_DamageInfo.CreatedUser_Code,
+          Flt_OperativeFlight.FlightKey,
+          CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) AS flightDate,
+          Com_DamageInfo.EntityType AS entityType,
+          Imp_FlightEvents.WeatherCondition,
+          Com_DamageLineItems.Severity,
+          Com_DamageLineItems.Occurrence,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Serviceable-Usable' ) AS NatureOfDamageBooleanserusable,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Serviceable-NonUsable') AS NatureOfDamageBooleansernonusable,
+       (SELECT IIF(COUNT(Com_DamageLineItemsConditions.NatureOfDamage) = 0, 'N', 'Y')  FROM Com_DamageLineItemsConditions
+                     WHERE Com_DamageLineItemsConditions.DamageLineItemsId = Com_DamageLineItems.DamageLineItemsId 
+                     AND Com_DamageLineItemsConditions.NatureOfDamage = 'Non-Serviceable') AS NatureOfDamageBooleannonservicable
+          FROM Com_DamageInfo
+          LEFT JOIN Flt_OperativeFlight
+          ON Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID
+          LEFT JOIN Flt_OperativeFlight_Legs
+          ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+          LEFT JOIN Com_DamageLineItems
+          ON Com_DamageInfo.DamageInFoId = Com_DamageLineItems.DamageInFoId
+            LEFT JOIN Imp_FlightEvents
+          ON Com_DamageInfo.FlightId = Imp_FlightEvents.FlightId
+              WHERE 
+                      Com_DamageInfo.EntityType = 'ULD'
+                             AND Flt_OperativeFlight.FlightKey = ?
+                     AND cast(Flt_OperativeFlight_Legs.DateSTD AS DATE) = cast(? AS DATE)
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamageBooleanserunable</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamageBooleanserunable</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamageBooleanserunable</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamageBooleansernonusable</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamageBooleansernonusable</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamageBooleansernonusable</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamageBooleannonservicable</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamageBooleannonservicable</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamageBooleannonservicable</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Remarks</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>65</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Remarks</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Remarks</design:label>
+            <design:formattingHints>
+              <design:displaySize>65</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightId</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Content</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Content</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Content</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DamagedPieces</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DamagedPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DamagedPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CreatedUser_Code</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CreatedUser_Code</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CreatedUser_Code</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfDamage</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>65</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfDamage</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfDamage</design:label>
+            <design:formattingHints>
+              <design:displaySize>65</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightKey</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightKey</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightKey</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ULDnumber</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>30</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ULDnumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ULDnumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>30</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>SType</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>SType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>SType</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightDate</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>91</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>WeatherCondition</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>WeatherCondition</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>WeatherCondition</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set1" id="425">
+            <list-property name="columnHints"/>
+            <list-property name="parameters"/>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">currentDateTime</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">currentDateTime</property>
+                    <property name="nativeName">currentDateTime</property>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select UPPER(convert(datetime, CONVERT(datetimeoffset, getDate()) AT TIME ZONE (select ParameterValueChar from App_SystemParameters where ParameterCode='Station_timezone'))) currentDateTime]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+            <structure name="dateTimeFormat">
+                <property name="category">Custom</property>
+                <property name="pattern">d MMMM y HH:mm</property>
+            </structure>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <page-footer>
+                <grid id="432">
+                    <property name="width">1.3416666666666666in</property>
+                    <column id="433">
+                        <property name="width">1.3416666666666666in</property>
+                    </column>
+                    <row id="434">
+                        <cell id="435">
+                            <data id="436">
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">tenantCurrentDateTime</property>
+                                        <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                        <property name="dataType">string</property>
+                                    </structure>
+                                </list-property>
+                                <property name="resultSetColumn">tenantCurrentDateTime</property>
+                            </data>
+                        </cell>
+                    </row>
+                </grid>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="9">
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">float</property>
+                    <property name="aggregateFunction">AVE</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                            <expression name="value" type="javascript">BirtDateTime.now()</expression>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Column Binding</property>
+                    <expression name="expression" type="javascript">BirtDateTime.now()</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="10"/>
+            <row id="11">
+                <cell id="12">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <grid id="14">
+                        <property name="width">7.875in</property>
+                        <column id="15">
+                            <property name="width">6.34375in</property>
+                        </column>
+                        <column id="16">
+                            <property name="width">1.53125in</property>
+                        </column>
+                        <row id="17">
+                            <cell id="18">
+                                <label id="20">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="textUnderline">underline</property>
+                                    <property name="textAlign">center</property>
+                                    <text-property name="text">imp.uld.damage.report</text-property>
+                                </label>
+                            </cell>
+                            <cell id="19">
+                                <data id="428">
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">tenantCurrentDateTime</property>
+                                            <expression name="expression" type="javascript">params["tenantCurrentDateTime"]</expression>
+                                            <property name="dataType">string</property>
+                                            <property name="allowExport">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">tenantCurrentDateTime</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <grid id="30">
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">CreatedUser_Code</property>
+                    <text-property name="displayName">CreatedUser_Code</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FlightDate</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                    <property name="dataType">date</property>
+                </structure>
+                <structure>
+                    <property name="name">WeatherCondition</property>
+                    <text-property name="displayName">WeatherCondition</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["WeatherCondition"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="31">
+                <property name="width">2.5208333333333335in</property>
+            </column>
+            <column id="32">
+                <property name="width">2.8229166666666665in</property>
+            </column>
+            <column id="33">
+                <property name="width">2.6041666666666665in</property>
+            </column>
+            <row id="34">
+                <cell id="35">
+                    <data id="42">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">CreatedUser_Code</property>
+                                <text-property name="displayName">CreatedUser_Code</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">CreatedUser_Code</property>
+                    </data>
+                </cell>
+                <cell id="36"/>
+                <cell id="37"/>
+            </row>
+            <row id="38">
+                <cell id="39">
+                    <grid id="52">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="width">2.4375in</property>
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">FlightDate</property>
+                                <text-property name="displayName">FlightDate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                                <property name="dataType">date</property>
+                            </structure>
+                        </list-property>
+                        <column id="53">
+                            <property name="width">0.8229166666666666in</property>
+                        </column>
+                        <column id="54">
+                            <property name="width">0.14583333333333334in</property>
+                        </column>
+                        <column id="55">
+                            <property name="width">1.46875in</property>
+                        </column>
+                        <row id="56">
+                            <cell id="57">
+                                <data id="60">
+                                    <property name="fontWeight">bold</property>
+                                    <property name="dataSet">Data Set</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">FlightKey</property>
+                                            <text-property name="displayName">FlightKey</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["FlightKey"]</expression>
+                                            <property name="dataType">string</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">FlightKey</property>
+                                </data>
+                            </cell>
+                            <cell id="58">
+                                <label id="61">
+                                    <text-property name="text">/</text-property>
+                                </label>
+                            </cell>
+                            <cell id="59">
+                                <data id="382">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.DateDataItemEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="dataSet">Data Set</property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">FlightDate</property>
+                                            <text-property name="displayName">FlightDate</text-property>
+                                            <expression name="expression" type="javascript">if(dataSetRow["FlightDate"] != null)&#13;
+{&#13;
+Formatter.format(dataSetRow["FlightDate"],"dd MMM yyyy ")&#13;
+}&#13;
+else&#13;
+{''}</expression>
+                                            <property name="dataType">date</property>
+                                            <property name="allowExport">true</property>
+                                        </structure>
+                                    </list-property>
+                                    <property name="resultSetColumn">FlightDate</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+                <cell id="40"/>
+                <cell id="41">
+                    <grid id="63">
+                        <property name="borderBottomStyle">none</property>
+                        <property name="borderLeftStyle">none</property>
+                        <property name="borderRightStyle">none</property>
+                        <property name="borderTopStyle">none</property>
+                        <property name="width">2.8645833333333335in</property>
+                        <column id="64">
+                            <property name="width">1.8020833333333333in</property>
+                        </column>
+                        <column id="65">
+                            <property name="width">1.0625in</property>
+                        </column>
+                        <row id="66">
+                            <cell id="67">
+                                <property name="borderBottomStyle">none</property>
+                                <property name="borderLeftStyle">none</property>
+                                <property name="borderRightStyle">none</property>
+                                <property name="borderTopStyle">none</property>
+                                <label id="69">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">normal</property>
+                                    <text-property name="text">import.create.damage.weather.condition</text-property>
+                                </label>
+                            </cell>
+                            <cell id="68">
+                                <data id="384">
+                                    <property name="fontWeight">bold</property>
+                                    <property name="resultSetColumn">WeatherCondition</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+        <grid id="197">
+            <column id="198"/>
+            <row id="199">
+                <cell id="200">
+                    <label id="201"/>
+                </cell>
+            </row>
+        </grid>
+        <table id="109">
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ULDnumber</property>
+                    <text-property name="displayName">ULDNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ULDnumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Remarks</property>
+                    <text-property name="displayName">Remarks</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Remarks"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleanserusable</property>
+                    <text-property name="displayName">NatureOfDamageBooleanserusable</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleanserusable"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleansernonusable</property>
+                    <text-property name="displayName">NatureOfDamageBooleansernonusable</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleansernonusable"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfDamageBooleannonservicable</property>
+                    <text-property name="displayName">NatureOfDamageBooleannonservicable</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfDamageBooleannonservicable"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">integer</property>
+                    <property name="aggregateFunction">RUNNINGCOUNT</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="149">
+                <property name="width">0.4895833333333333in</property>
+            </column>
+            <column id="150">
+                <property name="width">1.34375in</property>
+            </column>
+            <column id="153">
+                <property name="width">3.3541666666666665in</property>
+            </column>
+            <column id="158">
+                <property name="width">0.8958333333333334in</property>
+            </column>
+            <column id="159">
+                <property name="width">0.9479166666666666in</property>
+            </column>
+            <column id="189">
+                <property name="width">0.8958333333333334in</property>
+            </column>
+            <header>
+                <row id="110">
+                    <cell id="111">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="174">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">val.SNo</text-property>
+                        </label>
+                    </cell>
+                    <cell id="112">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="175">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">uld.uld.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="115">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">2</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="178">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">export.remarks</text-property>
+                        </label>
+                    </cell>
+                    <cell id="117">
+                        <property name="colSpan">3</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="191">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">import.create.damage.nature.damage</text-property>
+                        </label>
+                    </cell>
+                </row>
+                <row id="161">
+                    <cell id="171">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="182">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <text-property name="text">imp.servicable.usable</text-property>
+                        </label>
+                    </cell>
+                    <cell id="172">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <label id="183">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">imp.servicable.nonusable</text-property>
+                        </label>
+                    </cell>
+                    <cell id="186">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="whiteSpace">pre</property>
+                        <label id="190">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="whiteSpace">pre</property>
+                            <text-property name="text">imp.non.servicable</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="123">
+                    <cell id="124">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <property name="textAlign">center</property>
+                        <data id="424">
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="125">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="419">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">ULDnumber</property>
+                        </data>
+                    </cell>
+                    <cell id="128">
+                        <property name="colSpan">1</property>
+                        <property name="rowSpan">1</property>
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="420">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">Remarks</property>
+                        </data>
+                    </cell>
+                    <cell id="133">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="421">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleanserusable</property>
+                        </data>
+                    </cell>
+                    <cell id="134">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="422">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleansernonusable</property>
+                        </data>
+                    </cell>
+                    <cell id="187">
+                        <property name="borderBottomStyle">solid</property>
+                        <property name="borderBottomWidth">thin</property>
+                        <property name="borderLeftStyle">solid</property>
+                        <property name="borderLeftWidth">thin</property>
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <property name="borderTopStyle">solid</property>
+                        <property name="borderTopWidth">thin</property>
+                        <data id="423">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">NatureOfDamageBooleannonservicable</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+        <grid id="224">
+            <column id="225"/>
+            <row id="226">
+                <cell id="227">
+                    <label id="228"/>
+                </cell>
+            </row>
+        </grid>
+        <grid id="229">
+            <column id="230"/>
+            <row id="231">
+                <cell id="232">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <label id="233">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="fontSize">9pt</property>
+                        <property name="fontStyle">italic</property>
+                        <property name="textAlign">justify</property>
+                        <text-property name="text">imp.the.information.on.this.report</text-property>
+                    </label>
+                </cell>
+            </row>
+        </grid>
+        <grid id="234">
+            <column id="235"/>
+            <row id="236">
+                <cell id="237"/>
+            </row>
+        </grid>
+        <grid id="385">
+            <property name="fontSize">9pt</property>
+            <column id="386"/>
+            <row id="312">
+                <cell id="313">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <grid id="325">
+                        <column id="326"/>
+                        <row id="327">
+                            <cell id="328">
+                                <label id="335">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontStyle">italic</property>
+                                    <text-property name="text">import.breakdown.delay.legend</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                        <row id="329">
+                            <cell id="330">
+                                <label id="336">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontStyle">italic</property>
+                                    <property name="textAlign">left</property>
+                                    <text-property name="text">imp.service.u.n</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                        <row id="331">
+                            <cell id="332">
+                                <grid id="338">
+                                    <property name="width">7.802083333333333in</property>
+                                    <column id="339">
+                                        <property name="width">0.96875in</property>
+                                    </column>
+                                    <column id="340">
+                                        <property name="width">6.833333333333333in</property>
+                                    </column>
+                                    <row id="341">
+                                        <cell id="342">
+                                            <label id="344">
+                                                <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                                <property name="fontStyle">italic</property>
+                                                <text-property name="text">export.prepared.by</text-property>
+                                            </label>
+                                        </cell>
+                                        <cell id="343">
+                                            <data id="345">
+                                                <property name="fontStyle">italic</property>
+                                                <property name="dataSet">Data Set</property>
+                                                <list-property name="boundDataColumns">
+                                                    <structure>
+                                                        <property name="name">CreatedUser_Code</property>
+                                                        <text-property name="displayName">CreatedUser_Code</text-property>
+                                                        <expression name="expression" type="javascript">dataSetRow["CreatedUser_Code"]</expression>
+                                                        <property name="dataType">string</property>
+                                                    </structure>
+                                                </list-property>
+                                                <property name="resultSetColumn">CreatedUser_Code</property>
+                                            </data>
+                                        </cell>
+                                    </row>
+                                </grid>
+                            </cell>
+                        </row>
+                        <row id="333">
+                            <cell id="334">
+                                <label id="346">
+                                    <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                                    <property name="fontWeight">bold</property>
+                                    <property name="textAlign">center</property>
+                                    <text-property name="text">export.end.of.report</text-property>
+                                </label>
+                            </cell>
+                        </row>
+                    </grid>
+                </cell>
+            </row>
+        </grid>
+    </body>
+    <property name="pageVariables">
+        <variable-element name="NewVariableElement">
+            <property name="type">report</property>
+        </variable-element>
+    </property>
+</report>

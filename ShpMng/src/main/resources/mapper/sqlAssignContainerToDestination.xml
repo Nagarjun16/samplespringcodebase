@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="assignContainerToDestination">
+	<resultMap id="DestinationDetailsResultMap"
+		type="com.ngen.cosys.shipment.mail.model.AssignContainerToDestination">
+		<result column="UldCarrierCode" jdbcType="VARCHAR" property="carrierCode" />
+		<result column="ContainerDestination" jdbcType="VARCHAR"
+			property="destination" />
+		<result column="NestedId" jdbcType="VARCHAR" property="nestedId" />
+		<result column="UldKey" jdbcType="VARCHAR" property="storeLocation" />
+		<collection property="details" javaType="List"
+			ofType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestination"
+			select="AssignContainerDetails" column="UldKey=storeLocation" />
+	</resultMap>
+
+	<select id="getDestinationDetails"
+		parameterType="com.ngen.cosys.shipment.mail.model.SearchAssignToContainerToDestinationDetails"
+		resultType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestination">
+		SELECT UldCarrierCode as carrierCode
+		,UldKey as
+		storeLocation
+		,ContainerDestination as destination
+		,NestedId as nestedId
+		FROM Uld_UldMaster where Uld_UldMaster.UldKey=#{storeLocation} AND Uld_UldMaster.ContentCode = 'M'
+	</select>
+	
+	<select id="AssignContainerDetails"
+		resultType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		select
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId as
+		shipmentId,
+		Shipment_Master.ShipmentDate,
+		SUM(Shipment_InventoryHouse.Pieces) Pieces,
+		SUM(Shipment_InventoryHouse.Weight) Weight,
+		Shipment_HouseInformation.Number as mailBagNumber,
+		Shipment_HouseInformation.MailCategory as category,
+		Shipment_HouseInformation.MailSubCategory as mailType,
+		Shipment_HouseInformation.DispatchNumber as dispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber as receptacleNumber,
+		Shipment_HouseInformation.DispatchYear as year,
+		Shipment_HouseInformation.RegisteredIndicator as registeredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange as origin,
+		Shipment_HouseInformation.DestinationOfficeExchange as destination
+		from
+		Shipment_Master
+		inner join
+		Shipment_HouseInformation
+		on
+		Shipment_Master.ShipmentId= Shipment_HouseInformation.ShipmentId
+		inner
+		join
+		Shipment_Inventory
+		on Shipment_Master.ShipmentId =
+		Shipment_Inventory.Shipment_ID
+		inner join
+		Shipment_InventoryHouse
+		on
+		Shipment_Inventory.ShipmentInventory_Id =
+		Shipment_InventoryHouse.ShipmentInventoryId
+		and
+		Shipment_HouseInformation.ShipmentHouseId =
+		Shipment_InventoryHouse.ShipmentHouseId
+		where
+		Shipment_Inventory.ShipmentLocation = #{storeLocation}
+		group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId,
+		Shipment_HouseInformation.Number,
+		Shipment_Master.ShipmentDate,
+		Shipment_HouseInformation.MailCategory,
+		Shipment_HouseInformation.MailSubCategory,
+		Shipment_HouseInformation.DispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_HouseInformation.DispatchYear,
+		Shipment_HouseInformation.RegisteredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange,
+		Shipment_HouseInformation.DestinationOfficeExchange,
+		Shipment_HouseInformation.ReceptacleNumber
+
+	</select>
+	<select id="getContainerDetails"
+		resultType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		<!-- select
+		Shipment_Master.ShipmentNumber as shipmentNumber,
+		Shipment_Master.ShipmentId as shipmentId,
+		Shipment_Master.ShipmentDate,
+		SUM(Shipment_InventoryHouse.Pieces)
+		Pieces,
+		SUM(Shipment_InventoryHouse.Weight) Weight,
+		Shipment_HouseInformation.Number as mailBagNumber,
+		Shipment_HouseInformation.MailCategory as category,
+		Shipment_HouseInformation.MailSubCategory as mailType,
+		Shipment_HouseInformation.DispatchNumber as dispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber as receptacleNumber,
+		Shipment_HouseInformation.DispatchYear as year,
+		Shipment_HouseInformation.RegisteredIndicator as registeredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange as origin,
+		Shipment_HouseInformation.DestinationOfficeExchange as destination,
+		Shipment_Master.CarrierCode
+		from
+		Shipment_Master
+		inner join
+		Shipment_HouseInformation
+		on
+		Shipment_Master.ShipmentId= Shipment_HouseInformation.ShipmentId
+		inner
+		join
+		Shipment_Inventory
+		on Shipment_Master.ShipmentId =
+		Shipment_Inventory.Shipment_ID
+		inner join
+		Shipment_InventoryHouse
+		on
+		Shipment_Inventory.ShipmentInventory_Id =
+		Shipment_InventoryHouse.ShipmentInventoryId
+		and
+		Shipment_HouseInformation.ShipmentHouseId =
+		Shipment_InventoryHouse.ShipmentHouseId
+		where
+		Shipment_Inventory.ShipmentLocation = #{storeLocation}
+		group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId,
+		Shipment_HouseInformation.Number,
+		Shipment_Master.ShipmentDate,
+		Shipment_HouseInformation.MailCategory,
+		Shipment_HouseInformation.MailSubCategory,
+		Shipment_HouseInformation.DispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_HouseInformation.DispatchYear,
+		Shipment_HouseInformation.RegisteredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange,
+		Shipment_HouseInformation.DestinationOfficeExchange,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_Master.CarrierCode -->
+		select
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId as shipmentId,
+		Shipment_Master.ShipmentDate,
+		SUM(Shipment_InventoryHouse.Pieces)
+		Pieces,
+		SUM(Shipment_InventoryHouse.Weight) Weight,
+		Shipment_HouseInformation.Number as mailBagNumber,
+		Shipment_HouseInformation.MailCategory as category,
+		Shipment_HouseInformation.MailSubCategory as mailType,
+		Shipment_HouseInformation.DispatchNumber as dispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber as receptacleNumber,
+		Shipment_HouseInformation.DispatchYear as year,
+		Shipment_HouseInformation.RegisteredIndicator as registeredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange as origin,
+		Shipment_HouseInformation.DestinationOfficeExchange as destination,
+		Shipment_Master.CarrierCode,
+		(Select Customer_Master.CustomerCode From Customer_Master INNER JOIN Exp_eAcceptanceServiceInformation 
+		  ON Customer_Master.Customer_ID = Exp_eAcceptanceServiceInformation.CustomerId INNER JOIN Exp_eAcceptanceDocumentInformation ON 
+		Exp_eAcceptanceServiceInformation.ServiceInformationId = Exp_eAcceptanceDocumentInformation.ServiceInformationId
+		INNER JOIN Exp_eAcceptanceHouseInformation ON Exp_eAcceptanceDocumentInformation.DocumentInformationId = Exp_eAcceptanceHouseInformation.DocumentInformationId
+		Where Exp_eAcceptanceHouseInformation.Number = Shipment_HouseInformation.Number) agentCode
+		from
+		Shipment_Master
+		inner join
+		Shipment_HouseInformation
+		on
+		Shipment_Master.ShipmentId= Shipment_HouseInformation.ShipmentId
+		inner
+		join
+		Shipment_Inventory
+		on Shipment_Master.ShipmentId =
+		Shipment_Inventory.Shipment_ID
+		inner join
+		Shipment_InventoryHouse
+		on
+		Shipment_Inventory.ShipmentInventory_Id =
+		Shipment_InventoryHouse.ShipmentInventoryId
+		and
+		Shipment_HouseInformation.ShipmentHouseId =
+		Shipment_InventoryHouse.ShipmentHouseId
+		where
+		Shipment_Inventory.ShipmentLocation = #{storeLocation}
+		group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId,
+		Shipment_HouseInformation.Number,
+		Shipment_Master.ShipmentDate,
+		Shipment_HouseInformation.MailCategory,
+		Shipment_HouseInformation.MailSubCategory,
+		Shipment_HouseInformation.DispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_HouseInformation.DispatchYear,
+		Shipment_HouseInformation.RegisteredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange,
+		Shipment_HouseInformation.DestinationOfficeExchange,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_Master.CarrierCode
+	</select>
+	<select id="getACTDestinationDetails"
+		resultType="com.ngen.cosys.shipment.mail.model.SearchAssignToContainerToDestinationDetails">
+		select
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId as shipmentId,
+		Shipment_Master.ShipmentDate,
+		SUM(Shipment_InventoryHouse.Pieces)
+		Pieces,
+		SUM(Shipment_InventoryHouse.Weight) Weight,
+		Shipment_HouseInformation.Number as mailBagNumber,
+		Shipment_HouseInformation.MailCategory as category,
+		Shipment_HouseInformation.MailSubCategory as mailType,
+		Shipment_HouseInformation.DispatchNumber as dispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber as receptacleNumber,
+		Shipment_HouseInformation.DispatchYear as year,
+		Shipment_HouseInformation.RegisteredIndicator as registeredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange as origin,
+		Shipment_HouseInformation.DestinationOfficeExchange as destination
+		from
+		Shipment_Master
+		inner join
+		Shipment_HouseInformation
+		on
+		Shipment_Master.ShipmentId= Shipment_HouseInformation.ShipmentId
+		inner
+		join
+		Shipment_Inventory
+		on Shipment_Master.ShipmentId =
+		Shipment_Inventory.Shipment_ID
+		inner join
+		Shipment_InventoryHouse
+		on
+		Shipment_Inventory.ShipmentInventory_Id =
+		Shipment_InventoryHouse.ShipmentInventoryId
+		and
+		Shipment_HouseInformation.ShipmentHouseId =
+		Shipment_InventoryHouse.ShipmentHouseId
+		where
+		Shipment_Inventory.ShipmentLocation = #{storeLocation}
+		group by
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentId,
+		Shipment_HouseInformation.Number,
+		Shipment_Master.ShipmentDate,
+		Shipment_HouseInformation.MailCategory,
+		Shipment_HouseInformation.MailSubCategory,
+		Shipment_HouseInformation.DispatchNumber,
+		Shipment_HouseInformation.ReceptacleNumber,
+		Shipment_HouseInformation.DispatchYear,
+		Shipment_HouseInformation.RegisteredIndicator,
+		Shipment_HouseInformation.OriginOfficeExchange,
+		Shipment_HouseInformation.DestinationOfficeExchange,
+		Shipment_HouseInformation.ReceptacleNumber
+	</select>
+	<select id="getCount"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestination" resultType="java.lang.Integer">
+		select count(*) from Exp_AssignedULDTrolleyToFlight
+		where  ULDTrolleyNumber=#{storeLocation}
+	</select>
+	
+	<update id="updateUldMaster"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestination">
+		update Uld_UldMaster set
+		ContainerDestination=#{destination},
+		Uld_UldMaster.NestedID=#{nestedId}
+		where
+		Uld_UldMaster.UldKey=#{storeLocation}
+	</update>
+
+	<update id="updateShipmentHouseInfo"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		update Shipment_HouseInformation
+		set NextDestination =
+		#{destination}
+		where
+		Shipmentid = #{shipmentId}
+	</update>
+	<update id="updateHouseInfoDestination"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		update Shipment_HouseInformation
+		set NextDestination =''
+		where
+		Shipmentid = #{shipmentId};
+	</update>
+	<update id="EhouseInfoLocation"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		update Exp_eAcceptanceHouseInformation set
+		NextDestination=''
+		where Number=#{mailBagNumber}
+	</update>
+	<update id="updateEaccHouseInfo"
+		parameterType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		update Exp_eAcceptanceHouseInformation set
+		NextDestination=#{destination}
+		where Number=#{mailBagNumber}
+	</update>
+
+	<update id="upadteLocation">
+		update Shipment_Inventory set ShipmentLocation='UNKNOWN' where
+		ShipmentLocation=#{storeLocation};
+	</update>
+
+	<delete id="deleteAssignContainerToDestinationDetails">
+		delete from Shipment_InventoryHouse where
+		ShipmentInventoryId=#{shipmentInventoryId};
+	</delete>
+
+	<select id="getShipmentInventoryId"
+		resultType="com.ngen.cosys.shipment.mail.model.AssignContainerToDestinationDetails">
+		select ShipmentInventory_Id as shipmentInventoryId from
+		Shipment_Inventory where ShipmentLocation=#{storeLocation}
+	</select>
+
+</mapper>

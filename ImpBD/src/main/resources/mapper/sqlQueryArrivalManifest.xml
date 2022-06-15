@@ -1,0 +1,3176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ImpBDMapper">
+
+	<insert id="insertShipmentDimension"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentDimensionInfoModel"
+		useGeneratedKeys="true" keyProperty="id">
+	<![CDATA[
+		insert into Imp_ArrivalManifestShipmentDimensionInfo(
+			TransactionSequenceNo,
+			ImpArrivalManifestShipmentInfoId,
+			WeightUnitCode,
+			Weight,
+			MeasurementUnitCode,
+			DimensionLength,
+			DimensionWIdth,
+			DimensionHeight,
+			NumberOfPieces,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			(select (select isnull(max(TransactionSequenceNo),0) from Imp_ArrivalManifestShipmentDimensionInfo 
+						where ImpArrivalManifestShipmentInfoId = #{shipmentId})+1),
+			#{shipmentId},
+			#{weightUnitCode},
+			#{weight},
+			#{measurementUnitCode},
+			#{width},
+			#{height},
+			#{length},
+			#{noOfPieces},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<select id="getShipmentOnwardMvmt"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Imp_ArrivalManifestShipmentOnwardMovement
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</select>
+
+	<insert id="insertShipmentOnwardMvmt"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel"
+		useGeneratedKeys="true" keyProperty="id">
+	<![CDATA[	
+		insert into Imp_ArrivalManifestShipmentOnwardMovement(
+			TransactionSequenceNo,
+			ImpArrivalManifestShipmentInfoId,
+			AirportCityCode,
+			CarrierCode,
+			FlightNumber,
+			DepartureDate,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			(select (select isnull(max(TransactionSequenceNo),0) from Imp_ArrivalManifestShipmentOnwardMovement 
+						where ImpArrivalManifestShipmentInfoId = #{shipmentId})+1),
+			#{shipmentId},
+			UPPER(#{airportCityCode}),
+			#{carrierCode},
+			#{flightNumber},
+			#{departureDate},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<insert id="insertShipmentOCI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOciModel"
+		useGeneratedKeys="true" keyProperty="id">
+	<![CDATA[
+		Insert into Imp_ArrivalManifestShipmentOCI(
+			TransactionSequenceNo,
+			ImpArrivalManifestShipmentInfoId,
+			CountryCode,
+			InformationIdentifier,
+			CSRCIIdentifier,
+			SCSRCInformation,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			(select (select isnull(max(TransactionSequenceNo),0) from Imp_ArrivalManifestShipmentOCI 
+								where ImpArrivalManifestShipmentInfoId = #{shipmentId})+1),
+			#{shipmentId},
+			#{countryCode},
+			#{informationIdentifier},
+			#{csrciIdentifier},
+			#{scsrcInformation},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<insert id="insertShipmentOSI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestOtherServiceInfoModel"
+		useGeneratedKeys="true" keyProperty="id">
+	<![CDATA[	
+		Insert into Imp_ArrivalManifestOtherSvcInfo(
+			TransactionSequenceNo,
+			ImpArrivalManifestShipmentInfoId,
+			ServiceInformation,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			(select (select isnull(max(TransactionSequenceNo),0) from Imp_ArrivalManifestOtherSvcInfo 
+						where ImpArrivalManifestShipmentInfoId = #{shipmentId})+1),
+			#{shipmentId},
+			#{remarks},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<insert id="insertShipmentInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		useGeneratedKeys="true" keyProperty="impArrivalManifestShipmentInfoId">
+	<![CDATA[
+		insert into Imp_ArrivalManifestShipmentInfo(
+			ImpArrivalManifestULDId,
+			ShipmentNumber,
+			ShipmentDate,
+			Origin,
+			Destination,
+			ShipmentDescriptionCode,
+			Piece,
+			WeightUnitCode,
+			Weight,
+			VolumeUnitCode,
+			VolumeAmount,
+			DensityIndicator,
+			DensityGroupCode,
+			TotalPieces,
+			NatureOfGoodsDescription,
+			MovementPriorityCode,
+			CustomsOriginCode,
+			CustomsReference,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			Svc,
+			TransferType,
+			SurplusFlag,
+			ManuallyAdded,
+			OffloadedFlag,
+			OffloadReasonCode,
+			BookingFlightId,
+			FlightSegmentId
+		)values(
+			#{impArrivalManifestUldId},
+			#{shipmentNumber},
+			#{shipmentdate},
+			#{origin},
+			#{destination},
+			#{shipmentDescriptionCode},
+			#{piece},
+			#{weightUnitCode},
+			#{weight},
+			#{volumeunitCode},
+			#{volumeAmount},
+			#{densityIndicator},
+			#{densityGroupCode},
+			#{totalPieces},
+			#{natureOfGoodsDescription},
+			#{movementPriorityCode},
+			#{customsOriginCode},
+			#{customsReference},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP,
+			#{svc},
+			#{transferType},
+			#{surplusFlag},
+			1,
+			#{offloadedFlag},
+			#{offloadReasonCode},
+			#{bookingFlightId}, 
+			#{bookingFlightSegmentId}
+		)
+	]]>
+	</insert>
+
+	<insert id="insertULDInfo" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		useGeneratedKeys="true" keyProperty="impArrivalManifestUldId">
+	<![CDATA[	
+		insert into Imp_ArrivalManifestULD(
+			ImpArrivalManifestBySegmentId,
+			UldType,
+			UldSerialNumber,
+			UldOwnerCode,
+			ULDNumber,
+			UldLoadingIndicator,
+			UldRemarks,
+			VolumeAvailableCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			#{impArrivalManifestBySegmentId},
+			#{uldType},
+			#{uldSerialNumber},
+			#{uldOwnerCode},
+			#{uldNumber},
+			#{uldLoadingIndicator},
+			#{uldRemarks},
+			#{volumeAvailableCode},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<insert id="insertSHCInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByShipmentShcModel"
+		useGeneratedKeys="true" keyProperty="id">
+	<![CDATA[	
+		insert into Imp_ArrivalManifestByShipmentSHC(
+			ImpArrivalManifestShipmentInfoId,
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)values(
+			#{shipmentId},
+			#{specialHandlingCode},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP
+		)
+	]]>
+	</insert>
+
+	<update id="updateULDInfo" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+	<![CDATA[
+		update Imp_ArrivalManifestULD
+		set
+			UldRemarks = #{uldRemarks},
+			ULDNumber = #{uldNumber},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE()
+		where 
+			ImpArrivalManifestULDId = #{impArrivalManifestUldId} and
+			ImpArrivalManifestBySegmentId = #{impArrivalManifestBySegmentId}
+	]]>
+	</update>
+
+	<update id="updateShipmentInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentInfo
+		set
+			Origin = #{origin},
+			Destination = #{destination},
+			ShipmentDescriptionCode = #{shipmentDescriptionCode},
+			Piece = #{piece},
+			WeightUnitCode = #{weightUnitCode},
+			Weight = #{weight},
+			VolumeUnitCode = #{volumeunitCode},
+			VolumeAmount = #{volumeAmount},
+			DensityIndicator = #{densityIndicator},
+			DensityGroupCode = #{densityGroupCode},
+			TotalPieces = #{totalPieces},
+			NatureOfGoodsDescription = #{natureOfGoodsDescription},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE(),
+			Svc = #{svc},
+			OffloadedFlag = #{offloadedFlag},
+			OffloadReasonCode = #{offloadReasonCode},
+			TransferType = #{transferType},
+			BookingFlightId = #{bookingFlightId},
+			FlightSegmentId = #{bookingFlightSegmentId}
+		where 
+			ShipmentNumber = #{shipmentNumber} and 
+			ImpArrivalManifestShipmentInfoId = #{impArrivalManifestShipmentInfoId}
+	]]>
+	</update>
+
+	<update id="updateSHCInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByShipmentShcModel">
+	<![CDATA[
+		update Imp_ArrivalManifestByShipmentSHC
+		set
+			SpecialHandlingCode = #{specialHandlingCode} ,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE()
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</update>
+
+	<update id="updateOSIInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestOtherServiceInfoModel">
+	<![CDATA[
+		update Imp_ArrivalManifestOtherSvcInfo
+		set
+			ServiceInformation = #{remarks},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE()
+		where 
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and 
+			Imp_ArrivalManifestOtherSvcInfoId = #{id}
+	]]>
+	</update>
+	
+	<update id="updateShipmentDetails"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentInfo 
+		set
+			DensityGroupCode = #{densityGroupCode},
+			VolumeAmount = #{volumeAmount},
+			VolumeUnitCode = #{volumeunitCode},
+			CustomsOriginCode = #{customsOriginCode},
+			MovementPriorityCode = #{movementPriorityCode},
+			CustomsReference = #{customsReference}
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</update>
+
+	<delete id="deleteDimension"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentDimensionInfo where ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<delete id="deleteShipmentOCI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentOCI where ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<delete id="deleteShipmentOnwardMvmt"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentOnwardMovement where ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<delete id="deleteShipmentOSI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestOtherSvcInfo where ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<update id="updateShipmentDimension"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentDimensionInfoModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentDimensionInfo 
+		set
+			WeightUnitCode = #{weightUnitCode},
+			Weight = #{weight},
+			MeasurementUnitCode = #{measurementUnitCode},
+			DimensionLength = #{length},
+			DimensionWIdth = #{width},
+			DimensionHeight = #{height},
+			NumberOfPieces = #{noOfPieces} 
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentDimensionInfoId = #{id}
+	]]>
+	</update>
+
+	<update id="updateShipmentOCI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOciModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentOCI 
+		set
+			CountryCode = #{countryCode},
+			InformationIdentifier = #{informationIdentifier},
+			CSRCIIdentifier = #{csrciIdentifier},
+			SCSRCInformation = #{scsrcInformation} 
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentOCIId = #{id}
+	]]>
+	</update>
+
+	<update id="updateShipmentOnward"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentOnwardMovement 
+		set
+			AirportCityCode = UPPER(#{airportCityCode}),
+			CarrierCode = #{carrierCode},
+			FlightNumber = #{flightNumber},
+			DepartureDate = #{departureDate} 
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and 
+			AirportCityCode  NOT IN (#{tenantAirport}, #{tenantCity})
+	]]>
+		<choose>
+			<when test="id!= null and id!= ''">
+				and ImpArrivalManifestShipmentOnwardMovementId = #{id}
+			</when>
+		</choose>
+	</update>
+
+	<delete id="deleteULDInfo" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestULD where ImpArrivalManifestULDId = #{impArrivalManifestUldId}
+	]]>
+	</delete>
+
+	<delete id="deleteShipmentInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentInfo where ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<delete id="deleteSHCInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestByShipmentSHC where ImpArrivalManifestShipmentInfoId=#{shipmentId}
+	]]>
+	</delete>
+
+	<resultMap id="arrivalManifestFlightShipmentInfoResultMap"
+		type="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel">
+		<id column="Flight_ID" property="impArrivalManifestByFlightId" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightOriginDate" property="flightDate" />
+		<result column="DateSTA" property="sta" />
+		<result column="DateETA" property="eta" />
+		<result column="DateATA" property="ata" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftRegCode" property="aircraftRegCode" />
+		<result column="segmentId" property="segmentId" />
+		<result column="tenantAirport" property="tenantAirport" />
+		<result column="FlightKey" property="flightNo" />
+		<result column="RoutingInfo" property="routingInfo" />
+		<collection property="segments" 
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+			select="sqlGetArrivalManifestSegmentInfo"
+			column="impArrivalManifestByFlightId=Flight_ID,segmentId=segmentId,tenantAirport=tenantAirport" />
+		<collection property="ffmReceivedDetails" 
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+			select="sqlGetReceivedFFMCountDetails"
+			column="flightId=Flight_ID,tenantAirport=tenantAirport" />
+		<collection property="ffmRejectedDetails" 
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+			select="sqlGetRejectedFFMCountDetails"
+			column="flightId=Flight_ID,flightNo=FlightNumber,carrierCode=CarrierCode,tenantAirport=tenantAirport" />
+		<collection property="rejectedShipments"
+			javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentRejectDetails"
+			select="sqlGetFFMShipmentsRejectDetails" 
+			column="{flightId=Flight_ID, tenantAirport=tenantAirport}" />
+	</resultMap>
+
+	<resultMap id="arrivalManifestFlightSegmentInfoResultMap"
+		type="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel">
+		<id column="Flight_ID" property="impArrivalManifestByFlightId" />
+		<result column="FlightSegmentId" property="impArrivalManifestBySegmentId" />
+		<result column="FlightBoardPoint" property="boardingPoint" />
+		<result column="FlightOffPoint" property="offPoint" />
+		<result column="NilCargo" property="nilCargo" />
+		<result column="tenantAirport" property="tenantAirport" />
+		<result column="FlightSegmentOrder" property="flightSegmentOrder" />
+		<collection property="segmentUldGruopDetailsCountList" javaType="List"
+			ofType="java.lang.String"
+			select="sqlGetFreightFlightManifestULDGroupCountInfoAM" 
+			column="{impArrivalManifestByFlightId=Flight_ID,impArrivalManifestBySegmentId=FlightSegmentId,tenantAirport=tenantAirport}" />
+		<collection property="manifestedUlds" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel" select="sqlGetArrivalManifestUldInfo"
+			column="impArrivalManifestByFlightId=Flight_ID,impArrivalManifestBySegmentId=FlightSegmentId,tenantAirport=tenantAirport" />
+		<collection property="bulkShipments" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+			select="sqlGetArrivalManifestBulkShipmentInfo"
+			column="{impArrivalManifestByFlightId=Flight_ID,impArrivalManifestBySegmentId=FlightSegmentId,tenantAirport=tenantAirport}" />
+	</resultMap>
+
+	<resultMap id="arrivalManifestFFMDetails" type="com.ngen.cosys.impbd.model.FFMCountDetails">
+		<id column="segmentReceived" property="segmentReceived" />
+		<id column="segmentRejected" property="segmentRejected" />
+	</resultMap>
+
+	<resultMap id="arrivalManifestUldInfoResultMap"
+		type="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+		<id column="ImpArrivalManifestULDId" property="impArrivalManifestUldId" />
+		<result column="UldType" property="uldType" />
+		<result column="UldSerialNumber" property="uldSerialNumber" />
+		<result column="UldOwnerCode" property="uldOwnerCode" />
+		<result column="ULDNumber" property="uldNumber" />
+		<result column="UldLoadingIndicator" property="uldLoadingIndicator" />
+		<result column="UldRemarks" property="uldRemarks" />
+		<result column="VolumeAvailableCode" property="volumeAvailableCode" />
+		<result column="ImpArrivalManifestBySegmentId" property="impArrivalManifestBySegmentId" />
+		<result column="tenantAirport" property="tenantAirport" />
+		<collection property="shipments" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+			<id column="ShipmentManifestULDId" property="impArrivalManifestUldId" />
+			<id column="ImpArrivalManifestShipmentInfoId" property="impArrivalManifestShipmentInfoId" />
+			<id column="AwbPrefix" property="awbPrefix" />
+			<id column="AwbSuffix" property="awbSuffix" />
+			<id column="ShipmentNumber" property="shipmentNumber" />
+			<id column="ShipmentDate" property="shipmentdate" />
+			<result column="Origin" property="origin" />
+			<result column="Destination" property="destination" />
+			<result column="ShipmentDescriptionCode" property="shipmentDescriptionCode" />
+			<result column="Piece" property="piece" />
+			<result column="WeightUnitCode" property="weightUnitCode" />
+			<result column="Weight" property="weight" />
+			<result column="VolumeUnitCode" property="volumeunitCode" />
+			<result column="VolumeAmount" property="volumeAmount" />
+			<result column="DensityIndicator" property="densityIndicator" />
+			<result column="DensityGroupCode" property="densityGroupCode" />
+			<result column="TotalPieces" property="totalPieces" />
+			<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+			<result column="MovementPriorityCode" property="movementPriorityCode" />
+			<result column="CustomsOriginCode" property="customsOriginCode" />
+			<result column="CustomsReference" property="customsReference" />
+			<result column="RoutingInfoCarrierCode" property="carrierCode" />
+			<result column="RoutingInfoAirportCityCode" property="carrierDestination" />
+			<result column="Svc" property="svc" />
+			<result column="offloadedflag" property="offloadedFlag" />
+			<result column="offloadreasoncode" property="offloadReasonCode" />
+			<result column="ULDNumber" property="uldNumber" />
+			<result column="RoutingInfoOnwardMovementId" property="onwwardMovementId" />	
+			<result column="handledByDOMINT" property="handledByDOMINT" />
+			<result column="handledByMasterHouse" property="handledByMasterHouse" />
+			
+			<result column="DepartureAirportCityCode" property="departureAirportCityCode" />
+			<result column="DepartureCarrierCode" property="departureCarrierCode" />
+			<result column="DepartureFlightNumber" property="departureFlightNumber" />
+			<result column="DepartureFlightDate" property="departureFlightDate" />
+			<result column="DepartureTransferType" property="transferType" />
+			
+			<!-- Dimensions -->
+			<collection property="dimensions" 
+						javaType="List"
+						ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentDimensionInfoModel">
+				<id column="DimensionShipmentInfoId" property="shipmentId" />
+				<result column="ImpArrivalManifestShipmentDimensionInfoId" property="id" />
+				<result column="DimensionWeightUnitCode" property="weightUnitCode" />
+				<result column="DimensionWeight" property="weight" />
+				<result column="MeasurementUnitCode" property="measurementUnitCode" />
+				<result column="DimensionLength" property="length" />
+				<result column="DimensionWIdth" property="width" />
+				<result column="DimensionHeight" property="height" />
+				<result column="DimensionNumberOfPieces" property="noOfPieces" />	
+			</collection>
+			<!-- OCI -->
+			<collection property="oci" 
+						javaType="List"
+						ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOciModel">
+				<id column="OCIShipmentInfoId" property="shipmentId" />
+				<id column="ImpArrivalManifestShipmentOCIId" property="id" />
+				<result column="CountryCode" property="countryCode" />
+				<result column="InformationIdentifier" property="informationIdentifier" />
+				<result column="CSRCIIdentifier" property="csrciIdentifier" />
+				<result column="SCSRCInformation" property="scsrcInformation" />
+			</collection>
+			<!-- OSI -->
+			<collection property="osi" 
+						javaType="List"
+						ofType="com.ngen.cosys.impbd.model.ArrivalManifestOtherServiceInfoModel">
+				<id column="Imp_ArrivalManifestOtherSvcInfoId" property="id" />
+				<id column="SvcShipmentInfoId" property="shipmentId" />
+				<result column="ServiceInformation" property="remarks" />
+			</collection>
+			<!-- Onward Movement Info -->
+			<collection property="movementInfo" javaType="List"
+			ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel">
+				<id column="OnwardShipmentInfoId" property="shipmentId" />
+				<id column="OnwardMovementId" property="id" />
+				<result column="OnwardAirportCityCode" property="airportCityCode" />
+				<result column="OnwardCarrierCode" property="carrierCode" />
+				<result column="OnwardFlightNumber" property="flightNumber" />
+				<result column="OnwardDepartureDate" property="departureDate" />	
+			</collection>
+			<!-- SHC -->
+			<collection property="shc" 
+						javaType="List"
+						ofType="com.ngen.cosys.impbd.model.ArrivalManifestByShipmentShcModel">
+				<id column="ShcShipmentInfoId" property="shipmentId" />
+				<id column="ImpArrivalManifestByShipmentSHCId" property="id" />
+				<result column="SpecialHandlingCode" property="specialHandlingCode" />			
+			</collection>
+		</collection>
+	</resultMap>
+
+	<resultMap id="arrivalManifestShipmentInfoResultMap"
+		type="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+		<id column="ImpArrivalManifestULDId" property="impArrivalManifestUldId" />
+		<id column="ImpArrivalManifestShipmentInfoId" property="impArrivalManifestShipmentInfoId" />
+		<id column="AwbPrefix" property="awbPrefix" />
+		<id column="AwbSuffix" property="awbSuffix" />
+		<id column="ShipmentNumber" property="shipmentNumber" />
+		<id column="ShipmentDate" property="shipmentdate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="ShipmentDescriptionCode" property="shipmentDescriptionCode" />
+		<result column="Piece" property="piece" />
+		<result column="WeightUnitCode" property="weightUnitCode" />
+		<result column="Weight" property="weight" />
+		<result column="VolumeUnitCode" property="volumeunitCode" />
+		<result column="VolumeAmount" property="volumeAmount" />
+		<result column="DensityIndicator" property="densityIndicator" />
+		<result column="DensityGroupCode" property="densityGroupCode" />
+		<result column="TotalPieces" property="totalPieces" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+		<result column="MovementPriorityCode" property="movementPriorityCode" />
+		<result column="CustomsOriginCode" property="customsOriginCode" />
+		<result column="CustomsReference" property="customsReference" />
+		<result column="RoutingInfoCarrierCode" property="carrierCode" />
+		<result column="RoutingInfoAirportCityCode" property="carrierDestination" />
+		<result column="Svc" property="svc" />
+		<result column="offloadedflag" property="offloadedFlag" />
+		<result column="offloadreasoncode" property="offloadReasonCode" />
+		<result column="ULDNumber" property="uldNumber" />
+		<result column="RoutingInfoOnwardMovementId" property="onwwardMovementId" />
+		<result column="handledByDOMINT" property="handledByDOMINT" />
+		<result column="handledByMasterHouse" property="handledByMasterHouse" />
+		
+		<result column="DepartureAirportCityCode" property="departureAirportCityCode" />
+		<result column="DepartureCarrierCode" property="departureCarrierCode" />
+		<result column="DepartureFlightNumber" property="departureFlightNumber" />
+		<result column="DepartureFlightDate" property="departureFlightDate" />
+		<result column="DepartureTransferType" property="transferType" />
+			
+		<!-- Dimensions -->
+		<collection property="dimensions" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentDimensionInfoModel">
+			<id column="DimensionShipmentInfoId" property="shipmentId" />
+			<result column="ImpArrivalManifestShipmentDimensionInfoId" property="id" />
+			<result column="DimensionWeightUnitCode" property="weightUnitCode" />
+			<result column="DimensionWeight" property="weight" />
+			<result column="MeasurementUnitCode" property="measurementUnitCode" />
+			<result column="DimensionLength" property="length" />
+			<result column="DimensionWIdth" property="width" />
+			<result column="DimensionHeight" property="height" />
+			<result column="DimensionNumberOfPieces" property="noOfPieces" />	
+		</collection>
+		<!-- OCI -->
+		<collection property="oci" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOciModel">
+			<id column="OCIShipmentInfoId" property="shipmentId" />
+			<id column="ImpArrivalManifestShipmentOCIId" property="id" />
+			<result column="CountryCode" property="countryCode" />
+			<result column="InformationIdentifier" property="informationIdentifier" />
+			<result column="CSRCIIdentifier" property="csrciIdentifier" />
+			<result column="SCSRCInformation" property="scsrcInformation" />
+		</collection>
+		<!-- OSI -->
+		<collection property="osi" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestOtherServiceInfoModel">
+			<id column="Imp_ArrivalManifestOtherSvcInfoId" property="id" />
+			<id column="SvcShipmentInfoId" property="shipmentId" />
+			<result column="ServiceInformation" property="remarks" />
+		</collection>
+		<!-- Onward Movement Info -->
+		<collection property="movementInfo" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel">
+			<id column="OnwardShipmentInfoId" property="shipmentId" />
+			<id column="OnwardMovementId" property="id" />
+			<result column="OnwardAirportCityCode" property="airportCityCode" />
+			<result column="OnwardCarrierCode" property="carrierCode" />
+			<result column="OnwardFlightNumber" property="flightNumber" />
+			<result column="OnwardDepartureDate" property="departureDate" />	
+		</collection>
+		<!-- SHC -->
+		<collection property="shc" 
+					javaType="List"
+					ofType="com.ngen.cosys.impbd.model.ArrivalManifestByShipmentShcModel">
+			<id column="ShcShipmentInfoId" property="shipmentId" />
+			<id column="ImpArrivalManifestByShipmentSHCId" property="id" />
+			<result column="SpecialHandlingCode" property="specialHandlingCode" />			
+		</collection>
+	</resultMap>
+	
+	<select id="sqlGetArrivalManifestInfo"
+		parameterType="com.ngen.cosys.impbd.model.SearchArrivalManifestModel"
+		resultMap="arrivalManifestFlightShipmentInfoResultMap">
+	<![CDATA[
+		select
+			F1.Flight_ID,
+			F1.CarrierCode,
+			FlightNumber,
+			F1.FlightType,
+			F2.DateSTA as FlightOriginDate,
+			F2.DateSTA,
+			F2.DateETA,
+			F2.DateATA,
+			case
+				when F1.InboundAircraftRegNo is not null then
+					F1.InboundAircraftRegNo
+				else
+					(select 
+							TOP 1 AircraftRegCode 
+						from 
+							Imp_FreightFlightManifestByFlight
+						where
+							Imp_FreightFlightManifestByFlight.FlightId = F1.Flight_ID)
+				end as AircraftRegCode,
+			#{segmentId} as segmentId,
+			#{tenantAirport} as tenantAirport,
+			F1.FlightKey,
+			(select
+					string_agg(FlightSegmentInfo.FlightBoardPoint, '-') + '-' + #{tenantAirport}
+				from(
+					select
+						TOP 100
+							Flt_OperativeFlight_Segments.FlightBoardPoint
+					from
+						Flt_OperativeFlight_Segments
+					where
+						Flt_OperativeFlight_Segments.Flight_ID = F1.Flight_ID and
+						Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+					order by
+						Flt_OperativeFlight_Segments.FlightSegmentOrder)FlightSegmentInfo
+			) as RoutingInfo
+		from 
+			Flt_OperativeFlight F1 Join
+			Flt_OperativeFlight_Legs F2 
+				on F1.Flight_ID = F2.Flight_ID
+		where
+			FlightKey = #{flightNumber} and
+			cast(F2.DateSTA as date) = #{flightDate} and
+			F2.FlightOffPoint = #{tenantAirport}
+	]]>
+	</select>
+
+	<select id="sqlGetArrivalManifestSegmentInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultMap="arrivalManifestFlightSegmentInfoResultMap">
+	<![CDATA[
+		select
+			Flight_ID,
+			Flt_OperativeFlight_Segments.FlightSegmentId,
+			FlightBoardPoint,
+			FlightOffPoint,
+			NilCargo,
+			#{tenantAirport} as tenantAirport,
+			FlightSegmentOrder
+		from
+			Flt_OperativeFlight_Segments left join
+			Imp_ArrivalManifestBySegment 
+				on Flt_OperativeFlight_Segments.FlightSegmentId = Imp_ArrivalManifestBySegment.FlightSegmentId 
+		where 
+			Flt_OperativeFlight_Segments.Flight_ID = #{impArrivalManifestByFlightId} and
+			Flt_OperativeFlight_Segments.FlightOffPoint=#{tenantAirport}
+	]]>
+		<choose>
+			<when test="segmentId!=0">
+				and Flt_OperativeFlight_Segments.FlightSegmentId = #{segmentId}
+			</when>
+		</choose>
+		order by
+			Flt_OperativeFlight_Segments.FlightSegmentOrder asc
+	</select>
+	
+	<select id="sqlGetFreightFlightManifestULDGroupCountInfoAM"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+		resultType="java.lang.String">
+	<![CDATA[
+		select 
+			CONCAT(uldAllot.uldAllotment,'-' ,uldGroup.uldAllotment_group ,'-',count(UldAllotmentGroup_UldType)) 
+		FROM Uld_UldAllotment_UldType 
+		INNER JOIN
+		(select uldAllotmentGroup_id,uldAllotment_id, uldAllotment_group from  Uld_UldAllotment_Group
+		       )uldGroup on uldGroup.uldAllotmentGroup_id=Uld_UldAllotment_UldType.uldAllotmentGroup_id 
+		INNER JOIN
+		(select uldAllotment_id, uldAllotment from  Uld_UldAllotment
+		       )uldAllot on uldAllot.uldAllotment_id=uldGroup.uldAllotment_id 
+		where Uld_UldAllotment_UldType.UldAllotmentGroup_UldType 
+		in (select
+				distinct
+				SUBSTRING(Imp_ArrivalManifestULD.UldNumber,1,3)
+			from
+				Imp_ArrivalManifestByFlight inner join
+				Imp_ArrivalManifestBySegment	
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestULD
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId
+			where 
+				Imp_ArrivalManifestByFlight.FlightId=  #{impArrivalManifestByFlightId} and
+				Imp_ArrivalManifestBySegment.FlightSegmentId= #{impArrivalManifestBySegmentId})
+		group by uldAllot.uldAllotment,uldGroup.uldAllotment_group
+	]]>
+	</select>
+
+	<select id="sqlGetArrivalManifestUldInfo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+		resultMap="arrivalManifestUldInfoResultMap">
+	<![CDATA[		
+		With ArrivalManifestULDInfo As(
+			select			
+				Imp_ArrivalManifestByFlight.FlightId,
+				Imp_ArrivalManifestBySegment.FlightSegmentId,
+				Imp_ArrivalManifestULD.ImpArrivalManifestULDId,
+				Imp_ArrivalManifestULD.UldType,
+				Imp_ArrivalManifestULD.UldSerialNumber,
+				Imp_ArrivalManifestULD.UldOwnerCode,
+				Imp_ArrivalManifestULD.ULDNumber,
+				Imp_ArrivalManifestULD.UldLoadingIndicator,
+				Imp_ArrivalManifestULD.UldRemarks,
+				Imp_ArrivalManifestULD.VolumeAvailableCode,
+				Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId,
+				Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+				Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId as ShipmentManifestULDId,
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+				Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+				Imp_ArrivalManifestShipmentInfo.Origin,
+				Imp_ArrivalManifestShipmentInfo.Destination,
+				Imp_ArrivalManifestShipmentInfo.ShipmentDescriptionCode,
+				Imp_ArrivalManifestShipmentInfo.Piece,
+				Imp_ArrivalManifestShipmentInfo.Weight,
+				Imp_ArrivalManifestShipmentInfo.WeightUnitCode,
+				Imp_ArrivalManifestShipmentInfo.TotalPieces,
+				Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+				Imp_ArrivalManifestShipmentInfo.MovementPriorityCode,
+				Imp_ArrivalManifestShipmentInfo.CustomsOriginCode,
+				Imp_ArrivalManifestShipmentInfo.CustomsReference,
+				Imp_ArrivalManifestShipmentInfo.DensityGroupCode,
+				Imp_ArrivalManifestShipmentInfo.VolumeAmount,
+				Imp_ArrivalManifestShipmentInfo.VolumeUnitCode,
+				Imp_ArrivalManifestShipmentInfo.Svc,
+				Imp_ArrivalManifestShipmentInfo.offloadedflag,
+				Imp_ArrivalManifestShipmentInfo.offloadreasoncode,
+				#{tenantAirport} as tenantAirport
+				    		
+			from
+				Imp_ArrivalManifestByFlight inner join
+				Imp_ArrivalManifestBySegment
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestULD
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			where
+				Imp_ArrivalManifestByFlight.FlightId = #{impArrivalManifestByFlightId} and
+				Imp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+				Imp_ArrivalManifestULD.ULDNumber is not null
+		), ArrivalManifestDimensionInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentDimensionInfoId,
+				Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentInfoId as DimensionShipmentInfoId,
+				Imp_ArrivalManifestShipmentDimensionInfo.NumberOfPieces as DimensionNumberOfPieces,
+				Imp_ArrivalManifestShipmentDimensionInfo.Weight as DimensionWeight,
+				Imp_ArrivalManifestShipmentDimensionInfo.WeightUnitCode as DimensionWeightUnitCode,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionLength,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionWIdth,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionHeight,
+				Imp_ArrivalManifestShipmentDimensionInfo.MeasurementUnitCode  				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentDimensionInfo
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestOCIInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentOCIId,
+				Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentInfoId as OCIShipmentInfoId,
+				Imp_ArrivalManifestShipmentOCI.CountryCode,
+				Imp_ArrivalManifestShipmentOCI.InformationIdentifier,
+				Imp_ArrivalManifestShipmentOCI.CSRCIIdentifier,
+				Imp_ArrivalManifestShipmentOCI.SCSRCInformation				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentOCI
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestOnwardInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentOnwardMovementId as OnwardMovementId,
+				Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId as OnwardShipmentInfoId,
+				Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode as OnwardAirportCityCode,
+				isnull(Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode,'') as OnwardCarrierCode,
+				Imp_ArrivalManifestShipmentOnwardMovement.FlightNumber as OnwardFlightNumber,
+				Imp_ArrivalManifestShipmentOnwardMovement.DepartureDate as OnwardDepartureDate				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentOnwardMovement
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestSvcInfo AS(
+			select			
+				Imp_ArrivalManifestOtherSvcInfo.Imp_ArrivalManifestOtherSvcInfoId,
+				Imp_ArrivalManifestOtherSvcInfo.ImpArrivalManifestShipmentInfoId as SvcShipmentInfoId,
+				Imp_ArrivalManifestOtherSvcInfo.ServiceInformation	    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestOtherSvcInfo
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestOtherSvcInfo.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestSHCInfo AS(
+			select			
+				Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestByShipmentSHCId,
+				Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId as ShcShipmentInfoId,
+				Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode			    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestByShipmentSHC
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), masterHouseInfo AS(
+			select	
+			    Shipment_Master.shipmentNumber,		
+				Shipment_Master.handledByDOMINT,
+				Shipment_Master.handledByMasterHouse		
+			from
+				Shipment_Master inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+		)
+		select
+			ArrivalManifestULDInfo.ImpArrivalManifestULDId,
+			ArrivalManifestULDInfo.UldType,
+			ArrivalManifestULDInfo.UldSerialNumber,
+			ArrivalManifestULDInfo.UldOwnerCode,
+			ArrivalManifestULDInfo.ULDNumber,
+			ArrivalManifestULDInfo.UldLoadingIndicator,
+			ArrivalManifestULDInfo.UldRemarks,
+			ArrivalManifestULDInfo.VolumeAvailableCode,
+			ArrivalManifestULDInfo.ImpArrivalManifestBySegmentId,
+			ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId,
+			ArrivalManifestULDInfo.ImpArrivalManifestULDId as ShipmentManifestULDId,
+			ArrivalManifestULDInfo.ShipmentNumber,
+			ArrivalManifestULDInfo.ShipmentDate,
+			ArrivalManifestULDInfo.Origin,
+			ArrivalManifestULDInfo.Destination,
+			ArrivalManifestULDInfo.ShipmentDescriptionCode,
+			ArrivalManifestULDInfo.Piece,
+			ArrivalManifestULDInfo.Weight,
+			ArrivalManifestULDInfo.WeightUnitCode,
+			ArrivalManifestULDInfo.TotalPieces,
+			ArrivalManifestULDInfo.NatureOfGoodsDescription,
+			ArrivalManifestULDInfo.MovementPriorityCode,
+			ArrivalManifestULDInfo.CustomsOriginCode,
+			ArrivalManifestULDInfo.CustomsReference,
+			ArrivalManifestULDInfo.DensityGroupCode,
+			ArrivalManifestULDInfo.VolumeAmount,
+			ArrivalManifestULDInfo.VolumeUnitCode,
+			ArrivalManifestULDInfo.Svc,
+			ArrivalManifestULDInfo.offloadedflag,
+			ArrivalManifestULDInfo.offloadreasoncode,
+			ArrivalManifestULDInfo.tenantAirport,
+			masterHouseInfo.handledByDOMINT,
+			masterHouseInfo.handledByMasterHouse,
+			
+			RoutingInfo.ImpArrivalManifestShipmentOnwardMovementId as RoutingInfoOnwardMovementId,
+			RoutingInfo.NextPoint as RoutingInfoAirportCityCode,
+			RoutingInfo.NextCarrier as RoutingInfoCarrierCode,
+					
+			isnull(ShipmentBookingInfo.DepartureAirportCityCode, BookingInfo.AirportCityCode) as DepartureAirportCityCode,
+			isnull(ShipmentBookingInfo.DepartureCarrierCode, BookingInfo.CarrierCode) as DepartureCarrierCode,
+			isnull(ShipmentBookingInfo.DepartureFlightNumber, BookingInfo.FlightNumber) as DepartureFlightNumber,
+			isnull(ShipmentBookingInfo.DepartureFlightDate, BookingInfo.DepartureDate) as DepartureFlightDate,
+			ShipmentBookingInfo.DepartureTransferType,		    	
+		
+			ArrivalManifestDimensionInfo.ImpArrivalManifestShipmentDimensionInfoId,
+			ArrivalManifestDimensionInfo.DimensionShipmentInfoId,
+			ArrivalManifestDimensionInfo.DimensionNumberOfPieces,
+			ArrivalManifestDimensionInfo.DimensionWeight,
+			ArrivalManifestDimensionInfo.DimensionWeightUnitCode,
+			ArrivalManifestDimensionInfo.DimensionLength,
+			ArrivalManifestDimensionInfo.DimensionWIdth,
+			ArrivalManifestDimensionInfo.DimensionHeight,
+			ArrivalManifestDimensionInfo.MeasurementUnitCode,
+		
+			ArrivalManifestOCIInfo.ImpArrivalManifestShipmentOCIId,
+			ArrivalManifestOCIInfo.OCIShipmentInfoId,
+			ArrivalManifestOCIInfo.CountryCode,
+			ArrivalManifestOCIInfo.InformationIdentifier,
+			ArrivalManifestOCIInfo.CSRCIIdentifier,
+			ArrivalManifestOCIInfo.SCSRCInformation,	
+						 
+			ArrivalManifestOnwardInfo.OnwardMovementId,
+			ArrivalManifestOnwardInfo.OnwardShipmentInfoId,
+			ArrivalManifestOnwardInfo.OnwardAirportCityCode,
+			isnull(ArrivalManifestOnwardInfo.OnwardCarrierCode,'') as OnwardCarrierCode,
+			ArrivalManifestOnwardInfo.OnwardFlightNumber as OnwardFlightNumber,
+			ArrivalManifestOnwardInfo.OnwardDepartureDate as OnwardDepartureDate,
+					
+			ArrivalManifestSvcInfo.Imp_ArrivalManifestOtherSvcInfoId,
+			ArrivalManifestSvcInfo.SvcShipmentInfoId,
+			ArrivalManifestSvcInfo.ServiceInformation,
+					
+			ArrivalManifestSHCInfo.ImpArrivalManifestByShipmentSHCId,
+			ArrivalManifestSHCInfo.ShcShipmentInfoId,
+			ArrivalManifestSHCInfo.SpecialHandlingCode
+		from
+			ArrivalManifestULDInfo left join
+			ArrivalManifestDimensionInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestDimensionInfo.DimensionShipmentInfoId left join
+			ArrivalManifestOCIInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestOCIInfo.OCIShipmentInfoId left join
+			ArrivalManifestOnwardInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestOnwardInfo.OnwardShipmentInfoId left join
+			ArrivalManifestSvcInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSvcInfo.SvcShipmentInfoId left join
+			ArrivalManifestSHCInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSHCInfo.ShcShipmentInfoId left join
+			masterHouseInfo
+				on masterHouseInfo.shipmentNumber = ArrivalManifestULDInfo.shipmentNumber left join
+			(select
+					RouteInfo.ImpArrivalManifestShipmentInfoId,
+					RouteInfo.NextPoint,
+					RouteInfo.NextCarrier,
+					RouteInfo.ImpArrivalManifestShipmentOnwardMovementId
+				from(
+					select	
+						Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+						Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentOnwardMovementId,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextPoint,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextCarrier
+					from 
+						Imp_ArrivalManifestShipmentOnwardMovement inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId inner join
+						Imp_ArrivalManifestULD
+							on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+					where
+						Imp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+						Imp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+					)RouteInfo
+				where
+					RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+					RouteInfo.NextPoint <> '0'   
+			)RoutingInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = RoutingInfo.ImpArrivalManifestShipmentInfoId left join
+			(select				
+					innerImp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+					innerFlt_OperativeFlight_Segments.FlightOffPoint as DepartureAirportCityCode,
+					innerFlt_OperativeFlight.CarrierCode as DepartureCarrierCode,
+					innerFlt_OperativeFlight.FlightNumber as DepartureFlightNumber,
+					isnull(innerFlt_OperativeFlight_Legs.DateETD, innerFlt_OperativeFlight_Segments.DateSTD)  as DepartureFlightDate,
+					case
+						when (select count(1) from Transhipment_TransferTypes where Code = innerImp_ArrivalManifestShipmentInfo.TransferType) > 0  then
+							innerImp_ArrivalManifestShipmentInfo.TransferType
+						else
+							null
+						end as DepartureTransferType
+				from
+					Imp_ArrivalManifestShipmentInfo innerImp_ArrivalManifestShipmentInfo inner join
+					Imp_ArrivalManifestULD innerImp_ArrivalManifestULD
+						on innerImp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = innerImp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+					Imp_ArrivalManifestBySegment innerImp_ArrivalManifestBySegment
+						on innerImp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = innerImp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestByFlight innerImp_ArrivalManifestByFlight
+						on innerImp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = innerImp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId inner join
+					Flt_OperativeFlight_Segments innerFlt_OperativeFlight_Segments
+						on innerImp_ArrivalManifestShipmentInfo.FlightSegmentId = innerFlt_OperativeFlight_Segments.FlightSegmentId inner join
+					Flt_OperativeFlight innerFlt_OperativeFlight
+						on innerFlt_OperativeFlight_Segments.Flight_ID = innerFlt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs innerFlt_OperativeFlight_Legs
+						on innerFlt_OperativeFlight.Flight_ID = innerFlt_OperativeFlight_Legs.Flight_ID and
+							innerFlt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+				where
+					innerImp_ArrivalManifestByFlight.FlightId = #{impArrivalManifestByFlightId} and
+					innerImp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+					innerImp_ArrivalManifestULD.ULDNumber is not null
+			)ShipmentBookingInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ShipmentBookingInfo.ImpArrivalManifestShipmentInfoId left join
+			(select
+					distinct
+						Flt_OperativeFlight_Segments.FlightOffPoint as AirportCityCode,
+						Flt_OperativeFlight.CarrierCode as CarrierCode,
+						Flt_OperativeFlight.FlightNumber as FlightNumber,
+						min(isnull(Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Segments.DateSTD))  as DepartureDate,
+						Exp_ShipmentBooking.ShipmentNumber,
+						Exp_ShipmentBooking.ShipmentDate,
+						inwardFlightBookingDetail.FlightId
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+					Flt_OperativeFlight_Segments
+						on Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+					Flt_OperativeFlight
+						on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+					Exp_ShipmentFlightBookingDetail inwardFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = inwardFlightBookingDetail.BookingId
+				where
+					isnull(Exp_ShipmentFlightBookingDetail.OutwardBookingFlag, 0) = 1 and
+					inwardFlightBookingDetail.FlightId = #{impArrivalManifestByFlightId}
+				group by
+					Flt_OperativeFlight.CarrierCode,
+					Flt_OperativeFlight_Segments.FlightOffPoint,
+					Flt_OperativeFlight.FlightNumber,
+					Exp_ShipmentBooking.ShipmentNumber,
+					Exp_ShipmentBooking.ShipmentDate,
+					inwardFlightBookingDetail.FlightId
+			)BookingInfo
+				on ArrivalManifestULDInfo.ShipmentNumber = BookingInfo.ShipmentNumber and
+					ArrivalManifestULDInfo.ShipmentDate = BookingInfo.ShipmentDate and
+					ArrivalManifestULDInfo.FlightId = BookingInfo.FlightId
+		order by
+			substring(ArrivalManifestULDInfo.ULDNumber, 0, 4),
+			substring(substring(ArrivalManifestULDInfo.UldNumber, 4, 12), 0, patindex('%[a-zA-Z]%', substring(ArrivalManifestULDInfo.UldNumber, 4, 12))),
+			substring(substring(ArrivalManifestULDInfo.UldNumber, 4, 12), patindex('%[A-Za-z]%', substring(ArrivalManifestULDInfo.UldNumber, 4, 12)), 12),
+			substring(ArrivalManifestULDInfo.ShipmentNumber, 4, 12),
+			substring(ArrivalManifestULDInfo.ShipmentNumber, 0, 4)
+	]]>
+	</select>
+
+	<select id="sqlGetArrivalManifestBulkShipmentInfo" 
+	 parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+	 resultMap="arrivalManifestShipmentInfoResultMap">
+	<![CDATA[
+		With ArrivalManifestULDInfo As(
+			select			
+				Imp_ArrivalManifestByFlight.FlightId,
+				Imp_ArrivalManifestBySegment.FlightSegmentId,
+				Imp_ArrivalManifestULD.ImpArrivalManifestULDId,
+				Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId,
+				Imp_ArrivalManifestULD.ULDNumber,
+				Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+				Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId as ShipmentManifestULDId,		
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+				Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+				Imp_ArrivalManifestShipmentInfo.Origin,
+				Imp_ArrivalManifestShipmentInfo.Destination,
+				Imp_ArrivalManifestShipmentInfo.ShipmentDescriptionCode,
+				Imp_ArrivalManifestShipmentInfo.Piece,
+				Imp_ArrivalManifestShipmentInfo.Weight,
+				Imp_ArrivalManifestShipmentInfo.WeightUnitCode,
+				Imp_ArrivalManifestShipmentInfo.TotalPieces,
+				Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+				Imp_ArrivalManifestShipmentInfo.MovementPriorityCode,
+				Imp_ArrivalManifestShipmentInfo.CustomsOriginCode,
+				Imp_ArrivalManifestShipmentInfo.CustomsReference,
+				Imp_ArrivalManifestShipmentInfo.DensityGroupCode,
+				Imp_ArrivalManifestShipmentInfo.VolumeAmount,
+				Imp_ArrivalManifestShipmentInfo.VolumeUnitCode,
+				Imp_ArrivalManifestShipmentInfo.Svc,
+				Imp_ArrivalManifestShipmentInfo.offloadedflag,
+				Imp_ArrivalManifestShipmentInfo.offloadreasoncode,
+				#{tenantAirport} as tenantAirport
+					    		
+			from
+				Imp_ArrivalManifestByFlight inner join
+				Imp_ArrivalManifestBySegment
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestULD
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			where
+				Imp_ArrivalManifestByFlight.FlightId = #{impArrivalManifestByFlightId} and
+				Imp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+				Imp_ArrivalManifestULD.ULDNumber is null
+		), ArrivalManifestDimensionInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentDimensionInfoId,
+				Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentInfoId as DimensionShipmentInfoId,
+				Imp_ArrivalManifestShipmentDimensionInfo.NumberOfPieces as DimensionNumberOfPieces,
+				Imp_ArrivalManifestShipmentDimensionInfo.Weight as DimensionWeight,
+				Imp_ArrivalManifestShipmentDimensionInfo.WeightUnitCode as DimensionWeightUnitCode,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionLength,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionWIdth,
+				Imp_ArrivalManifestShipmentDimensionInfo.DimensionHeight,
+				Imp_ArrivalManifestShipmentDimensionInfo.MeasurementUnitCode  				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentDimensionInfo
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentDimensionInfo.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestOCIInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentOCIId,
+				Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentInfoId as OCIShipmentInfoId,
+				Imp_ArrivalManifestShipmentOCI.CountryCode,
+				Imp_ArrivalManifestShipmentOCI.InformationIdentifier,
+				Imp_ArrivalManifestShipmentOCI.CSRCIIdentifier,
+				Imp_ArrivalManifestShipmentOCI.SCSRCInformation				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentOCI
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentOCI.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestOnwardInfo AS(
+			select			
+				Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentOnwardMovementId as OnwardMovementId,
+				Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId as OnwardShipmentInfoId,
+				Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode as OnwardAirportCityCode,
+				isnull(Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode,'') as OnwardCarrierCode,
+				Imp_ArrivalManifestShipmentOnwardMovement.FlightNumber as OnwardFlightNumber,
+				Imp_ArrivalManifestShipmentOnwardMovement.DepartureDate as OnwardDepartureDate				    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestShipmentOnwardMovement
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestSvcInfo AS(
+			select			
+				Imp_ArrivalManifestOtherSvcInfo.Imp_ArrivalManifestOtherSvcInfoId,
+				Imp_ArrivalManifestOtherSvcInfo.ImpArrivalManifestShipmentInfoId as SvcShipmentInfoId,
+				Imp_ArrivalManifestOtherSvcInfo.ServiceInformation	    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestOtherSvcInfo
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestOtherSvcInfo.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), ArrivalManifestSHCInfo AS(
+			select			
+				Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestByShipmentSHCId,
+				Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId as ShcShipmentInfoId,
+				Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode			    		
+			from
+				ArrivalManifestULDInfo inner join
+				Imp_ArrivalManifestByShipmentSHC
+					on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+			where
+				ArrivalManifestULDInfo.FlightId = #{impArrivalManifestByFlightId} and
+				ArrivalManifestULDInfo.FlightSegmentId = #{impArrivalManifestBySegmentId}
+		), masterHouseInfo AS(
+			select	
+			    Shipment_Master.shipmentNumber,		
+				Shipment_Master.handledByDOMINT,
+				Shipment_Master.handledByMasterHouse		
+			from
+				Shipment_Master inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+		)
+		select
+			ArrivalManifestULDInfo.ImpArrivalManifestULDId,
+			ArrivalManifestULDInfo.ImpArrivalManifestBySegmentId,
+			ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId,
+			ArrivalManifestULDInfo.ShipmentNumber,
+			ArrivalManifestULDInfo.ShipmentDate,
+			ArrivalManifestULDInfo.Origin,
+			ArrivalManifestULDInfo.Destination,
+			ArrivalManifestULDInfo.ShipmentDescriptionCode,
+			ArrivalManifestULDInfo.Piece,
+			ArrivalManifestULDInfo.Weight,
+			ArrivalManifestULDInfo.WeightUnitCode,
+			ArrivalManifestULDInfo.TotalPieces,
+			ArrivalManifestULDInfo.NatureOfGoodsDescription,
+			ArrivalManifestULDInfo.MovementPriorityCode,
+			ArrivalManifestULDInfo.CustomsOriginCode,
+			ArrivalManifestULDInfo.CustomsReference,
+			ArrivalManifestULDInfo.DensityGroupCode,
+			ArrivalManifestULDInfo.VolumeAmount,
+			ArrivalManifestULDInfo.VolumeUnitCode,
+			ArrivalManifestULDInfo.Svc,
+			ArrivalManifestULDInfo.offloadedflag,
+			ArrivalManifestULDInfo.offloadreasoncode,
+			ArrivalManifestULDInfo.tenantAirport,
+			ArrivalManifestULDInfo.ULDNumber,
+			
+			RoutingInfo.ImpArrivalManifestShipmentOnwardMovementId as RoutingInfoOnwardMovementId,
+			RoutingInfo.NextPoint as RoutingInfoAirportCityCode,
+			RoutingInfo.NextCarrier as RoutingInfoCarrierCode,
+					
+			isnull(ShipmentBookingInfo.DepartureAirportCityCode, BookingInfo.AirportCityCode) as DepartureAirportCityCode,
+			isnull(ShipmentBookingInfo.DepartureCarrierCode, BookingInfo.CarrierCode) as DepartureCarrierCode,
+			isnull(ShipmentBookingInfo.DepartureFlightNumber, BookingInfo.FlightNumber) as DepartureFlightNumber,
+			isnull(ShipmentBookingInfo.DepartureFlightDate, BookingInfo.DepartureDate) as DepartureFlightDate,
+			ShipmentBookingInfo.DepartureTransferType,		    	
+		
+			ArrivalManifestDimensionInfo.ImpArrivalManifestShipmentDimensionInfoId,
+			ArrivalManifestDimensionInfo.DimensionShipmentInfoId,
+			ArrivalManifestDimensionInfo.DimensionNumberOfPieces,
+			ArrivalManifestDimensionInfo.DimensionWeight,
+			ArrivalManifestDimensionInfo.DimensionWeightUnitCode,
+			ArrivalManifestDimensionInfo.DimensionLength,
+			ArrivalManifestDimensionInfo.DimensionWIdth,
+			ArrivalManifestDimensionInfo.DimensionHeight,
+			ArrivalManifestDimensionInfo.MeasurementUnitCode,
+		
+			ArrivalManifestOCIInfo.ImpArrivalManifestShipmentOCIId,
+			ArrivalManifestOCIInfo.OCIShipmentInfoId,
+			ArrivalManifestOCIInfo.CountryCode,
+			ArrivalManifestOCIInfo.InformationIdentifier,
+			ArrivalManifestOCIInfo.CSRCIIdentifier,
+			ArrivalManifestOCIInfo.SCSRCInformation,	
+						 
+			ArrivalManifestOnwardInfo.OnwardMovementId,
+			ArrivalManifestOnwardInfo.OnwardShipmentInfoId,
+			ArrivalManifestOnwardInfo.OnwardAirportCityCode,
+			isnull(ArrivalManifestOnwardInfo.OnwardCarrierCode,'') as OnwardCarrierCode,
+			ArrivalManifestOnwardInfo.OnwardFlightNumber as OnwardFlightNumber,
+			ArrivalManifestOnwardInfo.OnwardDepartureDate as OnwardDepartureDate,
+					
+			ArrivalManifestSvcInfo.Imp_ArrivalManifestOtherSvcInfoId,
+			ArrivalManifestSvcInfo.SvcShipmentInfoId,
+			ArrivalManifestSvcInfo.ServiceInformation,
+			masterHouseInfo.handledByDOMINT,
+			masterHouseInfo.handledByMasterHouse,
+					
+			ArrivalManifestSHCInfo.ImpArrivalManifestByShipmentSHCId,
+			ArrivalManifestSHCInfo.ShcShipmentInfoId,
+			ArrivalManifestSHCInfo.SpecialHandlingCode
+		from
+			ArrivalManifestULDInfo left join
+			ArrivalManifestDimensionInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestDimensionInfo.DimensionShipmentInfoId left join
+			ArrivalManifestOCIInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestOCIInfo.OCIShipmentInfoId left join
+			ArrivalManifestOnwardInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestOnwardInfo.OnwardShipmentInfoId left join
+			ArrivalManifestSvcInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSvcInfo.SvcShipmentInfoId left join
+			ArrivalManifestSHCInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ArrivalManifestSHCInfo.ShcShipmentInfoId left join
+			masterHouseInfo
+			    on masterHouseInfo.shipmentNumber =  ArrivalManifestULDInfo.shipmentNumber left join
+			(select
+					RouteInfo.ImpArrivalManifestShipmentInfoId,
+					RouteInfo.NextPoint,
+					RouteInfo.NextCarrier,
+					RouteInfo.ImpArrivalManifestShipmentOnwardMovementId
+				from(
+					select	
+						Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+						Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentOnwardMovementId,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextPoint,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextCarrier
+					from 
+						Imp_ArrivalManifestShipmentOnwardMovement inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId inner join
+						Imp_ArrivalManifestULD
+							on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+					where
+						Imp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+						Imp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+					)RouteInfo
+				where
+					RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+					RouteInfo.NextPoint <> '0'   
+			)RoutingInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = RoutingInfo.ImpArrivalManifestShipmentInfoId left join
+			(select				
+					innerImp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+					innerFlt_OperativeFlight_Segments.FlightOffPoint as DepartureAirportCityCode,
+					innerFlt_OperativeFlight.CarrierCode as DepartureCarrierCode,
+					innerFlt_OperativeFlight.FlightNumber as DepartureFlightNumber,
+					isnull(innerFlt_OperativeFlight_Legs.DateETD, innerFlt_OperativeFlight_Segments.DateSTD)  as DepartureFlightDate,
+					case
+						when (select count(1) from Transhipment_TransferTypes where Code = innerImp_ArrivalManifestShipmentInfo.TransferType) > 0  then
+							innerImp_ArrivalManifestShipmentInfo.TransferType
+						else
+							null
+						end as DepartureTransferType
+				from
+					Imp_ArrivalManifestShipmentInfo innerImp_ArrivalManifestShipmentInfo inner join
+					Imp_ArrivalManifestULD innerImp_ArrivalManifestULD
+						on innerImp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = innerImp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+					Imp_ArrivalManifestBySegment innerImp_ArrivalManifestBySegment
+						on innerImp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = innerImp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestByFlight innerImp_ArrivalManifestByFlight
+						on innerImp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = innerImp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId inner join
+					Flt_OperativeFlight_Segments innerFlt_OperativeFlight_Segments
+						on innerImp_ArrivalManifestShipmentInfo.FlightSegmentId = innerFlt_OperativeFlight_Segments.FlightSegmentId inner join
+					Flt_OperativeFlight innerFlt_OperativeFlight
+						on innerFlt_OperativeFlight_Segments.Flight_ID = innerFlt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs innerFlt_OperativeFlight_Legs
+						on innerFlt_OperativeFlight.Flight_ID = innerFlt_OperativeFlight_Legs.Flight_ID and
+							innerFlt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+				where
+					innerImp_ArrivalManifestByFlight.FlightId = #{impArrivalManifestByFlightId} and
+					innerImp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+					innerImp_ArrivalManifestULD.ULDNumber is null
+			)ShipmentBookingInfo
+				on ArrivalManifestULDInfo.ImpArrivalManifestShipmentInfoId = ShipmentBookingInfo.ImpArrivalManifestShipmentInfoId left join
+			(select
+					distinct
+						Flt_OperativeFlight_Segments.FlightOffPoint as AirportCityCode,
+						Flt_OperativeFlight.CarrierCode as CarrierCode,
+						Flt_OperativeFlight.FlightNumber as FlightNumber,
+						min(isnull(Flt_OperativeFlight_Legs.DateETD, Flt_OperativeFlight_Segments.DateSTD))  as DepartureDate,
+						Exp_ShipmentBooking.ShipmentNumber,
+						Exp_ShipmentBooking.ShipmentDate,
+						inwardFlightBookingDetail.FlightId
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+					Flt_OperativeFlight_Segments
+						on Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+					Flt_OperativeFlight
+						on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+							Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} inner join
+					Exp_ShipmentFlightBookingDetail inwardFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId = inwardFlightBookingDetail.BookingId
+				where
+					isnull(Exp_ShipmentFlightBookingDetail.OutwardBookingFlag, 0) = 1 and
+					inwardFlightBookingDetail.FlightId = #{impArrivalManifestByFlightId}
+				group by
+					Flt_OperativeFlight.CarrierCode,
+					Flt_OperativeFlight_Segments.FlightOffPoint,
+					Flt_OperativeFlight.FlightNumber,
+					Exp_ShipmentBooking.ShipmentNumber,
+					Exp_ShipmentBooking.ShipmentDate,
+					inwardFlightBookingDetail.FlightId
+			)BookingInfo
+				on ArrivalManifestULDInfo.ShipmentNumber = BookingInfo.ShipmentNumber and
+					ArrivalManifestULDInfo.ShipmentDate = BookingInfo.ShipmentDate and
+					ArrivalManifestULDInfo.FlightId = BookingInfo.FlightId
+		order by
+			substring(ArrivalManifestULDInfo.ShipmentNumber, 4, 12),
+			substring(ArrivalManifestULDInfo.ShipmentNumber, 0, 4)
+    ]]>
+	</select>
+
+	<select id="sqlCheckArrivalManifestFlight"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel">
+	<![CDATA[
+		select
+			ImpArrivalManifestByFlightId,FlightId
+		from
+			Imp_ArrivalManifestByFlight
+		where
+			FlightId = #{flightId}
+	]]>
+	</select>
+
+	<select id="sqlCheckArrivalManifestSegment"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel">
+	<![CDATA[
+		select
+			ImpArrivalManifestByFlightId,FlightSegmentId,ImpArrivalManifestBySegmentId
+		from
+			Imp_ArrivalManifestBySegment
+		where
+			impArrivalManifestByFlightId = #{impArrivalManifestByFlightId} and
+			FlightSegmentId = #{segmentId}
+	]]>
+	</select>
+
+	<insert id="insertArrivalManifestFlight"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		useGeneratedKeys="true" keyProperty="impArrivalManifestByFlightId">
+	<![CDATA[
+		insert into Imp_ArrivalManifestByFlight(
+			AircraftRegCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			FlightId
+		)values(
+			#{aircraftRegCode},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP,
+			#{flightId}
+		)
+	]]>
+	</insert>
+
+	<insert id="insertArrivalManifestSegment"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+		useGeneratedKeys="true" keyProperty="impArrivalManifestBySegmentId">
+	<![CDATA[
+		insert into Imp_ArrivalManifestBySegment(
+			ImpArrivalManifestByFlightId,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			FlightSegmentId,
+			NilCargo
+		)values(
+			#{impArrivalManifestByFlightId},
+			#{createdBy},
+			CURRENT_TIMESTAMP,
+			#{modifiedBy},
+			CURRENT_TIMESTAMP,
+			#{segmentId},
+			#{nilCargo}
+		)
+	]]>
+	</insert>
+
+	<select id="sqlCheckArrivalManifestUld" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+	<![CDATA[
+		select
+			*
+		from
+			Imp_ArrivalManifestULD
+		where
+			ImpArrivalManifestBySegmentId = #{impArrivalManifestBySegmentId}
+	]]>	
+		<if test="uldNumber != null">
+			and ULDNumber = #{uldNumber}
+		</if>
+		<if test="uldNumber == null">
+			and ULDNumber is null
+		</if>
+	</select>
+
+	<select id="sqlCheckArrivalManifestShipment"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select
+			*
+		from
+			Imp_ArrivalManifestShipmentInfo s inner join
+			Imp_ArrivalManifestULD u 
+				on (s.ImpArrivalManifestULDId = u.ImpArrivalManifestULDId)
+		where
+			s.ShipmentNumber = #{shipmentNumber} and 
+			s.ImpArrivalManifestULDId = #{impArrivalManifestUldId} and 
+			u.ULDNumber is not null
+	]]>
+	</select>
+
+	<select id="sqlFetchULDNumber" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+	<![CDATA[
+		select
+			*
+		from
+			Imp_ArrivalManifestULD
+		where
+			ImpArrivalManifestULDId = #{impArrivalManifestUldId}
+	]]>	
+		<if test="uldNumber != null">
+			AND ULDNumber = #{uldNumber}
+		</if>
+		<if test="uldNumber == null">
+			AND ULDNumber is null
+		</if>
+	</select>
+
+	<select id="fetchDuplicateShipments"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select
+			*
+		from
+			Imp_ArrivalManifestShipmentInfo
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			(ShipmentDescriptionCode = 'P' OR ShipmentDescriptionCode='D') and 
+			ShipmentDate=#{shipmentdate}
+	]]>
+	</select>
+
+	<select id="fetchFlightStatus"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel">
+	<![CDATA[
+		select case when FlightDiscrepncyListSentBy is not null then 'Flight
+		Discrepancy list is Completed'
+		when ThroughTransitWorkingListFinalizedAt is not null then 'Flight
+		Discrepancy list is Completed'
+		when FlightClosedBy is not null then ('Flight is Closed By
+		'+FlightClosedBy )
+		when FlightCompletedAt is not null then ('Flight is Completed By
+		'+FlightCompletedBy )
+		when FirstTimeFlightCompletedAt is not null then 'First Time Flight
+		Closed'
+		when InwardServiceReportFinalizedAt is not null then 'InWard Service
+		Report Finalized'
+		when BreakDownCompletedAt is not null then ('Breakdown Completed By
+		'+BreakDownCompletedBy )
+		when FirstTimeBreakDownCompletedAt is not null then ('FirstTime breakDown
+		Completed By '+FirstTimeBreakDownCompletedBy )
+		when DocumentVerificationCompletedAt is not null then ('Document
+		verification Completed By '+DocumentVerificationCompletedBy )
+		when FirstTimeDocumentVerificationCompletedAt is not null then ('First
+		time Document Verification Completed By
+		'+FirstTimeDocumentVerificationCompletedBy )
+		when RampCheckInCompletedAt is not null then ('Ramp Check In Completed By
+		'+RampCheckInCompletedBy )
+		when FirstTimeRampCheckInCompletedAt is not null then ('First time Ramp
+		Check In Completed By '+FirstTimeRampCheckInCompletedBy )
+		when FirstULDCheckedInAt is not null then ('First ULD Checked In
+		By'+FirstULDCheckedInBy)
+		when InboundULDListFinalizedAt is not null then 'First ULD List Finalized'
+		when LastULDTowedAt is not null then 'Last ULD Towed'
+		when FirstULDTowedAt is not null then 'First ULD Towed'
+		else ''
+		end as FlightStatus ,
+		case when FlightDiscrepncyListSentBy is not null then
+		FlightDiscrepncyListSentAt
+		when ThroughTransitWorkingListFinalizedAt is not null then
+		[ThroughTransitWorkingListFinalizedAt]
+		when FlightClosedBy is not null then FightClosedAt
+		when FlightCompletedAt is not null then FlightCompletedAt
+		when FirstTimeFlightCompletedAt is not null then
+		FirstTimeFlightCompletedAt
+		when BreakDownCompletedAt is not null then BreakDownCompletedAt
+		when FirstTimeBreakDownCompletedAt is not null then
+		FirstTimeBreakDownCompletedAt
+		when DocumentVerificationCompletedAt is not null then
+		DocumentVerificationCompletedAt
+		when FirstTimeDocumentVerificationCompletedAt is not null then
+		FirstTimeDocumentVerificationCompletedAt
+		when RampCheckInCompletedAt is not null then RampCheckInCompletedAt
+		when FirstTimeRampCheckInCompletedAt is not null then
+		FirstTimeRampCheckInCompletedAt
+		when FirstULDCheckedInAt is not null then FirstULDCheckedInAt
+		when InboundULDListFinalizedAt is not null then InboundULDListFinalizedAt
+		when LastULDTowedAt is not null then LastULDTowedAt
+		when FirstULDTowedAt is not null then FirstULDTowedAt else '' end as
+		flightDate
+		from Imp_FlightEvents where FlightId=#{flightId}
+	]]>
+	</select>
+
+
+	<select id="sqltoCheckmanualShipment" parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select ManualFlag from Imp_CargoPreAnnouncement where
+		ULDNumber = #{uldNumber} and IncomingFlightId=#{flightId} and
+		UldBoardPoint =#{uldBoardPoint} and UldOffPoint =#{uldOffPoint}
+	]]>
+	</select>
+
+	<select id="checkOutBoundFlight"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel"
+		resultType="java.lang.Integer">
+	<![CDATA[	
+		select 
+			count(*) 
+		from 
+			Flt_OperativeFlight_Legs inner join
+			Flt_OperativeFlight
+				on Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+		where
+			Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} and 
+			Flt_OperativeFlight.FlightNumber = #{flightNumber} and
+			Flt_OperativeFlight.CarrierCode = #{carrierCode} and
+			cast(Flt_OperativeFlight_Legs.DateSTD as date) = cast(#{departureDate} as date)
+	]]>
+	</select>
+
+	<delete id="deleteOCI"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOciModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentOCI
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentOCIId = #{id}
+	]]>
+	</delete>
+
+	<delete id="dimensionDelete"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentDimensionInfoModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentDimensionInfo 
+		where 
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentDimensionInfoId = #{id}
+	]]>
+	</delete>
+
+	<delete id="onwardDelete"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel">
+	<![CDATA[
+		delete from Imp_ArrivalManifestShipmentOnwardMovement
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>
+	</delete>
+
+	<select id="checkOnwardDetails"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select 
+			count(*) 
+		from 
+			Imp_ArrivalManifestShipmentOnwardMovement 
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId}
+	]]>	
+		<choose>
+			<when test="id!= null and id!= ''">
+				and ImpArrivalManifestShipmentOnwardMovementId = #{id}
+			</when>
+		</choose>
+	</select>
+
+	<update id="updateShipmentOnwardFlight"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentOnwardMovementModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentOnwardMovement 
+		set
+			FlightNumber = #{flightNumber},
+			DepartureDate = #{departureDate} 
+		where
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentOnwardMovementId = #{id}
+	]]>
+	</update>
+
+	<select id="checkBookingExists"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select 
+			count(*) 
+		from
+			Imp_ArrivalManifestShipmentInfo 
+		where
+			ImpArrivalManifestShipmentInfoId = #{impArrivalManifestShipmentInfoId} and 
+			BookingFlightId is not null
+	]]>
+	</select>
+
+	<select id="checkSameBookingExists"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select 
+			count(*)
+		from 
+			Imp_ArrivalManifestShipmentInfo e1,
+			Imp_ArrivalManifestShipmentInfo e2
+		where 
+			e1.ImpArrivalManifestULDId = e2.ImpArrivalManifestULDId and
+			e1.ImpArrivalManifestULDId = #{impArrivalManifestUldId} and 
+			e1.BookingFlightId = e2.BookingFlightId
+	]]>
+	</select>
+	
+	<update id="updateServiceIndicator"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[	
+		update Exp_ShipmentBooking 
+		set 
+			ServiceFlag = #{svc} 
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	]]>
+	</update>
+	
+	<select id="fetchArrivalManifestSegmentID" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel">
+	<![CDATA[
+		select 
+			ImpArrivalManifestBySegmentId as impArrivalManifestBySegmentId
+		from
+			Imp_ArrivalManifestBySegment
+		where 
+			FlightSegmentid = (select top 1 FlightSegmentid from Flt_OperativeFlight_Segments 
+								where Flight_ID=  #{impArrivalManifestBySegmentId} and FlightOffPoint=#{tenantAirport})
+	]]>
+	</select>
+
+	<select id="FETCH_ARRIVALSEGMENT"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel">
+	<![CDATA[
+		select 
+			top 1 FlightSegmentId as segmentId
+		from
+			Flt_OperativeFlight_Segments 
+		where
+			FlightOffPoint = #{tenantAirport} and
+			Flight_ID = #{flightId}
+	]]>
+	</select>
+
+	<update id="updateBulkShipmentIndicator"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel">
+	<![CDATA[
+		update Imp_FlightEvents
+		set
+			BulkShipmentsExists = 1,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE()
+		where 
+			FlightId = #{flightId}
+	]]>
+	</update>
+
+	<!-- Check whether flight complete is done for a flight -->
+	<select id="sqlCheckInboundFlightStatus"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case when (count (1) > 0) then
+				1
+			else
+				0
+			end result
+		from
+			Imp_FlightEvents
+		where
+			Imp_FlightEvents.FlightId = #{flightId} and
+			(Imp_FlightEvents.DocumentVerificationCompletedAt is not null or BreakDownCompletedAt is not null)
+	]]>
+	</select>
+
+	<select id="fetchBookingExists"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select 
+			top 1 BookingFlightId as bookingFlightId,
+			FlightSegmentId as flightSegmentId 
+		from
+			Imp_ArrivalManifestShipmentInfo 
+		where
+			ShipmentNumber = #{shipmentNumber} and 
+			Shipmentdate=#{shipmentdate} and 
+			BookingFlightId is not null
+	]]>
+	</select>
+
+	<select id="fetchRampCheckInDetails" parameterType="com.ngen.cosys.impbd.model.CargoPreAnnouncement"
+		resultType="com.ngen.cosys.impbd.model.RampCheckInUld">
+	<![CDATA[
+		select * from Imp_RampCheckIn where FlightId = #{flightId} and ULDNumber = #{uldNumber}
+	]]>
+	</select>
+
+	<select id="sqlGetShipmentPieces"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.events.payload.ManageBookingEvent">
+	<![CDATA[
+		select 
+			top 1
+			ShipmentNumber,
+			shipmentdate,
+			origin,
+			destination,
+			weightunitcode,
+			NatureOfGoodsDescription,
+			TotalPieces,
+			sum(Weight) as grossweight,
+			sum(Piece) as pieces
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where
+			ShipmentNumber=#{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+	]]>
+		<choose>
+			<when test="uldNumber!= null">
+				and ULDNumber = #{uldNumber}
+			</when>
+		</choose>
+		<choose>
+			<when test="uldNumber == null">
+				and ULDNumber is null
+			</when>
+		</choose>
+	<![CDATA[
+		group by
+			TotalPieces,
+			ShipmentNumber,
+			shipmentdate,
+			origin,
+			destination,
+			weightunitcode,
+			NatureOfGoodsDescription
+	]]>
+	</select>
+
+	<select id="sqlCheckValidArrivalFlight"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="java.lang.Boolean">	
+	<![CDATA[	
+		SELECT  case when count(*) > 0 then 1 else 0 end result
+		FROM                   
+			Flt_OperativeFlight_Legs  A, Flt_OperativeFlight B
+		WHERE  A.FLIGHT_ID=B.FLIGHT_ID		
+			  AND  B.FlightKey =#{flightNumber}
+			  AND  CAST( A.DateSTA as date) = #{flightDate}
+		      AND  A.FlightOffPoint = #{tenantAirport}
+		      AND  (isNull(A.DateATA, A.DateSTA) - ((select cast(ParameterValueChar as numeric) from App_SystemParameters where ParameterCode='ARRIVALFLIGHT_CHECK')/24)) < DATEADD(HH, 8, GETDATE())
+	]]>
+	</select>
+
+	<delete id="deleteShipmentMasters"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster">
+	<![CDATA[
+		delete from Shipment_MasterSHC where ShipmentId = #{shipmentId}
+		delete from Shipment_MasterRoutingInfo where ShipmentId = #{shipmentId}
+		delete from imp_shipmentVerification where ShipmentId = #{shipmentId}
+		delete from Shipment_Master where ShipmentId = #{shipmentId}
+	]]>
+	</delete>
+
+	<select id="sqlCheckShipmentDocumentReceivedOn"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.lang.Boolean">	
+	<![CDATA[	
+		SELECT  case when count(*) > 0 then 1 else 0 end result
+		FROM                   
+			Shipment_Master
+		WHERE  
+			ShipmentType = #{shipmentType} and
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			(DocumentReceivedOn is not null OR PhotoCopy is not null) 
+	]]>
+	</select>
+
+	<select id="sqlFetchTranshipments"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select
+			ShipmentNumber,
+			ShipmentDate,
+			Origin,
+			Destination,
+			ShipmentDescriptionCode,
+			Piece,
+			Weight,
+			TotalPieces,
+			NatureOfGoodsDescription
+		from
+			Imp_ArrivalManifestByFlight inner join 
+			Imp_ArrivalManifestBySegment 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightid = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightid inner join 
+			Imp_ArrivalManifestULD 
+				on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentinfo 
+				on Imp_ArrivalManifestShipmentinfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+		where
+			Imp_ArrivalManifestByFlight.Flightid = #{flightId} and 
+			Imp_ArrivalManifestShipmentinfo.ManuallyAdded = 1 and 
+			Imp_ArrivalManifestShipmentinfo.destination NOT IN ( #{tenantAirport}, #{tenantCity}) and
+			Imp_ArrivalManifestShipmentinfo.BookingFlightid is null
+	]]>
+	</select>
+
+
+	<select id="sqlCheckUldAssignments" parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case 
+              when count(1) > 0 then
+                      1
+              else
+                      0
+              end result
+		from
+			Imp_ArrivalManifestByFlight inner join 
+			Imp_ArrivalManifestBySegment 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightid = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightid inner join 
+			Imp_ArrivalManifestULD 
+				on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+		where 
+			Imp_ArrivalManifestByFlight.FlightId <> #{flightId} and 
+			Imp_ArrivalManifestULD.ULDNumber = #{uldNumber} and 
+			not exists (select * from Uld_UldMaster where Uld_UldMaster.UldKey = #{uldNumber} and Uld_UldMaster.OutboundFlight_ID is not null) and
+			not exists (select * from Shipment_Inventory where Flight_ID <> #{flightId})
+	]]>
+	</select>
+
+	<update id="updateNilCargo"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel">
+	<![CDATA[
+		update Imp_ArrivalManifestBySegment
+		set 
+			NilCargo = #{nilCargo} 
+		where 
+			FlightSegmentId = #{segmentId}
+	]]>
+	</update>
+
+	<select id="sqlCheckSHCGrouping"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case when (count(1) > 0 ) then
+				1
+			else
+				0
+			end PHCShipment
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+			Imp_ArrivalManifestByShipmentSHC
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId inner join
+			Mst_AssociateSHCByHandlingGroup
+				on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+			Mst_SHCHandlingGroup
+				on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+		where
+			Mst_SHCHandlingGroup.SHCHandlingGroupCode = 'COU' and
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber=#{shipmentNumber} and 
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate=#{shipmentdate}
+	]]>
+	</select>
+
+	<select id="sqlFetchShipmentPieces"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select 
+			top 1
+			TotalPieces,
+			sum(Weight) as weight,
+			sum(Piece) as piece,
+			ShipmentDescriptionCode as shipmentDescriptionCode
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment 
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where
+			ShipmentNumber=#{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate}
+		group by
+			TotalPieces,
+			ShipmentDescriptionCode,
+			ShipmentNumber
+			
+		
+	]]>
+	</select>
+
+	<select id="fetchDuplicateSplitShipments"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select
+			*
+		from 
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+		where
+			ShipmentNumber = #{shipmentNumber} and ShipmentDescriptionCode='S' and
+			ShipmentDate=#{shipmentdate} and
+			Imp_ArrivalManifestByFlight.Flightid=#{flightId}
+	]]>
+	</select>
+
+	<select id="sqlGetArrivalManifestSHCHandlingGroupCode"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="java.lang.String">
+	<![CDATA[
+		select
+			TOP 1 Mst_SHCHandlingGroup.SHCHandlingGroupCode
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+			Imp_ArrivalManifestByShipmentSHC
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId inner join
+			Mst_AssociateSHCByHandlingGroup
+				on Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode = Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode inner join
+			Mst_SHCHandlingGroup
+				on Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID = Mst_SHCHandlingGroup.MstSHCHandlingGroupID
+		where
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and
+			Imp_ArrivalManifestBySegment.FlightSegmentId = #{impArrivalManifestBySegmentId} and
+			Imp_ArrivalManifestULD.ULDNumber = #{uldNumber}
+	]]>
+	</select>
+
+	<select id="sqlGetNotBookedShipments"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		select
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+			Imp_ArrivalManifestShipmentInfo.shipmentdate,
+			Imp_ArrivalManifestShipmentInfo.origin,
+			Imp_ArrivalManifestShipmentInfo.destination,
+			Imp_ArrivalManifestShipmentInfo.weightunitcode,
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+			Imp_ArrivalManifestShipmentInfo.TotalPieces,
+			sum(Imp_ArrivalManifestShipmentInfo.Weight) as weight,
+			sum(Imp_ArrivalManifestShipmentInfo.Piece) as piece,
+			isnull(Imp_ArrivalManifestShipmentInfo.DensityGroupCode,0) as DensityGroupCode,
+			Shipment_Master.Pieces as totalPieces,
+            Shipment_Master.Weight as totalWeight,
+			
+			case
+              when (select count(1) 
+                             from Exp_ShipmentBooking inner join Exp_ShipmentFlightBookingDetail on
+                                    Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId 
+                             where Exp_ShipmentBooking.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+                                           Exp_ShipmentBooking.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+                                           Exp_ShipmentFlightBookingDetail.FlightId = Imp_ArrivalManifestByFlight.FlightId) > 0 then
+                      1
+              else
+                      0
+              end as bookingRecordFound
+			
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+            Shipment_Master
+                on Imp_ArrivalManifestShipmentInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+                   Imp_ArrivalManifestShipmentInfo.ShipmentDate = Shipment_Master.ShipmentDate
+				
+		where
+			Imp_ArrivalManifestByFlight.Flightid =#{flightId} and 
+			Imp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) and 
+	       Imp_ArrivalManifestShipmentInfo.ShipmentNumber in (
+	              select 
+	                     innerImp_ArrivalManifestShipmentInfo.ShipmentNumber
+	              from
+	                      Imp_ArrivalManifestByFlight innerImp_ArrivalManifestByFlight inner join
+	                      Imp_ArrivalManifestBySegment innerImp_ArrivalManifestBySegment
+	                             on innerImp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = innerImp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+	                      Imp_ArrivalManifestULD innerImp_ArrivalManifestULD
+	                             on innerImp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = innerImp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+	                      Imp_ArrivalManifestShipmentInfo innerImp_ArrivalManifestShipmentInfo
+	                             on innerImp_ArrivalManifestULD.ImpArrivalManifestULDId = innerImp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+	              where
+	                      innerImp_ArrivalManifestByFlight.FlightId = #{flightId} and
+	                     innerImp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity}) and
+	                     innerImp_ArrivalManifestShipmentInfo.BookingFlightId is null
+	       )
+
+		group by
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+			Imp_ArrivalManifestShipmentInfo.shipmentdate,
+			Imp_ArrivalManifestShipmentInfo.origin,
+			Imp_ArrivalManifestShipmentInfo.destination,
+			Imp_ArrivalManifestShipmentInfo.weightunitcode,
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription,
+			Imp_ArrivalManifestShipmentInfo.TotalPieces,
+			Imp_ArrivalManifestShipmentInfo.DensityGroupCode,
+			Imp_ArrivalManifestByFlight.FlightId,
+			Shipment_Master.Pieces,
+            Shipment_Master.Weight
+			
+	]]>
+	</select>
+
+	<update id="updateOnwardNextDestination"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentOnwardMovement
+		set
+			AirportCityCode = upper(#{carrierDestination}),
+			CarrierCode = upper(#{carrierCode}),
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = GETDATE()
+		where 
+			ImpArrivalManifestShipmentInfoId = #{shipmentId} and
+			ImpArrivalManifestShipmentOnwardMovementId = #{onwwardMovementId}
+	]]>
+	</update>
+
+	<select id="sqlGetSegmentLevelULDCount"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestBySegmentModel"
+		resultType="java.math.BigInteger">
+	<![CDATA[
+		select
+			isnull(count(distinct uldNumber),0) as uldCount
+		from
+			Imp_ArrivalManifestByFlight AMBF inner join
+			Imp_ArrivalManifestBySegment AMBS 
+				on AMBS.ImpArrivalManifestByFlightId = AMBF.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD AMU 
+				on AMBS.ImpArrivalManifestBySegmentId = AMU.ImpArrivalManifestBySegmentId
+		where 
+			AMBF.FlightId=#{impArrivalManifestByFlightId} and
+			AMBS.FlightSegmentid =#{impArrivalManifestBySegmentId} and
+			AMU.ULDNumber is not null
+	]]>
+	</select>
+
+	<select id="sqlGetReceivedFFMCountDetails"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultMap="arrivalManifestFFMDetails">
+	<![CDATA[
+		select
+			concat(Flt_OperativeFlight_Segments.FlightBoardPoint,'-',Flt_OperativeFlight_Segments.FlightOffPoint
+			,'(',(select 
+					count(*) 
+				from 
+					Imp_FreightFlightManifestByFlight inner join 
+					Imp_FreightFlightManifestBySegment 
+						on Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId
+				where 
+					Imp_FreightFlightManifestByFlight.Flightid = #{flightId} and
+					Imp_FreightFlightManifestBySegment.Flightsegmentid = Flt_OperativeFlight_Segments.Flightsegmentid) ,')') as segmentReceived
+		from
+			Flt_OperativeFlight_Segments
+		where
+			Flt_OperativeFlight_Segments.Flight_ID = #{flightId} and 
+			Flt_OperativeFlight_Segments.Flightoffpoint = #{tenantAirport}
+		group by
+			Flt_OperativeFlight_Segments.FlightBoardPoint,
+			Flt_OperativeFlight_Segments.FlightOffPoint,
+			Flt_OperativeFlight_Segments.Flightsegmentid,
+			Flt_OperativeFlight_Segments.FlightSegmentOrder
+		order by
+			Flt_OperativeFlight_Segments.FlightSegmentOrder
+	]]>
+	</select>
+
+	<select id="sqlGetRejectedFFMCountDetails"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultMap="arrivalManifestFFMDetails">
+	<![CDATA[
+		select
+			concat(Interface_Incomingmessagelog.AirportCode,'(',count(*),')') as segmentRejected
+		from
+			Interface_Incomingmessagelog inner join
+			Flt_OperativeFlight_Segments
+				on cast(Interface_Incomingmessagelog.FlightOriginDate as date) = cast(Flt_OperativeFlight_Segments.DateSTD as date) and
+					Interface_Incomingmessagelog.AirportCode = Flt_OperativeFlight_Segments.FlightBoardPoint and
+					Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+		where
+			Interface_Incomingmessagelog.MessageType = 'FFM' and 
+			Interface_Incomingmessagelog.FlightNumber = #{flightNo} and 
+			Interface_Incomingmessagelog.CarrierCode = #{carrierCode} and
+			Flt_OperativeFlight_Segments.Flight_ID = #{flightId} and
+			Interface_Incomingmessagelog.Status ='ERROR'
+		group by
+			Interface_Incomingmessagelog.AirportCode
+	]]>
+	</select>
+
+	<select id="sqlGetArrivalManifestShipmentMasterDocumentReceivedStatus"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.lang.Boolean">
+	<![CDATA[
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end result
+		from
+			Shipment_Master
+		where
+			ShipmentNumber = #{shipmentNumber} and
+			ShipmentDate = #{shipmentdate} and
+			DocumentReceivedOn is null and
+			PhotoCopy is null
+	]]>
+	</select>
+
+	<select id="sqlGetFFMShipmentsRejectDetails"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentRejectDetails">
+	<![CDATA[
+		select
+			Imp_FreightFlightManifestByShipment.AwbNumber as shipmentNumber,
+			Imp_FreightFlightManifestByShipment.RejectReason as rejectReason,
+			Imp_FreightFlightManifestByShipment.Origin as origin,
+			Imp_FreightFlightManifestByShipment.Destination as destination,
+			Imp_FreightFlightManifestByShipment.ShipmentDescriptionCode as shipmentDescriptionCode,
+			Imp_FreightFlightManifestByShipment.Pieces as piece,
+			Imp_FreightFlightManifestByShipment.WeightUnitCode as weightUnitCode,
+			Imp_FreightFlightManifestByShipment.NatureOfGoodsDescription as natureOfGoodsDescription,
+			Imp_FreightFlightManifestByShipment.Weight as weight
+		from
+			Imp_FreightFlightManifestByFlight inner join
+			Imp_FreightFlightManifestBySegment
+				on Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId = 
+						Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId inner join
+			Imp_FreightFlightManifestULD
+				on Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestBySegmentId = 
+						Imp_FreightFlightManifestULD.ImpFreightFlightManifestBySegmentId inner join
+			Imp_FreightFlightManifestByShipment
+				on Imp_FreightFlightManifestULD.ImpFreightFlightManifestULDId =
+						Imp_FreightFlightManifestByShipment.ImpFreightFlightManifestULDId
+		where
+			Imp_FreightFlightManifestByFlight.FlightId = #{flightId} and
+			Imp_FreightFlightManifestBySegment.MessageStatus = 'PROCESSED' and
+			Imp_FreightFlightManifestByShipment.RejectReason is not null
+	]]>
+	</select>
+
+	<!-- ========= THROUGH SERVICE BUSINESS FUNCTION QUERIES -->
+	<select id="sqlGetThroughTransitAdviceShipmentsInfo"
+		parameterType="java.util.Map"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+	<![CDATA[		
+		select		
+			distinct
+			Imp_ArrivalManifestByFlight.FlightId as flightId,
+			Imp_ArrivalManifestBySegment.FlightSegmentId as flightSegmentId,
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber as shipmentNumber,
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate as shipmentdate,
+			Imp_ArrivalManifestShipmentInfo.Origin as origin,
+			Imp_ArrivalManifestShipmentInfo.Destination as destination,
+			Imp_ArrivalManifestShipmentInfo.BookingFlightId as bookingFlightId,			
+			Imp_ArrivalManifestShipmentInfo.FlightSegmentId as bookingFlightSegmentId,
+			Imp_ArrivalManifestShipmentInfo.TransferType as transferType,
+			Flt_OperativeFlight_Segments.FlightBoardPoint as incomingFlightBoardPoint,
+			Imp_ArrivalManifestShipmentInfo.Piece as piece,
+			Imp_ArrivalManifestShipmentInfo.Weight as weight,
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription as natureOfGoodsDescription
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+			Flt_OperativeFlight_Segments
+				on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+		where
+			Imp_ArrivalManifestShipmentInfo.TransferType in (
+				select Code from Transhipment_TransferTypes where TransferType = 'TT'
+			) and Imp_ArrivalManifestShipmentInfo.BookingFlightId is not null and
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and
+	]]>
+		<if test="shipmentNumbers != null">
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber in
+			<foreach collection="shipmentNumbers" item="shipment" index="index"
+				open="(" separator="," close=")">
+				#{shipment}
+			</foreach>
+		</if>
+	</select>
+
+
+	<select id="sqlGetArrivalManifestTransferType_SSB"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel"
+		resultType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+  		<![CDATA[
+  		select
+			Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId as arrivalManifestShipmentUldId,
+		  	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId as arrivalManifestShipmentInfoId,  			
+		  	Imp_ArrivalManifestShipmentInfo.Piece as manifestPieces,
+		  	Imp_ArrivalManifestShipmentInfo.Weight as manifestWeight,
+		  	case
+				when (select
+						count(1)
+					from
+						Imp_ArrivalManifestBySegment innerSegment inner join
+						Imp_ArrivalManifestULD innerULD  
+							on innerSegment.ImpArrivalManifestBySegmentId = innerULD.ImpArrivalManifestBySegmentId inner join
+						Imp_ArrivalManifestShipmentInfo innerShipment
+							on innerULD.ImpArrivalManifestULDId = innerShipment.ImpArrivalManifestULDId
+					where
+						innerSegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId and
+						innerShipment.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+						innerShipment.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+						innerShipment.ShipmentDescriptionCode in ('T')) > 0 then
+					1
+				else
+					0
+				end as totalShipment
+		from 
+			Imp_ArrivalManifestShipmentInfo inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestByFlight
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+		where
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{shipmentNumber} and
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{shipmentDate} and
+			Imp_ArrivalManifestByFlight.FlightId = #{inboundflightId} and
+			(Imp_ArrivalManifestShipmentInfo.BookingFlightId is null
+				 OR (Imp_ArrivalManifestShipmentInfo.BookingFlightId is not null and
+						Imp_ArrivalManifestShipmentInfo.TransferType not in (
+							select Code from Transhipment_TransferTypes where TransferType = 'TT'
+						) and
+						exists(
+							select
+								null
+							from
+								Exp_FlightEvents
+							where
+								Exp_FlightEvents.FlightDepartedOn is null and
+								Exp_FlightEvents.FlightId = Imp_ArrivalManifestShipmentInfo.BookingFlightId											
+						)
+					)
+			)
+		order by
+			Imp_ArrivalManifestShipmentInfo.Piece,
+			Imp_ArrivalManifestShipmentInfo.Weight
+		]]>
+	</select>
+
+	<update id="sqlClearBookingInfoFromArrivalManifestByFlight"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+	<![CDATA[
+		update Imp_ArrivalManifestShipmentInfo
+		set
+			BookingFlightId = null,
+			FlightSegmentId = null,
+			TransferType = null
+		where
+			ImpArrivalManifestShipmentInfoId in (
+				select
+					Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = #{inboundflightId} and
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{shipmentNumber} and
+					Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{shipmentDate} and
+					Imp_ArrivalManifestShipmentInfo.BookingFlightId = #{outboundFlightId}
+			) and
+			not exists(
+				select
+					null
+				from
+					Exp_AssignedULDTrolleyToFlight inner join
+					Exp_LoadedShipmentInfo
+						on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join
+					Exp_FlightEvents
+						on Exp_AssignedULDTrolleyToFlight.FlightId = Exp_FlightEvents.FlightId inner join
+					Shipment_Master
+						on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+				where
+					Exp_AssignedULDTrolleyToFlight.FlightId = Imp_ArrivalManifestShipmentInfo.BookingFlightId and
+					Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+					Shipment_Master.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+			)
+	]]>
+	</update>
+
+
+	<update id="updateArrivalManifestTransferTypeBooking"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+	<![CDATA[
+		Update Imp_ArrivalManifestShipmentInfo
+		set
+			TransferType = #{transferType},
+			BookingFlightId = #{outboundFlightId},
+			FlightSegmentId = #{outboundSegmentId}
+		where
+			ImpArrivalManifestULDId = #{arrivalManifestShipmentUldId} and
+			ImpArrivalManifestShipmentInfoId = #{arrivalManifestShipmentInfoId}
+	]]>
+	</update>
+
+
+	<update id="sqlUpdateTransferTypeArrivalManifestByShipmentNumber"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+	<![CDATA[
+  		Update Imp_ArrivalManifestShipmentInfo 
+  		set 
+  			TransferType = #{transferType}, 
+  			BookingFlightId = #{outboundFlightId},
+			FlightSegmentId = #{outboundSegmentId}
+  		where
+  			ImpArrivalManifestShipmentInfoId in (
+  				select
+					ImpArrivalManifestShipmentInfoId
+				from
+					Imp_ArrivalManifestByFlight inner join
+					Imp_ArrivalManifestBySegment
+						on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+					Imp_ArrivalManifestULD
+						on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+					Imp_ArrivalManifestShipmentInfo
+						on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+				where
+					Imp_ArrivalManifestByFlight.FlightId = #{inboundflightId} and
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{shipmentNumber} and
+  					Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{shipmentDate} and
+  					Imp_ArrivalManifestShipmentInfo.BookingFlightId is null
+  			)
+  	]]>
+	</update>
+
+	<!-- Update part/flight booking pieces/weight in case of through service -->
+	<update id="sqlUpdateBookingPartPiecesWeightFromArrivalManifest"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+  	<![CDATA[
+  		update Exp_ShipmentPartBookingDetail
+  		set
+  			PartPieces = #{manifestPieces},
+			PartWeight = #{manifestWeight},
+			TransferType = (case when #{transferType} is not null then #{transferType} else TransferType end)
+  		where
+  			PartBookingId = #{partBookingId} and 			
+  			BookingId = #{bookingId}
+  	]]>
+	</update>
+
+	<update id="sqlReduceOldBookingFlightPiecesWeightFromArrivalManifest"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+  	<![CDATA[
+  		update Exp_ShipmentFlightBookingDetail
+  		set
+  			BookingPieces = (isnull(BookingPieces, 0) - isnull(#{bookingPieces}, 0)),
+			BookingWeight = (isnull(BookingWeight, 0) - isnull(#{bookingWeight}, 0))
+  		where
+  			FlightBookingId = #{flightBookingId} and 			
+  			BookingId = #{bookingId}
+  	]]>
+	</update>
+
+	<update id="sqlIncreaseNewBookingFlightPiecesWeightFromArrivalManifest"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+  	<![CDATA[
+  		update Exp_ShipmentFlightBookingDetail
+  		set
+  			BookingPieces = (isnull(BookingPieces, 0) + isnull(#{manifestPieces}, 0)),
+			BookingWeight = (isnull(BookingWeight, 0) + isnull(#{manifestWeight}, 0)),
+			TransferType = (case when #{transferType} is not null then #{transferType} else TransferType end)
+  		where
+  			FlightBookingId = #{flightBookingId} and 			
+  			BookingId = #{bookingId}
+  	]]>
+	</update>
+
+	<update id="sqlUpdateTotalBookingPiecesWeightFromArrivalManifest"
+		parameterType="com.ngen.cosys.transfertype.model.InboundFlightModel">
+  	<![CDATA[
+  		update Exp_ShipmentBooking
+  		set
+  			Pieces = PartInfo.PartPieces,
+			GrossWeight = PartInfo.PartWeight
+		from(
+			select
+				BookingId,
+				sum(PartPieces) PartPieces,
+				sum(PartWeight) PartWeight
+			from
+				Exp_ShipmentPartBookingDetail
+			where
+				BookingId = #{bookingId}
+			group by
+				BookingId	
+		)PartInfo
+  		where
+  			Exp_ShipmentBooking.BookingId = PartInfo.BookingId and	
+  			Exp_ShipmentBooking.BookingId = #{bookingId}
+  	]]>
+	</update>
+
+	<select id="sqlGetThroughServiceSentForArrivalManifestByULD"
+		parameterType="java.util.Map" resultType="java.lang.Boolean">
+  	<![CDATA[  		
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end
+		from
+			Transhipment_ThroughTransitWorkingAdvice inner join
+			Transhipment_TTWAOutboundFlight
+				on Transhipment_ThroughTransitWorkingAdvice.TransThroughTransitWorkingAdviceId = 
+						Transhipment_TTWAOutboundFlight.TransThroughTransitWorkingAdviceId inner join
+			Transhipment_TTWAConnectingFlight
+				on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId = Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+			Transhipment_TTWAConnectingFlightULD
+				on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId
+		where
+			Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+			Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+			Transhipment_TTWAConnectingFlightULD.AdviceSentDate is not null  		
+  	]]>
+	</select>
+	
+	<select id="sqlGetThroughServiceSentForArrivalManifestByShipment"
+		parameterType="java.util.Map" resultType="java.lang.Boolean">
+  	<![CDATA[  		
+		select
+			case
+				when count(1) > 0 then
+					1
+				else
+					0
+				end
+		from
+			Transhipment_ThroughTransitWorkingAdvice inner join
+			Transhipment_TTWAOutboundFlight
+				on Transhipment_ThroughTransitWorkingAdvice.TransThroughTransitWorkingAdviceId = 
+						Transhipment_TTWAOutboundFlight.TransThroughTransitWorkingAdviceId inner join
+			Transhipment_TTWAConnectingFlight
+				on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId = Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+			Transhipment_TTWAConnectingFlightShipment
+				on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightId
+		where
+			Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+			Transhipment_TTWAConnectingFlightShipment.ShipmentNumber = #{shipmentNumber} and
+			Transhipment_TTWAConnectingFlightShipment.ShipmentDate = #{shipmentDate} and
+			Transhipment_TTWAConnectingFlightShipment.AdviceSentDate is not null  		
+  	]]>
+	</select>
+
+	<delete id="sqlDeleteThroughServiceShipmentSHCforArrivalManifest"
+		parameterType="java.util.Map">
+	<![CDATA[
+	 delete from Transhipment_TTWAConnectingFlightShipmentSHC
+	 where
+		TransTTWAConnectingFlightShipmentId in (
+			select 
+				Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightShipmentId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId inner join
+				Transhipment_TTWAConnectingFlightShipment
+					on Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId = Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightULDId
+			where
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteThroughServiceShipmentforArrivalManifest"
+		parameterType="java.util.Map">
+	<![CDATA[
+	 delete from Transhipment_TTWAConnectingFlightShipment
+	 where
+		TransTTWAConnectingFlightULDId in (
+			select 
+				Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId
+			where
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteThroughServiceULDPiggyBackforArrivalManifest"
+		parameterType="java.util.Map">
+	<![CDATA[
+	 delete from Transhipment_TTWAConnectingFlightULDPiggyBack
+	 where
+		TransTTWAConnectingFlightULDId in (
+			select 
+				Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId
+			where
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteThroughServiceULDSHCforArrivalManifest"
+		parameterType="java.util.Map">
+	<![CDATA[
+	delete from Transhipment_TTWAConnectingFlightULDSHC
+	where
+		TransTTWAConnectingFlightULDId in (
+			select 
+				Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId
+			where
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteThroughServiceULDforArrivalManifest"
+		parameterType="java.util.Map">
+	<![CDATA[
+	delete from Transhipment_TTWAConnectingFlightULD
+	where
+		TransTTWAConnectingFlightULDId in (
+			select 
+				Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId
+			where
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldKey} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete
+		id="sqlDeleteThroughServiceShipmentSHCforArrivalManifestByShipment"
+		parameterType="java.util.Map">
+	<![CDATA[	
+		delete from Transhipment_TTWAConnectingFlightShipmentSHC
+		where
+		TransTTWAConnectingFlightShipmentId in (
+			select 
+				Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightShipmentId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId inner join
+				Transhipment_TTWAConnectingFlightShipment
+					on Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId = Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightULDId
+			where 
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightShipment.ShipmentNumber = #{shipmentNumber} and
+				Transhipment_TTWAConnectingFlightShipment.ShipmentDate = #{shipmentDate} and 
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldNumber} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight inner join
+						Exp_LoadedShipmentInfo
+							on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join						
+						Shipment_Master
+							on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId 
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Shipment_Master.ShipmentNumber = Transhipment_TTWAConnectingFlightShipment.ShipmentNumber and
+						Shipment_Master.ShipmentDate = Transhipment_TTWAConnectingFlightShipment.ShipmentDate and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteThroughServiceShipmentforArrivalManifestByShipment"
+		parameterType="java.util.Map">
+	<![CDATA[
+		delete from Transhipment_TTWAConnectingFlightShipment
+		where
+		TransTTWAConnectingFlightShipmentId in (
+			select 
+				Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightShipmentId 
+			from 
+				Transhipment_TTWAOutboundFlight inner join
+				Transhipment_TTWAConnectingFlight
+					on Transhipment_TTWAOutboundFlight.TransTTWAOutboundFlightId=Transhipment_TTWAConnectingFlight.TransTTWAOutboundFlightId inner join
+				Transhipment_TTWAConnectingFlightULD
+					on Transhipment_TTWAConnectingFlight.TransTTWAConnectingFlightId = Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightId inner join
+				Transhipment_TTWAConnectingFlightShipment
+					on Transhipment_TTWAConnectingFlightULD.TransTTWAConnectingFlightULDId = Transhipment_TTWAConnectingFlightShipment.TransTTWAConnectingFlightULDId
+			where 
+				Transhipment_TTWAConnectingFlight.InboundFlightId = #{flightId} and
+				Transhipment_TTWAConnectingFlightShipment.ShipmentNumber = #{shipmentNumber} and
+				Transhipment_TTWAConnectingFlightShipment.ShipmentDate = #{shipmentDate} and 
+				Transhipment_TTWAConnectingFlightULD.ULDNumber = #{uldNumber} and
+				not exists(
+					select
+						null
+					from
+						Exp_AssignedULDTrolleyToFlight inner join
+						Exp_LoadedShipmentInfo
+							on Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId = Exp_LoadedShipmentInfo.AssUldTrolleyId inner join
+						Shipment_Master
+							on Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId 
+					where
+						Exp_AssignedULDTrolleyToFlight.FlightId = Transhipment_TTWAOutboundFlight.OutboundFlightId and
+						Shipment_Master.ShipmentNumber = Transhipment_TTWAConnectingFlightShipment.ShipmentNumber and
+						Shipment_Master.ShipmentDate = Transhipment_TTWAConnectingFlightShipment.ShipmentDate and
+						Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = Transhipment_TTWAConnectingFlightULD.ULDNumber
+				)
+		)
+	]]>
+	</delete>
+	
+	<select id="sqlQueryCheckImportTranShipmentAM" 
+	parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+	resultType="java.lang.Boolean">
+	    SELECT
+			 CASE  
+		WHEN
+			 COUNT(*) > 0 then 1 else 0 END 
+		FROM 
+			Imp_ArrivalManifestShipmentInfo 
+		WHERE 
+			ShipmentNumber = #{shipmentNumber}  
+			and (ShipmentDescriptionCode != 'P' and ShipmentDescriptionCode !='D' and ShipmentDescriptionCode !='S') 
+		AND
+			Origin NOT IN ( #{tenantAirport}, #{tenantCity})
+	</select>
+	<select id="sqlGetArrivalManifestULDShipmentInfoList"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel">
+		<![CDATA[
+		select
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber "shipmentNumber",
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate "shipmentdate",
+			Imp_ArrivalManifestShipmentInfo.Origin "origin",
+			Imp_ArrivalManifestShipmentInfo.Destination "destination",	
+			Imp_ArrivalManifestShipmentInfo.Piece "piece",
+			Imp_ArrivalManifestShipmentInfo.Weight "weight",
+			Imp_ArrivalManifestShipmentInfo.WeightUnitCode "weightUnitCode",
+			Imp_ArrivalManifestShipmentInfo.NatureOfGoodsDescription "natureOfGoodsDescription",
+			Imp_ArrivalManifestShipmentInfo.TransferType "transferType",
+			Imp_ArrivalManifestShipmentInfo.BookingFlightId "bookingFlightId",
+			isnull((
+				select
+					Flt_OperativeFlight_Legs.FlightOffPoint
+				from
+					Flt_OperativeFlight inner join
+					Flt_OperativeFlight_Legs
+						on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+				where
+					Flt_OperativeFlight.Flight_ID = Imp_ArrivalManifestShipmentInfo.BookingFlightId and 
+					Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+			), RoutingInfo.NextPoint) "onwardDestination"
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId  left join
+			(select
+					RouteInfo.ImpArrivalManifestShipmentInfoId,
+					RouteInfo.NextPoint,
+					RouteInfo.NextCarrier,
+					RouteInfo.ImpArrivalManifestShipmentOnwardMovementId
+				from(
+					select	
+						Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId,
+						Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode,
+						Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentOnwardMovementId,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.AirportCityCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextPoint,
+						LEAD(Imp_ArrivalManifestShipmentOnwardMovement.CarrierCode, 1,0) OVER (ORDER BY ImpArrivalManifestShipmentOnwardMovementId) AS NextCarrier
+					from 
+						Imp_ArrivalManifestShipmentOnwardMovement inner join
+						Imp_ArrivalManifestShipmentInfo
+							on Imp_ArrivalManifestShipmentOnwardMovement.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId inner join
+						Imp_ArrivalManifestULD
+							on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId inner join
+						Imp_ArrivalManifestBySegment
+							on Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+					where
+						Imp_ArrivalManifestBySegment.FlightSegmentId = #{flightSegmentId} and
+						Imp_ArrivalManifestShipmentInfo.Destination NOT IN ( #{tenantAirport}, #{tenantCity})
+					)RouteInfo
+				where
+					RouteInfo.AirportCityCode  in (#{tenantAirport}, #{tenantCity}) and
+					RouteInfo.NextPoint <> '0'   
+			)RoutingInfo
+				on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = RoutingInfo.ImpArrivalManifestShipmentInfoId
+		where
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and 
+			Imp_ArrivalManifestBySegment.FlightSegmentId = #{flightSegmentId} and
+			Imp_ArrivalManifestULD.ULDNumber = #{uldNumber}
+	]]>	
+	</select>
+	<select id="sqlUpdateQueryCheckBulkShipmentExistence" 
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestByFlightModel">
+		UPDATE
+		Imp_FlightEvents
+		SET
+		BreakBulk = 1
+		WHERE
+		FlightId = #{flightId} 
+		and exists(
+	    SELECT 
+			1
+		FROM Imp_ArrivalManifestShipmentInfo shp
+			INNER JOIN Imp_ArrivalManifestULD uld ON uld.ImpArrivalManifestULDId = shp.ImpArrivalManifestULDId
+			INNER JOIN Imp_ArrivalManifestBySegment seg ON seg.ImpArrivalManifestBySegmentId = uld.ImpArrivalManifestBySegmentId
+			INNER JOIN Imp_ArrivalManifestByFlight flt ON flt.ImpArrivalManifestByFlightId = seg.ImpArrivalManifestByFlightId
+		WHERE flt.flightid = #{flightId} AND uld.uldNumber IS NULL)
+	</select>
+	<select id="sqlGetArrivalManifestULDShipmentInfoSHCList"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestUldModel"
+		resultType="java.lang.String">
+		<![CDATA[
+		select 
+			specialHandlingCode
+		from(select
+           distinct
+			Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode,
+			Mst_SpecialHandlingCode.SpecialHandlingPriority
+			
+		from
+			Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment
+				on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD
+				on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo
+				on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join 
+		    Imp_ArrivalManifestByShipmentSHC  on Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId=	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId inner join 
+			Mst_SpecialHandlingCode on  Mst_SpecialHandlingCode.SpecialHandlingCode=Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode
+		where
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and 
+			Imp_ArrivalManifestBySegment.FlightSegmentId = #{flightSegmentId} and
+			Imp_ArrivalManifestULD.ULDNumber = #{uldNumber}
+			)SpecialHandlingCodes
+		order by 
+		    SpecialHandlingPriority asc
+		
+	   ]]>	
+	</select>
+	
+	
+	<select id="sqlValidateAWBDocInvFreightInfo"
+		parameterType="com.ngen.cosys.impbd.shipment.document.model.ShipmentMaster"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+		SELECT
+		       CASE
+		              WHEN SUM(Data.count) > 0
+		                     THEN 1
+		                     ELSE 0
+		       END As Count
+		FROM
+		       (
+                  SELECT
+                             Count(1) Count
+                  FROM
+                             Shipment_Master SM
+                  WHERE
+                             SM.ShipmentType                   = 'AWB'
+                             AND SM.ShipmentNumber             = #{shipmentNumber}
+							 AND CAST(SM.ShipmentDate AS DATE) = CAST(#{shipmentdate} AS DATE)
+							 and (SM.DocumentReceivedOn is not null or SM.PhotoCopy is not null)
+                  UNION
+                   
+				  SELECT  
+					  CASE WHEN COUNT(1) = 0 THEN 0
+						   ELSE 1
+					  END
+				  FROM 
+							Shipment_Master SM INNER JOIN 
+							Shipment_Inventory SI ON 
+							SM.ShipmentId = SI.Shipment_ID 
+				  WHERE 
+							SM.ShipmentNumber                 = #{shipmentNumber}
+							AND CAST(SM.ShipmentDate AS Date) = CAST(#{shipmentdate} AS DATE)
+				 UNION
+                   
+				 SELECT  
+					 CASE WHEN COUNT(1) = 0 THEN 0
+						  ELSE 1
+						  END
+					 FROM 
+						    Shipment_Master SM INNER JOIN 
+						    Shipment_FreightOut SF ON 
+						    SM.ShipmentId = SF.ShipmentID 
+					 WHERE 
+							SM.ShipmentNumber                 = #{shipmentNumber}
+							AND CAST(SM.ShipmentDate AS Date) = CAST(#{shipmentdate} AS DATE)
+
+
+		    )
+		       as Data 
+		   ]]>	
+	</select>
+	
+	<select id="sqlCheckSegmentLevelDuplicateShipments"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+			select	
+			    case when count (*) > 0 then 1
+				else 0 end
+			from
+				Imp_ArrivalManifestByFlight inner join
+				Imp_ArrivalManifestBySegment
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestULD
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			where
+				Imp_ArrivalManifestByFlight.FlightId = #{flightId} and
+				Imp_ArrivalManifestBySegment.FlightSegmentId <> #{flightSegmentId} and
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber =#{shipmentNumber}
+		]]>
+	</select>
+	
+	<select id="sqlGetShipmentExistsInArrivalManifestForAnULDLoose"
+		parameterType="com.ngen.cosys.impbd.model.ArrivalManifestShipmentInfoModel"
+		resultType="java.lang.Boolean">
+		<![CDATA[
+			select	
+			    case when count (*) > 0 then 1
+				else 0 end
+			from
+				Imp_ArrivalManifestByFlight inner join
+				Imp_ArrivalManifestBySegment
+					on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+				Imp_ArrivalManifestULD
+					on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+				Imp_ArrivalManifestShipmentInfo
+					on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+			where
+				Imp_ArrivalManifestByFlight.FlightId = #{flightId} and
+				Imp_ArrivalManifestBySegment.FlightSegmentId = #{flightSegmentId} and
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber =#{shipmentNumber} and
+				Imp_ArrivalManifestShipmentInfo.ShipmentDate =  CAST(#{shipmentdate} AS DATE)
+		]]>
+			<choose>
+				<when test="uldNumber != 'Loose' ">
+					<![CDATA[ and Imp_ArrivalManifestULD.ULDNumber = #{uldNumber} ]]>
+				</when>
+				<otherwise>
+					<![CDATA[ and Imp_ArrivalManifestULD.ULDNumber is null ]]>
+				</otherwise>
+			</choose>
+	</select>
+	
+	
+</mapper>

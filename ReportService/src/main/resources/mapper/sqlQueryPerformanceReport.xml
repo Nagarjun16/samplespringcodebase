@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PerofrmanceReportmapper">
+
+	  <select id="getperofrmanceReport" parameterType="com.ngen.cosys.report.service.poi.model.PerformanceReportModel" resultType="com.ngen.cosys.report.service.poi.model.PerformanceReportModel">
+	  <![CDATA[
+with AllBagInfo as (
+	(select 
+		* 
+	from (
+		select
+			RANK() OVER(PARTITION BY
+						MailBagNumber,
+						FlightKey,
+						FlightDate
+					ORDER BY CreatedDateTime) rank,
+		MailBagNumber,
+		FlightKey BKG_FLT,
+		FlightDate BKG_FLT_DAT,
+		DATEADD(hh, 8, CreatedDateTime) DAT_PA_RCV,
+		case When (select carriercode from Mst_Carrier where CarrierCode = substring(Interface_IncomingMessageFromPostalAuthorities.FlightKey,1,2)) is null
+			 then 'N'
+			 When (select MailHandler from MST_Carrier Where MST_Carrier.CarrierCode=substring(Interface_IncomingMessageFromPostalAuthorities.FlightKey,1,2)) = 'DNATA' THEN 'N'
+			 else 'Y'
+		end as SATS_CAR,
+		isnull(IsValidFlight,0) IsValidFlight
+	from
+		Interface_IncomingMessageFromPostalAuthorities ) A
+	where 
+		rank = 1 and 
+		Cast(BKG_FLT_DAT as date) = #{fromDate})),
+
+BookingInfo as(
+	select 
+		Exp_ShipmentBooking.BookingId,
+		Exp_ShipmentBooking.ShipmentNumber BookingMailBags,
+		Exp_ShipmentFlightBookingDetail.FlightId, 
+		Flt_OperativeFlight.FlightKey as BKG_FLT,
+		Flt_OperativeFlight_Legs.DateSTD BKG_FLT_DAT_RFDT,
+		DATEADD(hh, 8, Exp_FlightEvents.FirstTimeMailManifestCompletedAt) FirstTimeMailManifestCompletedAt
+	from 
+		Exp_ShipmentBooking Inner Join 
+		Exp_ShipmentFlightBookingDetail
+			on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join 
+		Flt_OperativeFlight 
+			on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_Id inner join 
+		Flt_OperativeFlight_Legs 
+			on Flt_OperativeFlight.Flight_Id = Flt_OperativeFlight_Legs.Flight_Id and 
+				Flt_OperativeFlight_Legs.FlightBoardPoint= #{tenantAirport} left join
+		Exp_FlightEvents
+			on Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightId
+		
+	where 
+		cast(Flt_OperativeFlight_Legs.DateSTD as date) = #{fromDate} and 
+		len(Exp_ShipmentBooking.ShipmentNumber) >=29 and Exp_ShipmentFlightBookingDetail.BookingStatusCode='UU'
+	),
+
+
+AcceptanceInfo as(
+	select * from (select 
+		Number as acceptedMailBags,
+		DATEADD(hh, 8, Exp_eAcceptanceHouseInformation.CreatedDateTime) as AA_DAT_RFDT_SCAN, 
+		'SATS' bagType, 
+		0 handedOver,
+		ROW_NUMBER() OVER(PARTITION BY Number  ORDER BY Number) rowNumberForSameBag
+	from 
+		Exp_eAcceptanceHouseInformation inner join 
+		AllBagInfo
+			on Exp_eAcceptanceHouseInformation.Number = AllBagInfo.MailBagNumber 
+	where 
+		Exp_eAcceptanceHouseInformation.TYPE = 'MAIL' and 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}
+	
+	union 
+	
+	select 
+		Number,
+		DATEADD(hh, 8, Exp_OuthouseAcceptanceHouseInformation.CreatedDateTime) , 
+		'DNATA' bagType, 
+		Deliverd handedOver,
+		ROW_NUMBER() OVER(PARTITION BY Number  ORDER BY Number) rowNumberForSameBag
+	from 
+		Exp_OuthouseAcceptanceHouseInformation inner join
+		AllBagInfo 
+			on Exp_OuthouseAcceptanceHouseInformation.Number = AllBagInfo.MailBagNumber 
+	where 
+		Exp_OuthouseAcceptanceHouseInformation.TYPE = 'MAIL' and 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}) A
+		where A.rowNumberForSameBag = 1),
+
+IPSAAInfo as (
+	select 
+		Number, 
+		DateReceiveScan AA_DAT_IPS_SCAN 
+	from 
+		Airmail_Truckdoc_Scan inner join 
+		AllBagInfo 
+			on Airmail_Truckdoc_Scan.Number = AllBagInfo.MailBagNumber
+	Where 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}),
+
+
+DNATAHANDOVERInfo as (
+	select 
+		Number,
+		DATEADD(hh, 8, HandOverDateTime) TA_DAT_SCAN 
+	from 
+		Exp_OuthouseAcceptanceHouseInformation inner join 
+		AllBagInfo 
+			on AllBagInfo.MailBagNumber = Exp_OuthouseAcceptanceHouseInformation.Number
+	where 
+		Type='MAIL' and 
+		Deliverd = 1 and 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}),
+
+MANUALHANDOVERInfo as (
+	select 
+		Number,
+		DATEADD(hh, 8, CreatedDateTime) TA_DAT_SCAN 
+	from 
+		Exp_OuthouseAcceptanceHouseInformation inner join 
+		AllBagInfo 
+			on 
+		AllBagInfo.MailBagNumber = Exp_OuthouseAcceptanceHouseInformation.Number
+	where 
+		Type='MAIL' and 
+		(Deliverd IS NULL OR Deliverd = 0) and 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}),
+
+
+MANIFESTINGInfo as (
+	select
+		Exp_ManifestShipmentHouseInfo.Number,
+		Exp_ManifestULDInfo.ULDNumber CONTAINER,
+		DATEADD(hh, 8, Exp_FlightEvents.MailManifestCompletedAt) HA_DAT_SCAN,
+		FLt_OperativeFlight.FlightKey HA_FLT,
+		Flt_OperativeFlight_Segments.DateSTD HA_FLT_STD,
+		case 
+			when (select MailHandler from MST_Carrier Where CarrierCode=Flt_OperativeFlight.CarrierCode) = 'DNATA' THEN 'N'
+		else 'Y'
+		end as SATS_CAR
+	from
+		Exp_ManifestShipmentHouseInfo inner join
+		Exp_ManifestShipmentInfo
+			on Exp_ManifestShipmentHouseInfo.ManifestShipmentInfoId = Exp_ManifestShipmentInfo.ManifestShipmentInfoId inner join
+		Exp_ManifestULDInfo
+			on Exp_ManifestShipmentInfo.ManifestUldInfoId = Exp_ManifestULDInfo.ManifestUldInfoId inner join
+		Exp_Manifest
+			on Exp_ManifestULDInfo.ManifestId = Exp_Manifest.ManifestId and
+				Exp_ManifestShipmentInfo.ManifestId = Exp_Manifest.ManifestId inner join
+		Shipment_HouseInformation
+			on Exp_ManifestShipmentHouseInfo.Number = Shipment_HouseInformation.Number inner join
+		AllBagInfo
+			on Shipment_HouseInformation.Number = AllBagInfo.MailBagNumber inner join
+		Shipment_Master
+			on Shipment_HouseInformation.ShipmentId = Shipment_Master.ShipmentId inner join
+		Flt_OperativeFlight_Segments
+			on Exp_Manifest.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+		Flt_OperativeFlight
+			on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+		Exp_FlightEvents
+			on Flt_OperativeFlight.Flight_ID = Exp_FlightEvents.FlightId
+	where
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate} and
+		Shipment_Master.ShipmentType='MAIL' AND Exp_ManifestULDInfo.ULDNumber <> 'BULK' AND
+		(MailManifestCompletedAt IS NOT NULL or FirstTimeMailManifestCompletedAt is not null)),
+		
+SHIPMENTHOUSEINFO as (
+		select
+			Number,
+			DATEADD(hh, 8, ManifestedDateTime) HA_DAT_SCAN_FIRST,
+			ManifestedFlight HA_FLT_FIRST,
+			ManifestedFlightDate HA_FLT_STD_FIRST,
+			ManifestedContainerNumber CONTAINER_FIRST,
+			UnloadCount
+		from
+			Shipment_HouseInformation inner join
+			AllBagInfo
+				on Shipment_HouseInformation.Number = AllBagInfo.MailBagNumber
+		where
+			cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}),
+
+OFFLOADEDInfo as(
+	select 
+		Exp_OffloadShipmentHouseInfo.Number,
+		count(Exp_OffloadShipmentHouseInfo.Number) offloadCount
+	from 
+		Exp_OffloadShipmentHouseInfo inner join 
+		Exp_OffloadShipmentInfo
+			on Exp_OffloadShipmentHouseInfo.ExpOffloadShipmentInfoId = Exp_OffloadShipmentInfo.ExpOffloadShipmentInfoId inner join 
+		AllBagInfo 
+			on Exp_OffloadShipmentHouseInfo.Number = AllBagInfo.MailBagNumber inner join 
+		Exp_OffloadULDInfo 
+			on Exp_OffloadShipmentInfo.ExpOffloadULDInfoId = Exp_OffloadULDInfo.ExpOffloadULDInfoId
+	where 
+		cast(AllBagInfo.BKG_FLT_DAT as date) = #{fromDate}
+	group by Exp_OffloadShipmentHouseInfo.Number)
+
+
+
+
+select 
+distinct
+	*
+from (
+	select 
+		AllBagInfo.MailBagNumber BookingMailBags,
+		AllBagInfo.BKG_FLT, 
+		FORMAT(AllBagInfo.BKG_FLT_DAT,'yyyy-MM-dd HH:mm') BKG_FLT_DAT, 
+		case when AllBagInfo.IsValidFlight = 1 then FORMAT(AllBagInfo.BKG_FLT_DAT, 'yyyy-MM-dd HH:mm') else null
+		end as BKG_FLT_DAT_RFDT,
+		ISNULL(AllBagInfo.SATS_CAR,MANIFESTINGInfo.SATS_CAR) SATS_CAR, 
+		BookingInfo.FlightId as bookingFlightId,
+		ABS(DATEDIFF(hour, BookingInfo.BKG_FLT_DAT_RFDT,AllBagInfo.DAT_PA_RCV)) lateLodgeInBagsHours,
+		DATEDIFF(hour,BookingInfo.BKG_FLT_DAT_RFDT, IPSAAInfo.AA_DAT_IPS_SCAN) bookingMinusAA,
+		FORMAT(AcceptanceInfo.AA_DAT_RFDT_SCAN, 'yyyy-MM-dd HH:mm')AA_DAT_RFDT_SCAN, 
+		AcceptanceInfo.bagType, 
+		AcceptanceInfo.handedOver,
+		FORMAT(IPSAAInfo.AA_DAT_IPS_SCAN, 'yyyy-MM-dd HH:mm') AA_DAT_IPS_SCAN, 
+		FORMAT(DNATAHANDOVERInfo.TA_DAT_SCAN,'yyyy-MM-dd HH:mm') TA_DAT_SCAN, 
+		DNATAHANDOVERInfo.Number as dnataHandOverBags,
+		MANUALHANDOVERInfo.Number manualHandoverBags,
+		CONTAINER,
+		FORMAT(HA_DAT_SCAN,'yyyy-MM-dd HH:mm') HA_DAT_SCAN,   
+		MANIFESTINGInfo.HA_FLT, 
+		FORMAT(MANIFESTINGInfo.HA_FLT_STD,'yyyy-MM-dd HH:mm') HA_FLT_STD,
+		FORMAT(SHIPMENTHOUSEINFO.HA_DAT_SCAN_FIRST,'yyyy-MM-dd HH:mm') HA_DAT_SCAN_FIRST, 
+		SHIPMENTHOUSEINFO.HA_FLT_FIRST,
+		FORMAT(SHIPMENTHOUSEINFO.HA_FLT_STD_FIRST,'yyyy-MM-dd HH:mm') HA_FLT_STD_FIRST,
+		SHIPMENTHOUSEINFO.CONTAINER_FIRST,
+		SHIPMENTHOUSEINFO.UnloadCount,
+		'COSYS' SRC_SYS,
+		MANIFESTINGInfo.Number manifestingMbs,
+		ABS(DATEDIFF (hour, SHIPMENTHOUSEINFO.HA_FLT_STD_FIRST, BookingInfo.BKG_FLT_DAT_RFDT)) HA_MINUS_PA_FLT, -- J minus D
+		ABS(DATEDIFF (hour, SHIPMENTHOUSEINFO.HA_DAT_SCAN_FIRST, IPSAAInfo.AA_DAT_IPS_SCAN)) HA_MINUS_AA_IPS, -- H minus F
+		ABS(DATEDIFF (hour, AllBagInfo.BKG_FLT_DAT, IPSAAInfo.AA_DAT_IPS_SCAN)) PA_FLT_MINUS_AA_IPS, -- C minus F
+		ABS(DATEDIFF (hour, AllBagInfo.BKG_FLT_DAT, AcceptanceInfo.AA_DAT_RFDT_SCAN)) PA_FLT_MINUS_AA_RFDT, -- C minus E
+		ABS(DATEDIFF (hour, SHIPMENTHOUSEINFO.HA_DAT_SCAN_FIRST, DNATAHANDOVERInfo.TA_DAT_SCAN)) PA_FLT_MINUS_TA, -- H minus G
+		case 
+			when AllBagInfo.IsValidFlight = 1 then 'N' else 'Y' end as INVALD_PA,
+		FORMAT(AllBagInfo.DAT_PA_RCV,'yyyy-MM-dd HH:mm')DAT_PA_RCV, 
+		OFFLOADEDInfo.offloadCount  RAMP_OFD,
+		null as haAndPACompare,
+		case
+			when (ABS(DATEDIFF(hour,BookingInfo.BKG_FLT_DAT_RFDT,DNATAHANDOVERInfo.TA_DAT_SCAN))) >= 6 then 'PaGreaterthanTA'
+		end as paAndTACompare,
+		case
+			when DATEDIFF(hour,MANIFESTINGInfo.HA_DAT_SCAN,AcceptanceInfo.AA_DAT_RFDT_SCAN) < 24 then 'HaLessThanAAByTwentyFourHrs'
+			when Datediff(hour,MANIFESTINGInfo.HA_DAT_SCAN,AcceptanceInfo.AA_DAT_RFDT_SCAN) > 24 AND MANIFESTINGInfo.HA_DAT_SCAN <= BookingInfo.BKG_FLT_DAT_RFDT then 'HasGeaterThanAAByTwentyFourHrs'
+		end as haAndAACompare,
+		IPSAAInfo.AA_DAT_IPS_SCAN as ipsAAScan,
+		null as paAndIPSAACompare,
+		Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailDescription as mailType,
+		DATEDIFF(minute, case when AllBagInfo.IsValidFlight = 1 then AllBagInfo.BKG_FLT_DAT else null end, SHIPMENTHOUSEINFO.HA_FLT_STD_FIRST) validateEarly
+	from 
+		AllBagInfo left join 
+		BookingInfo 
+			on AllBagInfo.MailBagNumber = BookingInfo.BookingMailBags left join 
+		AcceptanceInfo 
+			on AllBagInfo.MailBagNumber = AcceptanceInfo.acceptedMailBags left join 
+		IPSAAInfo 
+			on AllBagInfo.MailBagNumber = IPSAAInfo.Number left join 
+		DNATAHANDOVERInfo 
+			on AllBagInfo.MailBagNumber = DNATAHANDOVERInfo.Number left join 
+		MANUALHANDOVERInfo 
+			on AllBagInfo.MailBagNumber = MANUALHANDOVERInfo.Number left join 
+		MANIFESTINGInfo 
+			on AllBagInfo.MailBagNumber = MANIFESTINGInfo.Number left join
+		SHIPMENTHOUSEINFO
+			on AllBagInfo.MailBagNumber = SHIPMENTHOUSEINFO.Number left join 
+		OFFLOADEDInfo 
+			on AllBagInfo.MailBagNumber = OFFLOADEDInfo.Number left join 
+		Mst_CodeAdministration_SubGroupDetails 
+			on SUBSTRING(BookingInfo.BookingMailBags,14,2) = Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode and 
+				Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode='MailType' 
+				) A
+Order By 
+	A.BKG_FLT_DAT desc
+
+		  
+			   ]]>
+	  
+	  </select>
+	  
+	  </mapper>
+
+
+			

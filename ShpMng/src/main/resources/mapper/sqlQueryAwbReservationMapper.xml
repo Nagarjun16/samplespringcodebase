@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="AwbReservationMapper">
+
+	<select id="searchNextAwbNumberForReservation"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservationSearch"
+		resultMap="getNextAwbNumberForReservation">
+	<![CDATA[
+		select 
+			top 1
+			Com_AWBStockDetails.AWBStockDetailsId,
+			Com_AWBStockDetails.AWBNumber
+		from
+			Com_AWBStock inner join
+			Com_AWBStockDetails
+				on Com_AWBStockDetails.AWBStockId = Com_AWBStock.AWBStockId
+		where
+			(Com_AWBStockDetails.Reserved is null or Com_AWBStockDetails.Reserved = 0) and
+			(Com_AWBStockDetails.Issued is null or Com_AWBStockDetails.Issued = 0) and
+			(Com_AWBStockDetails.Deleted is null or Com_AWBStockDetails.Deleted = 0) and
+			Com_AWBStock.AWBStockId = #{stockId} and
+			Com_AWBStock.CarrierCode = #{carrierCode}
+		order by 
+			Com_AWBStockDetails.awbSuffix
+	]]>
+	</select>
+	
+	<resultMap
+		type="com.ngen.cosys.shipment.stockmanagement.model.AwbReservationSearch"
+		id="getNextAwbNumberForReservation">
+		<result column="AWBNumber" property="nextAWBNumber" />
+		<result column="awbPrefix" property="awbPrefix" />
+		<result column="AWBStockDetailsId" property="awbStockDetailsId" />
+	</resultMap>
+	
+	<update id="updateStockDetailsForReservation"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservation">
+	<![CDATA[
+		update Com_AWBStockDetails
+		set
+			Reserved = 1,
+			ReservedBy = #{createdBy},
+			ReservedOn = SYSDATETIME()
+		where
+			AWBNumber = #{awbNumber} and 
+			AWBStockDetailsId = #{awbStockDetailsId}
+	]]>
+	</update>
+	
+	<insert id="insertAwbReservationDetails"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservation"
+		useGeneratedKeys="true" keyProperty="awbStockReservationId" keyColumn="AWBStockReservationId">
+	<![CDATA[
+		insert into Com_AWBStockReservation(
+			AWBStockDetailsId,
+			ShipperId,
+			Origin,
+			Destination,
+			FlightKey,
+			FlightDate,
+			TerminalId,
+			Core,
+			CreatedUser_Code,
+			Created_DateTime,
+			LastUpdatedUser_Code,
+			LastUpdated_DateTime,
+			ShipperCode,
+			ShipperName
+		)values(
+			#{awbStockDetailsId},
+			#{shipperId},
+			#{origin},
+			#{destination},
+			#{flightKey},
+			#{flightDate},
+			#{terminalId},
+			#{core},
+			#{createdBy},
+			SYSDATETIME(),
+			null,
+			null,
+			#{shipperCode},
+			#{shipperName}
+		)
+	]]>
+	</insert>
+	
+	<select id="getAwbReservationDetails"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservationSearch"
+		resultMap="awbReservationDetails">
+	<![CDATA[
+		select 
+			Com_AWBStockReservation.AWBStockReservationId,
+			Com_AWBStockReservation.AWBStockDetailsId,
+			(select
+					TOP 1 BookingStatusCode
+				from
+					Exp_ShipmentBooking inner join
+					Exp_ShipmentFlightBookingDetail
+						on Exp_ShipmentBooking.BookingId =  Exp_ShipmentFlightBookingDetail.BookingId
+				where
+					Exp_ShipmentBooking.ShipmentNumber = Com_AWBStockDetails.AWBNumber and
+					Exp_ShipmentFlightBookingDetail.FlightId = flight.Flight_ID and
+					Exp_ShipmentFlightBookingDetail.FlightSegmentId = flight.FlightSegmentId
+			) as Status,
+			isnull(flight.DateATD, flight.DateSTD) as std,
+			flight.FlightOffPoint as Segment,
+			Com_AWBStockReservation.CreatedUser_Code as staff,
+			Com_AWBStockReservation.Created_DateTime as reservationDate,
+			Com_AWBStockReservation.ShipperId,
+			Com_AWBStockReservation.Origin,
+			Com_AWBStockReservation.Destination,
+			Com_AWBStockReservation.FlightKey,
+			Com_AWBStockReservation.FlightDate,
+			Com_AWBStockReservation.TerminalId,
+			Com_AWBStockReservation.Core,
+			Com_AWBStockDetails.AWBNumber,
+			isnull(Customer_Master.CustomerShortName, Com_AWBStockReservation.ShipperName) as shipperName
+		from 
+			Com_AWBStockReservation inner join 
+			Com_AWBStockDetails 
+				on Com_AWBStockDetails.AWBStockDetailsId = Com_AWBStockReservation.AWBStockDetailsId  left join 
+			Customer_Master
+				on Com_AWBStockReservation.ShipperId =  Customer_Master.Customer_ID left join 
+			(select 
+					flight.Flightkey,
+					leg.DateSTD,
+					flight.Flight_ID,
+					flight.FlightStatus,
+					segment.FlightOffPoint,
+					leg.DateATD,
+					segment.FlightSegmentId
+				from 
+					Flt_OperativeFlight flight inner join 
+					Flt_OperativeFlight_Legs leg 
+						on flight.Flight_ID = leg.Flight_ID and 
+							leg.FlightBoardPoint = #{tenantAirport} inner join 
+					Flt_OperativeFlight_Segments segment 
+						on flight.Flight_ID = segment.Flight_ID and 
+							segment.FlightBoardPoint = #{tenantAirport}
+			)flight
+				on Com_AWBStockReservation.FlightKey = flight.FlightKey and 
+					Com_AWBStockReservation.Destination = flight.FlightOffPoint and 
+					cast(Com_AWBStockReservation.FlightDate as date) = cast(flight.DateSTD as date) 
+		where 
+			Com_AWBStockReservation.TerminalId = #{terminalId} and
+			Com_AWBStockReservation.Core = #{core} and 
+			datediff(day,Com_AWBStockReservation.Created_DateTime,getDate()) <= 
+					isnull((select ParameterValueChar from App_SystemParameters where ParameterCode = 'RETURN_RESERVED_AWBS_TO_STOCK'),
+					datediff(day,Com_AWBStockReservation.Created_DateTime,getDate())) and 
+			not exists (select null from Exp_NeutralAWB_Master where AwbNumber = Com_AWBStockDetails.AWBNumber) and 
+			not exists(select null from Exp_eAcceptanceDocumentInformation 
+							where Exp_eAcceptanceDocumentInformation.ShipmentNumber = Com_AWBStockDetails.AWBNumber and
+									isnull(Exp_eAcceptanceDocumentInformation.Accepted, 0) = 1)
+	]]>
+		<if test="destination != null and destination != ''">
+			and Com_AWBStockReservation.Destination = #{destination}
+		</if>
+	</select>
+	
+	<resultMap id="awbReservationDetails"
+		type="com.ngen.cosys.shipment.stockmanagement.model.AwbReservation">
+		<result column="ShipperId" property="shipperId" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="AWBNumber" property="awbNumber" />
+		<result column="Status" property="status" />
+		<result column="shipperName" property="shipperName" />
+		<result column="Segment" property="segment" />
+		<result column="std" property="std" />
+		<result column="staff" property="staff" />
+		<result column="reservationDate" property="reservationDate" javaType="java.time.LocalDateTime" 
+			jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<select id="checkawbReservationExistance"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservation"
+		resultType="java.lang.Integer">
+	<![CDATA[
+		select 
+			count(AWBNumber)
+		from 
+			Com_AWBStockDetails inner join 
+			Com_AWBStockReservation
+				on Com_AWBStockReservation.AWBStockDetailsId = Com_AWBStockDetails.AWBStockDetailsId
+		where 
+			Com_AWBStockDetails.AWBNumber = #{awbNumber}
+	]]>		
+	</select>
+	<update id="updateAwbReservation"
+		parameterType="com.ngen.cosys.shipment.stockmanagement.model.AwbReservation">
+	<![CDATA[
+		update Com_AWBStockReservation
+		set 
+			ShipperId = #{shipperId},
+			Origin = #{origin},
+			Destination = #{destination},
+			FlightKey = #{flightKey},
+			FlightDate = #{flightDate},
+			TerminalId = #{terminalId},
+			Core = #{core},
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = SYSDATETIME(),
+			ShipperCode = #{shipperCode},
+			ShipperName = #{shipperName}
+		where 
+			AWBStockDetailsId =#{awbStockDetailsId}
+	]]>
+	</update>
+
+</mapper>

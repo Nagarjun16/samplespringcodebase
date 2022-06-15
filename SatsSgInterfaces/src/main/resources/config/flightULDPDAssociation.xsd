@@ -1,0 +1,200 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:tns="http://www.sats.com.sg/uldAssociationWebservice"
+            targetNamespace="http://www.sats.com.sg/uldAssociationWebservice" elementFormDefault="qualified">
+    <xsd:element name="FlightAssignedULDRequest">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="FlightNumber" type="xsd:string"
+                             maxOccurs="1" minOccurs="1"/>
+                <xsd:element name="FLightDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="ImportExportFlag" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="FlightAssignedULDResponse">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="FlightNumber" type="xsd:string"
+                             maxOccurs="1" minOccurs="1"/>
+                <xsd:element name="FlightDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="ImportExportFlag" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="STD" type="xsd:string"
+                             maxOccurs="1" minOccurs="1"></xsd:element>
+                <xsd:element name="STA" type="xsd:string"
+                             maxOccurs="1" minOccurs="1"></xsd:element>
+                <xsd:element name="ACReg" type="xsd:string"
+                             maxOccurs="1" minOccurs="0"></xsd:element>
+                <xsd:element name="Bay" type="xsd:string"
+                             maxOccurs="1" minOccurs="0"></xsd:element>
+                <xsd:element name="ULDBTList" type="tns:ULDDetail"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="ULDDetail">
+        <xsd:sequence>
+            <xsd:element name="ULD" type="tns:ULD" maxOccurs="9999"
+                         minOccurs="0">
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ULD">
+        <xsd:sequence>
+            <xsd:element name="ULDNumber" type="xsd:string"
+                         maxOccurs="1" minOccurs="1"></xsd:element>
+            <xsd:element name="ThroughTrasitFlag" type="xsd:string"
+                         maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="AssociatedPD" type="xsd:string"
+                         maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="Status" type="xsd:string"
+                         maxOccurs="1" minOccurs="0"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+
+    <xsd:element name="FlightULDPDAssociationRequest">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="FlightNumber" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="FlightDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="ImportExportFlag" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="AssociatedAssociatedPDList"
+                             type="tns:ULDDetail" maxOccurs="1" minOccurs="1">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="FlightULDPDAssociationResponse">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="Status" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="ErrorDetails" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="FlightAssignedULDChangesRequest">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="ChangeType" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+                <xsd:element name="FlightNumber" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+                <xsd:element name="FLightDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+                <xsd:element name="ImportExportFlag" type="xsd:string"
+                             maxOccurs="1" minOccurs="1">
+                </xsd:element>
+                <xsd:element name="ChangeStartDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+                <xsd:element name="ChangeEndDate" type="xsd:string"
+                             maxOccurs="1" minOccurs="0">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="FlightAssignedULDChangesResponse">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element maxOccurs="unbounded" minOccurs="1" name="FlightDetail" type="tns:FlightChangeDetail">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="FlightChangeDetail">
+        <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="OldFlightNumber" type="xsd:string">
+            </xsd:element>
+            <xsd:element maxOccurs="1" minOccurs="1" name="OldFLightDate" type="xsd:string">
+            </xsd:element>
+            <xsd:element maxOccurs="1" minOccurs="0" name="NewFLightNumber" type="xsd:string">
+            </xsd:element>
+            <xsd:element maxOccurs="1" minOccurs="0" name="NewFLightDate" type="xsd:string">
+            </xsd:element>
+            <xsd:element name="ImportExportFlag" type="xsd:string"
+                         maxOccurs="1" minOccurs="1">
+            </xsd:element>
+            <xsd:element maxOccurs="1" minOccurs="0" name="STD" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="STA" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="ACReg" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="Bay" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="ChangedULDBTList" type="tns:ULDDetail">
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="serviceStatus">
+        <xsd:sequence>
+            <xsd:element name="statusCode" type="xsd:string"/>
+            <xsd:element name="message" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="AuthenticationHeader" type="tns:AuthenticationHeader"/>
+    <xsd:complexType name="AuthenticationHeader">
+        <xsd:sequence>
+            <xsd:element name="messageId" type="xsd:string"/>
+            <xsd:element name="clientId" type="xsd:string"/>
+            <xsd:element name="accessToken" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="ULDReleaseToAgentRequest">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="AgentCode" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+                <xsd:element maxOccurs="1" minOccurs="0" name="ReleaseStartDate" type="xsd:string">
+                </xsd:element>
+                <xsd:element maxOccurs="1" minOccurs="0" name="ReleaseEndDate" type="xsd:string">
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="ULDReleaseToAgentResponse">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="AgentDetail" type="tns:AgentDetail" maxOccurs="unbounded"
+                             minOccurs="1"></xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="AgentDetail">
+        <xsd:sequence>
+            <xsd:element name="AgentCode" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+            <xsd:element name="AgentName" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+            <xsd:element name="ReleaseTime" type="xsd:dateTime" maxOccurs="1" minOccurs="1"></xsd:element>
+            <xsd:element name="ULDReleased" type="tns:ULD" maxOccurs="unbounded" minOccurs="1"></xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>

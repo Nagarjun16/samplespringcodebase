@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DisplayCpmModel">
+
+	<!-- Display Cpm Read Queries -->
+	<resultMap type="com.ngen.cosys.impbd.displaycpm.model.DisplayCpmModel"
+		id="DisplayCpmResultMap">
+		<id column="Flight_ID" property="flightId" />	
+		<result column="FlightKey" property="flight" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="STA" property="sta" />
+		<result column="ETA" property="eta" />
+		<result column="ATA" property="ata" />
+		<result column="AircraftRegCode" property="acRegistration" />
+		<result column="Remarks" property="siRemarks" />		
+		<collection 
+			javaType="List" 
+			property="listDisplayCpmDetails"
+			select="sqlGetDisplayCpmDetailsList" 
+			column="{flightId = Flight_ID}" />
+	</resultMap>
+
+	<select id="sqlGetDisplayCPMInfo"
+		parameterType="com.ngen.cosys.impbd.displaycpm.model.DisplayCpmModel"
+		resultMap="DisplayCpmResultMap">
+		select
+			Flt_OperativeFlight.Flight_ID,
+			Flt_OperativeFlight.FlightKey,
+			cast(Flt_OperativeFlight_Legs.DateSTA as Date) as FlightDate,
+			cast (Flt_OperativeFlight_Legs.DateSTA AS Time) as STA,
+			cast(Flt_OperativeFlight_Legs.DateETA As Time) as ETA,
+			cast(Flt_OperativeFlight_Legs.DateATA As Time)as ATA,
+			isnull(Imp_ContainerPalletMessageByFlight.AircraftRegCode, Flt_OperativeFlight_Legs.AircraftRegCode) AircraftRegCode,
+			Imp_ContainerPalletMessageByFlight.Remarks
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs
+				ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID inner join
+			Imp_ContainerPalletMessageByFlight
+				on Flt_OperativeFlight.Flight_ID = Imp_ContainerPalletMessageByFlight.FlightId
+		WHERE
+			Flt_OperativeFlight.FlightKey=#{flight} and 
+			cast(Flt_OperativeFlight_Legs.DateSTA as date) = #{flightDate} and
+			Flt_OperativeFlight_Legs.FlightOffPoint =#{tenantAirport}
+	</select>
+
+	<resultMap
+		type="com.ngen.cosys.impbd.displaycpm.model.DisplayCpmDetailsModel"
+		id="DisplayCpmDetailsListResultMap">
+		<result column="ULDNumber" property="uldNumber" />
+		<result column="Destination" property="destination" />
+		<result column="Weight" property="weight" />
+		<result column="ContentCodes" property="contentCode" />
+		<result column="Remarks" property="remarks" />
+		<result column="LoadPosition" property="loadPosition" />
+		<result column="SHCS" property="shc" />
+		<result column="LoadingInstructions" property="loadInstruction" />
+		<result column="ContentCodes" property="contentCode" />
+		
+	</resultMap>
+
+	<select id="sqlGetDisplayCpmDetailsList"
+		parameterType="com.ngen.cosys.impbd.displaycpm.model.DisplayCpmModel"
+		resultMap="DisplayCpmDetailsListResultMap">
+		select
+			Imp_ContainerPalletMessageULD.ULDNumber,
+			Imp_ContainerPalletMessageULD.Destination,
+			Imp_ContainerPalletMessageULD.Weight,
+			Imp_ContainerPalletMessageULD.LoadPosition,
+			Imp_ContainerPalletMessageULD.LoadingInstructions,
+			Imp_ContainerPalletMessageULD.ContourCode,
+			Imp_ContainerPalletMessageULD.VolumeCode,
+			CPMSHCInfo.SHCS,
+			CPMULDContentInfo.ContentCodes
+		from
+			Imp_ContainerPalletMessageByFlight inner join
+			Imp_ContainerPalletMessageBySegment
+				on Imp_ContainerPalletMessageByFlight.ImpContainerPalletMessageByFlightId = Imp_ContainerPalletMessageBySegment.ImpContainerPalletMessageByFlightId inner join
+			Imp_ContainerPalletMessageULD
+				on Imp_ContainerPalletMessageBySegment.ImpContainerPalletMessageBySegmentId = Imp_ContainerPalletMessageULD.ImpContainerPalletMessageBySegmentId left join
+			(
+				select outerSHC.ImpContainerPalletMessageULDId,
+					substring((Select 
+									' '+innerSHC.SpecialHandlingCode AS [text()]
+								From 
+									Imp_ContainerPalletMessageULDSHC as innerSHC
+								Where 
+									innerSHC.ImpContainerPalletMessageULDId = outerSHC.ImpContainerPalletMessageULDId
+								ORDER BY 
+									innerSHC.ImpContainerPalletMessageULDId For XML PATH ('')), 2, 1000) as SHCS
+				from
+					Imp_ContainerPalletMessageULDSHC as outerSHC
+				group by
+					outerSHC.ImpContainerPalletMessageULDId
+			) CPMSHCInfo on
+					Imp_ContainerPalletMessageULD.ImpContainerPalletMessageULDId = CPMSHCInfo.ImpContainerPalletMessageULDId left join
+			(
+				select outerContent.ImpContainerPalletMessageULDId,
+					substring((Select 
+									' '+Uld_ContentCodes.ContentCodeDescription AS [text()]
+								From 
+									Imp_ContainerPalletMessageULDContent as innerContent inner join
+									Uld_ContentCodes
+										on innerContent.ContentCode = Uld_ContentCodes.ContentCode									
+								Where 
+									innerContent.ImpContainerPalletMessageULDId = outerContent.ImpContainerPalletMessageULDId
+								ORDER BY 
+									innerContent.ImpContainerPalletMessageULDId For XML PATH ('')), 2, 1000) as ContentCodes
+				from
+					Imp_ContainerPalletMessageULDContent as outerContent
+				group by
+					outerContent.ImpContainerPalletMessageULDId
+			) CPMULDContentInfo on
+					Imp_ContainerPalletMessageULD.ImpContainerPalletMessageULDId = CPMULDContentInfo.ImpContainerPalletMessageULDId
+
+		WHERE
+			Imp_ContainerPalletMessageByFlight.FlightId = #{flightId}
+	</select>
+
+</mapper>	

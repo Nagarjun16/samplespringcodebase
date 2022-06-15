@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="sidMapper">
+
+	<select id="fetchSIDList" parameterType="com.ngen.cosys.shipment.nawb.model.SearchSIDRQ"
+		resultType="com.ngen.cosys.shipment.nawb.model.SIDHeaderDetail">
+		
+	SELECT distinct sidHeader.SIDHeaderId as sidHeaderId,sidHeader.RequestNumber as sidNumber,
+		sidHeader.ShipmentNumber as shipmentNumber,sidHeader.Status as status,sidHeader.Created_DateTime as createdOn,
+ 		sidHeader.CreatedUser_Code as createdBy,(select name from Agt_SIDCustomerDtls where SIDHeaderId=sidHeader.SIDHeaderId
+  		AND customerType='SHP')   as shipperName ,(select name from Agt_SIDCustomerDtls where
+  		SIDHeaderId=sidHeader.SIDHeaderId AND customerType='CNE') as consigneeName ,'R' as
+		"flagCRUD"
+  		FROM Agt_SIDHeader sidHeader INNER JOIN Agt_SIDCarrierRouting sidCarrRouting 
+  		ON sidHeader.SIDHeaderId=sidCarrRouting.SIDHeaderId
+   		LEFT JOIN Exp_NeutralAWB_Master nawbMaster ON nawbMaster.AWBNumber=sidHeader.ShipmentNumber     
+		LEFT JOIN Com_AWBStockDetails as stockDetails ON stockDetails.AwbNumber=nawbMaster.AWBNumber
+		LEFT JOIN Com_AWBStock as awbStock ON awbStock.AWBStockId=stockDetails.AWBStockId 
+   		where 1=1 		
+		<if test="sidNumber !=null and sidNumber != '' ">
+			AND sidHeader.RequestNumber = #{sidNumber}
+		</if>
+		<if test="shipmentNumber !=null and shipmentNumber != '' ">
+			AND sidHeader.ShipmentNumber = #{shipmentNumber}
+		</if>
+		<if test="status !=null and status != '' ">
+			AND sidHeader.Status = #{status}
+		</if>
+		<if test="carrierCode !=null and carrierCode != '' ">
+			AND sidCarrRouting.CarrierCode = #{carrierCode}
+		</if>
+		<if test="fromDate != null and toDate != null">
+			AND sidHeader.Created_DateTime BETWEEN #{fromDate}  AND #{toDate}
+		</if>
+ 		<if test="handlingTerminal !=null and handlingTerminal != '' ">
+			AND nawbMaster.HandlingArea = #{handlingTerminal}
+		</if>
+		<if test="stockId !=null and stockId != '' ">
+			AND awbStock.stockId = #{stockId}
+		</if>  
+	</select>
+	
+	<select id="fetchAWBFromStockList" parameterType="com.ngen.cosys.shipment.nawb.model.SearchStockRQ"
+		resultType="com.ngen.cosys.shipment.nawb.model.Stock">
+	 with StockInformation as
+              (select         
+                           ROW_NUMBER() OVER(ORDER BY 
+                                                stock.StockId + 0) rownumber, 
+                            stock.StockId,
+                            stock.AWBStockId AWBStockId,
+                            stock.CarrierCode,
+                            stock.StockCategoryCode,
+                            stockDetails.AWBStockDetailsId AWBStockDetailsId,
+                            stockDetails.AWBNumber
+                     from   
+                            Com_AWBStock stock  inner join 
+                            Com_AWBStockDetails stockDetails    
+                                    on stock.AWBStockId=stockDetails.AWBStockId 
+                     where 
+                            isnull(stockDetails.Reserved, 0) != 1 and
+                            isnull(stockDetails.Issued, 0) != 1 and
+                            isnull(stockDetails.Deleted, 0) != 1 and
+                            isnull(stockDetails.Duplicated, 0) != 1 and
+                            isnull(stockDetails.Processing, 0) != 1 and
+                            Cancelled is null and
+                            Booked is null and
+                            Printed is null 
+                            <if test="stockCategoryCode !=null and stockCategoryCode != '' ">
+							  and  stock.StockCategoryCode =  #{stockCategoryCode}
+							</if>
+							<if test="carrierCode !=null and carrierCode != '' "> 
+							  and stock.CarrierCode = #{carrierCode}
+							</if>
+							<if test="stockId !=null and stockId != '' "> 
+							  and stock.StockId = #{stockId}
+							</if>)
+                       
+           select        
+                     StockInformation.AWBStockDetailsId as awbStockDetailsId,
+                     StockInformation.AWBStockId as awbStockId,
+                     StockInformation.AWBNumber as awbNumber, 
+                     StockInformation.StockId as stockId, 
+                     StockInformation.CarrierCode as carrierCode,
+                     StockInformation.StockCategoryCode as stockCategoryCode, 
+                     'R' as "flagCRUD" 
+          from         
+                     StockInformation  inner join
+                     Com_AWBStock 
+                                    	on StockInformation.AWBStockId = Com_AWBStock.AWBStockId and 
+                                           StockInformation.rownumber=(select min(rownumber) from StockInformation) 
+               where 
+                    1=1			
+					<if test="stockCategoryCode !=null and stockCategoryCode != '' ">
+					  and  StockInformation.StockCategoryCode =  #{stockCategoryCode}
+					</if>
+					<if test="carrierCode !=null and carrierCode != '' "> 
+					  and StockInformation.CarrierCode = #{carrierCode}
+					</if>
+					<if test="stockId !=null and stockId != '' "> 
+					  and StockInformation.StockId = #{stockId}
+					</if>
+               order by
+						 StockInformation.CarrierCode,
+						 StockInformation.StockCategoryCode  	       
+	</select>
+	
+	<select id="searchSIDDetails" resultMap="sidMasterModelResultMap" parameterType="java.math.BigInteger">
+	 SELECT SIDHeaderId,RequestNumber,ShipmentNumber,Pieces,HandlingInformation,NatureOfGoodsDescription,Status, 'R' as
+		"flagCRUD"
+  		FROM Agt_SIDHeader where SIDHeaderId = #{sidHeaderId}
+	</select>
+	
+	<resultMap id="sidMasterModelResultMap" type="com.ngen.cosys.shipment.nawb.model.NeutralAWBMaster">
+		<id column="SIDHeaderId" property="sidHeaderId" />
+		<result column="RequestNumber" property="sidNumber" />
+		<result column="ShipmentNumber" property="awbNumber" />
+		<result column="Pieces" property="pieces" />
+		<result column="HandlingInformation" property="handlingInformation" />
+		<result column="NatureOfGoodsDescription" property="natureOfGoodsDescription" />
+		<result column="flagCRUD" property="flagCRUD" />
+		<result column="Status" property="status" />
+		<association property="consigneeInfo" javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetConsigneeInfo"
+          column="sidHeaderId=sidHeaderId" /> 
+        <association property="shipperInfo" javaType="com.ngen.cosys.shipment.model.CustomerInfo" select="sqlGetShipperInfo"
+          column="sidHeaderId=sidHeaderId" />  
+         <association property="chargeDeclaration" javaType="com.ngen.cosys.shipment.model.ChargeDeclaration" select="sqlGetChargeDeclarationInfo"
+          column="sidHeaderId=sidHeaderId" />  
+        <association property="routing" javaType="com.ngen.cosys.shipment.model.Routing" select="sqlGetRouting"
+          column="sidHeaderId=sidHeaderId" /> 
+	</resultMap>
+
+	<select id="sqlGetConsigneeInfo" resultMap="getCustomerInfoModels" parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+      SELECT SIDCustomerDtlsId,SIDHeaderId,CustomerType,Name, 'R' as
+		"flagCRUD"
+ 	  FROM Agt_SIDCustomerDtls where
+      SIDHeaderId = #{sidHeaderId} and CustomerType = 'CNE'		
+	</select>
+	<select id="sqlGetShipperInfo" resultMap="getCustomerInfoModels" parameterType="com.ngen.cosys.shipment.model.CustomerInfo">
+      SELECT SIDCustomerDtlsId,SIDHeaderId,CustomerType,Name, 'R' as
+		"flagCRUD"
+ 	  FROM Agt_SIDCustomerDtls where
+      SIDHeaderId = #{sidHeaderId} and CustomerType = 'SHP'		
+	</select>
+	
+	<select id="sqlGetConsigneeAddressInfo" resultMap="getConsigneeAddressInfoModels" parameterType="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+      SELECT SIDCustomerAddressInfoId,SIDCustomerDtlsId,StreetAddress1,StreetAddress2
+      ,CustomerPlace,StateCode,CountryCode,PostalCode, 'R' as
+		"flagCRUD"
+  	  FROM Agt_SIDCustAddressInfo where
+      SIDCustomerDtlsId = #{sidCustomerDtlsId}		
+	</select>
+
+	<select id="sqlGetConsigneeContactInfo" resultMap="getConsigneeContactInfoModels" parameterType="com.ngen.cosys.shipment.model.CustomerContactInfo">
+     SELECT SIDCustomerContactInfoId,SIDCustomerAddressInfoId,ContactIdentifier,ContactDetail, 'R' as
+		"flagCRUD"
+ 	 FROM Agt_SIDCustContactInfo where
+     SIDCustomerAddressInfoId = #{sidCustomerAddressInfoId}		
+	</select>
+	
+	<select id="sqlGetRouting" resultMap="getRoutingModels" parameterType="com.ngen.cosys.shipment.model.Routing">
+       SELECT SIDHeaderId,TransactionSequenceNo,FromPoint,ToPoint,CarrierCode,FlightKey,FlightDate, 'R' as
+		"flagCRUD"
+  	   FROM Agt_SIDCarrierRouting where
+       SIDHeaderId = #{sidHeaderId}		
+	</select>
+	
+	<select id="sqlGetChargeDeclarationInfo" resultMap="getChargeDeclarationModels" parameterType="com.ngen.cosys.shipment.model.Routing">
+       SELECT SIDHeaderId,
+   		CASE 
+  		 WHEN WeightValuationCharges = 'COL' THEN 'C' 
+   		 WHEN WeightValuationCharges = 'PPD' THEN 'P'     
+   		END AS WeightValuationCharges 
+   		,CurrencyCode,CarriageValue,CustomsValue, 'R' as
+		"flagCRUD"
+   		FROM Agt_SIDPaymentInfo where
+      	SIDHeaderId = #{sidHeaderId}		
+	</select>
+	
+	<resultMap id="getRoutingModels"
+		type="com.ngen.cosys.shipment.model.Routing">
+		<id property="sidHeaderId" column="SIDHeaderId" jdbcType="INTEGER" />
+		<result column="FromPoint" property="from" />
+		<result column="ToPoint" property="to" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="flagCRUD" property="flagCRUD" />
+	</resultMap>
+
+	<resultMap id="getCustomerInfoModels"
+		type="com.ngen.cosys.shipment.model.CustomerInfo">
+		<id property="sidHeaderId" column="SIDHeaderId" jdbcType="INTEGER" />
+		<id property="sidCustomerDtlsId" column="SIDCustomerDtlsId" jdbcType="INTEGER" />
+		<id property="customerType" column="CustomerType" jdbcType="VARCHAR" />
+		<result column="Name" property="customerName" />
+		 <result column="flagCRUD" property="flagCRUD" />
+		<association property="customerAddressInfo" javaType="com.ngen.cosys.shipment.model.CustomerAddressInfo" select="sqlGetConsigneeAddressInfo"
+          column="sidCustomerDtlsId=sidCustomerDtlsId" />  
+         
+	</resultMap>
+	<resultMap id="getConsigneeAddressInfoModels"
+		type="com.ngen.cosys.shipment.model.CustomerAddressInfo">
+		<id property="sidCustomerAddressInfoId" column="SIDCustomerAddressInfoId" jdbcType="INTEGER" />
+		<id property="sidCustomerDtlsId" column="SIDCustomerDtlsId" jdbcType="INTEGER" />
+		<result column="StreetAddress1" property="streetAddress1" />
+		<result column="StreetAddress2" property="streetAddress2" />
+		<result column="CustomerPlace" property="customerPlace" />
+		<result column="StateCode" property="stateCode" />
+		<result column="CountryCode" property="countryCode" />
+		<result column="PostalCode" property="postalCode" />
+		<result column="flagCRUD" property="flagCRUD" />
+		<collection property="customerContactInfo" javaType="List" ofType="com.ngen.cosys.shipment.model.CustomerContactInfo" select="sqlGetConsigneeContactInfo"
+          column="sidCustomerAddressInfoId=sidCustomerAddressInfoId" />	
+	</resultMap>
+
+	<resultMap id="getConsigneeContactInfoModels"
+		type="com.ngen.cosys.shipment.model.CustomerContactInfo">
+		<id property="sidCustomerAddressInfoId" column="SIDCustomerAddressInfoId" jdbcType="INTEGER" />
+		<result column="ContactIdentifier" property="contactIdentifier" />
+		<result column="ContactDetail" property="contactDetail"/>		
+		<result column="flagCRUD" property="flagCRUD" />
+	</resultMap>
+	
+	<resultMap id="getChargeDeclarationModels"
+		type="com.ngen.cosys.shipment.model.ChargeDeclaration">
+		<id property="sidHeaderId" column="SIDHeaderId" jdbcType="INTEGER" />
+		<result column="WeightValuationCharges" property="prepaIdCollectChargeDeclaration" />
+		<result column="CurrencyCode" property="currencyCode"/>
+		<result column="CarriageValue" property="carriageValueDeclaration"/>	
+		<result column="flagCRUD" property="flagCRUD" />	
+		<result column="CustomsValue" property="customsValueDeclaration"/>		
+	</resultMap>
+	
+   <update id="updateInProcessForSelectedAwbNumber" parameterType="com.ngen.cosys.shipment.nawb.model.SearchStockRQ">
+		update
+		Com_AWBStockDetails set Processing =  1,
+		LastUpdatedUser_Code = #{modifiedBy},
+	    LastUpdated_DateTime = #{modifiedOn}
+		where awbStockDetailsId = #{awbStockDetailsId} 
+	</update>
+	
+	<select id="checkInProcess" parameterType="com.ngen.cosys.shipment.nawb.model.NeutralAWBMaster"
+		resultType="java.math.BigInteger">
+		select Processing from Com_AWBStockDetails where awbStockDetailsId = #{awbStockDetailsId} 	
+	</select>
+	<select id="sqlQueryCHeckIfImportShipmentNAWB"
+	 parameterType="com.ngen.cosys.shipment.nawb.model.SearchNAWBRQ"
+	 resultType="java.lang.Boolean">
+	 SELECT
+       CASE
+              WHEN COUNT(1) > 0
+                     THEN 1
+                     ELSE 0
+       END
+		FROM
+       Shipment_Master
+		WHERE
+       ShipmentNumber  = #{awbNumber}
+       AND Destination in (#{tenantAirport}, #{tenantCity})
+       and not exists
+       (
+              SELECT AwbNumber
+              FROM
+                     Exp_NeutralAWB_Master
+              WHERE
+                     AwbNumber=#{awbNumber}
+       )
+	 </select>
+
+	
+</mapper>

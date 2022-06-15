@@ -1,0 +1,1295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="startedAt" id="70">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="completedAt" id="71">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="handlingTerminalCode" id="72">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="locationType" id="73">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="status" id="74">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="4">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCDEV</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="86">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">WhsInventoryCheckForLocationId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">WhsInventoryCheckForLocationId</text-property>
+                    <text-property name="heading">WhsInventoryCheckForLocationId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">HandlingTerminalCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">HandlingTerminalCode</text-property>
+                    <text-property name="heading">HandlingTerminalCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">LocationType</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">LocationType</text-property>
+                    <text-property name="heading">LocationType</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">WhsSectorId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">WhsSectorId</text-property>
+                    <text-property name="heading">WhsSectorId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">LocationCodeFrom</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">LocationCodeFrom</text-property>
+                    <text-property name="heading">LocationCodeFrom</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">LocationCodeTo</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">LocationCodeTo</text-property>
+                    <text-property name="heading">LocationCodeTo</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Status</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Status</text-property>
+                    <text-property name="heading">Status</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">StartedAt</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">StartedAt</text-property>
+                    <text-property name="heading">StartedAt</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">startedBy</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">startedBy</text-property>
+                    <text-property name="heading">startedBy</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CompletedAt</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CompletedAt</text-property>
+                    <text-property name="heading">CompletedAt</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">completedBy</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">completedBy</text-property>
+                    <text-property name="heading">completedBy</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">numberOfDiscrepancy</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">numberOfDiscrepancy</text-property>
+                    <text-property name="heading">numberOfDiscrepancy</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">foundShipments</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">foundShipments</text-property>
+                    <text-property name="heading">foundShipments</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">notFoundShipments</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">notFoundShipments</text-property>
+                    <text-property name="heading">notFoundShipments</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">notScannedLocations</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">notScannedLocations</text-property>
+                    <text-property name="heading">notScannedLocations</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">scannedLocations</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">scannedLocations</text-property>
+                    <text-property name="heading">scannedLocations</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">numberOfShipmentsStored</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">numberOfShipmentsStored</text-property>
+                    <text-property name="heading">numberOfShipmentsStored</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">numberOfLocations</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">numberOfLocations</text-property>
+                    <text-property name="heading">numberOfLocations</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">startedAt</property>
+                    <property name="paramName">startedAt</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">completedAt</property>
+                    <property name="paramName">completedAt</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">2</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">handlingTerminalCode</property>
+                    <property name="paramName">handlingTerminalCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">3</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">locationType</property>
+                    <property name="paramName">locationType</property>
+                    <property name="dataType">string</property>
+                    <property name="position">4</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">status</property>
+                    <property name="paramName">status</property>
+                    <property name="dataType">string</property>
+                    <property name="position">5</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">WhsInventoryCheckForLocationId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">HandlingTerminalCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">LocationType</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">WhsSectorId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">LocationCodeFrom</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">LocationCodeTo</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">Status</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">StartedAt</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">startedBy</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">CompletedAt</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">completedBy</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">numberOfDiscrepancy</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">foundShipments</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">notFoundShipments</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">notScannedLocations</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">scannedLocations</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">numberOfShipmentsStored</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">numberOfLocations</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">WhsInventoryCheckForLocationId</property>
+                    <property name="nativeName">WhsInventoryCheckForLocationId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">HandlingTerminalCode</property>
+                    <property name="nativeName">HandlingTerminalCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">LocationType</property>
+                    <property name="nativeName">LocationType</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">WhsSectorId</property>
+                    <property name="nativeName">WhsSectorId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">LocationCodeFrom</property>
+                    <property name="nativeName">LocationCodeFrom</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">LocationCodeTo</property>
+                    <property name="nativeName">LocationCodeTo</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">Status</property>
+                    <property name="nativeName">Status</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">StartedAt</property>
+                    <property name="nativeName">StartedAt</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">startedBy</property>
+                    <property name="nativeName">startedBy</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">CompletedAt</property>
+                    <property name="nativeName">CompletedAt</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">completedBy</property>
+                    <property name="nativeName">completedBy</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">numberOfDiscrepancy</property>
+                    <property name="nativeName">numberOfDiscrepancy</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">foundShipments</property>
+                    <property name="nativeName">foundShipments</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">notFoundShipments</property>
+                    <property name="nativeName">notFoundShipments</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">notScannedLocations</property>
+                    <property name="nativeName">notScannedLocations</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">scannedLocations</property>
+                    <property name="nativeName">scannedLocations</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">numberOfShipmentsStored</property>
+                    <property name="nativeName">numberOfShipmentsStored</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">numberOfLocations</property>
+                    <property name="nativeName">numberOfLocations</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[SELECT WhsInventoryCheckForLocationId
+		,HandlingTerminalCode
+		,LocationType
+		,WhsSectorId
+		,LocationCodeFrom
+		,LocationCodeTo
+		,Status
+		,StartedAt
+		,startedBy
+		,CompletedAt
+		,completedBy
+		,(select count(distinct
+		DiscrepancyFoundWithOriginal) from
+		Whs_InventoryCheckForLocationShipmentList
+		where
+		Whs_InventoryCheckForLocationShipmentList.WhsInventoryCheckForLocationId=Whs_InventoryCheckForLocation.WhsInventoryCheckForLocationId
+		and DiscrepancyFoundWithOriginal= 1) as numberOfDiscrepancy
+		,(select
+		count(FoundShipment) from Whs_InventoryCheckForLocationShipmentList
+		where
+		Whs_InventoryCheckForLocationShipmentList.WhsInventoryCheckForLocationId=Whs_InventoryCheckForLocation.WhsInventoryCheckForLocationId
+		and FoundShipment=1) as foundShipments
+		,(select count(*) from Shipment_Inventory where WarehouseLocation
+		between Whs_InventoryCheckForLocation.LocationCodeFrom and Whs_InventoryCheckForLocation.LocationCodeTo and Shipment_ID not in (
+		select ShipmentId from Whs_InventoryCheckForLocationShipmentList
+		where WhsInventoryCheckForLocationId = Whs_InventoryCheckForLocation.WhsInventoryCheckForLocationId) ) as notFoundShipments
+		,(select count(distinct
+		ScannedLocationCode) from Whs_InventoryCheckForLocationShipmentList
+		where
+		Whs_InventoryCheckForLocationShipmentList.WhsInventoryCheckForLocationId=Whs_InventoryCheckForLocation.WhsInventoryCheckForLocationId
+		and ManuallyEntered = 1)
+		as notScannedLocations
+		,(select count(distinct
+		ScannedLocationCode) from Whs_InventoryCheckForLocationShipmentList
+		where
+		Whs_InventoryCheckForLocationShipmentList.WhsInventoryCheckForLocationId=Whs_InventoryCheckForLocation.WhsInventoryCheckForLocationId
+		and (ManuallyEntered = 0 or ManuallyEntered is NULL))
+		as
+		scannedLocations
+		,(select count(distinct
+		Shipment_ID) from
+		Shipment_Inventory
+		where 
+		WarehouseLocation between
+		Whs_InventoryCheckForLocation.LocationCodeFrom and
+		Whs_InventoryCheckForLocation.LocationCodeTo)
+		as numberOfShipmentsStored
+		,(Select count(*) from Whs_Location
+		where Whs_Location.LocationCode between
+		Whs_InventoryCheckForLocation.LocationCodeFrom and
+		Whs_InventoryCheckForLocation.LocationCodeTo
+		) as numberOfLocations
+		FROM
+		Whs_InventoryCheckForLocation
+		where
+		cast(Whs_InventoryCheckForLocation.StartedAt as date) >= cast(? as date) and
+		cast(Whs_InventoryCheckForLocation.StartedAt as date) <= cast(? as date)
+		and
+		Whs_InventoryCheckForLocation.HandlingTerminalCode = ISNULL(?,HandlingTerminalCode)
+		and
+		Whs_InventoryCheckForLocation.LocationType= ISNULL(?,LocationType)
+		and Whs_InventoryCheckForLocation.Status= ISNULL(?,Status)
+		
+		]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>WhsInventoryCheckForLocationId</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>WhsInventoryCheckForLocationId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>WhsInventoryCheckForLocationId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>HandlingTerminalCode</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>6</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>HandlingTerminalCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>HandlingTerminalCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>LocationType</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>LocationType</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>LocationType</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>WhsSectorId</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>WhsSectorId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>WhsSectorId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>LocationCodeFrom</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>LocationCodeFrom</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>LocationCodeFrom</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>LocationCodeTo</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>LocationCodeTo</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>LocationCodeTo</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Status</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Status</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Status</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>StartedAt</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>StartedAt</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>StartedAt</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>startedBy</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>startedBy</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>startedBy</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CompletedAt</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CompletedAt</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CompletedAt</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>completedBy</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>64</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>completedBy</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>completedBy</design:label>
+            <design:formattingHints>
+              <design:displaySize>64</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>numberOfDiscrepancy</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>numberOfDiscrepancy</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>numberOfDiscrepancy</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>foundShipments</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>foundShipments</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>foundShipments</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>notFoundShipments</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>notFoundShipments</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>notFoundShipments</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>notScannedLocations</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>notScannedLocations</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>notScannedLocations</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>scannedLocations</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>scannedLocations</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>scannedLocations</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>numberOfShipmentsStored</design:name>
+              <design:position>17</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>numberOfShipmentsStored</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>numberOfShipmentsStored</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>numberOfLocations</design:name>
+              <design:position>18</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>4</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>numberOfLocations</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>numberOfLocations</design:label>
+            <design:formattingHints>
+              <design:displaySize>11</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="type">us-ledger</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <table id="88">
+            <property name="width">10.447916666666666in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">HandlingTerminalCode</property>
+                    <text-property name="displayName">HandlingTerminalCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HandlingTerminalCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">LocationType</property>
+                    <text-property name="displayName">LocationType</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["LocationType"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">StartedAt</property>
+                    <text-property name="displayName">StartedAt</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["StartedAt"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+                <structure>
+                    <property name="name">numberOfLocations</property>
+                    <text-property name="displayName">numberOfLocations</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["numberOfLocations"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">numberOfShipmentsStored</property>
+                    <text-property name="displayName">numberOfShipmentsStored</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["numberOfShipmentsStored"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">scannedLocations</property>
+                    <text-property name="displayName">scannedLocations</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["scannedLocations"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">notScannedLocations</property>
+                    <text-property name="displayName">notScannedLocations</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["notScannedLocations"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">numberOfDiscrepancy</property>
+                    <text-property name="displayName">numberOfDiscrepancy</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["numberOfDiscrepancy"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">foundShipments</property>
+                    <text-property name="displayName">foundShipments</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["foundShipments"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">notFoundShipments</property>
+                    <text-property name="displayName">notFoundShipments</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["notFoundShipments"]</expression>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="name">Status</property>
+                    <text-property name="displayName">Status</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Status"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+            </list-property>
+            <column id="128">
+                <property name="width">0.875in</property>
+            </column>
+            <column id="129">
+                <property name="width">1.1041666666666667in</property>
+            </column>
+            <column id="130">
+                <property name="width">0.8229166666666666in</property>
+            </column>
+            <column id="131">
+                <property name="width">0.90625in</property>
+            </column>
+            <column id="132">
+                <property name="width">0.78125in</property>
+            </column>
+            <column id="133">
+                <property name="width">0.7604166666666666in</property>
+            </column>
+            <column id="134">
+                <property name="width">0.875in</property>
+            </column>
+            <column id="135">
+                <property name="width">0.8645833333333334in</property>
+            </column>
+            <column id="136">
+                <property name="width">0.8645833333333334in</property>
+            </column>
+            <column id="137">
+                <property name="width">0.8645833333333334in</property>
+            </column>
+            <column id="138">
+                <property name="width">0.8645833333333334in</property>
+            </column>
+            <column id="139">
+                <property name="width">0.8645833333333334in</property>
+            </column>
+            <header>
+                <row id="89">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <property name="height">0.9375in</property>
+                    <cell id="90">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="57">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">g.terminal</text-property>
+                        </label>
+                    </cell>
+                    <cell id="91">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="58">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.locationtype</text-property>
+                        </label>
+                    </cell>
+                    <cell id="92">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="59">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.inventory.checkstart.datetime</text-property>
+                        </label>
+                    </cell>
+                    <cell id="93">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="60">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.checkcomplete.datetime</text-property>
+                        </label>
+                    </cell>
+                    <cell id="94">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="61">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.numberoflocations</text-property>
+                        </label>
+                    </cell>
+                    <cell id="95">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="62">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.numberofshipment.stored</text-property>
+                        </label>
+                    </cell>
+                    <cell id="96">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="63">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.scanned.entered.location</text-property>
+                        </label>
+                    </cell>
+                    <cell id="97">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="64">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.notscanned.entered.location</text-property>
+                        </label>
+                    </cell>
+                    <cell id="98">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="65">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.numberof.discrepancy</text-property>
+                        </label>
+                    </cell>
+                    <cell id="99">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="66">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.foundshipments</text-property>
+                        </label>
+                    </cell>
+                    <cell id="100">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <label id="67">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">warehouse.shpiments.notfound</text-property>
+                        </label>
+                    </cell>
+                    <cell id="101">
+                        <label id="68">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontWeight">bold</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">g.status</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="102">
+                    <property name="borderBottomStyle">solid</property>
+                    <property name="borderBottomWidth">thin</property>
+                    <property name="borderLeftStyle">solid</property>
+                    <property name="borderLeftWidth">thin</property>
+                    <property name="borderRightStyle">solid</property>
+                    <property name="borderRightWidth">thin</property>
+                    <property name="borderTopStyle">solid</property>
+                    <property name="borderTopWidth">thin</property>
+                    <property name="height">0.6145833333333334in</property>
+                    <cell id="103">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="140">
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">HandlingTerminalCode</property>
+                        </data>
+                    </cell>
+                    <cell id="104">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="141">
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">LocationType</property>
+                        </data>
+                    </cell>
+                    <cell id="105">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="142">
+                            <property name="resultSetColumn">StartedAt</property>
+                        </data>
+                    </cell>
+                    <cell id="106">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                    </cell>
+                    <cell id="107">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="143">
+                            <property name="resultSetColumn">numberOfLocations</property>
+                        </data>
+                    </cell>
+                    <cell id="108">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="144">
+                            <property name="resultSetColumn">numberOfShipmentsStored</property>
+                        </data>
+                    </cell>
+                    <cell id="109">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="145">
+                            <property name="resultSetColumn">scannedLocations</property>
+                        </data>
+                    </cell>
+                    <cell id="110">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="146">
+                            <property name="resultSetColumn">notScannedLocations</property>
+                        </data>
+                    </cell>
+                    <cell id="111">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="147">
+                            <property name="resultSetColumn">numberOfDiscrepancy</property>
+                        </data>
+                    </cell>
+                    <cell id="112">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="148">
+                            <property name="resultSetColumn">foundShipments</property>
+                        </data>
+                    </cell>
+                    <cell id="113">
+                        <property name="borderRightStyle">solid</property>
+                        <property name="borderRightWidth">thin</property>
+                        <data id="149">
+                            <property name="resultSetColumn">notFoundShipments</property>
+                        </data>
+                    </cell>
+                    <cell id="114">
+                        <data id="150">
+                            <property name="resultSetColumn">Status</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="115">
+                    <cell id="116"/>
+                    <cell id="117"/>
+                    <cell id="118"/>
+                    <cell id="119"/>
+                    <cell id="120"/>
+                    <cell id="121"/>
+                    <cell id="122"/>
+                    <cell id="123"/>
+                    <cell id="124"/>
+                    <cell id="125"/>
+                    <cell id="126"/>
+                    <cell id="127"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

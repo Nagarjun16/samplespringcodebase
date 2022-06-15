@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AutoMrsSend">
+
+	<select id="mrsConfigUrl"   resultType="java.lang.String">
+	<![CDATA[
+		select ParameterValueChar from App_SystemParameters
+		where ParameterCode = 'BILLING_INTERFACE_API_SERVER'
+	]]>
+	</select>
+	
+	<select id="getFlightsToSendMrs"
+		resultType="com.ngen.cosys.model.FlightModel">
+select
+			CustomsFlights.CustomsFlightId,
+					CustomsFlights.FlightKey,  
+					CustomsFlights.FlightDate,
+					CustomsFlights.FlightBoardPoint, 
+					CustomsFlights.FlightOffPoint, 
+					CustomsFlights.FlightType, 
+					CustomsFlights.ImportExportIndicator,
+					CustomsFlights.DifferenceOfDays
+		from
+			(
+				select 
+					
+					Customs_Flight.ImportExportIndicator,
+					DateDiff(day,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays,
+					Customs_Flight.FlightKey,  
+					Customs_Flight.FlightDate,
+					Customs_Flight.FlightBoardPoint, 
+					Customs_Flight.FlightOffPoint, 
+					Customs_Flight.FlightType,  
+					Customs_Flight.CustomsFlightId,
+					Customs_Flight.FMAAcknowledgeDate
+				from
+					Customs_Flight
+				where
+					 Customs_Flight.MRSSentDate IS NULL
+			)CustomsFlights
+		group by
+			CustomsFlights.CustomsFlightId,
+			CustomsFlights.ImportExportIndicator,
+			CustomsFlights.DifferenceOfDays,
+			CustomsFlights.FlightKey,  
+					CustomsFlights.FlightDate,
+					CustomsFlights.FlightBoardPoint, 
+					CustomsFlights.FlightOffPoint, 
+					CustomsFlights.FlightType, 
+					CustomsFlights.ImportExportIndicator,
+					CustomsFlights.FMAAcknowledgeDate
+		having
+			(CustomsFlights.ImportExportIndicator = 'I' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR IMPORT')) OR
+			
+			(CustomsFlights.ImportExportIndicator = 'E' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR EXPORT')) OR
+			
+			(CustomsFlights.ImportExportIndicator = 'I' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR IMPORT')
+			 and CustomsFlights.FMAAcknowledgeDate is null
+				) OR
+			
+			(CustomsFlights.ImportExportIndicator = 'E' and
+				DifferenceOfDays = (SELECT CAST (ParameterValueNum  AS INTEGER)  FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR EXPORT')
+				and CustomsFlights.FMAAcknowledgeDate is null
+				) 
+			
+			
+				
+	</select>
+	
+	<select id="getACESExportSQFlightsToSendMrs" parameterType="Map" resultType="com.ngen.cosys.model.FlightModel">
+
+		SELECT
+				Customs_Flight.ImportExportIndicator,
+				DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays,
+				Customs_Flight.FlightKey,
+				Customs_Flight.FlightDate,
+				Customs_Flight.FlightBoardPoint,
+				Customs_Flight.FlightOffPoint,
+				Customs_Flight.FlightType,
+				Customs_Flight.CustomsFlightId,
+				Customs_Flight.FMAAcknowledgeDate
+		FROM
+				Customs_Flight inner join
+				 (select 
+			            Flt_OperativeFlight.FlightKey, 
+			            Flt_OperativeFlight_Legs.DateSTD, 
+			            Flt_OperativeFlight.CarrierCode,
+						Flt_OperativeFlight.Flight_ID,
+						Flt_OperativeFlight_Legs.FlightOffPoint
+			                     
+			       from 
+			            Flt_OperativeFlight inner join 
+			            Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+						and Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+			                     
+			       ) fltDetail 
+			              on Customs_Flight.Flightkey = fltDetail.FlightKey and 
+						cast(Customs_Flight.FlightDate as date) = cast(fltDetail.DateSTD as date)
+						and Customs_Flight.FlightOffPoint = fltDetail.FlightOffPoint
+		WHERE
+				Customs_Flight.MRSSentDate IS NULL 
+		AND  EXISTS 
+		(SELECT NULL FROM Mst_AssociateCarrierWithGroup 
+			INNER JOIN Mst_CarrierGroup ON Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+			WHERE CarrierGroupCode LIKE '%SQ%' AND Mst_AssociateCarrierWithGroup.CarrierCode=fltDetail.CarrierCode )
+		AND Customs_Flight.ImportExportIndicator = 'E'
+		AND ( 	
+			(DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR EXPORT')) OR      
+			(DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR EXPORT') AND Customs_Flight.FMAAcknowledgeDate IS NULL ) 
+			)
+	 AND (NOT EXISTS (select count(*) from Custom_ShipmentInfo a 
+                        inner join Customs_Flight b on a.CustomFlightId= b.CustomsFlightId
+                        where TotalPieces= ShipmentPieces and b.CustomsFlightId = Customs_Flight.CustomsFlightId
+                        group by FlightKey,FlightDate, ShipmentNumber, ShipmentPieces,ShipmentWeight
+                        having count(*) > 1 )
+                    )
+        AND CONCAT(Customs_Flight.FlightKey, Customs_Flight.FlightDate) NOT IN 
+        
+        (SELECT  CONCAT(FlightKey,flightdate) FROM custom_shipmentinfo f join customs_flight i
+           on (i.customsflightid = f.customflightid)
+                        left join Custom_ShipmentLocalAuthorityRequirement g
+                         on (f.customshipmentinfoid = g.customshipmentinfoid)
+                        left join Custom_ShipmentLocalAuthorityRequirementDetail h
+                        on (g.CustomShipmentLocalAuthorityRequirementId = h.CustomShipmentLocalAuthorityRequirementId)
+                        WHERE (appointedagentcode is null or convert (varchar(20),appointedagentcode) = '')
+                        and (referencenumber !='TS' or referencenumber is null) and f.mrsstatuscode != 'UN'
+                       )
+					
+	</select>
+	
+	<select id="getACESExportOALFlightsToSendMrs" parameterType="Map" resultType="com.ngen.cosys.model.FlightModel">
+
+		SELECT
+				Customs_Flight.ImportExportIndicator,
+				DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays,
+				Customs_Flight.FlightKey,
+				Customs_Flight.FlightDate,
+				Customs_Flight.FlightBoardPoint,
+				Customs_Flight.FlightOffPoint,
+				Customs_Flight.FlightType,
+				Customs_Flight.CustomsFlightId,
+				Customs_Flight.FMAAcknowledgeDate
+		FROM
+				Customs_Flight inner join
+				 (select 
+			            Flt_OperativeFlight.FlightKey, 
+			            Flt_OperativeFlight_Legs.DateSTD, 
+			            Flt_OperativeFlight.CarrierCode,
+						Flt_OperativeFlight.Flight_ID,
+						Flt_OperativeFlight_Legs.FlightOffPoint
+			                     
+			       from 
+			            Flt_OperativeFlight inner join 
+			            Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+						and Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+			                     
+			       ) fltDetail 
+			              on Customs_Flight.Flightkey = fltDetail.FlightKey and 
+						cast(Customs_Flight.FlightDate as date) = cast(fltDetail.DateSTD as date)
+						and Customs_Flight.FlightOffPoint = fltDetail.FlightOffPoint
+		WHERE
+				Customs_Flight.MRSSentDate IS NULL 
+		AND  EXISTS 
+		(SELECT NULL FROM Mst_AssociateCarrierWithGroup 
+			INNER JOIN Mst_CarrierGroup ON Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+			WHERE CarrierGroupCode LIKE '%OAL%' AND Mst_AssociateCarrierWithGroup.CarrierCode=fltDetail.CarrierCode )
+		AND Customs_Flight.ImportExportIndicator = 'E'
+		AND ( 	
+			DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR EXPORT') OR      
+			(DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR EXPORT') AND Customs_Flight.FMAAcknowledgeDate IS NULL ) 
+			)
+		 AND (NOT EXISTS (select count(*) from Custom_ShipmentInfo a 
+                        inner join Customs_Flight b on a.CustomFlightId= b.CustomsFlightId
+                        where TotalPieces= ShipmentPieces and b.CustomsFlightId = Customs_Flight.CustomsFlightId
+                        group by FlightKey,FlightDate, ShipmentNumber, ShipmentPieces,ShipmentWeight
+                        having count(*) > 1 )
+                    )
+        AND CONCAT(Customs_Flight.FlightKey, Customs_Flight.FlightDate) NOT IN 
+        
+        (SELECT  CONCAT(FlightKey,flightdate) FROM custom_shipmentinfo f join customs_flight i
+           on (i.customsflightid = f.customflightid)
+                        left join Custom_ShipmentLocalAuthorityRequirement g
+                         on (f.customshipmentinfoid = g.customshipmentinfoid)
+                        left join Custom_ShipmentLocalAuthorityRequirementDetail h
+                        on (g.CustomShipmentLocalAuthorityRequirementId = h.CustomShipmentLocalAuthorityRequirementId)
+                        WHERE (appointedagentcode is null or convert (varchar(20),appointedagentcode) = '')
+                        and (referencenumber !='TS' or referencenumber is null) and f.mrsstatuscode != 'UN'
+                       )
+	</select>
+	
+	<select id="getACESImportSQFlightsToSendMrs" parameterType="Map" resultType="com.ngen.cosys.model.FlightModel">
+
+		SELECT
+				Customs_Flight.ImportExportIndicator,
+				DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays,
+				Customs_Flight.FlightKey,
+				Customs_Flight.FlightDate,
+				Customs_Flight.FlightBoardPoint,
+				Customs_Flight.FlightOffPoint,
+				Customs_Flight.FlightType,
+				Customs_Flight.CustomsFlightId,
+				Customs_Flight.FMAAcknowledgeDate
+		FROM
+				Customs_Flight inner join
+				 (select 
+			            Flt_OperativeFlight.FlightKey, 
+			            Flt_OperativeFlight_Legs.DateSTA, 
+			            Flt_OperativeFlight.CarrierCode,
+						Flt_OperativeFlight.Flight_ID,
+						Flt_OperativeFlight_Legs.FlightBoardPoint
+			                     
+			       from 
+			            Flt_OperativeFlight inner join 
+			            Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+						and Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			                     
+			       ) fltDetail 
+			              on Customs_Flight.Flightkey = fltDetail.FlightKey and 
+						cast(Customs_Flight.FlightDate as date) = cast(fltDetail.DateSTA as date)
+						and Customs_Flight.FlightBoardPoint = fltDetail.FlightBoardPoint
+		WHERE
+				Customs_Flight.MRSSentDate IS NULL 
+		AND  EXISTS 
+		(SELECT NULL FROM Mst_AssociateCarrierWithGroup 
+			INNER JOIN Mst_CarrierGroup ON Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+			WHERE CarrierGroupCode LIKE '%SQ%' AND Mst_AssociateCarrierWithGroup.CarrierCode=fltDetail.CarrierCode )
+		AND Customs_Flight.ImportExportIndicator = 'I'
+		AND ( 	
+			DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR IMPORT') OR      
+			(DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR IMPORT') AND Customs_Flight.FMAAcknowledgeDate IS NULL ) 
+			)
+		 AND (NOT EXISTS (select count(*) from Custom_ShipmentInfo a 
+                        inner join Customs_Flight b on a.CustomFlightId= b.CustomsFlightId
+                        where TotalPieces= ShipmentPieces and b.CustomsFlightId = Customs_Flight.CustomsFlightId
+                        group by FlightKey,FlightDate, ShipmentNumber, ShipmentPieces,ShipmentWeight
+                        having count(*) > 1 )
+                    )
+        AND CONCAT(Customs_Flight.FlightKey, Customs_Flight.FlightDate) NOT IN 
+        
+        (SELECT  CONCAT(FlightKey,flightdate) FROM custom_shipmentinfo f join customs_flight i
+           on (i.customsflightid = f.customflightid)
+                        left join Custom_ShipmentLocalAuthorityRequirement g
+                         on (f.customshipmentinfoid = g.customshipmentinfoid)
+                        left join Custom_ShipmentLocalAuthorityRequirementDetail h
+                        on (g.CustomShipmentLocalAuthorityRequirementId = h.CustomShipmentLocalAuthorityRequirementId)
+                        WHERE (appointedagentcode is null or convert (varchar(20),appointedagentcode) = '')
+                        and (referencenumber !='TS' or referencenumber is null) and f.mrsstatuscode != 'UN'
+                       )
+					
+	</select>
+	
+	<select id="getACESImportOALFlightsToSendMrs" parameterType="Map" resultType="com.ngen.cosys.model.FlightModel">
+		SELECT
+				Customs_Flight.ImportExportIndicator,
+				DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) DifferenceOfDays,
+				Customs_Flight.FlightKey,
+				Customs_Flight.FlightDate,
+				Customs_Flight.FlightBoardPoint,
+				Customs_Flight.FlightOffPoint,
+				Customs_Flight.FlightType,
+				Customs_Flight.CustomsFlightId,
+				Customs_Flight.FMAAcknowledgeDate
+		FROM
+				Customs_Flight inner join
+				(select 
+			            Flt_OperativeFlight.FlightKey, 
+			            Flt_OperativeFlight_Legs.DateSTA, 
+			            Flt_OperativeFlight.CarrierCode,
+						Flt_OperativeFlight.Flight_ID,
+						Flt_OperativeFlight_Legs.FlightBoardPoint
+			                     
+			       from 
+			            Flt_OperativeFlight inner join 
+			            Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+						and Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+			                     
+			       ) fltDetail 
+			              on Customs_Flight.Flightkey = fltDetail.FlightKey and 
+						cast(Customs_Flight.FlightDate as date) = cast(fltDetail.DateSTA as date)
+						and Customs_Flight.FlightBoardPoint = fltDetail.FlightBoardPoint
+		WHERE
+				Customs_Flight.MRSSentDate IS NULL 
+		AND  EXISTS 
+		(SELECT NULL FROM Mst_AssociateCarrierWithGroup 
+			INNER JOIN Mst_CarrierGroup ON Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID = Mst_CarrierGroup.Mst_CarrierGroup_ID 
+			WHERE CarrierGroupCode LIKE '%OAL%' AND Mst_AssociateCarrierWithGroup.CarrierCode=fltDetail.CarrierCode )
+		AND Customs_Flight.ImportExportIndicator = 'I'
+		AND ( 	
+			DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS FIRST WINDOW FOR IMPORT') OR      
+			(DATEDIFF(DAY,Customs_Flight.FlightDate,CURRENT_TIMESTAMP) = (SELECT CAST (ParameterValueChar AS INTEGER) FROM App_SystemParameters WHERE ParameterCode='MRS SECOND WINDOW FOR IMPORT') AND Customs_Flight.FMAAcknowledgeDate IS NULL ) 
+			)
+		 AND (NOT EXISTS (select count(*) from Custom_ShipmentInfo a 
+                        inner join Customs_Flight b on a.CustomFlightId= b.CustomsFlightId
+                        where TotalPieces= ShipmentPieces and b.CustomsFlightId = Customs_Flight.CustomsFlightId
+                        group by FlightKey,FlightDate, ShipmentNumber, ShipmentPieces,ShipmentWeight
+                        having count(*) > 1 )
+                    )
+        AND CONCAT(Customs_Flight.FlightKey, Customs_Flight.FlightDate) NOT IN 
+        
+        (SELECT  CONCAT(FlightKey,flightdate) FROM custom_shipmentinfo f join customs_flight i
+           on (i.customsflightid = f.customflightid)
+                        left join Custom_ShipmentLocalAuthorityRequirement g
+                         on (f.customshipmentinfoid = g.customshipmentinfoid)
+                        left join Custom_ShipmentLocalAuthorityRequirementDetail h
+                        on (g.CustomShipmentLocalAuthorityRequirementId = h.CustomShipmentLocalAuthorityRequirementId)
+                        WHERE (appointedagentcode is null or convert (varchar(20),appointedagentcode) = '')
+                        and (referencenumber !='TS' or referencenumber is null) and f.mrsstatuscode != 'UN'
+                       )
+					
+	</select>
+	
+	
+	
+</mapper>

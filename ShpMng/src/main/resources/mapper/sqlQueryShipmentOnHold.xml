@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentOnHold">
+
+ 	<select id="searchAWBdetails"
+	 parameterType="com.ngen.cosys.shipment.model.SearchAWB" resultMap="fetchAWBObj">
+      	Select sm.ShipmentId,
+		sm.ShipmentNumber,
+		sm.Origin,
+		sm.Destination,
+		sm.Pieces,
+		sm.Weight,
+		shc.SpecialHandlingCode,
+		#{hawbNumber} HawbNumber,
+      	sm.Locked as hold,
+      	sm.NatureOfGoodsDescription,
+      	sm.LockReason as reasonForHold
+      	from Shipment_Master sm left join Shipment_MasterSHC shc on sm.ShipmentId = shc.ShipmentId
+      	where sm.ShipmentNumber = #{shipmentNumber}
+      	and sm.ShipmentDate = ISNULL(CAST(#{shipmentDate} as date),GETDATE())
+      </select> 
+      
+       <select id="searchHAWBdetails" parameterType="com.ngen.cosys.shipment.model.SearchAWB" 
+      resultType="com.ngen.cosys.shipment.model.ShipmentHouseInformation">
+		SELECT
+		Origin hwbOrigin,
+		Pieces hwbPieces,
+		Weight hwbWeight,
+		Number hwbNumber,
+		Destination hwbDestination,
+		NatureOfGoodsDescription hwbNatureOfGoods
+		
+	FROM
+		Shipment_HouseInformation
+	WHERE
+		ShipmentId = #{shipmentId}
+	AND
+		Number = #{hawbNumber}
+	</select>
+	
+	 <select id="fetchHouseSHCList"  parameterType="com.ngen.cosys.shipment.model.ShipmentMaster"
+      resultType="java.lang.String"    >
+      select SpecialHandlingCode
+        from Shipment_HouseSHC
+        where
+        ShipmentHouseId=(select ShipmentHouseId from Shipment_HouseInformation where ShipmentId=#{shipmentId} and Number=#{hawbNumber})
+            
+      </select>
+
+     <select id="searchShipmentOnHoldDetails"
+	 parameterType="com.ngen.cosys.shipment.model.ShipmentMaster"
+      resultMap= "fetchInventory">
+		select
+	      	si.ShipmentInventory_Id,
+	      	si.Shipment_ID,
+	      	si.ShipmentLocation,
+			si.Pieces as piecesInv,
+			si.Weight as weightInv,
+	      	si.WarehouseLocation,
+	      	si.Flight_ID as flightId,
+	      	op.FlightKey as flightKey, 
+	      	legs.DateSTA,
+	      	si.Locked as hold,
+	      	si.LockReason as reasonForHold,
+			si.CreatedUser_Code as createdBy,
+			si.Created_DateTime as createdOn,
+			si.LastUpdatedUser_Code as modifiedBy,
+			si.LastUpdated_DateTime as modifiedOn,
+			si.HoldRemarks as remarks,
+	      	ish.SpecialHandlingCode as shcInv,
+	      	si.PartSuffix as partSuffix,
+			si.HoldNotifyGroup as holdNotifyGroup,
+			si.Locked as holdOldValue,
+			si.HoldRemarks as remarksOldValue
+		from 
+			Shipment_Inventory si left join 
+			Flt_OperativeFlight op
+				on si.Flight_ID = op.Flight_ID left join 
+			Flt_OperativeFlight_Legs legs 
+				on op.Flight_ID = legs.Flight_ID and 
+					legs.FlightOffPoint = #{tenantAirport} left join 
+			Shipment_InventorySHC ish 
+				on si.ShipmentInventory_Id = ish.ShipmentInventoryId
+		where
+			si.AssignedUldTrolley is null and
+			si.Shipment_ID = #{shipmentId}
+			<if test="hawbNumber!=null and hawbNumber!=''">
+			 and ShipmentHouseId in (select ShipmentHouseId from Shipment_HouseInformation where ShipmentId=#{shipmentId} and Number=#{hawbNumber})
+			
+			</if>
+      	<if test="flightId != null and flightId !=''">
+			and si.Flight_ID = #{flightId}
+		</if>
+      </select>
+      
+         
+      <resultMap id="fetchAWBObj" type="com.ngen.cosys.shipment.model.ShipmentMaster">
+  		<id property="shipmentId" column="shipmentId"/>
+  		<result property="shipmentNumber" column="shipmentNumber"/>
+  		<result property="origin" column="origin"/>
+  		<result column="HawbNumber" property="hawbNumber" />
+  		<result property="destination" column="destination"/>
+  		<result property="pieces" column="pieces"/>
+  		<result property="weight" column="weight"/>
+  		<result property="hold" column="hold"/>
+  		<result property="natureOfGoods" column="NatureOfGoodsDescription"/>
+  		<result property="reasonForHold" column="reasonForHold"/>
+  		<association property="houseInformation" 
+			select="searchHAWBdetails"
+			column="hawbNumber=HawbNumber,shipmentId=ShipmentId"></association>
+  		<collection property="shcList"  ofType="java.lang.String" javaType="ArrayList">
+  			<result column="specialHandlingCode"/>		
+  		</collection>
+ 
+  		<!-- <collection property="shipmentInventories" javaType="List"
+			ofType="com.ngen.cosys.shipment.model.ShipmentInventory" select="searchInventoryShipmentLocation"
+			column="shipmentId=ShipmentId" /> -->
+	  </resultMap>
+	  
+	  
+  		<resultMap id = "fetchInventory" type = "com.ngen.cosys.shipment.model.ShipmentInventory">
+            <id property="shipmentInventoryId" column="ShipmentInventory_Id"/>
+  		    <result property="shipmentId" column="Shipment_ID"/>
+  		    <result property="shipmentLocation" column="ShipmentLocation"/>
+  		    <result property="piecesInv" column="piecesInv"/>
+  		    <result property="weightInv" column="weightInv"/>
+  		    <result property="warehouseLocation" column="WarehouseLocation"/>
+  		    <result property="flightId" column="Flight_ID"/>
+  		    <result property="flightKey" column="FlightKey"/>
+  		    <result property="flightKeyDate" column="DateSTA"/>
+  		    <result property="hold" column="hold"/>	 
+  		    <result property="reasonForHold" column="reasonForHold"/>	
+  		    <result property="createdBy" column="createdBy"/>	
+  		    <result property="createdOn" column="createdOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>	   
+  		    <result property="modifiedBy" column="modifiedBy"/>	
+  		    <result property="modifiedOn" column="modifiedOn" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>	
+  		    <result property="remarks" column="remarks"/>
+  		    <result property="partSuffix" column="partSuffix"/>
+  		    <result property="holdNotifyGroup" column="holdNotifyGroup"/>
+			<result property="holdOldValue" column="holdOldValue"/>
+  		    <result property="remarksOldValue" column="remarksOldValue"/>
+  		   <!--  <collection property="shcListInv" javaType="ArrayList" ofType="java.lang.String" column="specialHandlingCodeInv" >
+  		        <result column="specialHandlingCodeInv" property="shcListInv"/>
+  		    </collection> -->
+  		     <collection property="shcListInv" javaType="ArrayList" ofType="com.ngen.cosys.shipment.model.ShipmentInventoryShcModel">
+  		        <result column="shcInv" property="shcInv"/>
+  		    </collection>
+	</resultMap>
+      
+   <select id="searchshipmentNumber"
+	 parameterType="com.ngen.cosys.shipment.model.SearchAWB"
+      resultType="java.lang.String">
+      
+      SELECT 
+      ShipmentNumber as shipmentNumber
+      from Shipment_Master
+      where ShipmentNumber = #{shipmentNumber}  
+      and ShipmentDate = ISNULL(CAST(#{shipmentDate} as date),GETDATE())
+   </select>
+   
+      <select id="sqlCheckShipmentInventoryHoldcount"
+	 parameterType="com.ngen.cosys.shipment.model.ShipmentMaster"
+      resultType="java.lang.Boolean">   
+      with shipmentData as (
+				select
+					*
+				from
+					Shipment_Master 
+				where ShipmentNumber = #{shipmentNumber}
+				and ShipmentDate = #{shipmentDate}
+				),
+
+			totalInventoryCount as (
+				select
+					count(1) totalInventory
+				from 
+					shipmentData
+						inner join Shipment_Inventory
+							on shipmentData.ShipmentId = Shipment_Inventory.Shipment_Id
+			),
+
+			totalFreightOutCount as (
+				select
+					count(1) totalFreightOut
+				from 
+					shipmentData
+						inner join Shipment_FreightOut
+							on shipmentData.ShipmentId = Shipment_FreightOut.ShipmentId
+			),
+
+			lockedInventoryCount as (
+				select
+					count(1) lockedInventory
+				from 
+					shipmentData
+						inner join Shipment_Inventory
+							on shipmentData.ShipmentId = Shipment_Inventory.Shipment_Id
+							and Shipment_Inventory.Locked = 1
+			),
+
+			lockedFreightOutCount as (
+				select
+					count(1) lockedFreightOut
+				from 
+					shipmentData
+						inner join Shipment_FreightOut
+							on shipmentData.ShipmentId = Shipment_FreightOut.ShipmentId
+							and Shipment_FreightOut.Locked = 1
+			)
+
+			select
+				case
+					when (totalInventoryCount.totalInventory + totalFreightOutCount.totalFreightOut) =
+					(lockedInventoryCount.lockedInventory + lockedFreightOutCount.lockedFreightOut) then 0
+					else 1 end counter
+			from totalInventoryCount, totalFreightOutCount, lockedInventoryCount, lockedFreightOutCount
+   </select>
+   
+   	<select id="sqlGetTracingCaseNumber" resultType="java.math.BigInteger">
+       <!-- select max(substring(CaseNumber, 3, len(CaseNumber))) from Com_TracingShipmentInfo -->
+      <!--  SELECT
+	   		isnull( MAX(CAST(SUBSTRING(CaseNumber,3,LEN(CaseNumber)) AS INT)),1)
+			FROM Com_TracingShipmentInfo -->
+			SELECT NEXT VALUE FOR Com_TracingShipmentInfo_CaseNumber_Seq
+    </select>
+    
+    <insert id="insertTracingRecords"
+		parameterType="com.ngen.cosys.shipment.model.ShipmentMaster"
+		useGeneratedKeys="true" keyProperty="comTracingShipmentInfoId">
+		    INSERT INTO "Com_TracingShipmentInfo" ("CaseNumber", "CaseStatus", "IrregularityTypeCode", "ImportExportIndicator", 
+			"TracingCreatedFor", "Origin", "Destination", "TotalPieces", "TotalWeight", "IrregularityPieces", "IrregularityWeight", "NatureOfGoodsDescription", 
+			"ImportUserCode", "ImportStaffNumber", "ImportStaffName", "ExportUserId", "ExportStaffNumber", "ExportStaffName", "FollowupDate", "ReasonForClosing", 
+			"JustifiableCaseFlag", "Remarks", "ClosedOn", "Source", "CreatedUserCode", "CreatedDateTime", "LastUpdatedUserCode", "LastUpdatedDateTime", "ShipmentNumber", 
+			"ShipmentDate", "HouseNumber", "FlightKey", "FlightDate", "CarrierCode", "BoardingPoint", "OffPoint", "AgentCode", "HandlingArea") 
+				VALUES 
+			(#{caseNumber}, 'INPROGRESS', 'SHPHOLD', #{shipmentTypeflag}, 'AWB', #{origin}, #{destination}, #{pieces}, #{weight}, #{irrPieces}, #{irrWeight}, #{natureOfGoods}, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+			 NULL, NULL, #{createdBy}, CURRENT_TIMESTAMP, NULL, NULL, #{shipmentNumber}, #{shipmentDate},#{hawbNumber}, NULL, NULL, NULL, NULL,
+			 NULL, NULL, NULL);
+    </insert>
+    
+    <insert id="insertTracingShipmentInfoRecords"
+    parameterType="com.ngen.cosys.shipment.model.ShipmentInventory"
+    useGeneratedKeys="true" keyProperty="ComTracingShipmentLocationInfoId">
+    insert into
+		Com_TracingShipmentLocationInfo(ComTracingShipmentInfoId,ShipmentLocationCode,Pieces,Weight,WeightUnitCode,WarehouseLocationCode,CreatedUserCode,CreatedDateTime,TransactionSequenceNo)
+		values
+		(#{comTracingShipmentInfoId},#{shipmentLocation},#{piecesInv},#{weightInv},'K',#{warehouseLocation},#{createdBy},CURRENT_TIMESTAMP,(SELECT
+		(select isnull(max(TransactionSequenceNo),0) from
+		Com_TracingShipmentLocationInfo )+1))
+    </insert>
+    
+ <!--     <insert id="insertTracingShipmentShcInfo"
+    parameterType="java.lang.String"
+    useGeneratedKeys="true" keyProperty="ComTracingShipmentSHCId">
+		insert into
+		Com_TracingShipmentSHC(ComTracingShipmentInfoId,SpecialHandlingCode,CreatedUserCode,CreatedDateTime)
+		values(#{comTracingShipmentInfoId},#{specialHandlingCode},#{createdBy},CURRENT_TIMESTAMP) 
+	</insert> --> 
+    
+      
+       <update id="updateShipmentOnHold"
+        parameterType="com.ngen.cosys.shipment.model.ShipmentMaster">
+       <![CDATA[
+       
+       UPDATE Shipment_Master
+         SET Locked =  #{hold},
+		 LockReason = #{reasonForHold},
+		 LockedBy = #{modifiedBy}
+         where ShipmentId = #{shipmentId}
+       ]]>
+       </update>
+       
+       <update id="updateShipmentOnHoldDetail"
+        parameterType="com.ngen.cosys.shipment.model.ShipmentInventory">
+         UPDATE Shipment_Inventory
+         SET Locked = #{hold},
+         LockedBy = #{modifiedBy},
+         LastUpdatedUser_Code = #{modifiedBy},
+         LastUpdated_DateTime = #{modifiedOn}, 
+		 LockReason = #{reasonForHold},
+         HoldRemarks = #{remarks},
+         HoldNotifyGroup = #{holdNotifyGroup},
+         AckOrAssignDate = NULL
+         where ShipmentInventory_Id = #{shipmentInventoryId}
+          <if test ="hawbNumber != null and hawbNumber !=''"> 
+            and si.ShipmentHouseId in(select shipmentHouseId from Shipment_houseInformation where ShipmentId=#{shipmentId} and Number=#{hawbNumber})
+			</if>
+   		</update>
+   		
+   		 <update id="updateTracingRecord"
+        parameterType="com.ngen.cosys.shipment.model.ShipmentInventory">
+         UPDATE Com_TracingShipmentInfo
+         SET ReasonForClosing = 'FOUNDCARGO ',
+         CaseStatus = 'CLOSED',
+         ClosedOn = #{modifiedOn},
+         LastUpdatedUserCode = #{modifiedBy},
+         LastUpdatedDateTime = #{modifiedOn} 
+         where  ComTracingShipmentInfoId = #{comTracingShipmentInfoId}
+          <if test ="hawbNumber != null and hawbNumber !=''">
+         and HouseNumber = #{hawbNumber}
+         </if> 
+   		</update>
+   		
+   		<insert id="insertTracingShipmentActivity"
+		parameterType="com.ngen.cosys.shipment.model.ShipmentInventory"
+		useGeneratedKeys="true" keyProperty="ComTracingShipmentFollowupActionId">
+
+		INSERT INTO
+		Com_TracingShipmentFollowupAction(ComTracingShipmentInfoId,Activity,ActivityPerformedBy,ActivityPerformedOn,CreatedUserCode,CreatedDateTime)values
+		(#{comTracingShipmentInfoId}, CONVERT(NVARCHAR
+		,#{remarks}),#{createdBy},#{modifiedOn},#{createdBy},#{createdOn})
+
+
+	</insert>
+	
+	<select id="getTracingShipmentInfoId"
+		parameterType="com.ngen.cosys.shipment.model.ShipmentInventory"
+		resultType = "java.math.BigInteger">
+		<![CDATA[
+		 SELECT top(1) ComTracingShipmentInfoId from Com_TracingShipmentInfo
+         where ShipmentNumber = #{shipmentNumber} 
+         and IrregularityTypeCode = 'SHPHOLD' ]]>
+          <if test ="hawbNumber != null and hawbNumber !=''">
+         and HouseNumber = #{hawbNumber}
+         </if> 
+         <![CDATA[
+          order by 1 desc
+         ]]>
+		
+
+	</select>
+   		
+</mapper>

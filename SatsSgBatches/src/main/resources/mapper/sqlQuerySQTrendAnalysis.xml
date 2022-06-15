@@ -1,0 +1,1578 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SQTrendAnalysisMapper">
+
+	<select id="sqlGetParametersForTrendAnalysis" resultMap="parametersMap">
+		select 
+			A.Fromdt,
+			A.Todt
+		from 
+			(
+			select (select cast(parametervaluechar as datetime) from App_SystemParameters where ParameterCode = 'SQTrendAnalysisLastBatchUpdateTime') as 'Fromdt'
+			, getdate() as 'Todt') A
+	</select>
+	
+	<resultMap type="com.ngen.cosys.TrendAnalysis.Model.SQTrendAnalysisModel" id="parametersMap">
+		<result column="Fromdt" property="fromDate"/>
+		<result column="Todt" property="toDate"/>
+	</resultMap>
+	
+	<resultMap type="com.ngen.cosys.TrendAnalysis.Model.SQTrendAnalysisModel" id="trendAnalysisExpOpsMap">
+	<result column="shipmentNumber" property="shipmentNumber"/>
+	<result column="shipmentDate" property="shipmentDate"/>
+	<result column="origin" property="origin"/>
+	<result column="destination" property="destination"/>
+	<result column="pieces" property="pieces"/>
+	<result column="weight" property="weight"/>
+	<result column="shc" property="shc"/>
+	<result column="natureOfGoods" property="natureOfGoods"/>
+	<result column="departedPart" property="departedPart"/>
+	<result column="acceptanceDateTime" property="acceptanceDateTime"/>
+	<result column="lodgeInDateTime" property="lodgeInDateTime"/>
+	<result column="agent" property="agent"/>
+	<result column="acceptanceFlightKey" property="acceptanceFlightKey"/>
+	<result column="acceptanceFlightSTD" property="acceptanceFlightSTD"/>
+	<result column="acceptanceFlightATD" property="acceptanceFlightATD"/>
+	<result column="departedFlightKey" property="departedFlightKey"/>
+	<result column="departedFlightStd" property="departedFlightStd"/>
+	<result column="departedFlightDateAtd" property="departedFlightDateAtd"/>
+	<result column="departedPart" property="departedPart"/>
+	<result column="departedPieces" property="departedPieces"/>
+	<result column="departedweight" property="departedweight"/>
+	<result column="offloadPieces" property="offloadPieces"/>
+	<result column="offloadWeight" property="offloadWeight"/>
+	<result column="offloadReason" property="offloadReason"/>
+	<result column="bookingCancellationReason" property="bookingCancellationReason"/>
+	<result column="bookedPieces" property="bookedPieces"/>
+	<result column="bookedWeight" property="bookedWeight"/>
+	<result column="bookedPartSuffix" property="bookedPartSuffix"/>
+	<result column="cancelledBookingPieces" property="cancelledBookingPieces"/>
+	<result column="cancelledBookingWeight" property="cancelledBookingWeight"/>
+	<result column="cancelledBookingPartSuffix" property="cancelledBookingPartSuffix"/>
+	<result column="cancelledBookingFlightKey" property="cancelledBookingFlightKey"/>
+	<result column="cancelledBookingFlightSTD" property="cancelledBookingFlightSTD"/>
+	<result column="cancelledBookingFlightATD" property="cancelledBookingFlightATD"/>
+	<result column="cancelledDateTime" property="cancelledDateTime"/>
+	</resultMap>
+	
+	
+	<select id="sqlQueryTrendAnalysisForCancelledShipment" resultMap="trendAnalysisExpOpsMap">
+	select * from (
+	Select
+		Distinct
+		BkgDelta.ShipmentNumber shipmentNumber, 
+		BkgDelta.ShipmentDate shipmentDate,
+		isnull(booking.Pieces, sm.pieces) pieces,
+		isnull(booking.GrossWeight, sm.weight) weight,
+		isnull(booking.Origin, sm.Origin) origin,
+		isnull(booking.Destination, sm.destination) destination,
+		isnull(booking.NatureOfGoodsDescription, sm.NatureOfGoodsDescription) natureOfGoods,
+		substring((select STRING_AGG(SpecialHandlingCode, '/') from Exp_BookingDeltaSHC where Exp_BookingDeltaSHC.ExpBookingDeltaId = BkgDelta.ExpBookingDeltaId),1,63) shc,
+		BkgDelta.ShipmentBookingPieces cancelledBookingPieces,
+		BkgDelta.ShipmentBookingWeight cancelledBookingWeight,
+		BkgDelta.FlightKey cancelledBookingFlightKey,
+		dateadd(hour, 8, BkgDelta.CreatedDateTime) cancelledDateTime,
+		Leg.DateSTD cancelledBookingFlightSTD,
+		Leg.DateATD cancelledBookingFlightATD,
+		BkgDelta.FlightKey acceptanceFlightKey,
+		Leg.DateSTD acceptanceFlightSTD,
+		Leg.DateATD acceptanceFlightATD,
+		isnull(WorkingListRemarks, (select top 1
+			ShipmentRemarks 
+		from 
+			Shipment_Remarks 
+		where 
+			Shipment_Remarks.ShipmentNumber = BkgDelta.ShipmentNumber and 
+			Shipment_Remarks.ShipmentDate = BkgDelta.ShipmentDate and 
+			Shipment_Remarks.Flight_Id = BkgDelta.FlightId
+		order by Shipment_Remarks.Created_DateTime desc)) bookingCancellationReason
+	From 
+		Exp_BookingDelta BkgDelta inner join
+		Flt_OperativeFlight Flt 
+			On Flt.Flight_ID = BkgDelta.FlightId Inner Join 
+		Flt_OperativeFlight_Legs Leg 
+			On Leg.Flight_ID = Flt.Flight_ID And 
+		Leg.FlightBoardPoint = BkgDelta.FlightBoardPoint left Join 
+		Exp_ShipmentBooking booking
+			on BkgDelta.ShipmentNumber = booking.ShipmentNumber and	
+				BkgDelta.ShipmentDate = booking.ShipmentDate left join
+		Shipment_Master sm
+			on BkgDelta.ShipmentNumber = sm.ShipmentNumber and	
+				BkgDelta.ShipmentDate = sm.ShipmentDate
+	Where 
+		BkgDelta.FlightBoardPoint = #{tenantAirport} And 
+		BkgDelta.BookingStatusCode = 'XX' And 		
+		(booking.BookingId is not null or sm.ShipmentId is not null) and
+		BkgDelta.CreatedDateTime Between #{fromDate} And #{toDate}) A
+	where
+	A.bookingCancellationReason is not null and bookingCancellationReason != 'Offloaded'
+	</select>
+
+	<select id="sqlQueryTrendAnalysisForExportAcceptance" resultMap="trendAnalysisExpOpsMap" >
+	Select 
+		AcpDoc.ShipmentNumber shipmentNumber, 
+		AcpDoc.ShipmentDate shipmentDate, 
+		AcpDoc.Origin origin, 
+		AcpDoc.Destination destination, 
+		AcpDoc.Piece pieces, 
+		AcpDoc.Weight weight, 
+		AcpDocShc.Shc shc, 
+		AcpDoc.NatureOfGoodsDescription natureOfGoods, 
+		'P' departedPart,
+		DateAdd(Hour,8,AcpDoc.AcceptedDateTime) As acceptanceDateTime,
+		DateAdd(Hour,8,FinalizeWeightInitiatedOn) lodgeInDateTime, 
+		Svc.CustomerName agent,
+		null bookingcreationdate,
+		AcpDoc.FirstBookedFlight acceptanceFlightKey, 
+		leg.DateSTD acceptanceFlightSTD, 
+		leg.DateATD acceptanceFlightATD
+	From Exp_eAcceptanceDocumentInformation AcpDoc
+	Inner Join Exp_eAcceptanceServiceInformation Svc 
+			On Svc.ServiceInformationId = AcpDoc.ServiceInformationId	
+	Inner Join Flt_OperativeFlight Flt 
+			On Flt.FlightKey = AcpDoc.FirstBookedFlight
+	Inner JOIN Flt_OperativeFlight_Legs leg 
+			ON leg.Flight_ID = Flt.Flight_ID
+			And Leg.FlightBoardPoint = #{tenantAirport}
+			And Cast(leg.DateSTD As Date) = Cast(AcpDoc.FirstBookedFlightDate As Date)	
+	Left Join (Select DocumentInformationId, String_agg(SpecialHandlingCode, '/') Shc
+				From Exp_eAcceptanceDocumentInfoSHC
+				Group By DocumentInformationId) AcpDocShc
+			On AcpDocShc.DocumentInformationId  = AcpDoc.DocumentInformationId
+	Where IsNull(AcpDoc.Status,'OPEN') = 'ACCEPTED'
+	And AcpDoc.AcceptedDateTime Between #{fromDate} And #{toDate}
+	
+	union
+
+		select * from (select
+		Shipment_Master.ShipmentNumber,
+		Shipment_Master.ShipmentDate,
+		Shipment_Master.Origin origin, 
+		Shipment_Master.Destination destination, 
+		Shipment_Master.Pieces pieces, 
+		Shipment_Master.Weight weight,
+		mstshc.Shc shc,
+		Shipment_Master.NatureOfGoodsDescription natureOfGoods,
+		'P' departedPart,
+		DateAdd(Hour,8,Imp_ShipmentVerification.CreatedDateTime) As acceptanceDateTime,
+		null lodgeInDateTime,
+		null agent,
+		(select 
+			top 1
+			isnull(innerbook.LastUpdatedDateTime,innerbook.CreatedDateTime) 
+		from 
+			Exp_ShipmentBooking innerbook inner join
+			Exp_ShipmentFlightBookingDetail
+				on innerbook.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+			Flt_OperativeFlight_Segments
+				on Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+		where
+			innerbook.ShipmentNumber = Shipment_Master.ShipmentNumber and
+			innerbook.ShipmentDate = Shipment_Master.ShipmentDate and
+			Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		order by 
+			Exp_ShipmentFlightBookingDetail.CreatedDateTime ASC ) bookingcreationdate,
+		(select 
+			top 1
+			Flt_OperativeFlight.FlightKey
+		from 
+			Exp_ShipmentBooking innerbook inner join
+			Exp_ShipmentFlightBookingDetail
+				on innerbook.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+			Flt_OperativeFlight
+				on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID
+		where
+			innerbook.ShipmentNumber = Shipment_Master.ShipmentNumber and
+			innerbook.ShipmentDate = Shipment_Master.ShipmentDate and
+			Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		order by 
+			Exp_ShipmentFlightBookingDetail.CreatedDateTime ASC ) acceptanceFlightKey,
+		(select 
+			top 1
+			Flt_OperativeFlight_Segments.DateSTD
+		from 
+			Exp_ShipmentBooking innerbook inner join
+			Exp_ShipmentFlightBookingDetail
+				on innerbook.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+			Flt_OperativeFlight_Segments
+				on Exp_ShipmentFlightBookingDetail.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+		where
+			innerbook.ShipmentNumber = Shipment_Master.ShipmentNumber and
+			innerbook.ShipmentDate = Shipment_Master.ShipmentDate and
+			Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		order by 
+			Exp_ShipmentFlightBookingDetail.CreatedDateTime ASC ) acceptanceFlightSTD,
+		(select 
+			top 1
+			Flt_OperativeFlight_Legs.DateATD
+		from 
+			Exp_ShipmentBooking innerbook inner join
+			Exp_ShipmentFlightBookingDetail
+				on innerbook.BookingId = Exp_ShipmentFlightBookingDetail.BookingId inner join
+			Flt_OperativeFlight
+				on Exp_ShipmentFlightBookingDetail.FlightId = Flt_OperativeFlight.Flight_ID inner join
+			Flt_OperativeFlight_Legs
+				on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+					Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport}
+		where
+			innerbook.ShipmentNumber = Shipment_Master.ShipmentNumber and
+			innerbook.ShipmentDate = Shipment_Master.ShipmentDate and
+			Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		order by 
+			Exp_ShipmentFlightBookingDetail.CreatedDateTime ASC ) acceptanceFlightATD
+	from
+		Imp_ShipmentVerification inner join
+		Shipment_Master
+			on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId left join
+		(Select ShipmentId, String_agg(SpecialHandlingCode, '/') Shc
+				From Shipment_MasterSHC
+				Group By ShipmentId) mstshc
+			on mstshc.ShipmentId  = Shipment_Master.ShipmentId
+	where
+		Shipment_Master.ShipmentType != 'MAIL' and
+		Shipment_Master.Origin != #{tenantAirport} and
+		Shipment_Master.Destination != #{tenantAirport}  ) A 
+	where
+		A.bookingcreationdate  
+		between #{fromDate} And #{toDate}
+	</select>
+	
+	<select id="sqlQueryTrendAnalysisForExportFreightOut" resultMap="trendAnalysisExpOpsMap">
+	With FrtOut As (
+	Select Flt.FlightKey, leg.DateSTD, leg.DateATD,
+		sm.ShipmentNumber, sm.ShipmentDate, IsNull(FrtOut.PartSuffix,'P') PartSuffix, 
+		Sum(FrtOut.Pieces) Pieces, Sum(FrtOut.Weight) Weight
+	From Shipment_FreightOut FrtOut
+	Inner Join Shipment_Master sm on sm.ShipmentId = FrtOut.ShipmentId
+	Inner Join Flt_OperativeFlight Flt On Flt.Flight_ID = FrtOut.FlightId
+	Inner Join Flt_OperativeFlight_Legs leg On Leg.Flight_ID = Flt.Flight_ID
+	Where sm.ShipmentType != 'MAIL'
+	And sm.Destination != #{tenantAirport}
+	And leg.FlightBoardPoint = #{tenantAirport}
+	And IsNull(FrtOut.LastUpdatedDateTime,FrtOut.CreatedDateTime) 
+			Between #{fromDate} And #{toDate}
+	Group By Flt.FlightKey, leg.DateSTD, leg.DateATD, sm.ShipmentNumber, sm.ShipmentDate, IsNull(FrtOut.PartSuffix,'P')
+	)
+	Select 
+		FrtOut.ShipmentNumber shipmentNumber, 
+		FrtOut.ShipmentDate shipmentDate, 
+		Rpt.Origin origin, 
+		Rpt.Destination destination, 
+		Rpt.Pieces pieces, 
+		Rpt.Weight weight, 
+		Rpt.Shc shc, 
+		Rpt.NOG natureOfGoods,
+		Rpt.AcceptanceDateTime acceptanceDateTime, 
+		Rpt.LodgeInDateTime lodgeInDateTime, 
+		Rpt.LodgeInAgentName agent,
+		Rpt.AcceptanceFlightKey acceptanceFlightKey, 
+		Rpt.AcceptanceFlightSTD acceptanceFlightSTD, 
+		Rpt.AcceptanceFlightATD acceptanceFlightATD,
+		FrtOut.FlightKey departedFlightKey, 
+		FrtOut.DateSTD departedFlightStd, 
+		FrtOut.DateATD departedFlightDateAtd,
+		FrtOut.PartSuffix departedPart, 
+		FrtOut.Pieces departedPieces, 
+		FrtOut.Weight departedweight
+	From 
+		FrtOut Inner Join 
+		Rpt_ExportShipmentsInfo Rpt 
+			On Rpt.ShipmentNumber = FrtOut.ShipmentNumber And 
+				Rpt.ShipmentDate = FrtOut.ShipmentDate	and
+				Rpt.AcceptanceDateTime is not null
+	</select>
+	
+	<select id="sqlQueryTrendAnalysisForExportOffload" resultMap="trendAnalysisExpOpsMap">
+	Select distinct
+		sm.Origin origin,
+		sm.Destination destination,
+		sm.Pieces pieces,
+		sm.Weight weight,
+		sm.NatureOfGoodsDescription natureOfGoods,
+		Flt.FlightKey departedFlightKey, 
+		Leg.DateSTD departedFlightStd, 
+		sm.ShipmentNumber shipmentNumber, 
+		sm.ShipmentDate shipmentDate, 
+		OffloadInv.Pieces offloadPieces, 
+		OffloadInv.Weight offloadWeight, 
+		OffloadInv.OffloadReason offloadReason,
+		OffloadInv.PartSuffix departedPart, 
+		DateAdd(Hour,8,Max(OffLoadShp.CreatedDateTime)) OffLoadDateTime,
+		Rpt_ExportShipmentsInfo.AcceptanceDateTime acceptanceDateTime,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightKey acceptanceFlightKey,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightSTD acceptanceFlightSTD,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightATD acceptanceFlightATD,
+		Rpt_ExportShipmentsInfo.LodgeInAgentName agent,
+		Rpt_ExportShipmentsInfo.LodgeInDateTime lodgeInDateTime,
+		Rpt_ExportShipmentsInfo.Pieces pieces,
+		Rpt_ExportShipmentsInfo.Weight weight,
+		Rpt_ExportShipmentsInfo.DepartedPcs departedPieces,
+		Rpt_ExportShipmentsInfo.Departedwgt departedweight
+	From 
+		Exp_OffloadShipmentInfo OffLoadShp Inner Join 
+		Exp_OffloadShipmentinventoryInfo OffloadInv
+			on OffLoadShp.ExpOffloadShipmentInfoId = offloadInv.ExpOffloadShipmentInfoId Inner Join 
+		Shipment_Master sm 
+			on sm.ShipmentId = OffLoadShp.ShipmentId Inner Join 
+		Exp_OffloadULDInfo OffLoadUld 
+			On OffLoadShp.ExpOffloadULDInfoId = OffLoadUld.ExpOffloadULDInfoId Inner Join 
+		Flt_OperativeFlight_Segments Seg 
+			On Seg.FlightSegmentId = OffLoadUld.FlightSegmentId Inner Join 
+		Flt_OperativeFlight flt 
+			On Flt.Flight_ID = Seg.Flight_Id Inner Join 
+		Flt_OperativeFlight_legs leg 
+			On leg.Flight_ID = Flt.Flight_Id Inner join
+		Rpt_ExportShipmentsInfo
+			On sm.ShipmentNumber = Rpt_ExportShipmentsInfo.ShipmentNumber and
+				sm.ShipmentDate = Rpt_ExportShipmentsInfo.ShipmentDate
+	Where 
+		sm.ShipmentType != 'MAIL' And 
+		sm.Destination != #{tenantAirport} And 
+		leg.FlightBoardPoint = #{tenantAirport} aND 
+		OffLoadShp.CreatedDateTime Between #{fromDate} And #{toDate} and
+		Rpt_ExportShipmentsInfo.DepartedFlightKey is not null and
+		Rpt_ExportShipmentsInfo.AcceptanceFlightKey is not null
+	Group By 
+		sm.Origin,
+		sm.Destination,
+		sm.Pieces,
+		sm.Weight,
+		sm.NatureOfGoodsDescription,
+		Flt.FlightKey, 
+		Leg.DateSTD, 
+		sm.ShipmentNumber, 
+		sm.ShipmentDate, 
+		OffloadInv.Pieces, 
+		OffloadInv.Weight, 
+		OffloadInv.OffloadReason,
+		OffloadInv.PartSuffix,
+		Rpt_ExportShipmentsInfo.AcceptanceDateTime,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightKey,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightSTD,
+		Rpt_ExportShipmentsInfo.AcceptanceFlightATD,
+		Rpt_ExportShipmentsInfo.LodgeInAgentName,
+		Rpt_ExportShipmentsInfo.LodgeInDateTime,
+		Rpt_ExportShipmentsInfo.Pieces,
+		Rpt_ExportShipmentsInfo.Weight,
+		Rpt_ExportShipmentsInfo.DepartedPcs,
+		Rpt_ExportShipmentsInfo.Departedwgt
+	</select>
+	
+	<insert id="sqlInsertSQTrendAnalysis">
+		INSERT INTO Rpt_ExportShipmentsInfo
+           (ShipmentNumber
+           ,ShipmentDate
+           ,Origin
+           ,Destination
+           ,Pieces
+           ,Weight
+           ,SHC
+           ,NOG
+           ,LodgeInDateTime
+           ,LodgeInAgentName
+           ,AcceptanceDateTime
+           ,AcceptanceFlightKey
+           ,AcceptanceFlightSTD
+           ,AcceptanceFlightATD
+           ,BookingCanxReason
+           ,OffLoadReason
+           ,OffLoadPcs
+           ,OffLoadWgt
+           ,DepartedFlightKey
+           ,DepartedFlightSTD
+           ,DepartedFlightATD
+           ,DepartedPart
+           ,DepartedPcs
+           ,DepartedWgt
+           ,DepartedAsAcceptanceFlight
+           ,CreatedTime
+           ,BookedPieces
+		   ,BookedWeight
+		   ,BookedPartSuffix
+		   ,CancelledBookingPieces
+		   ,CancelledBookingWeight
+		   ,CancelledBookingPartSuffix
+		   ,CancelledBookingFlightKey
+		   ,CancelledBookingFlightSTD
+		   ,CancelledBookingFlightATD
+		   ,CancelledDateTime
+		   ,Offloaded
+           )
+     VALUES
+           (
+           #{shipmentNumber},
+		   #{shipmentDate},
+		   #{origin},
+		   #{destination},
+		   #{pieces},
+		   #{weight},
+		   #{shc},
+		   #{natureOfGoods},
+		   #{lodgeInDateTime},
+		   #{agent},
+		   #{acceptanceDateTime},
+		   #{acceptanceFlightKey},
+		   #{acceptanceFlightSTD},
+		   #{acceptanceFlightATD},
+		   #{bookingCancellationReason},
+		   #{offloadReason},
+		   #{offloadPieces},
+		   #{offloadWeight},
+		   #{departedFlightKey},
+		   #{departedFlightStd},
+		   #{departedFlightDateAtd},
+		   #{departedPart},
+		   #{departedPieces},
+		   #{departedweight},
+		   #{departedAsAcceptanceFlight},
+		   getdate(),
+		   #{bookedPieces},
+           #{bookedWeight},
+		   #{bookedPartSuffix},
+           #{cancelledBookingPieces},
+           #{cancelledBookingWeight},
+           #{cancelledBookingPartSuffix},
+           #{cancelledBookingFlightKey},
+           #{cancelledBookingFlightSTD},
+           #{cancelledBookingFlightATD},
+           #{cancelledDateTime},
+           #{fromOffload}
+           )
+	</insert>
+	
+	<select id="sqlCheckBookingAndUpliftShipmentAlreadyExists" resultType="java.lang.Boolean">
+	select 
+		case when count(*) > 0 then 1 else 0 end
+	from 
+		Rpt_ExportShipmentsInfo 
+	where 
+		ShipmentNumber = #{shipmentNumber} 
+		<if test="fromOffload == true">
+		and DepartedFlightKey = #{departedFlightKey}
+		and cast(DepartedFlightSTD as date) = cast(#{departedFlightStd} as date)
+		</if>
+		<if test="fromCancelBooking == true">
+		and isnull(CancelledBookingFlightKey, AcceptanceFlightKey) = #{cancelledBookingFlightKey}
+		and cast(isnull(CancelledBookingFlightSTD, AcceptanceFlightSTD) as date) = cast(#{cancelledBookingFlightSTD} as date)
+		</if>
+		<if test="fromOffload == false and fromCancelBooking == false">
+		and 
+		AcceptanceFlightKey = #{acceptanceFlightKey} and 
+		cast(AcceptanceFlightSTD as date) = cast(#{acceptanceFlightSTD} as date)
+		</if>
+		<if test="departedPart !=null">
+		and DepartedPart = #{departedPart}
+		</if>
+	</select>
+	
+	<update id="sqlUpdateTrendAnalysis">
+	update
+		Rpt_ExportShipmentsInfo
+	set
+		ShipmentNumber = #{shipmentNumber}
+       <if test="origin != null">
+        ,Origin = #{origin}
+       </if>
+       <if test="destination != null">
+        ,Destination = #{destination}
+       </if>
+       <if test="pieces != null">
+        ,Pieces = #{pieces}
+       </if>
+       <if test="weight != null">
+        ,Weight = #{weight}
+       </if>
+       <if test="shc != null">
+        ,SHC = #{shc}
+       </if>
+       <if test="natureOfGoods != null">
+		,NOG = #{natureOfGoods}       
+       </if>
+       <if test="lodgeInDateTime != null">
+		,LodgeInDateTime = #{lodgeInDateTime}       
+       </if>
+       <if test="agent != null">
+		,LodgeInAgentName = #{agent}       
+       </if>
+       <if test="acceptanceDateTime != null">
+		,AcceptanceDateTime = #{acceptanceDateTime}
+       </if>
+       <if test="acceptanceFlightKey != null">
+		,AcceptanceFlightKey = #{acceptanceFlightKey}
+       </if>
+       <if test="acceptanceFlightSTD != null">
+		,AcceptanceFlightSTD = #{acceptanceFlightSTD}       
+       </if>
+       <if test="acceptanceFlightATD != null">
+		,AcceptanceFlightATD = #{acceptanceFlightATD}       
+       </if>
+       <if test="bookingCancellationReason != null">
+		,BookingCanxReason = #{bookingCancellationReason}       
+       </if>
+       <if test="offloadReason != null">
+		,OffLoadReason = #{offloadReason}       
+       </if>
+       <if test="offloadPieces != null">
+       ,OffLoadPcs = #{offloadPieces}
+       </if>
+       <if test="offloadWeight != null">
+       ,OffLoadWgt = #{offloadWeight}
+       </if>
+       <if test="departedFlightKey != null">
+       ,DepartedFlightKey = #{departedFlightKey}
+       </if>
+       <if test="departedFlightStd != null">
+       ,DepartedFlightSTD = #{departedFlightStd}
+       </if>
+       <if test="departedFlightDateAtd != null">
+       ,DepartedFlightATD = #{departedFlightDateAtd}
+       </if>
+       <if test="departedPart != null">
+       ,DepartedPart = #{departedPart}
+       </if>
+       <if test="departedPieces != null">
+       ,DepartedPcs = #{departedPieces}
+       </if>
+       <if test="departedweight != null">
+       ,DepartedWgt = #{departedweight}
+       </if>
+       <if test="departedAsAcceptanceFlight != null">
+		,DepartedAsAcceptanceFlight = #{departedAsAcceptanceFlight}       
+       </if>
+        <if test="bookedPieces != null">
+       ,BookedPieces = #{bookedPieces}
+       </if>
+        <if test="bookedWeight != null">
+       ,BookedWeight = #{bookedWeight}
+       </if>
+        <if test="bookedPartSuffix != null">
+       ,BookedPartSuffix = #{bookedPartSuffix}
+       </if>
+        <if test="cancelledBookingPieces != null">
+       ,CancelledBookingPieces = #{cancelledBookingPieces}
+       </if>
+        <if test="cancelledBookingWeight != null">
+       ,CancelledBookingWeight = #{cancelledBookingWeight}
+       </if>
+        <if test="cancelledBookingPartSuffix != null">
+       ,CancelledBookingPartSuffix = #{cancelledBookingPartSuffix}
+       </if>
+        <if test="cancelledBookingFlightKey != null">
+       ,CancelledBookingFlightKey = #{cancelledBookingFlightKey}
+       </if>
+        <if test="cancelledBookingFlightSTD != null">
+       ,CancelledBookingFlightSTD = #{cancelledBookingFlightSTD}
+       </if>
+        <if test="cancelledBookingFlightATD != null">
+       ,CancelledBookingFlightATD = #{cancelledBookingFlightATD}
+       </if>
+       <if test="cancelledDateTime != null">
+       ,CancelledDateTime = #{cancelledDateTime}
+       </if>
+       ,UpdatedTime = getdate()
+       
+   	where
+   		ShipmentNumber = #{shipmentNumber}  
+   		<if test="fromOffload == true">
+		and DepartedFlightKey = #{departedFlightKey}
+		and cast(DepartedFlightSTD as date) = cast(#{departedFlightStd} as date)
+		</if>
+		<if test="fromCancelBooking == true">
+		and isnull(CancelledBookingFlightKey, AcceptanceFlightKey) = #{cancelledBookingFlightKey}
+		and cast(isnull(CancelledBookingFlightSTD, AcceptanceFlightSTD) as date) = cast(#{cancelledBookingFlightSTD} as date)
+		</if>
+		<if test="fromOffload == false and fromCancelBooking == false">
+		and 
+		AcceptanceFlightKey = #{acceptanceFlightKey} and 
+		cast(AcceptanceFlightSTD as date) = cast(#{acceptanceFlightSTD} as date)
+		</if>
+		<if test="departedPart !=null">
+		and DepartedPart = #{departedPart}
+		</if>
+	
+	</update>
+	
+	<select id="sqlGetOffloadingAtAirSide" resultType="com.ngen.cosys.TrendAnalysis.Model.SQTrendAnalysisModel">
+		with 
+		parameter as
+						(
+						select (select parametervaluechar from App_SystemParameters where ParameterCode = 'SQTrendAnalysisLastBatchUpdateTime') as 'Fromdt'
+						, getdate() as 'Todt'),
+		Awb As (
+			Select Sm.ShipmentId, Sm.ShipmentNumber, Sm.ShipmentDate, Sm.Origin, Sm.Destination, Sm.Pieces, Sm.Weight, 
+				Sm.NatureOfGoodsDescription NOG,
+				AcpDoc.FirstBookedFlight acceptanceFlightKey, 
+				Flt.Flight_Id FlightId, leg.DateSTD acceptanceFlightSTD, leg.DateATD acceptanceFlightATD,
+				DateAdd(Hour,8,FinalizeWeightInitiatedOn) LodgeInDateTime, Svc.CustomerName	LodgeInAgentName
+			From Exp_eAcceptanceDocumentInformation AcpDoc
+			Inner Join Exp_eAcceptanceServiceInformation Svc On Svc.ServiceInformationId = AcpDoc.ServiceInformationId	
+			Inner Join Shipment_Master Sm 
+					On Sm.ShipmentNumber = AcpDoc.ShipmentNumber 
+					And Sm.ShipmentDate = AcpDoc.ShipmentDate
+			Inner Join Flt_OperativeFlight Flt On Flt.FlightKey = AcpDoc.FirstBookedFlight
+			Inner JOIN Flt_OperativeFlight_Legs leg
+					ON leg.Flight_ID = Flt.Flight_ID
+					And Leg.FlightBoardPoint = #{tenantAirport}
+					And Cast(leg.DateSTD As Date) = Cast(AcpDoc.FirstBookedFlightDate As Date)	
+			Where Sm.Destination != #{tenantAirport}
+			And Sm.ShipmentType != 'MAIL'
+			And IsNull(AcpDoc.Status,'OPEN') = 'ACCEPTED'
+			--And Cast(Leg.DateSTD As Date)  Between #FromDate And #ToDate
+		),
+		CNXShp As (
+				Select rmk.ShipmentNumber, rmk.ShipmentDate, rmk.ShipmentRemarks bookingCancellationReason,
+						rmk.Created_DateTime bookingCancellationDateTime
+				From Shipment_Remarks rmk  
+				Where exists (Select 1 From  Shipment_Remarks In_rmk 
+							  Where rmk.ShipmentNumber = In_rmk.ShipmentNumber
+							  And rmk.ShipmentDate = In_rmk.ShipmentDate
+							  And rmk.RemarkType = 'BKD'
+							  Group By In_rmk.ShipmentNumber, In_rmk.ShipmentDate
+							  Having Max(In_rmk.ShipmentRemark_Id) = rmk.ShipmentRemark_Id)
+		),
+		OffLoad As (
+			Select Awb.FlightId, OffLoadShp.ShipmentId, Sum(OffLoadShp.Pieces) offloadPieces, 
+				Sum(OffLoadShp.Weight) offloadWeight, 
+				Max(OffLoadShp.Reason) OffLoadReason, 
+				Max(OffLoadShp.CreatedDateTime) OffLoadDateTime
+			From Exp_OffloadULDInfo OffLoadUld
+			Inner Join Exp_OffloadShipmentInfo OffLoadShp On OffLoadShp.ExpOffloadULDInfoId = OffLoadUld.ExpOffloadULDInfoId
+			Inner Join Flt_OperativeFlight_Segments Seg On Seg.FlightSegmentId = OffLoadUld.FlightSegmentId
+			Inner Join Awb On Awb.FlightId = Seg.Flight_Id And Awb.ShipmentId = OffLoadShp.ShipmentId
+			Group By Awb.FlightId, OffLoadShp.ShipmentId
+		),
+		FrtOut As (
+			Select FrtOut.FlightId, FrtOut.ShipmentId, PartSuffix DepartedPart, 
+					Sum(FrtOut.Pieces) departedPieces, Sum(FrtOut.Weight) departedweight
+			From Shipment_FreightOut FrtOut
+			Inner Join Awb On Awb.ShipmentId = FrtOut.ShipmentId And Awb.FlightID = FrtOut.FlightID
+			Group By FrtOut.FlightId, FrtOut.ShipmentId, PartSuffix
+		),
+		AWBSHC As (
+			Select Shc.ShipmentId, String_agg(Shc.SpecialHandlingCode, '/') SHC
+			From Shipment_MasterSHC Shc
+			Inner Join Awb On Awb.ShipmentId = Shc.ShipmentId
+			Group By Shc.ShipmentId
+		)
+		Select Awb.ShipmentNumber shipmentNumber, 
+				Awb.ShipmentDate shipmentDate, 
+				Awb.Origin origin,  
+				Awb.Destination destination,
+				Awb.Pieces pieces, 
+				Awb.Weight weight, 
+				AWBSHC.SHC shc, 
+				Awb.NOG natureOfGoods,		
+				Awb.LodgeInDateTime lodgeInDateTime, 
+				Awb.LodgeInAgentName agent,
+				Awb.acceptanceFlightKey acceptanceFlightKey, 
+				Awb.acceptanceFlightSTD acceptanceFlightSTD, 
+				Awb.acceptanceFlightATD acceptanceFlightATD,
+				FrtOut.DepartedPart departedPart, 
+				FrtOut.departedPieces departedPieces, 
+				FrtOut.departedweight departedweight, 
+				OffLoad.offloadPieces offloadPieces, 
+				OffLoad.offloadWeight offloadWeight,
+				OffLoad.OffLoadReason offloadReason,
+				DateAdd(Hour,8,OffLoad.OffLoadDateTime) OffLoadDateTime,
+				CNXShp.bookingCancellationReason,
+				DateAdd(Hour,8,CNXShp.bookingCancellationDateTime) bookingCancellationDateTime
+		From Awb
+		Inner Join OffLoad On OffLoad.ShipmentId = Awb.ShipmentId And OffLoad.FlightId = Awb.FlightId 
+		Inner Join parameter on (Awb.acceptanceFlightSTD  Between parameter.Fromdt And parameter.Todt --#FromDate And #ToDate
+					Or OffLoad.OffLoadDateTime Between parameter.Fromdt And parameter.Todt)
+		Left Join FrtOut On FrtOut.ShipmentId = Awb.ShipmentId And FrtOut.FlightId = Awb.FlightId
+		Left Join AWBSHC On AWBSHC.ShipmentId = Awb.ShipmentId
+		Left Join CNXShp On CNXShp.ShipmentNumber = Awb.ShipmentNumber And CNXShp.ShipmentDate = Awb.ShipmentDate and
+					CNXShp.bookingCancellationDateTime Between parameter.Fromdt And parameter.Todt
+		
+		Union
+		Select Awb.ShipmentNumber shipmentNumber, 
+				Awb.ShipmentDate shipmentDate, 
+				Awb.Origin origin, 
+				Awb.Destination destination, 		
+				Awb.Pieces pieces, 
+				Awb.Weight weight, 
+				AWBSHC.SHC shc, 
+				Awb.NOG natureOfGoods, 
+				Awb.LodgeInDateTime lodgeInDateTime, 
+				Awb.LodgeInAgentName agent,
+				Awb.acceptanceFlightKey acceptanceFlightKey, 
+				Awb.acceptanceFlightSTD acceptanceFlightSTD, 
+				Awb.acceptanceFlightATD acceptanceFlightATD,
+				Null departedPart, 
+				Null departedPieces, 
+				Null departedweight, 
+				Null offloadPieces, 
+				Null offloadWeight,		
+				Null OffLoadReason,
+				Null OffLoadDateTime,
+				CNXShp.bookingCancellationReason,
+				DateAdd(Hour,8,CNXShp.bookingCancellationDateTime) bookingCancellationDateTime
+		From Awb
+		Inner Join CNXShp On CNXShp.ShipmentNumber = Awb.ShipmentNumber And CNXShp.ShipmentDate = Awb.ShipmentDate
+		Inner Join parameter on CNXShp.bookingCancellationDateTime Between parameter.Fromdt And parameter.Todt
+		Left Join AWBSHC On AWBSHC.ShipmentId = Awb.ShipmentId
+
+	</select>
+
+
+	<update id="sqlUpdateSystemParameterForSqTrendAnalysis">
+	update 
+		App_SystemParameters
+	set 
+		ParameterValueChar = getdate()
+	where ParameterCode = 'SQTrendAnalysisLastBatchUpdateTime'
+	</update>	
+	
+	<select id="sqlGetOutBoundFFMComplianceExportDashBoard" resultMap="importExportDashboardForTrendAnalysisMap">
+	with 
+		parameter as
+						(
+						select (select cast(parametervaluechar as datetime) from App_SystemParameters where ParameterCode = 'SQTrendAnalysisLastBatchUpdateTime') as 'Fromdt'
+						, getdate() as 'Todt'),
+	Flights AS (
+		SELECT Flt_OperativeFlight.CarrierCode
+			 , Flt_OperativeFlight.Flight_ID
+			 , Flt_OperativeFlight.FlightNumber
+			 , Flt_OperativeFlight.FlightKey
+			 , Flt_OperativeFlight_Legs.FlightBoardPoint
+			 , Flt_OperativeFlight_Legs.FlightOffPoint
+			 , Flt_OperativeFlight_Legs.DateSTD
+			 , Flt_OperativeFlight_Legs.DateETD
+			 , Flt_OperativeFlight_Legs.DateATD
+			 , Flt_OperativeFlight.FlightType
+			 , Flt_OperativeFlight_Legs.AircraftType
+			 , Flt_OperativeFlight.FlightAutoCompleteFlag
+			 , Flt_OperativeFlight.FlightCancelFlag
+			 , Exp_FlightEvents.BuildupCompletedAt
+			 , Exp_FlightEvents.DLSCompletedAt
+			 , Exp_FlightEvents.ManifestCompletedAt
+			 , Exp_FlightEvents.FlightCompletedAt
+			 , Exp_FlightEvents.OutwardServiceReportFinalizedAt
+			 , (SELECT MAX(Exp_DG_Flight_NOTOC.SentOn)
+					  FROM Exp_DG_Flight_NOTOC
+					  WHERE Exp_DG_Flight_NOTOC.FlightId = Flt_OperativeFlight.Flight_ID
+			   ) AS NotocSentOn, 
+			   (SELECT MAX(Cdh_FlightPouch.PouchFinalizedDate)
+			    FROM Cdh_FlightPouch
+			    WHERE Cdh_FlightPouch.FlightId = Flt_OperativeFlight.Flight_ID
+			    AND Cdh_FlightPouch.DocumentStatus IN ('Finalized' , 'Checkout', 'DropOff')
+			   ) AS PouchCompletedAt, 
+				(SELECT ISNULL(MAX(CompletedAt),MAX(StartedAt))
+				  FROM Exp_HandOver
+				  WHERE Exp_HandOver.FlightId   = Flt_OperativeFlight.Flight_ID
+				  AND StartedAt IS NOT NULL 
+				) AS RampReleaseAt, 
+				( SELECT MAX(Interface_OutgoingMessageLog.SentOn)
+					FROM Interface_OutgoingMessageLog
+					WHERE Interface_OutgoingMessageLog.CarrierCode = Flt_OperativeFlight.CarrierCode
+					AND Interface_OutgoingMessageLog.FlightNumber = Flt_OperativeFlight.FlightNumber
+					AND CAST(Interface_OutgoingMessageLog.FlightOriginDate AS DATE) = CAST(Flt_OperativeFlight.FlightOriginDate AS DATE)
+					AND Interface_OutgoingMessageLog.MessageType = 'UCM'
+					AND Interface_OutgoingMessageLog.Status = 'SENT'
+				) AS UCMSent,
+				(Select Max(ALI.InstructionVersion)
+				 From Exp_AirlineLoadingInstructions ALI 
+				 Where ALI.FlightId = Flt_OperativeFlight.Flight_ID
+				) ALILastVersion,
+				(Select Max(ALI.ReceivedDate)
+				 From Exp_AirlineLoadingInstructions ALI
+				 Where ALI.FlightId = Flt_OperativeFlight.Flight_ID
+				) ALILastTime			
+			FROM Flt_OperativeFlight
+		   INNER JOIN Flt_OperativeFlight_Legs 
+					ON Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+		   INNER JOIN Exp_FlightEvents 
+					ON Exp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID 
+			inner join parameter on  Exp_FlightEvents.FlightCompletedAt  between parameter.fromdt and parameter.todt
+			LEFT JOIN Cdh_FlightPouch ON Cdh_FlightPouch.FlightId = Flt_OperativeFlight.Flight_ID
+			WHERE 
+			   Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} 
+			   AND Flt_OperativeFlight.GroundHandlerCode    != 'DNATA'
+	 ),
+	 ULDRelease As (
+		Select FlightId, Max(CompletedAt) ULDLastReleaseTime
+		From Exp_HandOver
+		Group By FlightId
+	),
+	OffLoad As (
+		Select Flights.Flight_Id, Max(OffLoadShp.CreatedDateTime) LastOffloadedAt
+		From Exp_OffloadULDInfo OffLoadUld
+		Inner Join Exp_OffloadShipmentInfo OffLoadShp 
+				On OffLoadShp.ExpOffloadULDInfoId = OffLoadUld.ExpOffloadULDInfoId
+		Inner Join Flt_OperativeFlight_Segments Seg 
+				On Seg.FlightSegmentId = OffLoadUld.FlightSegmentId
+		Inner Join Flights On Flights.Flight_Id = Seg.Flight_Id
+		Group By Flights.Flight_Id
+	)
+	SELECT Flights.CarrierCode as carrierCode
+	       , Flights.FlightKey as  flightKey     
+	       , Flights.FlightBoardPoint as flightBoardPoint
+	       , Flights.FlightOffPoint as flightOffPoint
+	       , Flights.DateSTD as dateSTD
+	       , Flights.DateETD as dateETD
+	       , Flights.DateATD as dateATD
+	       , Flights.FlightType as flagFrtPax
+	       , Flights.AircraftType as aircraftType
+		   , CASE WHEN Flights.FlightAutoCompleteFlag = 1 THEN 'YES' ELSE 'NO' END as autoFlightComplete
+	       , CASE WHEN Flights.FlightCancelFlag = 'D' THEN 'CNX' 
+				  ELSE CASE WHEN Flights.FlightCompletedAt IS NOT NULL THEN 'DEP'
+						    ELSE CASE WHEN Flights.DateETD > Flights.DateSTD THEN 'DLY' ELSE 'ONT' END
+					   END
+	         END  as flightStatus
+		   , Flights.ALILastVersion AS aliLastVersion  
+		   , Flights.ALILastTime AS aliLastReceivedTime			          
+	       , DATEADD(HOUR, +8, Flights.BuildupCompletedAt)  AS buildupCompletedTime
+	       , DATEADD(HOUR, +8, Flights.DLSCompletedAt)      AS dlsCompletedTime
+	       , DATEADD(HOUR, +8, Flights.ManifestCompletedAt) AS manifestCompletedTime
+		   , DATEADD(HOUR, +8, Flights.NotocSentOn)         AS notocFinalizedTime              
+	       , DATEADD(HOUR, +8, Flights.UCMSent)             AS ucmSentTime       
+		   , DATEADD(HOUR, +8, OffLoad.LastOffloadedAt) AS offLoadLastFinalizedTime
+		   , DATEADD(HOUR, +8, Flights.OutwardServiceReportFinalizedAt) AS outwardServiceReportFinalizedTime
+	       ,(CASE WHEN Flights.BuildupCompletedAt IS NOT NULL
+	              THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETD, Flights.DateSTD), DATEADD(HOUR, +8, Flights.BuildupCompletedAt))
+	              ELSE NULL END 
+		    ) AS buildupCompleteLeadTime
+	       ,(CASE WHEN Flights.DLSCompletedAt IS NOT NULL
+	               THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETD, Flights.DateSTD), DATEADD(HOUR, +8, Flights.DLSCompletedAt))
+	               ELSE NULL END 
+		    ) AS dlsCompleteLeadTime
+	       ,(CASE WHEN Flights.ManifestCompletedAt IS NOT NULL
+	               THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETD, Flights.DateSTD), DATEADD(HOUR, +8, Flights.ManifestCompletedAt))
+	               ELSE NULL
+	               END 
+		    ) AS manifestCompleteLeadTime
+	       ,(CASE WHEN Flights.NotocSentOn IS NOT NULL
+	               THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETD, Flights.DateSTD), DATEADD(HOUR, +8, Flights.NotocSentOn))
+	               ELSE NULL    END
+			) AS notocSentLeadTime
+	       ,(CASE WHEN Flights.UCMSent IS NOT NULL
+	              THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETD, Flights.DateSTD), DATEADD(HOUR, +8, Flights.UCMSent))
+	              ELSE NULL END
+			) AS ucmSentLeadTime		
+			, DATEADD(HOUR, +8, Flights.FlightCompletedAt)   AS flightCompletedTime
+			, DATEADD(HOUR, +8, ULDRelease.ULDLastReleaseTime) uldLastReleaseTime
+	FROM Flights
+	Left Join ULDRelease On ULDRelease.FlightId = Flights.Flight_Id
+	Left Join OffLoad On OffLoad.Flight_Id = Flights.Flight_Id
+		
+	</select>
+	
+	<select id="sqlGetImportDashBoardTrendAnalysis" resultMap="importExportDashboardForTrendAnalysisMap">
+	with 
+		parameter as
+						(
+						select (select dateadd(hour,8, cast(parametervaluechar as datetime)) from App_SystemParameters where ParameterCode = 'SQTrendAnalysisLastBatchUpdateTime') as 'Fromdt'
+						, dateadd(hour,8,getdate()) as 'Todt'),
+	Flights AS(
+			SELECT Flt_OperativeFlight.CarrierCode
+					 , Flt_OperativeFlight.Flight_ID
+					 , Flt_OperativeFlight_Segments.FlightSegmentId
+					 , Flt_OperativeFlight.FlightNumber
+					 , Flt_OperativeFlight.FlightKey
+					 , Flt_OperativeFlight.FlightOriginDate
+					 , Flt_OperativeFlight_Legs.FlightBoardPoint
+					 , Flt_OperativeFlight_Legs.FlightOffPoint
+					 , Flt_OperativeFlight_Legs.DateSTA
+					 , Flt_OperativeFlight_Legs.DateETA
+					 , Flt_OperativeFlight_Legs.DateATA
+					 , Flt_OperativeFlight.FlightType
+					 , Flt_OperativeFlight_Legs.AircraftType
+					 , Flt_OperativeFlight.FlightCancelFlag
+					 , Imp_FlightEvents.RampCheckInCompletedAt
+					 , Imp_FlightEvents.DocumentVerificationCompletedAt
+					 , Imp_FlightEvents.BreakDownCompletedAt
+					 , Imp_FlightEvents.FlightCompletedAt
+					 , Imp_FlightEvents.FightClosedAt
+					 , Imp_FlightEvents.FlightDiscrepncyListSentAt
+					 , Imp_FlightEvents.ThroughTransitWorkingListFinalizedAt
+					 , Imp_FlightEvents.InwardServiceReportFinalizedAt
+					 , Imp_FreightFlightManifestBySegment.MessageStatus
+					 , Imp_FreightFlightManifestBySegment.MessageProcessedDate
+					 , (SELECT MAX(Imp_RampCheckIn.CheckedInAt)
+						FROM Imp_RampCheckIn
+						WHERE Imp_RampCheckIn.FlightId = Flt_OperativeFlight.Flight_ID
+					   ) AS RampCheckInAt
+			FROM Flt_OperativeFlight
+			INNER JOIN Flt_OperativeFlight_Legs
+					ON Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			INNER JOIN Flt_OperativeFlight_Segments
+					ON Flt_OperativeFlight_Segments.Flight_ID            = Flt_OperativeFlight.Flight_ID
+					AND Flt_OperativeFlight_Segments.FlightBoardPoint = Flt_OperativeFlight_Legs.FlightBoardPoint
+					AND Flt_OperativeFlight_Segments.FlightOffPoint   = Flt_OperativeFlight_Legs.FlightOffPoint
+			INNER JOIN Imp_FlightEvents
+					ON Imp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID inner join parameter
+					on Flt_OperativeFlight_Legs.DateSTD  between parameter.fromdt and parameter.todt
+			LEFT JOIN Imp_FreightFlightManifestByFlight
+				   ON Imp_FreightFlightManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID
+			LEFT JOIN Imp_FreightFlightManifestBySegment
+					ON Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId = Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId
+					AND Imp_FreightFlightManifestBySegment.FlightSegmentId                = Flt_OperativeFlight_Segments.FlightSegmentId
+					AND (Imp_FreightFlightManifestBySegment.MessageStatus IS NULL
+						OR Imp_FreightFlightManifestBySegment.MessageStatus    = 'PROCESSED')
+			WHERE 
+			  Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+		)
+		SELECT Flights.CarrierCode carrierCode
+		       , Flights.FlightKey flightKey
+		       , Flights.FlightBoardPoint flightBoardPoint
+		       , Flights.FlightOffPoint flightOffPoint
+		       , Flights.DateSTA dateSTA
+		       , Flights.DateETA dateETA
+		       , Flights.DateATA dateATA
+		       , Flights.FlightType flagFrtPax
+		       , Flights.AircraftType aircraftType      
+		       , CASE WHEN Flights.FlightCancelFlag = 'D'
+		              THEN 'CNX' 
+					  ELSE CASE WHEN Flights.DateATA IS NOT NULL
+		                        THEN 'ARR'
+		                        ELSE CASE WHEN Flights.DateETA > Flights.DateSTA
+		                                  THEN 'DLY'
+		                                  ELSE 'ONT'
+		                             END
+		                    END
+		         END flightStatus
+		       , DATEADD(HOUR, +8, ISNULL(Flights.RampCheckInCompletedAt, Flights.RampCheckInAt)) AS rampCheckInCompletedAt
+		       , CASE WHEN Flights.MessageStatus = 'PROCESSED'
+		              THEN DATEADD(HOUR, +8, Flights.MessageProcessedDate)
+		              ELSE NULL
+		         END impFFMProcessedTime
+		       , DATEADD(HOUR, +8, Flights.DocumentVerificationCompletedAt) AS documentVerificationCompletedAt
+		       , DATEADD(HOUR, +8, Flights.BreakDownCompletedAt) AS breakDownCompletedTime
+		       , DATEADD(HOUR, +8, Flights.ThroughTransitWorkingListFinalizedAt) AS ttWorkingListFinalizedTime
+		       , DATEADD(HOUR, +8, Flights.InwardServiceReportFinalizedAt) AS inwardServiceReportFinalizedTime
+			   ,(CASE WHEN Flights.FlightDiscrepncyListSentAt IS NOT NULL
+		              THEN DATEDIFF(MINUTE, COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.FlightDiscrepncyListSentAt))
+		              ELSE NULL
+		         END)
+		         AS fdlSentLeadTime
+		       ,(CASE WHEN Flights.RampCheckInCompletedAt IS NOT NULL
+		              THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.RampCheckInCompletedAt))
+		              ELSE NULL
+		         END)
+		         AS rampCheckInCompleteLeadTime
+		       , (CASE WHEN Flights.MessageProcessedDate IS NOT NULL
+		               THEN DATEDIFF(MINUTE, COALESCE(Flights.DateETA, Flights.DateSTA), 
+							DATEADD(HOUR, +8, Flights.MessageProcessedDate))
+		               ELSE NULL
+		                  END
+		         ) AS impFFMProcessedLeadTime
+		       ,(CASE WHEN Flights.DocumentVerificationCompletedAt IS NOT NULL
+		                                    THEN DATEDIFF(MINUTE, COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.DocumentVerificationCompletedAt))
+		                                    ELSE NULL
+		                  END
+		         )  AS documentVerificationCompleteLeadTime
+		       ,(CASE WHEN Flights.BreakDownCompletedAt IS NOT NULL
+		                                    THEN DATEDIFF(MINUTE, COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.BreakDownCompletedAt))
+		                                    ELSE NULL
+		        END) AS breakdownCompleteLeadTime
+		       , DATEADD(HOUR, +8, Flights.FlightCompletedAt) AS flightCompletedTime
+		       , DATEADD(HOUR, +8, Flights.FightClosedAt) AS flightClosedTime       
+				,(CASE WHEN Flights.FlightCompletedAt IS NOT NULL
+		              THEN DATEDIFF(MINUTE, COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.FlightCompletedAt))
+		              ELSE NULL
+		         END) AS flightCompleteLeadTime
+		        ,( CASE WHEN Flights.FlightDiscrepncyListSentAt IS NOT NULL
+		               THEN DATEDIFF(MINUTE, COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA), DATEADD(HOUR, +8, Flights.FlightDiscrepncyListSentAt))
+		               ELSE NULL
+		          END
+		         ) AS fdlSentLeadTime 
+		FROM Flights
+	</select>
+	
+	<resultMap type="com.ngen.cosys.TrendAnalysis.Model.OutBoundFFMComplainceModel" id="importExportDashboardForTrendAnalysisMap">
+		<result column="carrierCode" property="carrierCode"/>
+		<result column="flightKey" property="flightKey"/>
+		<result column="flightBoardPoint" property="flightBoardPoint"/>
+		<result column="flightOffPoint" property="flightOffPoint"/>
+		<result column="dateSTD" property="dateSTD"/>
+		<result column="dateATD" property="dateATD"/>
+		<result column="dateETD" property="dateETD"/>
+		<result column="dateSTA" property="dateSTA"/>
+		<result column="dateETA" property="dateETA"/>
+		<result column="dateATA" property="dateATA"/>
+		<result column="flagFrtPax" property="flagFrtPax"/>
+		<result column="aircraftType" property="aircraftType"/>
+		<result column="autoFlightComplete" property="autoFlightComplete"/>
+		<result column="flightStatus" property="flightStatus"/>
+		<result column="aliLastVersion" property="aliLastVersion"/>
+		<result column="aliLastReceivedTime" property="aliLastReceivedTime"/>
+		<result column="buildupCompletedTime" property="buildupCompletedTime"/>
+		<result column="dlsCompletedTime" property="dlsCompletedTime"/>
+		<result column="manifestCompletedTime" property="manifestCompletedTime"/>
+		<result column="notocFinalizedTime" property="notocFinalizedTime"/>
+		<result column="ucmSentTime" property="ucmSentTime"/>
+		<result column="offLoadLastFinalizedTime" property="offLoadLastFinalizedTime"/>
+		<result column="outwardServiceReportFinalizedTime" property="outwardServiceReportFinalizedTime"/>
+		<result column="buildupCompleteLeadTime" property="buildupCompleteLeadTime"/>
+		<result column="dlsCompleteLeadTime" property="dlsCompleteLeadTime"/>
+		<result column="manifestCompleteLeadTime" property="manifestCompleteLeadTime"/>
+		<result column="notocSentLeadTime" property="notocSentLeadTime"/>
+		<result column="ucmSentLeadTime" property="ucmSentLeadTime"/>
+		<result column="flightCompletedTime" property="flightCompletedTime"/>
+		<result column="uldLastReleaseTime" property="uldLastReleaseTime"/>
+		<result column="rampCheckInCompletedAt" property="rampCheckInCompletedAt"/>
+		<result column="impFFMProcessedTime" property="impFFMProcessedTime"/>
+		<result column="documentVerificationCompletedAt" property="documentVerificationCompletedAt"/>
+		<result column="breakDownCompletedTime" property="breakDownCompletedTime"/>
+		<result column="ttWorkingListFinalizedTime" property="ttWorkingListFinalizedTime"/>
+		<result column="inwardServiceReportFinalizedTime" property="inwardServiceReportFinalizedTime"/>
+		<result column="fdlSentLeadTime" property="fdlSentLeadTime"/>
+		<result column="rampCheckInCompleteLeadTime" property="rampCheckInCompleteLeadTime"/>
+		<result column="impFFMProcessedLeadTime" property="impFFMProcessedLeadTime"/>
+		<result column="documentVerificationCompleteLeadTime" property="documentVerificationCompleteLeadTime"/>
+		<result column="breakdownCompleteLeadTime" property="breakdownCompleteLeadTime"/>
+		<result column="flightClosedTime" property="flightClosedTime"/>
+		<result column="flightCompleteLeadTime" property="flightCompleteLeadTime"/>
+		<result column="fdlSentLeadTime" property="fdlSentLeadTime"/>
+		<result column="totalBkdAWB" property="totalBkdAWB"/>
+		<result column="totalBkdPcs" property="totalBkdPcs"/>
+		<result column="totalBkdWgt" property="totalBkdWgt"/>
+		<result column="totalBkdAWB_STDMinus2Hrs" property="totalBkdAWB_STDMinus2Hrs"/>
+		<result column="totalBkdPcs_STDMinus2Hrs" property="totalBkdPcs_STDMinus2Hrs"/>
+		<result column="totalBkdWgt_STDMinus2Hrs" property="totalBkdWgt_STDMinus2Hrs"/>
+		<result column="totalBkdPcs_STDMinus4Hrs" property="totalBkdPcs_STDMinus4Hrs"/>
+		<result column="totalBkdWgt_STDMinus4Hrs" property="totalBkdWgt_STDMinus4Hrs"/>
+		<result column="totalBkdWgt_STDMinus4Hrs" property="totalBkdWgt_STDMinus4Hrs"/>
+		<result column="totalBkdAWB_STDMinus8Hrs" property="totalBkdAWB_STDMinus8Hrs"/>
+		<result column="totalBkdPcs_STDMinus8Hrs" property="totalBkdPcs_STDMinus8Hrs"/>
+		<result column="totalBkdWgt_STDMinus8Hrs" property="totalBkdWgt_STDMinus8Hrs"/>
+		<result column="totalDepAWB" property="totalDepAWB"/>
+		<result column="totalDepPcs" property="totalDepPcs"/>
+		<result column="totalDepWgt" property="totalDepWgt"/>
+		<result column="totalOffLoadAWB" property="totalOffLoadAWB"/>
+		<result column="totalOffLoadPcs" property="totalOffLoadPcs"/>
+		<result column="totalOffLoadWgt" property="totalOffLoadWgt"/>
+	</resultMap>
+	
+	<insert id="sqlInsertImportExportDashBoardForTrendAnalysis" >
+	INSERT INTO Rpt_FlightInfo
+           (CarrierCode
+           ,FlightKey
+           ,FlightBoardPoint
+           ,FlightOffPoint
+           ,DateSTA
+           ,DateATA
+           ,DateETA
+           ,DateSTD
+           ,DateATD
+           ,DateETD
+           ,FlightType
+           ,AutoFlightCompleteFlag
+           ,AircraftType
+           ,FlightStatus
+           ,ALILastVersion
+           ,ALILastReceivedTime
+           ,TotalBkdAWB_STDMinus8Hrs
+           ,TotalBkdPcs_STDMinus8Hrs
+           ,TotalBkdWgt_STDMinus8Hrs
+           ,TotalBkdAWB_STDMinus4Hrs
+           ,TotalBkdPcs_STDMinus4Hrs
+           ,TotalBkdWgt_STDMinus4Hrs
+           ,TotalBkdAWB_STDMinus2Hrs
+           ,TotalBkdPcs_STDMinus2Hrs
+           ,TotalBkdWgt_STDMinus2Hrs
+           ,TotalDepAWB
+           ,TotalDepPcs
+           ,TotalDepWgt
+           ,TotalOffLoadAWB
+           ,TotalOffLoadPcs
+           ,TotalOffLoadWgt
+           ,BuildupCompletedTime
+           ,DLSCompletedTime
+           ,ManifestCompletedTime
+           ,NotocFinalizedTime
+           ,UCMSentTime
+           ,OffLoadLastFinalizedTime
+           ,OutwardServiceReportFinalizedTime
+           ,BuildupCompleteLeadTime
+           ,DLSCompleteLeadTime
+           ,ManifestCompleteLeadTime
+           ,NotocSentLeadTime
+           ,UCMSentLeadTime
+           ,RampCheckInCompletedTime
+           ,ImportFFMProcessedTime
+           ,DocumentVerificationCompletedTime
+           ,BreakDownCompletedTime
+           ,TTWorkingListFinalizedTime
+           ,InwardServiceReportFinalizedTime
+           ,FDLSentTime
+           ,RampCheckInCompleteLeadTime
+           ,ImportFFMProcessedLeadTime
+           ,DocumentVerificationCompleteLeadTime
+           ,BreakdownCompleteLeadTime
+           ,FlightCompletedTime
+           ,FlightClosedTime
+           ,FlightCompleteLeadTime
+           ,FDLSentLeadTime
+           ,CreatedTime
+           ,ULDLastReleaseTime
+           )
+     VALUES
+           (#{carrierCode}
+           ,#{flightKey}
+           ,#{flightBoardPoint}
+           ,#{flightOffPoint}
+           ,#{dateSTA}
+           ,#{dateATA}
+           ,#{dateETA}
+           ,#{dateSTD}
+           ,#{dateATD}
+           ,#{dateETD}
+           ,#{flagFrtPax}
+           ,#{autoFlightComplete}
+           ,#{aircraftType}
+           ,#{flightStatus}
+           ,#{aliLastVersion}
+           ,#{aliLastReceivedTime}
+           ,#{totalBkdAWB_STDMinus8Hrs}
+           ,#{totalBkdPcs_STDMinus8Hrs}
+           ,#{totalBkdWgt_STDMinus8Hrs}
+           ,#{totalBkdAWB_STDMinus4Hrs}
+           ,#{totalBkdPcs_STDMinus4Hrs}
+           ,#{totalBkdWgt_STDMinus4Hrs}
+           ,#{totalBkdAWB_STDMinus2Hrs}
+           ,#{totalBkdPcs_STDMinus2Hrs}
+           ,#{totalBkdWgt_STDMinus2Hrs}
+           ,#{totalDepAWB}
+           ,#{totalDepPcs}
+           ,#{totalDepWgt}
+           ,#{totalOffLoadAWB}
+           ,#{totalOffLoadPcs}
+           ,#{totalOffLoadWgt}
+           ,#{buildupCompletedTime}
+           ,#{dlsCompletedTime}
+           ,#{manifestCompletedTime}
+           ,#{notocFinalizedTime}
+           ,#{ucmSentTime}
+           ,#{offLoadLastFinalizedTime}
+           ,#{outwardServiceReportFinalizedTime}
+           ,#{buildupCompleteLeadTime}
+           ,#{dlsCompleteLeadTime}
+           ,#{manifestCompleteLeadTime}
+           ,#{notocSentLeadTime}
+           ,#{ucmSentLeadTime}
+           ,#{rampCheckInCompletedAt}
+           ,#{impFFMProcessedTime}
+           ,#{documentVerificationCompletedAt}
+           ,#{breakDownCompletedTime}
+           ,#{ttWorkingListFinalizedTime}
+           ,#{inwardServiceReportFinalizedTime}
+           ,#{fdlSentTime}
+           ,#{rampCheckInCompleteLeadTime}
+           ,#{impFFMProcessedLeadTime}
+           ,#{documentVerificationCompleteLeadTime}
+           ,#{breakdownCompleteLeadTime}
+           ,#{flightCompletedTime}
+           ,#{flightClosedTime}
+           ,#{flightCompleteLeadTime}
+           ,#{fdlSentLeadTime}
+           ,getdate()
+           ,#{uldLastReleaseTime}
+           )
+	</insert>
+	
+	<update id="sqlUpdateExportImportDashboardForTrendAnalysis">
+	update 
+		Rpt_FlightInfo
+	set
+		FlightKey = #{flightKey}
+		<if test="flightBoardPoint != null">
+		   ,FlightBoardPoint = #{flightBoardPoint}
+		 </if>
+		<if test="flightOffPoint != null">
+           ,FlightOffPoint = #{flightOffPoint}
+          </if>
+           <if test="flagFrtPax != null">
+           ,FlightType = #{flagFrtPax}
+           </if>
+           <if test="aircraftType != null">
+           ,AircraftType = #{aircraftType}
+           </if>
+           <if test="dateSTA != null">
+           ,DateSTA = #{dateSTA}
+           </if>
+           <if test="dateATA != null">
+           ,DateATA = #{dateATA}
+           </if>
+           <if test="dateETA != null">
+           ,DateETA = #{dateETA}
+           </if>
+           <if test="dateSTD != null">
+           ,DateSTD = #{dateSTD}
+           </if>
+           <if test="dateATD != null">
+           ,DateATD = #{dateATD}
+           </if>
+           <if test="dateETD != null">
+           ,DateETD = #{dateETD}
+           </if>
+           <if test="flightStatus != null">
+           ,FlightStatus = #{flightStatus}
+           </if>
+           <if test="totalBkdAWB_STDMinus8Hrs != null">
+           ,TotalBkdAWB_STDMinus8Hrs = #{totalBkdAWB_STDMinus8Hrs}
+           </if>
+           <if test="totalBkdPcs_STDMinus8Hrs != null">
+           ,TotalBkdPcs_STDMinus8Hrs = #{totalBkdPcs_STDMinus8Hrs}
+           </if>
+           <if test="totalBkdWgt_STDMinus8Hrs != null">
+           ,TotalBkdWgt_STDMinus8Hrs = #{totalBkdWgt_STDMinus8Hrs}
+           </if>
+           <if test="totalBkdAWB_STDMinus4Hrs != null">
+           ,TotalBkdAWB_STDMinus4Hrs = #{totalBkdAWB_STDMinus4Hrs}
+           </if>
+           <if test="totalBkdPcs_STDMinus4Hrs != null">
+           ,TotalBkdPcs_STDMinus4Hrs = #{totalBkdPcs_STDMinus4Hrs}
+           </if>
+           <if test="totalBkdWgt_STDMinus4Hrs != null">
+           ,TotalBkdWgt_STDMinus4Hrs = #{totalBkdWgt_STDMinus4Hrs}
+           </if>
+           <if test="totalBkdAWB_STDMinus2Hrs != null">
+           ,TotalBkdAWB_STDMinus2Hrs = #{totalBkdAWB_STDMinus2Hrs}
+           </if>
+           <if test="totalBkdPcs_STDMinus2Hrs != null">
+           ,TotalBkdPcs_STDMinus2Hrs = #{totalBkdPcs_STDMinus2Hrs}
+           </if>
+           <if test="totalBkdWgt_STDMinus2Hrs != null">
+           ,TotalBkdWgt_STDMinus2Hrs = #{totalBkdWgt_STDMinus2Hrs}
+           </if>
+           <if test="totalDepAWB != null">
+           ,TotalDepAWB = #{totalDepAWB}
+           </if>
+           <if test="totalDepPcs != null">
+           ,TotalDepPcs = #{totalDepPcs}
+           </if>
+           <if test="totalDepWgt != null">
+           ,TotalDepWgt = #{totalDepWgt}
+           </if>
+           <if test="totalOffLoadAWB != null">
+           ,TotalOffLoadAWB = #{totalOffLoadAWB}
+           </if>
+           <if test="totalOffLoadPcs != null">
+           ,TotalOffLoadPcs = #{totalOffLoadPcs}
+           </if>	
+           <if test="totalOffLoadWgt != null">
+           ,TotalOffLoadWgt = #{totalOffLoadWgt}
+           </if>
+           <if test="buildupCompletedTime != null">
+           ,BuildupCompletedTime = #{buildupCompletedTime}
+           </if>
+           <if test="buildupCompleteLeadTime != null">
+           ,BuildupCompleteLeadTime = #{buildupCompleteLeadTime}
+           </if>
+           <if test="dlsCompletedTime != null">
+           ,DLSCompletedTime = #{dlsCompletedTime}
+           </if>
+           <if test="dlsCompleteLeadTime != null">
+           ,DLSCompleteLeadTime = #{dlsCompleteLeadTime}
+           </if>
+           <if test="notocFinalizedTime != null">
+           ,NotocFinalizedTime = #{notocFinalizedTime}
+           </if>
+           <if test="notocSentLeadTime != null">
+           ,NotocSentLeadTime = #{notocSentLeadTime}
+           </if>
+           <if test="manifestCompletedTime != null">
+           ,ManifestCompletedTime = #{manifestCompletedTime}
+           </if>
+           <if test="manifestCompleteLeadTime != null">
+           ,ManifestCompleteLeadTime = #{manifestCompleteLeadTime}
+           </if>
+           <if test="offLoadLastFinalizedTime != null">
+           ,OffLoadLastFinalizedTime = #{offLoadLastFinalizedTime}
+           </if>
+           <if test="aliLastVersion != null">
+           ,ALILastVersion = #{aliLastVersion}
+           </if>
+           <if test="aliLastReceivedTime != null">
+           ,ALILastReceivedTime = #{aliLastReceivedTime}
+           </if>
+           <if test="outwardServiceReportFinalizedTime != null">
+           ,OutwardServiceReportFinalizedTime = #{outwardServiceReportFinalizedTime}
+           </if>
+           <if test="rampCheckInCompletedAt != null">
+           ,RampCheckInCompletedTime = #{rampCheckInCompletedAt}
+           </if>
+           <if test="rampCheckInCompleteLeadTime != null">
+           ,RampCheckInCompleteLeadTime = #{rampCheckInCompleteLeadTime}
+           </if>
+           <if test="impFFMProcessedTime != null">
+           ,ImportFFMProcessedTime = #{impFFMProcessedTime}
+           </if>
+           <if test="impFFMProcessedLeadTime != null">
+           ,ImportFFMProcessedLeadTime = #{impFFMProcessedLeadTime}
+           </if>
+           <if test="documentVerificationCompletedAt != null">
+           ,DocumentVerificationCompletedTime = #{documentVerificationCompletedAt}
+           </if>
+           <if test="documentVerificationCompleteLeadTime != null">
+           ,DocumentVerificationCompleteLeadTime = #{documentVerificationCompleteLeadTime}
+           </if>
+           <if test="breakDownCompletedTime != null">
+           ,BreakDownCompletedTime = #{breakDownCompletedTime}
+           </if>
+           <if test="breakdownCompleteLeadTime != null">
+           ,BreakdownCompleteLeadTime = #{breakdownCompleteLeadTime}
+           </if>
+           <if test="fdlSentTime != null">
+           ,FDLSentTime = #{fdlSentTime}
+           </if>
+           <if test="fdlSentLeadTime != null">
+           ,FDLSentLeadTime = #{fdlSentLeadTime}
+           </if>
+           <if test="inwardServiceReportFinalizedTime != null">
+           ,InwardServiceReportFinalizedTime = #{inwardServiceReportFinalizedTime}
+           </if>
+           <if test="ucmSentTime != null">
+           ,UCMSentTime = #{ucmSentTime}
+           </if>
+           <if test="ucmSentLeadTime != null">
+           ,UCMSentLeadTime = #{ucmSentLeadTime}
+           </if>
+           <if test="ttWorkingListFinalizedTime != null">
+           ,TTWorkingListFinalizedTime = #{ttWorkingListFinalizedTime}
+           </if>
+           <if test="flightCompletedTime != null">
+           ,FlightCompletedTime = #{flightCompletedTime}
+           </if>
+           <if test="flightCompleteLeadTime != null">
+           ,FlightCompleteLeadTime = #{flightCompleteLeadTime}
+           </if>
+           <if test="flightClosedTime != null">
+           ,FlightClosedTime = #{flightClosedTime}
+           </if>
+           <if test="uldLastReleaseTime != null">
+           ,ULDLastReleaseTime = #{uldLastReleaseTime}
+           </if>
+           ,UpdatedTime = getdate()
+          where
+          	FlightKey = #{flightKey} 
+          	<if test="fromImport == true ">
+          	and	FlightOffPoint = #{tenantAirport}
+          	and	cast(DateSTA as date) = cast(#{dateSTA} as date)
+          	</if>
+          	<if test="fromImport == false ">
+          	and FlightBoardPoint = #{tenantAirport}
+          	and	cast(DateSTD as date) = cast(#{dateSTD} as date)
+          	</if>
+	</update>
+	
+	<select id="sqlCheckFFMComplianceExportExistsOrNot" resultType="java.lang.Boolean">
+	select
+		case when count(*) > 0 then 1 else 0 end
+	from
+		Rpt_FlightInfo
+	where
+		FlightKey = #{flightKey} and
+		FlightBoardPoint = #{tenantAirport} and	
+		DateSTD = #{dateSTD}
+	</select>
+	
+	<select id="sqlgetLatestTimeStampForOffloadInGivenTimeSpan" resultMap="importExportDashboardForTrendAnalysisMap">
+	select 
+		Flt_OperativeFlight.FlightKey flightKey,
+		Flt_OperativeFlight_Segments.DateSTD dateSTD,
+		DATEADD(HOUR, +8,Exp_OffloadShipmentInfo.CreatedDateTime) offLoadLastFinalizedTime
+	from 
+		Exp_OffloadULDInfo inner join
+		Exp_OffloadShipmentInfo	
+			on Exp_OffloadULDInfo.ExpOffloadULDInfoId = Exp_OffloadShipmentInfo.ExpOffloadULDInfoId inner join
+		Exp_OffloadShipmentInventoryInfo
+			on Exp_OffloadShipmentInfo.ExpOffloadShipmentInfoId = Exp_OffloadShipmentInventoryInfo.ExpOffloadShipmentInfoId inner join
+		Flt_OperativeFlight_Segments
+			on Exp_OffloadULDInfo.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId inner join
+		Flt_OperativeFlight
+			on Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+	where
+		Exp_OffloadShipmentInfo.CreatedDateTime between #{fromDate} and #{toDate}
+	</select>
+	
+	<select id="sqlCheckImportDashboardTrendExistsOrNot" resultType="java.lang.Boolean">
+	select
+		case when count(*) > 0 then 1 else 0 end
+	from
+		Rpt_FlightInfo
+	where
+		FlightKey = #{flightKey} and
+		FlightOffPoint = #{tenantAirport} and	
+		DateSTA = #{dateSTA}
+	</select>
+	
+	<update id="sqlUpdateTrendDepAsBkd">
+	Update 
+		Rpt_ExportShipmentsInfo 
+	Set 
+		DepartedAsAcceptanceFlight = Case When AcceptanceFlightKey = DepartedFlightKey
+									And AcceptanceFlightSTD = DepartedFlightSTD Then 'Y' Else 'N' End 
+		Where IsNull(UpdatedTime,CreatedTime) Between #{fromDate} and #{toDate}
+	</update>
+	
+	
+	<select id="sqlGetBKDVsUpliftedBookedTonnage" resultMap="importExportDashboardForTrendAnalysisMap">
+	With BkgUpdate As (
+					Select Distinct 
+						FlightId, 
+						FlightKey
+					From 
+						Exp_BookingDelta 
+					Where 
+						FlightBoardPoint = #{tenantAirport}  And 
+						BookingStatusCode in ('SS', 'XX') And 
+						isnull(LastUpdatedDateTime,CreatedDateTime) Between #{fromDate} And #{toDate}
+					)
+	,BkgDeltaData as(
+						Select 
+							Flt.CarrierCode carrierCode, 
+							Flt.FlightKey flightKey, 
+							Delta.FlightBoardPoint flightBoardPoint, 
+							Delta.FlightOffPoint flightOffPoint,  
+							Leg.DateSTD dateSTD, 
+							Leg.DateATD dateATD,
+							iif(BookingStatusCode = 'SS',Delta.ShipmentNumber, null) ShipmentNumber,
+							iif(BookingStatusCode = 'SS',Delta.ShipmentBookingPieces, 0) ShipmentBookingPieces,
+							iif(BookingStatusCode = 'SS',Delta.ShipmentBookingWeight, 0) ShipmentBookingWeight,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 2, 1, 0) totalBkdAWB_STDMinus2Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 2, Delta.ShipmentBookingPieces, 0) totalBkdPcs_STDMinus2Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 2, Delta.ShipmentBookingWeight, 0) totalBkdWgt_STDMinus2Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 4, 1, 0) totalBkdAWB_STDMinus4Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 4, Delta.ShipmentBookingPieces, 0) totalBkdPcs_STDMinus4Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 4, Delta.ShipmentBookingWeight, 0) totalBkdWgt_STDMinus4Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 8, 1, 0) totalBkdAWB_STDMinus8Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 8, Delta.ShipmentBookingPieces, 0) totalBkdPcs_STDMinus8Hrs,
+							iif(BookingStatusCode = 'SS' and DATEDIFF(Hour,DateAdd(Hour,8,Delta.CreatedDateTime),Leg.DateSTD) >= 8, Delta.ShipmentBookingWeight, 0) totalBkdWgt_STDMinus8Hrs,
+							Flt.FlightType flagFrtPax
+						From 
+							Exp_BookingDelta Delta Inner Join 
+							BkgUpdate 
+								On BkgUpdate.FlightId = Delta.FlightId Inner Join 
+							Flt_OperativeFlight Flt 
+								On Flt.Flight_ID = BkgUpdate.FlightId Inner Join 
+							Flt_OperativeFlight_Legs Leg 
+								On Leg.Flight_ID = Flt.Flight_ID And 
+									Leg.FlightBoardPoint = Delta.FlightBoardPoint
+						Where
+							Delta.FlightBoardPoint = #{tenantAirport} And
+							Delta.BookingStatusCode in ('SS', 'XX') And
+							Delta.ExpBookingDeltaId = (Select 
+															Max(Delta_A.ExpBookingDeltaId) 
+														From 
+															Exp_BookingDelta Delta_A 
+														Where 
+															Delta_A.FlightBoardPoint = 'SIN' And
+															Delta_A.BookingStatusCode in ('SS', 'XX') And 
+															Delta_A.FlightId = Delta.FlightId And 
+															Delta_A.ShipmentNumber = Delta.ShipmentNumber And
+															IsNull(Delta_A.PartSuffix,'P') = IsNull(Delta.PartSuffix,'P')
+															)
+							)
+	Select 
+		carrierCode, 
+		flightKey, 
+		flightBoardPoint, 
+		flightOffPoint, 
+		dateSTD, 
+		dateATD,
+		Count(Distinct Delta.ShipmentNumber) totalBkdAWB, 
+		Sum(Delta.ShipmentBookingPieces) totalBkdPcs,
+		Sum(Delta.ShipmentBookingWeight) totalBkdWgt,
+		Sum(totalBkdAWB_STDMinus2Hrs) totalBkdAWB_STDMinus2Hrs,
+		sum(totalBkdPcs_STDMinus2Hrs) totalBkdPcs_STDMinus2Hrs,
+		sum(totalBkdWgt_STDMinus2Hrs) totalBkdWgt_STDMinus2Hrs,
+		Sum(totalBkdAWB_STDMinus4Hrs) totalBkdAWB_STDMinus4Hrs,
+		sum(totalBkdPcs_STDMinus4Hrs) totalBkdPcs_STDMinus4Hrs,
+		sum(totalBkdWgt_STDMinus4Hrs) totalBkdWgt_STDMinus4Hrs,
+		Sum(totalBkdAWB_STDMinus8Hrs) totalBkdAWB_STDMinus8Hrs,
+		sum(totalBkdPcs_STDMinus8Hrs) totalBkdPcs_STDMinus8Hrs,
+		sum(totalBkdWgt_STDMinus8Hrs) totalBkdWgt_STDMinus8Hrs,
+		flagFrtPax
+	From 
+		BkgDeltaData Delta 
+	Group By 
+		CarrierCode, 
+		FlightKey, 
+		FlightBoardPoint, 
+		FlightOffPoint, 
+		DateSTD, 
+		DateATD, 
+		flagFrtPax
+	</select>
+	
+	<select id="sqlGetBKDVsUpliftedDepartedTonnage" resultMap="importExportDashboardForTrendAnalysisMap">
+	With DepUpdate As (
+		Select Distinct FrtOut.FlightId
+		From Shipment_FreightOut FrtOut
+		Inner JOIN Flt_OperativeFlight_Legs leg
+				ON leg.Flight_ID = FrtOut.FlightID
+		WHERE Leg.FlightBoardPoint = #{tenantAirport}	
+		And FrtOut.CreatedDateTime Between #{fromDate} And #{toDate}
+	)
+	Select 
+		Flt.CarrierCode carrierCode, 
+		Flt.FlightKey flightKey, 
+		Leg.FlightBoardPoint flightBoardPoint, 
+		Leg.DateSTD dateSTD, 
+		Leg.DateATD dateATD, 
+		Count(Distinct FrtOut.ShipmentId) totalDepAWB, 
+		Sum(FrtOut.Pieces) totalDepPcs, 
+		Sum(FrtOut.Weight) totalDepWgt
+	From 
+		Shipment_FreightOut FrtOut Inner Join 
+		DepUpdate 
+			On DepUpdate.FlightId = FrtOut.FlightId Inner Join 
+		Flt_OperativeFlight Flt 
+			On Flt.Flight_ID = DepUpdate.FlightId Inner JOIN 
+		Flt_OperativeFlight_Legs leg
+			ON leg.Flight_ID = Flt.Flight_ID
+	WHERE 
+		Leg.FlightBoardPoint = #{tenantAirport}	
+	Group By 
+		Flt.CarrierCode, 
+		Flt.FlightKey, 
+		Leg.FlightBoardPoint, 
+		Leg.DateSTD, 
+		Leg.DateATD
+	
+	
+	</select>
+	
+	<select id="sqlGetBKDVsUpliftedOffloadedTonnage" resultMap="importExportDashboardForTrendAnalysisMap">
+	With OffloadUpdate As (
+		Select Distinct FlightSegmentId
+		From Exp_OffloadShipmentInfo OffloadShp
+		Inner Join Exp_OffloadULDInfo OffloadUld 
+				On OffloadUld.ExpOffloadULDInfoId = OffloadShp.ExpOffloadULDInfoId
+		Where OffloadShp.CreatedDateTime Between #{fromDate} And #{toDate}	
+	)
+	Select  
+		Flt.CarrierCode carrierCode, 
+		Flt.FlightKey flightKey, 
+		Leg.FlightBoardPoint flightBoardPoint, 
+		Leg.DateSTD dateSTD, 
+		Leg.DateATD dateATD, 
+		Count(Distinct OffloadShp.ShipmentId) totalOffLoadAWB, 
+		Sum(OffloadShp.Pieces) totalOffLoadPcs, 
+		Sum(OffloadShp.Weight) totalOffLoadWgt,		
+		Max(DateAdd(Hour,8,IsNull(OffloadShp.LastUpdatedDateTime, OffloadShp.CreatedDateTime))) offLoadLastFinalizedTime
+	From 
+		Exp_OffloadShipmentInfo OffloadShp Inner Join 
+		Exp_OffloadULDInfo OffloadUld 
+			On OffloadUld.ExpOffloadULDInfoId = OffloadShp.ExpOffloadULDInfoId Inner Join 
+		OffloadUpdate 
+			On OffloadUpdate.FlightSegmentId = OffloadUld.FlightSegmentId Inner Join 
+		Flt_OperativeFlight_Segments Seg 
+			On Seg.FlightSegmentId = OffloadUpdate.FlightSegmentId Inner Join 
+		Flt_OperativeFlight Flt 
+			On Flt.Flight_ID = Seg.Flight_ID Inner JOIN 
+		Flt_OperativeFlight_Legs leg
+			ON leg.Flight_ID = Flt.Flight_ID
+	WHERE 
+		Leg.FlightBoardPoint = #{tenantAirport}	
+	Group By 
+		Flt.CarrierCode, 
+		Flt.FlightKey, 
+		Leg.FlightBoardPoint, 
+		Leg.DateSTD, 
+		Leg.DateATD
+	</select>
+</mapper>

@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SapInterfaceMapper">
+
+	<insert id="insertInvoiceAndCreditNoteDetails"
+		parameterType="com.ngen.cosys.billing.sap.model.InvoiceAndCreditNote"
+		useGeneratedKeys="true" keyProperty="invoiceCrdtNoteId" keyColumn="FinSysInvoiceCrdtNoteId">
+		insert into Billing_FinSysInvoiceCrdtNote (
+		FinSysInterfaceFileInfo,
+		FinSysCustomerCode,
+		DocumentNo,
+		CancelIndicator, DocumentMiscText,
+		TotalAmount,DocumentMiscFooter, RaiseBy,
+		CreatedUserCode,
+		CreatedDateTime,
+		CreditTerm,
+		CustomerName1,
+		CustomerName2,
+		CustomerName3,
+		CustomerName4,
+		Street2,
+		Street3,
+		CustomerStreet,
+		POBox,
+		CustomerCity,
+		CustomerPostalCode,
+		DocumentDate,
+		CreditNoteTypeIndicator
+		)
+		values(
+		#{sapFileInfoId},
+		#{customerAccountNo},
+		#{documentNo},
+		#{cancelIndicator}, #{documentMiscText},
+		#{grandTotalAmount},#{documentMiscFooterText},
+		#{raiseBy},
+		'ICDSAPINTERFACE',
+		getDate(),
+		#{creditTerm},
+		#{customerName1},
+		#{customerName2},
+		#{customerName3},
+		#{customerName4},
+		#{street2},
+		#{street3},
+		#{customerStreet},
+		#{poBox},
+		#{customerCity},
+		#{customerPostalCode},
+		getDate(),
+		#{creditNoteTypeIndicator})
+	</insert>
+
+	<insert id="insertInvoiceAndCreditNoteEntryDetails"
+		parameterType="com.ngen.cosys.billing.sap.model.InvoiceAndCreditNoteEntry"
+		useGeneratedKeys="true" keyProperty="invoiceCrdtNoteEntryId"
+		keyColumn="FinSysInvoiceCrdtNoteEntryId">
+		insert into Billing_FinSysInvoiceCrdtNoteEntry (
+		FinSysInvoiceCrdtNoteId,
+		RefBillingNumber,
+		FinSysChargeCode,
+		FinSysChargeDesc,
+		Quantity,
+		UnitOfMeasure,
+		Rate,
+		Amount,
+		AdditonalInfo,
+		TotalQuantity,
+		TotalRate,
+		TotalAmount,
+		CreatedUserCode,
+		CreatedDateTime,
+		LineSequenceNumber,
+		CreditNoteTypeIndicator
+		)
+		values(
+		#{invoiceCrdtNoteId},
+		#{cosysBillingNumber},
+		#{materialCode},
+		#{materialDescription},
+		#{quantity},
+		#{unitOfMeasure},
+		#{rate},
+		#{amount},
+		#{materialMiscTxt},
+		#{totalQuantity},
+		#{totalRate},
+		#{totalAmount},
+		'ICDSAPINTERFACE',
+		getDate(),
+		#{lineSequenceNumber},
+		#{creditNoteTypeIndicator}
+		)
+	</insert>
+	
+	
+	<update id="updatefinsysinvoiceno" parameterType="com.ngen.cosys.billing.sap.model.InvoiceAndCreditNoteEntry">
+		update
+		Billing_BillEntry
+		set FinSysInvoiceNumber=#{finSysInvoiceNo},FinSysInvoiceDate=#{invoiceDate},IsVoid=#{isVoid}
+		where BillingNo=#{billingNumber}
+
+	</update>
+
+
+	<insert id="insertsapFileInfodetails" parameterType="com.ngen.cosys.billing.sap.model.SAPFileInfo"
+		useGeneratedKeys="true" keyProperty="sapFileInfoId" keyColumn="FinSysInterfaceFileInfoId">
+		insert
+		into Billing_FinSysInterfaceFileInfo (
+		InterfaceType,
+		FileName,
+		FileCreationDt,
+		TotalLineCount,
+		ProcessStartDt,
+		ProcessingStatus,
+		ProcessingInfo,
+		CreatedUserCode,
+		CreatedDateTime
+		)
+		values(
+		#{interfaceType},
+		#{fileName},
+		#{fileCreationDt},
+		#{totalLineCount},
+		getDate(),
+		#{processedStatus},
+		#{processingInfo},
+		'SAPINTERFACE',
+		getDate())
+	</insert>
+	
+	<insert id="insertOutBoundSAPFileInfo" parameterType="com.ngen.cosys.billing.sap.model.SAPFileInfo"
+		useGeneratedKeys="true" keyProperty="sapFileInfoId" keyColumn="FinSysInterfaceFileInfoId">
+		insert
+		into Billing_FinSysInterfaceFileInfo (
+		InterfaceType,
+		FileName,
+		FileCreationDt,
+		TotalLineCount,
+		ProcessStartDt,
+		ProcessingStatus,
+		ProcessingInfo,
+		CreatedUserCode,
+		CreatedDateTime,
+		ProcessEndDt
+		)
+		values(
+		#{interfaceType},
+		#{fileName},
+		getDate(),
+		#{totalLineCount},
+		getDate(),
+		#{processedStatus},
+		#{processingInfo},
+		'SAPINTERFACE',
+		getDate(),
+		getDate())
+	</insert>
+
+
+	<update id="updatesapFileInfodetails" parameterType="com.ngen.cosys.billing.sap.model.SAPFileInfo">
+		update
+		Billing_FinSysInterfaceFileInfo set
+		FileName=#{fileName},
+		FileCreationDt=#{fileCreationDt},
+		TotalLineCount=#{totalLineCount},
+		ProcessingStatus=#{processedStatus},
+		ProcessingInfo=#{processingInfo},
+		ProcessEndDt= getDate()
+		where FinSysInterfaceFileInfoId
+		=#{sapFileInfoId}
+	</update>
+
+
+
+
+	<insert id="insertCutomerMaster" parameterType="com.ngen.cosys.billing.sap.model.CustomerInfo">
+		
+		IF NOT EXISTS (SELECT * FROM Billing_FinanceSystemCustomer WHERE FinSysCustomerCode = #{cutomerCode})
+			insert into
+			Billing_FinanceSystemCustomer (
+			FinSysCustomerCode,
+			CustomerName,
+			BlockIndicator,
+			CreatedUser_Code,
+			Created_DateTime,
+			InUse,
+			SalesOrganization,
+			DistributionChannel,
+			Division
+			)
+			values(
+			#{cutomerCode},
+			#{customerName},
+			#{blockIndicator},
+			'ICDSAPINTERFACE', getDate(),'1',
+			#{salesOrganization},
+			#{distributionChannel},
+			#{division})
+		ELSE
+			update Billing_FinanceSystemCustomer set 
+		    CustomerName=#{customerName},
+			BlockIndicator=#{blockIndicator},
+			LastUpdatedUser_Code='ICDSAPINTERFACE',
+			LastUpdated_DateTime=getDate(),
+			SalesOrganization=#{salesOrganization},
+			DistributionChannel=#{distributionChannel},
+			Division=#{division}
+			where FinSysCustomerCode =#{cutomerCode}
+		
+		
+	</insert>
+
+	<update id="updateCutomerMaster" parameterType="com.ngen.cosys.billing.sap.model.CustomerInfo">
+		
+		IF NOT EXISTS (SELECT * FROM Billing_FinanceSystemCustomer WHERE FinSysCustomerCode = #{cutomerCode})
+			insert into
+			Billing_FinanceSystemCustomer (
+			FinSysCustomerCode,
+			CustomerName,
+			BlockIndicator,
+			CreatedUser_Code,
+			Created_DateTime,
+			InUse,
+			SalesOrganization,
+			DistributionChannel,
+			Division
+			)
+			values(
+			#{cutomerCode},
+			#{customerName},
+			#{blockIndicator},
+			'ICDSAPINTERFACE', getDate(),'1',
+			#{salesOrganization},
+			#{distributionChannel},
+			#{division}
+			)
+		ELSE
+			update Billing_FinanceSystemCustomer set 
+		    CustomerName=#{customerName},
+			BlockIndicator=#{blockIndicator},
+			LastUpdatedUser_Code='ICDSAPINTERFACE',
+			LastUpdated_DateTime=getDate(),
+			SalesOrganization=#{salesOrganization},
+			DistributionChannel=#{distributionChannel},
+			Division=#{division}
+			where FinSysCustomerCode =#{cutomerCode}
+
+	</update>
+
+
+
+	<delete id="deleteCutomerMaster" parameterType="com.ngen.cosys.billing.sap.model.CustomerInfo">
+		update
+		Billing_FinanceSystemCustomer
+		set InUse='0'
+		where FinSysCustomerCode
+		=#{cutomerCode}
+		
+	</delete>
+
+
+	<insert id="insertMaterialMaster" parameterType="com.ngen.cosys.billing.sap.model.MaterialInfo">
+		
+		IF NOT EXISTS (SELECT * FROM Billing_FinanceSystemChargeCode WHERE FinSysChargeCode = #{materialNumber})
+			insert into
+			Billing_FinanceSystemChargeCode (
+			FinSysChargeCode,
+			FinSysChargeDesc,
+			UOM,
+			PricingType,
+			InUse,
+			CreatedUser_Code,
+			Created_DateTime,
+			SalesOrganization,
+			DistributionChannel,
+			Division
+			)
+			values(
+			#{materialNumber},
+			#{materialDescription},
+			#{unitOfMeasurement},
+			#{pricingType},
+			'1',
+			'SAPINTERFACE', getDate(),
+			#{salesOrganization},
+			#{distributionChannel},
+			#{division})
+		ELSE 
+			update
+			Billing_FinanceSystemChargeCode
+			set
+			FinSysChargeDesc=#{materialDescription},
+			UOM=#{unitOfMeasurement},
+			PricingType=#{pricingType},
+			LastUpdatedUser_Code='ICDSAPINTERFACE',
+			LastUpdated_DateTime=getDate(),
+			SalesOrganization=#{salesOrganization},
+			DistributionChannel=#{distributionChannel},
+			Division=#{division}
+			where FinSysChargeCode =#{materialNumber}
+		  	
+	</insert>
+
+	<update id="updateMaterialMaster" parameterType="com.ngen.cosys.billing.sap.model.MaterialInfo">
+		
+		IF NOT EXISTS (SELECT * FROM Billing_FinanceSystemChargeCode WHERE FinSysChargeCode = #{materialNumber})
+			insert into
+			Billing_FinanceSystemChargeCode (
+			FinSysChargeCode,
+			FinSysChargeDesc,
+			UOM,
+			PricingType,
+			InUse,
+			CreatedUser_Code,
+			Created_DateTime,
+			SalesOrganization,
+			DistributionChannel,
+			Division
+			)
+			values(
+			#{materialNumber},
+			#{materialDescription},
+			#{unitOfMeasurement},
+			#{pricingType},
+			'1',
+			'SAPINTERFACE', getDate(),
+			#{salesOrganization},
+			#{distributionChannel},
+			#{division})
+		ELSE 
+			update
+			Billing_FinanceSystemChargeCode
+			set
+			FinSysChargeDesc=#{materialDescription},
+			UOM=#{unitOfMeasurement},
+			PricingType=#{pricingType},
+			LastUpdatedUser_Code='ICDSAPINTERFACE',
+			LastUpdated_DateTime=getDate(),
+			SalesOrganization=#{salesOrganization},
+			DistributionChannel=#{distributionChannel},
+			Division=#{division}
+			where FinSysChargeCode =#{materialNumber}
+
+	</update>
+
+
+	<update id="deleteMaterialMaster" parameterType="com.ngen.cosys.billing.sap.model.MaterialInfo">
+		update
+		Billing_FinanceSystemChargeCode
+		set InUse='0'
+		where FinSysChargeCode
+		=#{materialNumber}
+
+	</update>
+
+	<!-- <delete id="deleteMaterialMaster" parameterType="com.ngen.cosys.billing.sap.model.MaterialInfo"> 
+		delete from Billing_FinanceSystemChargeCode where FinSysChargeCode = #{materialNumber} 
+		</delete> -->
+
+
+	<insert id="insertSapFileProcessingErrorDetails" parameterType="com.ngen.cosys.billing.sap.model.SAPFileErrorInfo"
+		useGeneratedKeys="true" keyProperty="sapFileErrorId" keyColumn="FinSysInterfaceFileErrorId">
+		insert
+		into Billing_FinSysInterfaceFileError (
+		FinSysInterfaceFileInfoId,
+		FileErrorLineNo,
+		ReferenceInfo,
+		ProcessingInfo,
+		CreatedUserCode,
+		CreatedDateTime
+		)
+		values(
+		#{sapFileInfoId},
+		#{lineNo},
+		#{referenceInfo},
+		#{processingInfo},
+		'ICDSAPINTERFACE',
+		getDate())
+	</insert>
+
+
+	<resultMap id="accountPayableDetailsObj"
+		type="com.ngen.cosys.billing.sap.model.AccountsPayableDetails">
+		<result property="billEntryId" column="BillEntryId" />
+		<result property="billGenId" column="BillGenId" />
+		<result property="apVendorCode" column="FinSysAPCode" />
+		<result property="accountNo" column="FinanceSystemIdentificationNumber" />
+		<result property="customerId" column="CustomerId" />
+		<result property="chargeCodeId" column="ChargecodeId" />
+		<result property="sgdAmount" column="ChargeTotalAmount" />
+		<result property="billGenDate" column="BillGenDate" />
+		<result property="billingFrequency" column="BillingFrequency" />
+		<result property="payeeName" column="payeeName" />
+		
+
+	</resultMap>
+
+
+	<select id="fetchAccountPayableDetails" resultMap="accountPayableDetailsObj">
+		<!-- SELECT
+		be.BillEntryId,
+		bg.BillGenId,
+		bg.BillGenDate,
+		ci.CustomerId,
+		be.ChargecodeId,
+		ci.BillingFrequency,ci.FinanceSystemIdentificationNumber,ci.FinSysAPCode,
+		ApportionedAmount,bg.PostingStatus as billGenPostingStatus,
+		be.PostingStatus as
+		billEntryPostingStatus
+		FROM Billing_BillEntry be
+		JOIN Billing_BillGen bg on
+		bg.BillGenId=be.BillGenId
+		JOIN
+		Billing_CustomerInfo ci on
+		ci.CustomerId=bg.CustomerId
+		WHERE bg.PostingStatus=0 AND be.PostingStatus=0
+		ORDER BY ci.CustomerId,be.ChargecodeId -->
+		
+		
+		SELECT
+		be.BillAPEntryId,
+		bg.BillGenId,
+		bg.BillGenDate,
+		ci.CustomerId,
+		be.ChargecodeId,
+		ci.APGenFrequency,ci.FinanceSystemIdentificationNumber,ci.FinSysAPCode,
+		ChargeTotalAmount,bg.PostingStatus as billGenPostingStatus,
+		be.PostingStatus as
+		billEntryPostingStatus
+		FROM Billing_APEntry be
+		JOIN Billing_BillGen bg on
+		bg.BillGenId=be.BillGenId
+		JOIN
+		Billing_CustomerInfo ci on
+		ci.CustomerId=bg.CustomerId
+		WHERE bg.PostingStatus=0 AND be.PostingStatus=0
+		ORDER BY ci.CustomerId,be.ChargecodeId 
+		
+
+	</select>
+
+
+
+	<resultMap id="salesAndDistributionBillingObj"
+		type="com.ngen.cosys.billing.sap.model.SalesAndDistributionBillingDetails">
+		<result property="billEntryId" column="BillEntryId" />
+		<result property="billGenId" column="BillGenId" />
+		<result property="customerId" column="CustomerId" />
+		<result property="chargeCodeId" column="ChargecodeId" />
+		<result property="groupChargeCodeId" column="ChargeGroupId" />
+		<result property="sapCustomerCode" column="FinanceSystemIdentificationNumber" />
+		<result property="cumulativeOrderQuantity" column="ApportionedQuantity" />
+		<result property="grossWeight" column="ApportionedQuantityWeight" />
+		<result property="netWeight" column="ApportionedQuantityNetWeight" />
+		<result property="amount" column="ApportionedAmount" />
+		<result property="discountAmount" column="ApportionedDiscountAmount" />
+		<result property="billingNumber" column="BillingNo" />
+		<result property="materialNumber" column="FinSysChargeCode" />
+		<result property="materialDescription" column="FinSysChargeDesc" />
+		<result property="uom" column="UOM" />
+		<result property="pricingType" column="PricingType" />
+		<result property="billGenDate" column="BillGenDate" />
+		<result property="salesOrganization" column="SalesOrganization"/>
+		<result property="distributionChannel" column="DistributionChannel"/>
+		<result property="division" column="Division"/>
+		
+	</resultMap>
+
+
+	<select id="fetchSalesAndDistributionBillingDetails" resultMap="salesAndDistributionBillingObj">
+		SELECT 
+		be.BillEntryId,
+		bg.BillGenId,
+		bg.BillGenDate,
+		be.CustomerId,
+		ci.FinanceSystemIdentificationNumber,
+		be.ChargecodeId,
+		bccg.ChargeGroupId,
+		be.FinSysChargeCode,
+		scc.FinSysChargeDesc,
+		scc.UOM,
+		be.PricingType,
+		be.ApportionedQuantity,
+		be.ApportionedQuantityWeight,
+		be.ApportionedQuantityNetWeight,
+		be.ApportionedAmount,
+		be.ApportionedDiscountAmount,
+		be.FinSysInvoiceNumber,
+		be.BillingNo,
+		bg.PostingStatus as billGenPostingStatus,
+		be.PostingStatus as
+		billEntryPostingStatus,
+		scc.SalesOrganization,
+		scc.DistributionChannel,
+		scc.Division
+		
+		FROM Billing_BillEntry be
+		JOIN Billing_BillGen bg
+		on be.BillGenId=bg.BillGenId
+		JOIN
+		Billing_FinanceSystemChargeCode scc on
+		scc.FinSysChargeCode=be.FinSysChargeCode
+		JOIN Billing_CustomerInfo ci
+		on ci.CustomerId=bg.CustomerId
+		LEFT JOIN Billing_ChargeCodeGroup bccg on bccg.BillingChargeCodeId=be.ChargecodeId
+		WHERE 
+		--bg.PostingStatus=0 AND 
+		be.PostingStatus=0 
+		ORDER BY CustomerId,ChargeGroupId,ChargecodeId
+
+	</select>
+	
+	<select id="getSaleAndDistributionFileSeqNo" resultType="java.lang.String" >
+	  	SELECT NEXT VALUE FOR Billing_SAPFileNoSD_Seq AS seqNumber;  
+	</select>
+	
+	<select id="getAccountPayableFileSeqNo" resultType="java.lang.String" >
+	  	SELECT NEXT VALUE FOR Billing_SAPFileNoAP_Seq AS seqNumber;  
+	</select>
+
+	
+	<update id="updateBillEntryPostingStatus" parameterType="java.util.List" >
+
+		<foreach collection="list" item="billGenIds"  separator=";">
+			UPDATE Billing_BillEntry SET PostingStatus = 1,PostingDate=GETDATE() 
+			WHERE BillGenId=#{billGenIds}
+	    </foreach>
+	</update>
+	
+	<update id="updatBillGenPostingStatus" parameterType="java.util.List" >
+
+		<foreach collection="list" item="subListId"  separator=";">
+			UPDATE Billing_BillGen SET PostingStatus = 1,PostingDate=GETDATE() 
+			WHERE BillGenId=#{subListId}
+	    </foreach>
+	</update>
+	
+	
+	<update id="updateAPBillEntryPostingStatus" parameterType="java.util.List" >
+
+		<foreach collection="list" item="subListId"  separator=";">
+			UPDATE Billing_APEntry SET PostingStatus = 1
+			WHERE BillGenId=#{subListId}
+	    </foreach>
+	</update>
+	
+	
+	
+	
+	<select id="getFileInboundFolder" resultType="java.lang.String" parameterType="java.lang.String">
+	 	SELECT ParameterValueChar FROM App_SystemParameters where ParameterCode=#{folderId}
+	</select>
+	
+	<select id="getFileOutboundFolder" resultType="java.lang.String" parameterType="java.lang.String">
+	 	SELECT ParameterValueChar FROM App_SystemParameters where ParameterCode=#{folderId}
+	</select>
+	
+	<select id="getCurrentDate" resultType="java.lang.String" >
+	 	  SELECT CONVERT(VARCHAR(19), getdate(), 120) as currentDate
+	</select>
+
+	<select id="getFileStatus" parameterType="java.lang.String" resultType="java.lang.Integer">
+	 SELECT 
+ 		CASE WHEN Count(ProcessingStatus)>0 THEN 1
+        ELSE 0 END Result
+        FROM Billing_FinSysInterfaceFileInfo 
+        WHERE FileName=#{fileName} and ProcessingStatus = 'SUCCESS'
+	</select>
+	
+	<select id="getOutBoundFileStatus" resultType="java.lang.Integer">
+	SELECT count(1)
+	FROM Billing_FinSysInterfaceFileInfo 
+	WHERE ProcessingStatus = 'SUCCESS' and 
+ 	FileName like '%I062%' and convert(date, CONVERT(datetimeoffset, filecreationdt) AT TIME ZONE (select ParameterValueChar from App_SystemParameters 
+where ParameterCode='Station_timezone')) =convert(date, CONVERT(datetimeoffset, getDate()) AT TIME ZONE (select ParameterValueChar from App_SystemParameters 
+where ParameterCode='Station_timezone')) 
+	</select>
+
+	<select id="sqlGetInvoiceSentByEmailDetails" resultMap="sqlGetInvoiceSentByEmailDetailsMap">
+		select 
+			distinct 
+			Billing_BillEntry.CustomerId,
+			Billing_BillEntry.FinSysInvoiceNumber 
+			from 
+				Billing_BillEntry 
+				inner join Billing_CustomerInfo
+					on Billing_BillEntry.CustomerId = Billing_CustomerInfo.CustomerId
+			where Billing_BillEntry.ESupportDocEmailSent = 0 and Billing_CustomerInfo.SendESupportDocument = 1
+			and Billing_BillEntry.FinSysInvoiceNumber is not null and isnull(Billing_BillEntry.IsVoid, 0) = 0	
+	</select>
+	
+	<resultMap id="sqlGetInvoiceSentByEmailDetailsMap"
+		type="com.ngen.cosys.billing.sap.model.InvoiceSentByEmail">
+		<result property="customerId" column="CustomerId" />
+		<result property="finSysInvoiceNumber" column="finSysInvoiceNumber" />
+	</resultMap>
+	
+		<select id="getEmailId" parameterType="com.ngen.cosys.billing.sap.model.InvoiceSentByEmail"
+			resultType="java.lang.String">
+			select
+			Email
+			from
+			Billing_CustomerInfo
+			inner join Billing_CustomerNotification
+			on Billing_CustomerInfo.CustomerInfoId =
+			Billing_CustomerNotification.BillingCustomerId
+			where CustomerId = #{customerId} and getdate() between StartDate and isnull(EndDate, getdate())
+		</select>
+		
+		
+	<update id="sqlupdateESupportDocEmailSent" parameterType="com.ngen.cosys.billing.sap.model.InvoiceSentByEmail">
+
+		UPDATE Billing_BillEntry 
+			SET ESupportDocEmailSent = 1 
+			, LastUpdatedUserCode = 'COSYS MAIL SENDER'
+			, LastUpdatedDateTime = getdate()
+			WHERE
+		CustomerId = #{customerId} and FinSysInvoiceNumber = #{finSysInvoiceNumber}
+		and ESupportDocEmailSent = 0
+	</update>
+
+<select id="getSaleAndDistirbutionExternalSaleOrderType"
+	resultType="java.lang.String">
+	SELECT ParameterValueChar FROM App_SystemParameters where
+	ParameterCode='SAP_SALESORDERTYPE_EXTERNAL'
+</select>
+
+<select id="getSaleAndDistirbutionInternalSaleOrderType"
+	resultType="java.lang.String">
+	SELECT ParameterValueChar FROM App_SystemParameters where ParameterCode='SAP_SALESORDERTYPE_INTERNAL'
+</select>
+
+<select id="getSaleAndDistirbutionPricingTypeCode"
+	resultType="java.lang.String">
+	SELECT ParameterValueChar FROM App_SystemParameters where ParameterCode='SAP_SALESORDER_PRICING_CODE'
+</select>
+
+<select id="getSaleAndDistirbutionCompanyCode"
+	resultType="java.lang.String">
+	SELECT ParameterValueChar FROM App_SystemParameters where ParameterCode='SAP_SALESORDER_COMPANY_CODE'
+</select>
+
+
+</mapper>

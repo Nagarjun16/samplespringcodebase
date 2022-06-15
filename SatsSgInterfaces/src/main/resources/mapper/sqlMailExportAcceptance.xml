@@ -1,0 +1,1010 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mailExportAcceptanceMapper">
+
+	<select id="getCountryCode"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		select CountryCode as countryCode
+		from Mst_City
+		where
+		CityCode = #{dnDestination}
+	</select>
+
+	<select id="isCarrierSats" parameterType="java.lang.String"
+		resultType="java.lang.Boolean">
+		select case when count(1) > 0 then 1 else 0 end
+		from
+		Mst_Carrier
+		where CarrierCode = '${value}'
+		and GroundHandlerCode =
+		'SATS'
+	</select>
+
+	<resultMap id="fetchPADetails"
+		type="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		<result column="bookingId" property="bookingId" />
+		<result column="paFlightId" property="paFlightId" />
+		<result column="paFlightKey" property="paFlightKey" />
+		<result column="paFlightDate" property="paFlightDate" />
+		<collection property="paFlightSeg" ofType="java.lang.String"
+			javaType="List">
+			<result column="paFlightSeg" />
+		</collection>
+	</resultMap>
+
+	<select id="getPAFlightDetails"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultMap="fetchPADetails">
+		select booking.BookingId as bookingId, bookingDeatil.FlightId as paFlightId,
+		fltOpr.FlightKey as paFlightKey, fltOpr.FlightOriginDate as
+		paFlightDate,
+		case when car.GroundHandlerCode = 'SATS' then 1 else 0 end as
+		isSatsAssistedCar,
+		fltOprSeg.FlightBoardPoint + '-' + fltOprSeg.FlightOffPoint as paFlightSeg
+		from Exp_ShipmentBooking booking
+		left join Exp_ShipmentFlightBookingDetail bookingDeatil on
+		booking.BookingId = bookingDeatil.BookingId
+		left join Flt_OperativeFlight fltOpr on bookingDeatil.FlightId =
+		fltOpr.Flight_ID
+		left join Flt_OperativeFlight_Segments fltOprSeg on fltOprSeg.Flight_ID =
+		fltOpr.Flight_ID
+		left join Mst_carrier car on car.CarrierCode = fltOpr.CarrierCode
+		where
+		booking.ShipmentNumber = #{mailBagNumber}
+		and
+		fltOprSeg.FlightBoardPoint =#{tenantAirport}
+		and fltOprSeg.SegmentLegFlag = 1
+	</select>
+	<select id="checkMailBag"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_eAcceptanceHouseInformation where
+		Number=#{mailBagNumber}
+	</select>
+
+	<update id="updateServiceInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		update Exp_eAcceptanceServiceInformation
+		set CustomerId =
+		#{customerId},
+		CustomerName = #{customerName},
+		Status = 'ACCEPTED',
+		AcceptanceType = 'MAIL'
+		where ServiceNumber = #{serviceNumber}
+	</update>
+
+	<insert id="insertServiceInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="serviceId" keyColumn="ServiceInformationId">
+		INSERT INTO
+		Exp_eAcceptanceServiceInformation
+		(ServiceNumber
+		,CustomerId
+		,CustomerName
+		,ServiceCreationDateTime
+		,ContractorICPass
+		,ContractorName
+		,Status
+		,CreatedUserCode
+		,CreatedDateTime
+		,AcceptanceType)
+		VALUES
+		(#{serviceNumber},
+		#{customerId},
+		#{customerName},
+		getDate(),
+		'LOCALMAIL',
+		'LOCALMAIL',
+		'ACCEPTED',
+		#{createdBy},
+		getDate(),
+		'MAIL')
+	</insert>
+
+	<insert id="insertDocumentInformation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="documentInfoId" keyColumn="DocumentInformationId">
+		INSERT
+		INTO Exp_eAcceptanceDocumentInformation
+		(ServiceInformationId
+		,ShipmentNumber
+		,CarrierCode
+		,Origin
+		,Destination
+		,FirstOffPoint
+		,Piece
+		,Weight
+		,NatureOfGoodsDescription
+		,HandlingArea
+		,Accepted
+		,AcceptedDateTime
+		,Remarks
+		,CreatedUserCode
+		,CreatedDateTime
+		,ShipmentDate
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,RegisteredIndicator
+		,DestinationOfficeExchange
+		,TransferredFromCarrierCode
+		)
+		VALUES
+		(#{serviceId}
+		,#{shipmentNumber}
+		,#{carrierCode}
+		,#{dnOrigin}
+		,#{dnDestination}
+		,#{dnDestination}
+		,#{totalPieces}
+		,#{mailBagWeight}
+		,'MAIL'
+		,#{terminal}
+		,1
+		,getDate()
+		,#{dnRemarks}
+		,#{createdBy}
+		,getDate()
+		,#{shipmentDate}
+		,#{originOfficeExchange}
+		,#{mailBagMailCategory}
+		,#{mailBagMailSubcategory}
+		,#{mailBagDispatchYear}
+		,#{mailBagRegisteredIndicator}
+		,#{destinationOfficeExchange}
+		,#{outgoingCarrier}
+		)
+	</insert>
+
+	<insert id="insertHouseInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		useGeneratedKeys="true" keyProperty="houseId" keyColumn="HouseInformationId">
+		INSERT INTO
+		Exp_eAcceptanceHouseInformation
+		(DocumentInformationId
+		,Type
+		,Number
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		)
+		VALUES
+		(#{docId}
+		,'MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate()
+		,#{originOfficeExchange}
+		,#{mailBagMailCategory}
+		,#{mailBagMailSubcategory}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destinationOfficeExchange}
+		)
+	</insert>
+
+	<insert id="insertDocumentInformationSHC"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		INSERT INTO Exp_eAcceptanceDocumentInfoSHC
+		(DocumentInformationId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{documentInfoId}
+		,'MAL'
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<insert id="insertShipmentInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="shipmentId" keyColumn="ShipmentId">
+		INSERT INTO
+		Shipment_Master
+		(ShipmentType
+		,ShipmentNumber
+		,ShipmentDate
+		,SVC
+		,Origin
+		,Destination
+		,Pieces
+		,Weight
+		,WeightUnitCode
+		,NatureOfGoodsDescription
+		,CreatedUserCode
+		,CreatedDateTime
+		,ManuallyCreated
+		,CarrierCode
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,RegisteredIndicator
+		,DestinationOfficeExchange
+		)
+		VALUES
+		('MAIL'
+		,#{shipmentNumber}
+		,#{shipmentDate}
+		,0
+		,#{dnOrigin}
+		,#{dnDestination}
+		,#{totalPieces}
+		,#{totalWeight}
+		,'K'
+		,'MAIL'
+		,#{createdBy}
+		,getDate()
+		,0
+		,#{carrierCode}
+		,#{originOfficeExchange}
+		,#{mailBagMailCategory}
+		,#{mailBagMailSubcategory}
+		,#{mailBagDispatchYear}
+		,#{mailBagRegisteredIndicator}
+		,#{destinationOfficeExchange}
+		)
+	</insert>
+	
+	<select id="getCustomerIdForPAFlight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest" resultType="java.math.BigInteger">
+		 select
+		CST_MST.Customer_ID
+		from Customer_Types CST_TYP
+		INNER JOIN Customer_Master CST_MST ON
+		CST_TYP.Customer_ID =
+		CST_MST.Customer_ID
+		where CST_TYP.CustomerTypeCode = 'PA'
+		AND CST_MST.CustomerCode=#{agentCode}
+	</select>
+
+	<insert id="insertShipmentCustomerInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="shipmentCustomerInfoId"
+		keyColumn="ShipmentCustomerInfoId">
+		INSERT INTO Shipment_MasterCustomerInfo
+		(ShipmentId
+		,CustomerCode
+		,CustomerName
+		,CreatedUserCode
+		,CreatedDateTime
+		,CustomerType)
+		VALUES
+		(#{shipmentId}
+		,#{agentCode}
+		,#{customerName}
+		,#{createdBy}
+		,getDate()
+		,'PA')
+	</insert>
+
+	<insert id="insertShipmentHandlingArea"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="shipmentMasterHandlAreaId"
+		keyColumn="ShipmentMasterHandlAreaId">
+		INSERT INTO Shipment_MasterHandlingArea
+		(ShipmentId
+		,HandledBy
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentId}
+		,#{terminal}
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<insert id="insertShipmentHouseInformation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		useGeneratedKeys="true" keyProperty="shipmentHouseId" keyColumn="ShipmentHouseId">
+		INSERT INTO Shipment_HouseInformation
+		(ShipmentId
+		,ShipmentType
+		,Number
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		)
+		VALUES
+		(#{shipmentId}
+		,'MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate()
+		,#{originOfficeExchange}
+		,#{mailBagMailCategory}
+		,#{mailBagMailSubcategory}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destinationOfficeExchange}
+		)
+	</insert>
+
+	<insert id="insertShipmentSHC"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		INSERT INTO Shipment_MasterSHC
+		(ShipmentId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentId}
+		,'MAL'
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<insert id="insertShipmentInventory"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		useGeneratedKeys="true" keyProperty="shipmentInventoryId" keyColumn="ShipmentInventory_Id">
+		INSERT INTO Shipment_Inventory
+		(Shipment_ID
+		,ShipmentLocation
+		,Pieces
+		,Weight
+		,WarehouseLocation
+		,CreatedUser_Code
+		,Created_DateTime)
+		VALUES
+		(#{shipmentId}
+		,#{uldNumber}
+		,#{inventoryPieces}
+		,#{inventoryWeight}
+		,#{containerLocation}
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<insert id="insertShipmentInventoryHouse"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		INSERT INTO Shipment_InventoryHouse
+		(ShipmentInventoryId
+		,ShipmentHouseId
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shpInvId}
+		,#{shipmentHouseId}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<insert id="insertShipmentInventorySHC"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		INSERT INTO Shipment_InventorySHC
+		(ShipmentInventoryId
+		,SpecialHandlingCode
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shipmentInventoryId}
+		,'MAL'
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<select id="getDnDetails"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		select eAcp.DocumentInformationId as documentInfoId,
+		eAcp.Piece as totalPieces, eAcp.Weight as totalWeight,
+		eAcp.ShipmentNumber, eAcp.ShipmentDate, ShpMst.ShipmentId
+		from
+		Exp_eAcceptanceDocumentInformation eAcp
+		inner join shipment_master
+		ShpMst on eAcp.ShipmentNumber = ShpMst.ShipmentNumber
+		and CAST(eAcp.ShipmentDate as date) = CAST(ShpMst.ShipmentDate as date)
+		where eAcp.ShipmentNumber = #{shipmentNumber}
+		and CAST(eAcp.ShipmentDate as date) =
+		#{shipmentDate}
+	</select>
+
+	<update id="updateDnPiecesWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		update Exp_eAcceptanceDocumentInformation
+		set Piece =
+		#{totalPieces},
+		Weight = #{totalWeight}
+		where ShipmentNumber =
+		#{shipmentNumber}
+		and ShipmentDate = #{shipmentDate}
+	</update>
+
+	<update id="updateShipmentMasterPiecesWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		update Shipment_Master
+		set Pieces = #{totalPieces},
+		Weight = #{totalWeight}
+		where ShipmentNumber = #{shipmentNumber}
+		and
+		ShipmentDate = #{shipmentDate}
+	</update>
+
+	<select id="getShpInventoryId"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="java.lang.Integer">
+		select TOP 1 ShipmentInventory_Id
+		from Shipment_Inventory where Shipment_ID = #{shipmentId}
+		and ISNULL(CONVERT(varchar, ShipmentLocation),'') = ISNULL(CONVERT(varchar,#{uldNumber}),'') and
+		ISNULL(CONVERT(varchar, WarehouseLocation),'') =
+		ISNULL(CONVERT(varchar,#{warehouseLocation}),'')
+		<!-- select TOP 1 ShipmentInventory_Id from Shipment_Inventory where Shipment_ID 
+			= #{shipmentId} and CONVERT( VARBINARY ,ISNULL(ShipmentLocation,'')) = CONVERT( 
+			VARBINARY ,ISNULL(#{uldNumber},'')) and CONVERT( VARBINARY ,ISNULL(WarehouseLocation,'')) 
+			= CONVERT( VARBINARY ,ISNULL(#{warehouseLocation},'')) -->
+	</select>
+
+	<update id="updateShipmentInventoryPiecesWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		update Shipment_Inventory
+		set Pieces = Pieces + #{inventoryPieces},
+		Weight = Weight + #{inventoryWeight},
+		WarehouseLocation = #{warehouseLocation}
+		where
+		ShipmentInventory_Id = #{shipmentInventoryId}
+	</update>
+
+	<insert id="updateHouseInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		useGeneratedKeys="true" keyProperty="houseId" keyColumn="HouseInformationId">
+		INSERT INTO
+		Exp_eAcceptanceHouseInformation
+		(DocumentInformationId
+		,Type
+		,Number
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		)
+		VALUES
+		(#{docId}
+		,'MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate()
+		,#{origin}
+		,#{category}
+		,#{mailType}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destination}
+		)
+	</insert>
+
+	<insert id="updateShipmentHouseInformation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		useGeneratedKeys="true" keyProperty="shipmentHouseId" keyColumn="ShipmentHouseId">
+		INSERT INTO Shipment_HouseInformation
+		(ShipmentId
+		,ShipmentType
+		,Number
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		)
+		VALUES
+		(#{shipmentId}
+		,'MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate()
+		,#{origin}
+		,#{category}
+		,#{mailType}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destination}
+		)
+	</insert>
+
+	<insert id="updateShipmentInventoryHouse"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		INSERT INTO Shipment_InventoryHouse
+		(ShipmentInventoryId
+		,ShipmentHouseId
+		,Pieces
+		,Weight
+		,CreatedUserCode
+		,CreatedDateTime)
+		VALUES
+		(#{shpInvId}
+		,#{shipmentHouseId}
+		,#{pieces}
+		,#{weight}
+		,#{createdBy}
+		,getDate())
+	</insert>
+
+	<select id="getMailBagNumbereAcceptanceHouse"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		resultType="java.lang.Integer">
+		select count(*) from Exp_eAcceptanceHouseInformation
+		where
+		Number = #{mailBagNumber}
+	</select>
+	<select id="getShipmentIdDetails"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="java.lang.Integer">
+        select ShipmentId from Shipment_Master where ShipmentNumber=#{shipmentNumber}
+		and CAST(ShipmentDate AS DATE) = #{shipmentDate}
+		</select>
+	<select id="getMailBagNumberShipmentHouse"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_HouseInformation
+		where Number=
+		#{mailBagNumber}
+	</select>
+
+	<select id="getMailBagNumberInventoryHouse"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance"
+		resultType="java.lang.Integer">
+		select count(*) from Shipment_InventoryHouse
+		where
+		ShipmentHouseId = (select ShipmentHouseId from
+		Shipment_HouseInformation
+		where Number = #{mailBagNumber})
+	</select>
+
+	<update id="updateAcceptanceHouseInfoWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		update Exp_eAcceptanceHouseInformation
+		set weight =
+		#{weight}
+		where Number = #{mailBagNumber}
+	</update>
+
+	<update id="updateShipmentHouseInfoWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		update Shipment_HouseInformation
+		set weight = #{weight}
+		where Number= #{mailBagNumber}
+	</update>
+
+	<update id="updateInventoryHouseWeight"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		update Shipment_InventoryHouse
+		set weight = #{weight}
+		where ShipmentHouseId = (select ShipmentHouseId from
+		Shipment_HouseInformation
+		where Number = #{mailBagNumber})
+	</update>
+
+	<select id="fetchAcceptanceDetails"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceDetails"
+		resultMap="fetchDetails">
+		SELECT CASE
+		WHEN Dmg.EntityKey IS NOT NULL
+		THEN 'true'
+		ELSE 'false'
+		END AS damaged
+		,Dmg.EntityType
+		,Shp.ShipmentType AS shipmentType
+		,Hse.Number AS mailBagNumber
+		, Doc.TransferredFromCarrierCode as outgoingCarrier
+		,InvHse.Pieces
+		,InvHse.Weight
+		,Hse.OriginOfficeExchange AS origin
+		,Hse.MailCategory AS category
+		,Hse.MailSubCategory
+		,Hse.DispatchYear AS year
+		,Hse.DispatchNumber AS dispatchNumber
+		,Hse.ReceptacleNumber AS receptacleNumber
+		,Hse.LastBagIndicator AS lastBagIndicator
+		,Hse.RegisteredIndicator AS registeredIndicator
+		,Hse.NextDestination AS nextDestination
+		,Hse.DestinationOfficeExchange AS destination
+		,Inv.WarehouseLocation
+		,Shp.CarrierCode
+		,CASE
+		WHEN Legs.DateSTD IS NOT NULL
+		THEN Flt.FlightKey
+		END AS paFlightKey
+		,Legs.DateSTD AS paFlightDate
+		,Shp.ShipmentNumber
+		,Shp.ShipmentId
+		,Shp.ShipmentDate
+		,Inv.ShipmentLocation
+		,Cust.CustomerCode
+		FROM Exp_eAcceptanceDocumentInformation Doc
+		INNER JOIN
+		Exp_eAcceptanceHouseInformation DocHse ON DocHse.DocumentInformationId
+		= Doc.DocumentInformationId
+		INNER JOIN Shipment_Master Shp ON
+		Shp.ShipmentNumber = Doc.ShipmentNumber
+		AND Shp.ShipmentDate = Doc.ShipmentDate
+		INNER JOIN
+		Shipment_HouseInformation Hse ON Hse.ShipmentId = Shp.ShipmentId
+		AND Hse.Number = DocHse.Number
+		left JOIN Shipment_MasterCustomerInfo Cust
+		ON Cust.ShipmentId = Shp.ShipmentId
+		INNER JOIN Shipment_Inventory Inv
+		ON Inv.Shipment_ID = Shp.ShipmentID
+		INNER JOIN Shipment_InventoryHouse
+		InvHse ON InvHse.ShipmentInventoryId = Inv.ShipmentInventory_Id
+		AND InvHse.ShipmentHouseId = Hse.ShipmentHouseId
+		LEFT JOIN Com_DamageInfo
+		Dmg ON Dmg.EntityKey = Hse.Number
+		LEFT JOIN Exp_ShipmentBooking ShpBook
+		ON ShpBook.ShipmentNumber = Hse.Number
+		LEFT JOIN
+		Exp_ShipmentFlightBookingDetail ShpBookFlt ON ShpBookFlt.BookingId =
+		ShpBook.BookingId
+		AND ShpBookFlt.BookingStatusCode = 'UU'
+		LEFT JOIN Flt_OperativeFlight Flt
+		ON Flt.Flight_id = ShpBookFlt.FlightId
+		LEFT JOIN
+		Flt_OperativeFlight_Legs Legs ON Flt.Flight_id = Legs.Flight_id
+		AND Legs.FlightBoardPoint = #{tenantAirport}
+		WHERE Shp.ShipmentType = 'MAIL'
+		and Doc.CarrierCode = #{carrierCode}
+		<if test="agentCode != null and agentCode != ''">
+			and Cust.CustomerCode = #{agentCode}
+		</if>
+		<if
+			test="transferredFromCarrierCode != null and transferredFromCarrierCode != ''">
+			and Doc.TransferredFromCarrierCode =
+			#{transferredFromCarrierCode}
+		</if>
+		<if test="uldNumber != null and uldNumber != ''">
+			and Inv.ShipmentLocation = #{uldNumber}
+		</if>
+		<if test="warehouseLocation != null and warehouseLocation != ''">
+			and Inv.WarehouseLocation = #{warehouseLocation}
+		</if>
+		UNION
+		SELECT CASE
+		WHEN Dmg.EntityKey IS NOT NULL
+		THEN 'true'
+		ELSE 'false'
+		END AS damaged
+		,Dmg.EntityType
+		,Type AS shipmentType
+		,outhouse.Number AS mailBagNumber
+		,null
+		,outhouse.Pieces AS pieces
+		,outhouse.Weight AS weight
+		,outhouse.OriginOfficeExchange AS origin
+		,outhouse.MailCategory
+		,outhouse.MailSubCategory
+		,outhouse.DispatchYear AS year
+		,outhouse.DispatchNumber AS dispatchNumber
+		,outhouse.ReceptacleNumber AS receptacleNumber
+		,outhouse.LastBagIndicator AS lastBagIndicator
+		,outhouse.RegisteredIndicator AS registeredIndicator
+		,outhouse.NextDestination AS nextDestination
+		,outhouse.DestinationOfficeExchange AS destination
+		,outhouse.WarehouseLocation
+		,outhouse.CarrierCode
+		,outhouse.FlightKey AS paFlightKey
+		,outhouse.FlightDate AS paFlightDate
+		,SUBSTRING(outhouse.Number, 0, 20) AS ShipmentNumber
+		,NULL ShipmentId
+		,outhouse.CreatedDateTime ShipmentDate
+		,outhouse.ShipmentLocation
+		,NULL AS CustomerCode
+		FROM Exp_OuthouseAcceptanceHouseInformation outhouse
+		LEFT JOIN Com_DamageInfo Dmg ON Dmg.EntityKey = outhouse.Number
+		where
+		outhouse.CarrierCode = #{carrierCode}
+		<if test="uldNumber != null and uldNumber != ''">
+			and outhouse.ShipmentLocation = #{uldNumber}
+		</if>
+		<if test="warehouseLocation != null and warehouseLocation != ''">
+			and outhouse.WarehouseLocation = #{warehouseLocation}
+		</if>
+		ORDER BY ShipmentDate, mailBagNumber
+	</select>
+
+	<resultMap id="fetchDetails"
+		type="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		<result column="entityKey" property="entityKey" />
+		<result column="damaged" property="damaged" />
+		<result column="entityType" property="entityType" />
+		<result column="mailBagNumber" property="mailBagNumber" />
+		<result column="category" property="category" />
+		<result column="mailType" property="mailType" />
+		<result column="dispatchNumber" property="dispatchNumber" />
+		<result column="year" property="year" />
+		<result column="outgoingCarrier" property="outgoingCarrier" />
+		<result column="lastBagIndicator" property="lastBagIndicator" />
+		<result column="receptacleNumber" property="receptacleNumber" />
+		<result column="registeredIndicator" property="registeredIndicator" />
+		<result column="origin" property="origin" />
+		<result column="destination" property="destination" />
+		<result column="nextDestination" property="nextDestination" />
+		<result column="carrierDetermined" property="carrierDetermined" />
+		<result column="warehouseLocation" property="warehouseLocation" />
+		<result column="shipmentLocation" property="shipmentLocation" />
+		<result column="paFlightKey" property="paFlightKey" />
+	</resultMap>
+
+	<select id="verifyUldNumber"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceDetails"
+		resultType="java.lang.Integer">
+		select count (*) from Uld_UldMaster
+		where
+		UldType =
+		#{uldType}
+		and UldNumber = #{uldNum}
+		and UldCarrierCode =
+		#{uldCarrier}
+	</select>
+	<select id="verifyUldKey"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceDetails"
+		resultType="java.lang.Integer">
+		select count (*) from Uld_UldMaster
+		where
+		UldKey= #{uldKey}
+	</select>
+
+	<select id="verifyShipmentNumber"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="java.lang.Integer">
+		select count (*) from Uld_UldMaster
+		where
+		UldKey=
+		#{uldNumber}
+	</select>
+
+	<update id="updateNestedId"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceDetails">
+		update Uld_UldMaster
+		set NestedId = #{nestedId}
+		where
+		UldType = #{uldType}
+		and UldNumber = #{uldNum}
+		and UldCarrierCode =
+		#{uldCarrier}
+	</update>
+
+	<update id="updateUldMasterLocation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		update Uld_UldMaster
+		set Intact=1
+		where
+		UldKey =
+		#{uldNumber}
+	</update>
+
+	<insert id="insertUldMasterLocation"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		INSERT INTO Uld_UldMaster
+		(
+		UldKey
+		,CreatedUser_Code
+		,Created_DateTime
+		,Intact)
+		VALUES
+		(
+		#{uldNumber}
+		,#{createdBy}
+		,getDate()
+		,1)
+	</insert>
+	<insert id="insertInMovementUld"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		INSERT INTO Uld_UldInMovements
+		(
+		Uld_ID,
+		UldInMovementSequenceNo,
+		UldInMovementStatus,
+		InMovementCreationDate,
+		InMovementFinalizedFlag,
+		CreatedUser_Code,
+		Created_DateTime)
+		VALUES(
+		(select Uld_ID from Uld_UldMaster where UldKey = #{uldNumber}),
+		(SELECT (select isnull(max(UldInMovementSequenceNo),0) from
+		Uld_UldInMovements where Uld_ID = (select Uld_ID from Uld_UldMaster
+		where UldKey = #{uldNumber}))+1),
+		'INW',
+		#{createdOn},
+		0,
+		#{createdBy},
+		#{createdOn})
+	</insert>
+
+	<select id="getMailNumberCount" resultType="java.lang.Integer">
+		select count(*) from Exp_OuthouseAcceptanceHouseInformation
+		where Number=
+		'${value}'
+	</select>
+	<insert id="insertOAInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		INSERT INTO Exp_OuthouseAcceptanceHouseInformation
+		(Type
+		,Number
+		,Pieces
+		,Weight
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		,CreatedUserCode
+		,CreatedDateTime
+		,CarrierCode
+		,FlightKey
+		,FlightDate
+		,WarehouseLocation
+		,ShipmentLocation)
+		VALUES
+		('MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{origin}
+		,#{category}
+		,#{mailType}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destination}
+		,#{createdBy}
+		,#{createdOn}
+		,#{carrierCode}
+		,#{paFlightKey}
+		,#{paFlightDate}
+		,'TRUCKDOCK'
+		,#{shipmentLocation})
+	</insert>
+
+	<insert id="insertOuthouseInfo"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptance">
+		INSERT INTO Exp_OuthouseAcceptanceHouseInformation
+		(Type
+		,Number
+		,Pieces
+		,Weight
+		,OriginOfficeExchange
+		,MailCategory
+		,MailSubCategory
+		,DispatchYear
+		,DispatchNumber
+		,ReceptacleNumber
+		,LastBagIndicator
+		,RegisteredIndicator
+		,NextDestination
+		,DestinationOfficeExchange
+		,CreatedUserCode
+		,CreatedDateTime
+		,CarrierCode
+		,FlightKey
+		,FlightDate
+		,WarehouseLocation
+		,ShipmentLocation)
+		VALUES
+		('MAIL'
+		,#{mailBagNumber}
+		,#{pieces}
+		,#{weight}
+		,#{origin}
+		,#{mailBagMailCategory}
+		,#{mailBagMailSubcategory}
+		,#{year}
+		,#{dispatchNumber}
+		,#{receptacleNumber}
+		,#{lastBagIndicator}
+		,#{registeredIndicator}
+		,#{nextDestination}
+		,#{destination}
+		,#{createdBy}
+		,#{createdOn}
+		,#{carrierCode}
+		,#{paFlightKey}
+		,#{paFlightDate}
+		,#{warehouseLocation}
+		,#{uldNumber})
+	</insert>
+	<select id="getUldDetails"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+		select Intact as intact from Uld_UldMaster where UldNumber=#{uldNumber} and
+		Intact=1
+	</select>
+	<update id="updateShipmentMasterComplete"
+		parameterType="com.ngen.cosys.satssginterfaces.mss.model.MailExportAcceptanceRequest">
+       update shipment_master
+		set CompleteShipment = 1
+		where exists (select 1
+		from Shipment_HouseInformation
+		where lastbagindicator = 1 and ReceptacleNumber != '___'
+		and shipment_master.ShipmentId = Shipment_HouseInformation.ShipmentId
+		and Shipment_HouseInformation.ShipmentId = #{shipmentId}
+		group by ShipmentId
+		having convert(int,max(ReceptacleNumber))=sum(Pieces))
+		</update>
+		
+		<select id="getShipmentId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.MSSMailBagMovement" resultType="java.lang.Integer">
+		select
+		Shipment_Master.ShipmentId
+		from
+		Shipment_Master inner join
+		Shipment_HouseInformation on Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+		where Shipment_HouseInformation.Number= #{mailBagId}
+		</select>
+		
+</mapper>

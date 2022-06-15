@@ -1,0 +1,1756 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="CustomFlightId" id="143">
+            <property name="valueType">static</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="FlightKey" id="187">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="FlightDate" id="188">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantAirportCode" id="194">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="tenantCityCode" id="195">
+            <property name="valueType">static</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysprodsqldb1server.database.windows.net;databaseName=NGCPROD</property>
+            <property name="odaUser">SatsProdReadonlyUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">TmdjRGJSZWFkJTQ1Ng==</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="mrsFetch" id="118">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">ImportExportIndicator</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ImportExportIndicator</text-property>
+                    <text-property name="heading">ImportExportIndicator</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Type</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Type</text-property>
+                    <text-property name="heading">Type</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CustomShipmentLocalAuthorityRequirementId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">CustomShipmentLocalAuthorityRequirementId</text-property>
+                    <text-property name="heading">CustomShipmentLocalAuthorityRequirementId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CustomShipmentInfoId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">CustomShipmentInfoId</text-property>
+                    <text-property name="heading">CustomShipmentInfoId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentStatus</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentStatus</text-property>
+                    <text-property name="heading">ShipmentStatus</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">NatureOfGoods</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">NatureOfGoods</text-property>
+                    <text-property name="heading">NatureOfGoods</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">Origin</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <text-property name="heading">Origin</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">FinalDestination</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FinalDestination</text-property>
+                    <text-property name="heading">FinalDestination</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalPieces</text-property>
+                    <text-property name="heading">TotalPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">TotalWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">TotalWeight</text-property>
+                    <text-property name="heading">TotalWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentPieces</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ShipmentPieces</text-property>
+                    <text-property name="heading">ShipmentPieces</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentWeight</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">ShipmentWeight</text-property>
+                    <text-property name="heading">ShipmentWeight</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CustomShipmentCustomerInfoId</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">CustomShipmentCustomerInfoId</text-property>
+                    <text-property name="heading">CustomShipmentCustomerInfoId</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CMDReceived</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CMDReceived</text-property>
+                    <text-property name="heading">CMDReceived</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">MRSStatusCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">MRSStatusCode</text-property>
+                    <text-property name="heading">MRSStatusCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">AcesCodeDescription</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">AcesCodeDescription</text-property>
+                    <text-property name="heading">AcesCodeDescription</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ShipmentNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <text-property name="heading">ShipmentNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">appointedAgentCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">appointedAgentCode</text-property>
+                    <text-property name="heading">appointedAgentCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ReferenceNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ReferenceNumber</text-property>
+                    <text-property name="heading">ReferenceNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">DoNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">DoNumber</text-property>
+                    <text-property name="heading">DoNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CreatedDateTime</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CreatedDateTime</text-property>
+                    <text-property name="heading">CreatedDateTime</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_3</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">1</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_4</property>
+                    <property name="paramName">tenantCityCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">2</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_5</property>
+                    <property name="paramName">tenantAirportCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">3</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_6</property>
+                    <property name="paramName">tenantCityCode</property>
+                    <property name="dataType">string</property>
+                    <property name="position">4</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">CustomFlightId</property>
+                    <property name="dataType">integer</property>
+                    <property name="position">5</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+                <structure>
+                    <property name="name">param_2</property>
+                    <property name="paramName">CustomFlightId</property>
+                    <property name="dataType">integer</property>
+                    <property name="position">6</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">ImportExportIndicator</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">Type</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">CustomShipmentLocalAuthorityRequirementId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">CustomShipmentInfoId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">ShipmentStatus</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">NatureOfGoods</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">Origin</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">FinalDestination</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">TotalPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">TotalWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">ShipmentPieces</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">ShipmentWeight</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">CustomShipmentCustomerInfoId</property>
+                        <property name="dataType">decimal</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">CMDReceived</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">MRSStatusCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">16</property>
+                        <property name="name">AcesCodeDescription</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">17</property>
+                        <property name="name">ShipmentNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">18</property>
+                        <property name="name">appointedAgentCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">19</property>
+                        <property name="name">ReferenceNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">DoNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">21</property>
+                        <property name="name">CreatedDateTime</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">ImportExportIndicator</property>
+                    <property name="nativeName">ImportExportIndicator</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">Type</property>
+                    <property name="nativeName">Type</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">CustomShipmentLocalAuthorityRequirementId</property>
+                    <property name="nativeName">CustomShipmentLocalAuthorityRequirementId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">CustomShipmentInfoId</property>
+                    <property name="nativeName">CustomShipmentInfoId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">ShipmentStatus</property>
+                    <property name="nativeName">ShipmentStatus</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">NatureOfGoods</property>
+                    <property name="nativeName">NatureOfGoods</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">Origin</property>
+                    <property name="nativeName">Origin</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">FinalDestination</property>
+                    <property name="nativeName">FinalDestination</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">TotalPieces</property>
+                    <property name="nativeName">TotalPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">TotalWeight</property>
+                    <property name="nativeName">TotalWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">ShipmentPieces</property>
+                    <property name="nativeName">ShipmentPieces</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">ShipmentWeight</property>
+                    <property name="nativeName">ShipmentWeight</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">3</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">CustomShipmentCustomerInfoId</property>
+                    <property name="nativeName">CustomShipmentCustomerInfoId</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">2</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">CMDReceived</property>
+                    <property name="nativeName">CMDReceived</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">MRSStatusCode</property>
+                    <property name="nativeName">MRSStatusCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">16</property>
+                    <property name="name">AcesCodeDescription</property>
+                    <property name="nativeName">AcesCodeDescription</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">17</property>
+                    <property name="name">ShipmentNumber</property>
+                    <property name="nativeName">ShipmentNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">18</property>
+                    <property name="name">appointedAgentCode</property>
+                    <property name="nativeName">appointedAgentCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">19</property>
+                    <property name="name">ReferenceNumber</property>
+                    <property name="nativeName">ReferenceNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">DoNumber</property>
+                    <property name="nativeName">DoNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">21</property>
+                    <property name="name">CreatedDateTime</property>
+                    <property name="nativeName">CreatedDateTime</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select
+       Custom_ShipmentInfo.ImportExportIndicator,
+       Custom_ShipmentLocalAuthorityRequirement.Type,
+Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId,
+       Custom_ShipmentInfo.CustomShipmentInfoId ,
+       Custom_ShipmentInfo.ShipmentStatus,
+       Custom_ShipmentInfo.NatureOfGoods,
+       Custom_ShipmentInfo.Origin,
+       Custom_ShipmentInfo.FinalDestination,
+       Custom_ShipmentInfo.TotalPieces,
+       Custom_ShipmentInfo.TotalWeight,
+       Custom_ShipmentInfo.ShipmentPieces,
+       Custom_ShipmentInfo.ShipmentWeight,
+       Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId,
+       case
+              when Custom_ShipmentInfo.CMDReceivedDate IS Not Null THEN
+                      'Y'
+              else
+                      'N'
+       end CMDReceived,
+       Custom_ShipmentInfo.MRSStatusCode,
+       Mst_AcesCode.AcesCodeClass+'-'+Mst_AcesCode.AcesCodeDisplayType as
+       AcesCodeDescription,
+       Custom_ShipmentInfo.ShipmentNumber,
+       case
+              when Custom_ShipmentInfo.Origin not in (?,?) and Custom_ShipmentInfo.FinalDestination not in (?,?) then
+                      ''
+              when Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId is null and
+                     Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId is null then
+                      ''  
+              else
+                      case 
+                             when Custom_ShipmentLocalAuthorityRequirement.AppointedAgentCode is not null then
+                                           Custom_ShipmentLocalAuthorityRequirement.AppointedAgentCode
+                             when Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId is not null then
+                                    case
+                                           when (Custom_ShipmentCustomerInfo.AppointedAgent is null and Custom_ShipmentInfo.ImportExportIndicator = 'I') then
+                                                          'IXX'
+                                           when (Custom_ShipmentCustomerInfo.AppointedAgent is null and Custom_ShipmentInfo.ImportExportIndicator = 'E') then
+                                                          'EXX'
+                                           else
+                                                  Custom_ShipmentCustomerInfo.AppointedAgent
+                                    end
+                             end
+       end as appointedAgentCode,
+       Custom_ShipmentLocalAuthorityRequirement.ReferenceNumber as ReferenceNumber,
+       Custom_ShipmentInfo.DoNumber,
+       Custom_ShipmentInfo.CreatedDateTime
+from
+       Custom_ShipmentInfo left join
+       (select
+              Custom_ShipmentLocalAuthorityRequirement.RowNumber,
+             Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId,
+              Custom_ShipmentLocalAuthorityRequirement.Type,
+       Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId,
+              Custom_ShipmentLocalAuthorityRequirement.ReferenceNumber,
+              Custom_ShipmentLocalAuthorityRequirement.CustomerTypeCode,
+              Custom_ShipmentLocalAuthorityRequirement.AppointedAgentCode
+       from(
+              select
+                      ROW_NUMBER() over(partition by
+              Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId,
+                             Custom_ShipmentLocalAuthorityRequirement.Type
+                             Order by Custom_ShipmentLocalAuthorityRequirementDetail.ReferenceNumber) RowNumber,
+                    Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId,
+                      Custom_ShipmentLocalAuthorityRequirement.Type,
+              Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId,
+                   Custom_ShipmentLocalAuthorityRequirementDetail.ReferenceNumber,
+                      Customer_Types.CustomerTypeCode, 
+                     case
+                             when Customer_Types.CustomerTypeCode = 'AGT' then
+                                    Customer_Master.CustomerCode
+                             else
+                                    null
+                             end AppointedAgentCode
+              from 
+                      Customs_Flight inner join
+                      Custom_ShipmentInfo
+                                    on Customs_Flight.CustomsFlightId = Custom_ShipmentInfo.CustomFlightId inner join
+                      Custom_ShipmentLocalAuthorityRequirement
+                             on Custom_ShipmentInfo.CustomShipmentInfoId = Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId inner join
+                      Custom_ShipmentLocalAuthorityRequirementDetail
+                             on Custom_ShipmentLocalAuthorityRequirement.CustomShipmentLocalAuthorityRequirementId = Custom_ShipmentLocalAuthorityRequirementDetail.CustomShipmentLocalAuthorityRequirementId left join
+                      Customer_Master
+                             on Custom_ShipmentLocalAuthorityRequirementDetail.AppointedAgentCode = Customer_Master.Customer_ID left join
+                      Customer_Types
+                             on Customer_Master.Customer_ID = Customer_Types.Customer_ID and
+                      Customer_Types.CustomerTypeCode = 'AGT' 
+              where
+                      Custom_ShipmentInfo.CustomFlightId=?
+              )Custom_ShipmentLocalAuthorityRequirement
+       )Custom_ShipmentLocalAuthorityRequirement
+              on Custom_ShipmentInfo.CustomShipmentInfoId = Custom_ShipmentLocalAuthorityRequirement.CustomShipmentInfoId and
+              Custom_ShipmentLocalAuthorityRequirement.RowNumber = 1  left join
+       (select
+              Custom_ShipmentCustomerInfo.CustomShipmentInfoId,
+              Custom_ShipmentCustomerInfo.CustomShipmentCustomerInfoId,
+              Custom_ShipmentCustomerInfo.CustomerCode,
+              Custom_ShipmentCustomerInfo.AppointedAgentCode,
+              (select
+                      case  
+                             when count(1) > 0 then
+                                    1
+                             else
+                                    0
+                             end
+                      from
+                             Customer_Master
+                      where
+                             CustomerCode in ('IXX', 'EXX') and
+                             Customer_Master.Customer_ID = Custom_ShipmentCustomerInfo.AppointedAgentCode
+              ) as DirectCustomer,
+              Customer_Master.CustomerCode as AppointedAgent
+       from
+              Custom_ShipmentCustomerInfo left join
+              Customer_Master
+                      on Custom_ShipmentCustomerInfo.AppointedAgentCode = Customer_Master.Customer_ID
+       )Custom_ShipmentCustomerInfo
+              on Custom_ShipmentInfo.CustomShipmentInfoId = Custom_ShipmentCustomerInfo.CustomShipmentInfoId left join
+       Mst_AcesCode
+              on Custom_ShipmentInfo.MRSStatusCode = Mst_AcesCode.AcesCode
+where
+       Custom_ShipmentInfo.CustomFlightId = ?]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ImportExportIndicator</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ImportExportIndicator</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ImportExportIndicator</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Type</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Type</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Type</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CustomShipmentLocalAuthorityRequirementId</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CustomShipmentLocalAuthorityRequirementId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CustomShipmentLocalAuthorityRequirementId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CustomShipmentInfoId</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CustomShipmentInfoId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CustomShipmentInfoId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentStatus</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>35</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentStatus</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentStatus</design:label>
+            <design:formattingHints>
+              <design:displaySize>35</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>NatureOfGoods</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>NatureOfGoods</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>NatureOfGoods</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>Origin</design:name>
+              <design:position>7</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>Origin</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>Origin</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FinalDestination</design:name>
+              <design:position>8</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FinalDestination</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FinalDestination</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>TotalPieces</design:name>
+              <design:position>9</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>TotalPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>TotalPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>TotalWeight</design:name>
+              <design:position>10</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>TotalWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>TotalWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentPieces</design:name>
+              <design:position>11</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>4</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentPieces</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentPieces</design:label>
+            <design:formattingHints>
+              <design:displaySize>6</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentWeight</design:name>
+              <design:position>12</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>3</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>1</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentWeight</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentWeight</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CustomShipmentCustomerInfoId</design:name>
+              <design:position>13</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>2</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CustomShipmentCustomerInfoId</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CustomShipmentCustomerInfoId</design:label>
+            <design:formattingHints>
+              <design:displaySize>17</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CMDReceived</design:name>
+              <design:position>14</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>1</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CMDReceived</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CMDReceived</design:label>
+            <design:formattingHints>
+              <design:displaySize>1</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>MRSStatusCode</design:name>
+              <design:position>15</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>2</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>MRSStatusCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>MRSStatusCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>2</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>AcesCodeDescription</design:name>
+              <design:position>16</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>3</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>AcesCodeDescription</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>AcesCodeDescription</design:label>
+            <design:formattingHints>
+              <design:displaySize>3</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ShipmentNumber</design:name>
+              <design:position>17</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ShipmentNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ShipmentNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>appointedAgentCode</design:name>
+              <design:position>18</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>appointedAgentCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>appointedAgentCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ReferenceNumber</design:name>
+              <design:position>19</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>20</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ReferenceNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ReferenceNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>20</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>DoNumber</design:name>
+              <design:position>20</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>DoNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>DoNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CreatedDateTime</design:name>
+              <design:position>21</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CreatedDateTime</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CreatedDateTime</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="191">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">FlightDate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">FlightDate</text-property>
+                    <text-property name="heading">FlightDate</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters">
+                <structure>
+                    <property name="name">param_1</property>
+                    <property name="paramName">FlightDate</property>
+                    <property name="nativeName"></property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">0</property>
+                    <property name="position">1</property>
+                    <property name="isOptional">false</property>
+                    <property name="isInput">true</property>
+                    <property name="isOutput">false</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">FlightDate</property>
+                        <property name="dataType">date</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">FlightDate</property>
+                    <property name="nativeName">FlightDate</property>
+                    <property name="dataType">date</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[
+ select upper(cast(? as date)) FlightDate
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>FlightDate</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>4000</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>FlightDate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>FlightDate</design:label>
+            <design:formattingHints>
+              <design:displaySize>4000</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <property name="orientation">landscape</property>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <label id="93">
+            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+            <property name="fontFamily">"Courier New"</property>
+            <property name="fontSize">10pt</property>
+            <property name="fontWeight">normal</property>
+            <property name="textAlign">center</property>
+            <text-property name="text">customs.manifest.reconcilStatement</text-property>
+        </label>
+        <grid id="145">
+            <property name="fontFamily">"Courier New"</property>
+            <column id="146"/>
+            <column id="147"/>
+            <column id="148"/>
+            <column id="149"/>
+            <column id="150"/>
+            <column id="151"/>
+            <column id="152"/>
+            <column id="153"/>
+            <column id="154"/>
+            <row id="155">
+                <cell id="156">
+                    <label id="185">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="fontWeight">bold</property>
+                        <text-property name="text">export.booking.flight</text-property>
+                    </label>
+                </cell>
+                <cell id="157">
+                    <data id="189">
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">FlightKey</property>
+                                <expression name="expression" type="javascript">params["FlightKey"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">FlightKey</property>
+                    </data>
+                </cell>
+                <cell id="158">
+                    <label id="186">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                        <property name="fontWeight">bold</property>
+                        <text-property name="text">custom.flight.date</text-property>
+                    </label>
+                </cell>
+                <cell id="159">
+                    <data id="192">
+                        <property name="eventHandlerClass">com.ngen.cosys.report.event.DateDataItemEventHandler</property>
+                        <property name="dataSet">Data Set</property>
+                        <list-property name="boundDataColumns">
+                            <structure>
+                                <property name="name">FlightDate</property>
+                                <text-property name="displayName">FlightDate</text-property>
+                                <expression name="expression" type="javascript">dataSetRow["FlightDate"]</expression>
+                                <property name="dataType">date</property>
+                                <property name="allowExport">true</property>
+                            </structure>
+                        </list-property>
+                        <property name="resultSetColumn">FlightDate</property>
+                    </data>
+                </cell>
+                <cell id="160"/>
+                <cell id="161"/>
+                <cell id="162"/>
+                <cell id="163"/>
+                <cell id="164"/>
+            </row>
+        </grid>
+        <table id="8">
+            <property name="width">10.447916666666666in</property>
+            <property name="dataSet">mrsFetch</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">ImportExportIndicator</property>
+                    <text-property name="displayName">ImportExportIndicator</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ImportExportIndicator"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Type</property>
+                    <text-property name="displayName">Type</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Type"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomShipmentLocalAuthorityRequirementId</property>
+                    <text-property name="displayName">CustomShipmentLocalAuthorityRequirementId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomShipmentLocalAuthorityRequirementId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomShipmentInfoId</property>
+                    <text-property name="displayName">CustomShipmentInfoId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomShipmentInfoId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentStatus</property>
+                    <text-property name="displayName">ShipmentStatus</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentStatus"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">NatureOfGoods</property>
+                    <text-property name="displayName">NatureOfGoods</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["NatureOfGoods"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">Origin</property>
+                    <text-property name="displayName">Origin</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["Origin"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">FinalDestination</property>
+                    <text-property name="displayName">FinalDestination</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["FinalDestination"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">TotalPieces</property>
+                    <text-property name="displayName">TotalPieces</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["TotalPieces"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">TotalWeight</property>
+                    <text-property name="displayName">TotalWeight</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["ShipmentWeight"]!=dataSetRow["TotalWeight"]){dataSetRow["TotalWeight"]}</expression>
+                    <property name="dataType">decimal</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentPieces</property>
+                    <text-property name="displayName">ShipmentPieces</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["ShipmentPieces"]&lt;dataSetRow["TotalPieces"])&#13;
+{&#13;
+dataSetRow["ShipmentPieces"]+'/'+dataSetRow["TotalPieces"]&#13;
+}&#13;
+else{&#13;
+dataSetRow["ShipmentPieces"]&#13;
+}</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentWeight</property>
+                    <text-property name="displayName">ShipmentWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomShipmentCustomerInfoId</property>
+                    <text-property name="displayName">CustomShipmentCustomerInfoId</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomShipmentCustomerInfoId"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+                <structure>
+                    <property name="name">CMDReceived</property>
+                    <text-property name="displayName">CMDReceived</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CMDReceived"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">MRSStatusCode</property>
+                    <text-property name="displayName">MRSStatusCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["MRSStatusCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">AcesCodeDescription</property>
+                    <text-property name="displayName">AcesCodeDescription</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["AcesCodeDescription"]=='U-D')&#13;
+{&#13;
+'Unmatched-Discrepancy'&#13;
+}&#13;
+else if(dataSetRow["AcesCodeDescription"]=='M-M'){&#13;
+'Matched'&#13;
+}</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentNumber</property>
+                    <text-property name="displayName">ShipmentNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">appointedAgentCode</property>
+                    <text-property name="displayName">appointedAgentCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["appointedAgentCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ReferenceNumber</property>
+                    <text-property name="displayName">ReferenceNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ReferenceNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">DoNumber</property>
+                    <text-property name="displayName">DoNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["DoNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CreatedDateTime</property>
+                    <text-property name="displayName">CreatedDateTime</text-property>
+                    <expression name="expression" type="javascript">if(dataSetRow["ShipmentWeight"]!=dataSetRow["TotalWeight"]){&#13;
+'/'&#13;
+}</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">Aggregation</property>
+                    <property name="dataType">integer</property>
+                    <property name="aggregateFunction">RUNNINGCOUNT</property>
+                    <list-property name="arguments">
+                        <structure>
+                            <property name="name">Expression</property>
+                        </structure>
+                    </list-property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">ShipmentWeight_1</property>
+                    <text-property name="displayName">ShipmentWeight</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ShipmentWeight"]</expression>
+                    <property name="dataType">decimal</property>
+                </structure>
+            </list-property>
+            <column id="60">
+                <property name="width">0.3958333333333333in</property>
+            </column>
+            <column id="61">
+                <property name="width">1.375in</property>
+            </column>
+            <column id="62">
+                <property name="width">0.65625in</property>
+            </column>
+            <column id="63">
+                <property name="width">0.6458333333333334in</property>
+            </column>
+            <column id="64">
+                <property name="width">1.125in</property>
+            </column>
+            <column id="65">
+                <property name="width">1.46875in</property>
+            </column>
+            <column id="66">
+                <property name="width">1.34375in</property>
+            </column>
+            <column id="67">
+                <property name="width">0.65625in</property>
+            </column>
+            <column id="68">
+                <property name="width">0.6041666666666666in</property>
+            </column>
+            <column id="69">
+                <property name="width">0.625in</property>
+            </column>
+            <column id="70">
+                <property name="width">1.0520833333333333in</property>
+            </column>
+            <column id="71">
+                <property name="width">0.46875in</property>
+            </column>
+            <header>
+                <row id="9">
+                    <cell id="10">
+                        <label id="76">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">export.sno.caps</text-property>
+                        </label>
+                    </cell>
+                    <cell id="11">
+                        <label id="77">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">exp.awb.number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="12">
+                        <label id="78">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">awb.org</text-property>
+                        </label>
+                    </cell>
+                    <cell id="13">
+                        <label id="79">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">awb.des</text-property>
+                        </label>
+                    </cell>
+                    <cell id="14">
+                        <label id="80">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">custom.shp.pcs</text-property>
+                        </label>
+                    </cell>
+                    <cell id="15">
+                        <label id="81">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">custom.shp.wgt</text-property>
+                        </label>
+                    </cell>
+                    <cell id="16">
+                        <label id="82">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">export.nature.of.goods.caps</text-property>
+                        </label>
+                    </cell>
+                    <cell id="17">
+                        <label id="83">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">import.doissue.aces</text-property>
+                        </label>
+                    </cell>
+                    <cell id="18">
+                        <label id="84">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">export.agent.uc</text-property>
+                        </label>
+                    </cell>
+                    <cell id="19">
+                        <label id="85">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">custom.status</text-property>
+                        </label>
+                    </cell>
+                    <cell id="20">
+                        <label id="86">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <property name="textAlign">left</property>
+                            <text-property name="text">custom.status.desc.capital</text-property>
+                        </label>
+                    </cell>
+                    <cell id="21">
+                        <label id="87">
+                            <property name="eventHandlerClass">com.ngen.cosys.report.event.LabelEventHandler</property>
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="fontWeight">normal</property>
+                            <text-property name="text">customs.cmd</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="26">
+                    <cell id="27">
+                        <property name="fontFamily">"Courier New"</property>
+                        <data id="128">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">Aggregation</property>
+                        </data>
+                    </cell>
+                    <cell id="28">
+                        <data id="123">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">ShipmentNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="29">
+                        <data id="120">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">Origin</property>
+                        </data>
+                    </cell>
+                    <cell id="30">
+                        <data id="122">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">FinalDestination</property>
+                        </data>
+                    </cell>
+                    <cell id="31">
+                        <data id="126">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">ShipmentPieces</property>
+                        </data>
+                    </cell>
+                    <cell id="32">
+                        <grid id="129">
+                            <property name="marginTop">-3pt</property>
+                            <property name="width">1.4375in</property>
+                            <column id="130">
+                                <property name="width">0.5208333333333334in</property>
+                            </column>
+                            <column id="131">
+                                <property name="width">0.10416666666666667in</property>
+                            </column>
+                            <column id="137">
+                                <property name="width">0.8125in</property>
+                            </column>
+                            <row id="132">
+                                <cell id="133">
+                                    <data id="135">
+                                        <property name="eventHandlerClass">com.ngen.cosys.report.event.WeightDataItemEventHandler</property>
+                                        <property name="fontFamily">"Courier New"</property>
+                                        <structure name="numberFormat">
+                                            <property name="category">Currency</property>
+                                            <property name="pattern">###0.0{RoundingMode=HALF_UP}</property>
+                                        </structure>
+                                        <property name="resultSetColumn">ShipmentWeight</property>
+                                    </data>
+                                </cell>
+                                <cell id="134">
+                                    <data id="139">
+                                        <property name="fontFamily">"Courier New"</property>
+                                        <property name="resultSetColumn">CreatedDateTime</property>
+                                    </data>
+                                </cell>
+                                <cell id="136">
+                                    <data id="140">
+                                        <property name="eventHandlerClass">com.ngen.cosys.report.event.WeightDataItemEventHandler</property>
+                                        <property name="fontFamily">"Courier New"</property>
+                                        <structure name="numberFormat">
+                                            <property name="category">Currency</property>
+                                            <property name="pattern">###0.0{RoundingMode=HALF_UP}</property>
+                                        </structure>
+                                        <property name="textAlign">left</property>
+                                        <property name="resultSetColumn">TotalWeight</property>
+                                    </data>
+                                </cell>
+                            </row>
+                        </grid>
+                    </cell>
+                    <cell id="33">
+                        <data id="121">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="fontSize">10pt</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">NatureOfGoods</property>
+                        </data>
+                    </cell>
+                    <cell id="34">
+                        <data id="193">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="resultSetColumn">ReferenceNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="35">
+                        <data id="142">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">appointedAgentCode</property>
+                        </data>
+                    </cell>
+                    <cell id="36">
+                        <data id="144">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="resultSetColumn">MRSStatusCode</property>
+                        </data>
+                    </cell>
+                    <cell id="37">
+                        <data id="141">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">left</property>
+                            <property name="resultSetColumn">AcesCodeDescription</property>
+                        </data>
+                    </cell>
+                    <cell id="38">
+                        <data id="125">
+                            <property name="fontFamily">"Courier New"</property>
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">CMDReceived</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+            <footer>
+                <row id="43">
+                    <cell id="44"/>
+                    <cell id="45"/>
+                    <cell id="46"/>
+                    <cell id="47"/>
+                    <cell id="48"/>
+                    <cell id="49"/>
+                    <cell id="50"/>
+                    <cell id="51"/>
+                    <cell id="52"/>
+                    <cell id="53"/>
+                    <cell id="54"/>
+                    <cell id="55"/>
+                </row>
+            </footer>
+        </table>
+    </body>
+</report>

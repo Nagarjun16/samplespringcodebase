@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="IVRSInterfaceMapper">
+
+	<select id="sqlSelectIVRSAPIConfig" 
+			resultType="com.ngen.cosys.service.ivrs.config.IVRSInterfaceConfig">
+		<![CDATA[
+			WITH 
+				API_REPORT AS
+				(
+					SELECT	ParameterValueChar AS APIReportService
+					FROM	App_SystemParameters
+					WHERE	ParameterCode = 'API_REPORT_SERVICE'
+					AND 	ParameterStatusFlag = 'Y'
+					AND 	StartDate <= GETDATE() 
+					AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				),
+				API_IVRS AS
+				(
+					SELECT	ParameterValueChar AS APIPerformCall
+					FROM	App_SystemParameters
+					WHERE	ParameterCode = 'API_ESB_CONNECTOR_IVRS'
+					AND 	ParameterStatusFlag = 'Y'
+					AND 	StartDate <= GETDATE() 
+					AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				),
+				API_FAX AS
+				(
+					SELECT	ParameterValueChar AS APISendFax
+					FROM	App_SystemParameters
+					WHERE	ParameterCode = 'API_ESB_CONNECTOR_FAX'
+					AND 	ParameterStatusFlag = 'Y'
+					AND 	StartDate <= GETDATE() 
+					AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				)
+			SELECT	API_REPORT.APIReportService AS "reportServiceUrl",
+					API_IVRS.APIPerformCall AS "performCallUrl", 
+					API_FAX.APISendFax AS "sendFaxUrl"
+			FROM	API_REPORT, API_IVRS, API_FAX
+		]]>
+	</select>
+	
+	<resultMap id="ivrsfaxAWBRequestDataMap" type="com.ngen.cosys.service.ivrs.model.IVRSRequest">
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="AwbPrefix" property="awbPrefix" />
+		<result column="AwbSuffix" property="awbSuffix" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="totalPieces" />
+		<result column="Weight" property="totalWeight" />
+		<result column="CustomerName" property="consigneeName" />
+		<result column="ContactTypeDetail" property="contactNo" />
+		<collection property="awbDetails" javaType="List"
+			ofType="com.ngen.cosys.service.ivrs.model.IVRSRequest$AWBDetail" 
+			select="selectIVRSFAXAWBDetail" column="{shipmentId=ShipmentId}" />
+	</resultMap>
+	
+	<resultMap id="ivrsfaxAWBRequestDetailDataMap" type="com.ngen.cosys.service.ivrs.model.IVRSRequest$AWBDetail">
+		<result column="CarrierCode" property="flightCarrier" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="Piece" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="FSUStatus" property="fsuStatus" />
+	</resultMap>
+	
+	<select id="sqlSelectIVRSFAXAWBRequest" 
+			parameterType="com.ngen.cosys.events.payload.ShipmentNotification"
+			resultMap="ivrsfaxAWBRequestDataMap">
+		<![CDATA[
+			SELECT	Shipment_Master.ShipmentId,
+					SUBSTRING(Shipment_Master.ShipmentNumber, 1, 3) AS AwbPrefix, 
+					SUBSTRING(Shipment_Master.ShipmentNumber, 4, 8) AS AwbSuffix,
+					CAST(Shipment_Master.ShipmentDate AS DATE) AS ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_MasterCustomerInfo.CustomerName,
+					IVRS_NotificationContactInfo.ContactTypeDetail
+			FROM	Shipment_Master
+				LEFT JOIN
+					Shipment_MasterCustomerInfo
+				ON	Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.ShipmentId
+				AND	Shipment_MasterCustomerInfo.CustomerType IN ('CNE','DCNE')
+				LEFT JOIN
+					IVRS_NotificationContactInfo
+				ON	IVRS_NotificationContactInfo.ShipmentId = Shipment_Master.ShipmentId
+		]]>
+		<choose>
+			<when test="notificationType == 'IVRS'">
+				<![CDATA[
+					AND	IVRS_NotificationContactInfo.ContactTypeCode IN ('TE')
+				]]>
+			</when>
+			<when test="notificationType == 'FAX'">
+				<![CDATA[
+					AND	IVRS_NotificationContactInfo.ContactTypeCode IN ('FX')
+				]]>
+			</when>
+		</choose>
+		<![CDATA[
+			WHERE	Shipment_Master.ShipmentNumber = CAST(#{shipmentNumber} AS VARCHAR)
+			AND		Shipment_Master.ShipmentDate = CAST(#{shipmentDate} AS DATE)
+		]]>
+	</select>
+	
+	<resultMap id="ivrsfaxReportParamsMap" type="com.ngen.cosys.service.ivrs.model.IVRSFaxReportParams">
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="ConsigneeName" property="consigneeName" />
+		<result column="CustomerCode" property="customerCode" />
+		<result column="CustomerName" property="customerName" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="ArrivedDate" property="arrivedDate" />
+	</resultMap>
+	
+	<select id="sqlSelectIVRSFAXReportParams" 
+			parameterType="Map"
+			resultMap="ivrsfaxReportParamsMap">
+		<![CDATA[
+			SELECT	Shipment_Master.ShipmentId,
+					Shipment_Master.ShipmentNumber,
+					Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_MasterCustomerInfo.CustomerName AS ConsigneeName,
+					CASE WHEN Customer_Master.CustomerCode = 'IXX' 
+						THEN Shipment_MasterCustomerInfo.CustomerCode ELSE Customer_Master.CustomerCode 
+					END CustomerCode,
+					CASE WHEN Customer_Master.CustomerCode = 'IXX' 
+						THEN Shipment_MasterCustomerInfo.CustomerCode ELSE Customer_Master.CustomerShortName 
+					END CustomerName,
+					Flt_OperativeFlight.FlightKey,
+					CAST(Flt_OperativeFlight_Legs.DateSTA AS DATE) AS ArrivedDate
+			FROM	Imp_ShipmentVerification
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+				INNER JOIN
+					Shipment_MasterCustomerInfo
+				ON	Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.ShipmentId
+				AND	Shipment_MasterCustomerInfo.CustomerType = 'CNE'
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Imp_ShipmentVerification.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+				AND	Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+				LEFT JOIN
+					Customer_Master
+				ON	Customer_Master.Customer_ID	= Shipment_MasterCustomerInfo.AppointedAgent
+			WHERE	Shipment_Master.ShipmentNumber = CAST(#{shipmentNumber} AS VARCHAR)
+			AND		Shipment_Master.ShipmentDate = CAST(#{shipmentDate} AS DATE)
+		]]>
+	</select>
+	
+	<select id="selectIVRSFAXAWBDetail" resultMap="ivrsfaxAWBRequestDetailDataMap">
+		<![CDATA[
+			SELECT	Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode,
+					Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey,
+					CAST(Flt_OperativeFlight_Legs.DateSTA AS DATE) AS FlightDate,
+					Imp_ArrivalManifestShipmentInfo.Piece,
+					Imp_ArrivalManifestShipmentInfo.Weight,
+					(
+						SELECT	STRING_AGG(ShipmentStatus.EventType, '-')
+						FROM (
+							SELECT	DISTINCT Shipment_StatusUpdateEvent.EventType
+							FROM	Shipment_StatusUpdateEvent
+							WHERE	Shipment_StatusUpdateEvent.IncomingFlightId = Imp_ArrivalManifestByFlight.FlightId
+							AND		Shipment_StatusUpdateEvent.ShipmentId = Shipment_Master.ShipmentId
+						) ShipmentStatus
+					) FSUStatus
+			FROM	Imp_ArrivalManifestByFlight
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Imp_ArrivalManifestByFlight.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+				INNER JOIN
+					Imp_ArrivalManifestBySegment
+				ON	Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+				INNER JOIN
+					Flt_OperativeFlight_Segments
+				ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = Imp_ArrivalManifestBySegment.FlightSegmentId
+				INNER JOIN
+					Imp_ArrivalManifestULD
+				ON	Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+				INNER JOIN
+					Imp_ArrivalManifestShipmentInfo
+				ON	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+			WHERE	Shipment_Master.ShipmentId = #{shipmentId}
+		]]>
+	</select>
+	
+	<resultMap id="ivrsEnquireAWBRequestMap" type="com.ngen.cosys.service.ivrs.model.IVRSAWBResponse">
+		<result column="MessageSequenceNo" property="messageSequenceNo" />
+		<result column="RequestDateTime" property="requestDateTime" />
+		<result column="AwbPrefix" property="awbPrefix" />
+		<result column="AwbSuffix" property="awbSuffix" />
+		<result column="Status" property="status" />
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+		<result column="Pieces" property="totalPieces" />
+		<result column="Weight" property="totalWeight" />
+		<result column="CustomerName" property="consigneeName" />
+		<collection property="awbDetails" javaType="List"
+			ofType="com.ngen.cosys.service.ivrs.model.IVRSAWBResponse$AWBDetail" 
+			select="selectIVRSEnquireAWBDetail" column="{shipmentId=ShipmentId}" />
+	</resultMap>
+	
+	<resultMap id="ivrsEnquireAWBRequestDetailMap" type="com.ngen.cosys.service.ivrs.model.IVRSAWBResponse$AWBDetail">
+		<result column="CarrierCode" property="flightCarrier" />
+		<result column="FlightNumber" property="flightNumber" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="Piece" property="pieces" />
+		<result column="Weight" property="weight" />
+		<result column="FSUStatus" property="fsuStatus" />
+	</resultMap>
+	
+	<select id="sqlSelectIVRSEnquireAWBRequest" 
+			parameterType="com.ngen.cosys.service.ivrs.model.IVRSAWBRequest"
+			resultMap="ivrsEnquireAWBRequestMap">
+		<![CDATA[
+   			SELECT	#{messageSequenceNo} AS MessageSequenceNo,
+   					#{requestDateTime} AS RequestDateTime,
+   					#{awbPrefix} AS AwbPrefix,
+   					#{awbSuffix} AS AwbSuffix,
+   					'S' AS Status,
+   					Shipment_Master.ShipmentId,
+   					CAST(Shipment_Master.ShipmentDate AS DATE) AS ShipmentDate,
+					Shipment_Master.Origin,
+					Shipment_Master.Destination,
+					Shipment_Master.Pieces,
+					Shipment_Master.Weight,
+					Shipment_MasterCustomerInfo.CustomerName
+			FROM	Shipment_Master
+				LEFT JOIN
+					Shipment_MasterCustomerInfo
+				ON	Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.ShipmentId
+				AND	Shipment_MasterCustomerInfo.CustomerType IN ('CNE','DCNE')
+				LEFT JOIN
+					Shipment_MasterCustomerAddressInfo
+				ON	Shipment_MasterCustomerAddressInfo.ShipmentCustomerInfoId 
+						= Shipment_MasterCustomerInfo.ShipmentCustomerInfoId
+			WHERE	Shipment_Master.ShipmentNumber = CAST(CONCAT(#{awbPrefix},#{awbSuffix}) AS VARCHAR)
+			AND		Shipment_Master.ShipmentDate = CAST(#{shipmentDate} AS DATE)
+		]]>
+	</select>
+	
+	<select id="selectIVRSEnquireAWBDetail" resultMap="ivrsEnquireAWBRequestDetailMap">
+		<![CDATA[
+			SELECT	Flt_OperativeFlight.Flight_ID, 
+					Flt_OperativeFlight.CarrierCode,
+					Flt_OperativeFlight.FlightNumber,
+					Flt_OperativeFlight.FlightKey,
+					CAST(Flt_OperativeFlight_Legs.DateSTA AS DATE) AS FlightDate,
+					Imp_ArrivalManifestShipmentInfo.Piece,
+					Imp_ArrivalManifestShipmentInfo.Weight,
+					(
+						SELECT	STRING_AGG(ShipmentStatus.EventType, '-')
+						FROM (
+							SELECT	DISTINCT Shipment_StatusUpdateEvent.EventType
+							FROM	Shipment_StatusUpdateEvent
+							WHERE	Shipment_StatusUpdateEvent.IncomingFlightId = Imp_ArrivalManifestByFlight.FlightId
+							AND		Shipment_StatusUpdateEvent.ShipmentId = Shipment_Master.ShipmentId
+						) ShipmentStatus
+					) FSUStatus
+			FROM	Imp_ArrivalManifestByFlight
+				INNER JOIN
+					Flt_OperativeFlight
+				ON	Flt_OperativeFlight.Flight_ID = Imp_ArrivalManifestByFlight.FlightId
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+				INNER JOIN
+					Imp_ArrivalManifestBySegment
+				ON	Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId = Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+				INNER JOIN
+					Flt_OperativeFlight_Segments
+				ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = Imp_ArrivalManifestBySegment.FlightSegmentId
+				INNER JOIN
+					Imp_ArrivalManifestULD
+				ON	Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+				INNER JOIN
+					Imp_ArrivalManifestShipmentInfo
+				ON	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId = Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate
+			WHERE	Shipment_Master.ShipmentId = #{shipmentId}
+		]]>
+	</select>
+	
+	<resultMap id="messageLogDetailMap" type="com.ngen.cosys.service.ivrs.model.IVRSMessageLog">
+		<result column="InterfaceOutgoingMessageLogId" property="messageId" />
+		<result column="InterfacingSystem" property="interfaceSystem" />
+		<result column="MessageType" property="messageType" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="ShipmentDate" property="shipmentDate" />
+		<result column="MessageFormat" property="messageSequenceNo" />
+		<result column="Status" property="status" />
+		<result column="CreatedDateTime" property="createdTime" />
+		<result column="InterfaceOutgoingMessageLogErrorInfoId" property="errorMessageId" />
+		<result column="ErrorCode" property="errorStatus" />
+	</resultMap>
+	
+	<select id="sqlSelectIVRSFAXMessageLogDetail" 
+			parameterType="com.ngen.cosys.service.ivrs.model.IVRSDataResponse"
+			resultMap="messageLogDetailMap">
+		<![CDATA[
+			SELECT	Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId,
+					Interface_OutgoingMessageLog.InterfacingSystem,
+					Interface_OutgoingMessageLog.MessageType,
+					Interface_OutgoingMessageLog.ShipmentNumber,
+					Interface_OutgoingMessageLog.ShipmentDate,
+					Interface_OutgoingMessageLog.MessageFormat,
+					Interface_OutgoingMessageLog.Status,
+					Interface_OutgoingMessageLog.CreatedDateTime,
+					Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogErrorInfoId,
+					Interface_OutgoingMessageLogErrorInfo.ErrorCode
+			FROM	Interface_OutgoingMessageLog
+				LEFT JOIN
+					Interface_OutgoingMessageLogErrorInfo
+				ON	Interface_OutgoingMessageLogErrorInfo.InterfaceOutgoingMessageLogId
+						= Interface_OutgoingMessageLog.InterfaceOutgoingMessageLogId
+			WHERE	Interface_OutgoingMessageLog.InterfacingSystem IN ('IVRS','FAX')
+			AND		Interface_OutgoingMessageLog.MessageType IN ('IVRS','FAX')
+			AND		Interface_OutgoingMessageLog.ShipmentNumber = CAST(CONCAT(#{awbPrefix},#{awbSuffix}) AS VARCHAR)
+			AND		CAST(Interface_OutgoingMessageLog.ShipmentDate AS DATE) = CAST(#{shipmentDate} AS DATE)
+			AND		Interface_OutgoingMessageLog.MessageFormat = CAST(#{messageSequenceNo} AS VARCHAR)
+		]]>
+	</select>
+	
+	<update id="sqlUpdateIVRSOutgoingMessageLog" parameterType="com.ngen.cosys.service.ivrs.model.IVRSBaseBO">
+		<![CDATA[
+			UPDATE	Interface_OutgoingMessageLog
+			SET 	LastUpdatedUserCode = 'SYSTEM', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE 	InterfaceOutgoingMessageLogId = #{messageId}
+		]]>
+	</update>
+	
+	<update id="sqlUpdateIVRSIncomingMessageLog" parameterType="com.ngen.cosys.service.ivrs.model.IVRSBaseBO">
+		<![CDATA[
+			UPDATE	Interface_IncomingMessageLog
+			SET 	LastUpdatedUserCode = 'SYSTEM', 
+					LastUpdatedDateTime = GETDATE()
+			WHERE 	InterfaceIncomingMessageLogId = #{messageId}
+		]]>
+	</update>
+	
+</mapper>

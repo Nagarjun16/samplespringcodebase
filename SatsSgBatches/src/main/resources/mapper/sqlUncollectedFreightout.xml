@@ -1,0 +1,978 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentDeliveryMapper">
+<resultMap
+		type="com.ngen.cosys.uncollectedfreightout.model.UncollectedFreightoutShipmentModel"
+		id="UncollectedFreightoutResultMap">
+		<result column="shipmentnumber" property="shipmentNumber"></result>
+		<result column="awbNumber" property="awbNumber"></result>
+		<result column="FlightDate" property="flightDate" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"></result>
+		<result column="pieces" property="pieces"></result>
+		<result column="weight" property="weight"></result>
+		<result column="natureOfGoods" property="natureOfGoods"></result>
+		<result column="Origin" property="origin"></result>
+		<result column="chargecode" property="chargeCode"></result>
+		<result column="flightkey" property="flight"></result>
+		<result column = "fltkey" property = "flightKey"></result>
+		<result column ="irrPieces" property="irrPieces"></result>
+		<result column ="irrWeight" property="irrWeight"></result>
+		<result column = "shipmentId" property = "shipmentId"></result>
+		<result column ="flightId" property = "flightId"></result>
+		<result column = "boardpoint" property="boardpoint"></result>
+		<result column = "lastCycle" property="lastCycle"></result>
+		<result column = "Number" property="houseNumber"></result>
+		<result column ="shchandlinggroupcode" property = "shcHandlingGroupCode"></result>
+		<result column = "shipmentDate" property = "shipmentDate" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"></result>
+		<result column = "carrierCode" property = "carrierCode"></result>
+		<result column = "destination" property = "destination"></result>
+		<result column = "customerCode" property = "customerCode"></result>		
+	</resultMap>
+<select id="sqlGetUncollectedFreightout" 
+		parameterType="com.ngen.cosys.uncollectedfreightout.model.UncollectedFreightoutShipmentModel"
+		resultMap="UncollectedFreightoutResultMap">
+ <![CDATA[
+	WITH flight AS (
+
+              SELECT leg.flight_id  FlightId, Flt.carriercode, Flt.flightnumber, Flt.flightkey,
+
+                                           Cast(Leg.datesta AS DATE) FlightDate
+
+              FROM   flt_operativeflight Flt
+
+    INNER JOIN flt_operativeflight_legs leg ON leg.flight_id = Flt.flight_id
+
+    WHERE  Leg.flightoffpoint =  #{tenantAirport}
+
+),
+
+Manifest As (
+
+              SELECT arr.FlightId, sm.ShipmentId,
+
+                     Sum(Shp.Piece) Pieces, Sum(Shp.Weight) Weight
+
+              FROM   Imp_ArrivalManifestShipmentInfo Shp
+
+              INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = Shp.ShipmentNumber
+
+                                            And Sm.ShipmentDate = Shp.ShipmentDate      
+
+              INNER JOIN Imp_ArrivalManifestULD Uld      
+
+                              ON Uld.ImpArrivalManifestULDId = Shp.ImpArrivalManifestULDId
+
+              INNER JOIN Imp_ArrivalManifestBySegment ManSeg
+
+                              ON ManSeg.ImpArrivalManifestBySegmentId = Uld.ImpArrivalManifestBySegmentId
+
+              INNER JOIN Imp_ArrivalManifestByFlight arr
+
+                              ON arr.ImpArrivalManifestByFlightId = ManSeg.ImpArrivalManifestByFlightId
+
+              Inner Join Flight Flt On Flt.FlightId = arr.FlightId
+
+              Inner Join Flt_operativeflight_Segments FltSeg
+
+                              On FltSeg.Flight_Id       = Flt.FlightId
+
+                             And FltSeg.FlightSegmentId = ManSeg.FlightSegmentId
+
+              Group By   Arr.FlightId, sm.ShipmentId
+
+),
+
+Msca As (
+
+              Select irr.Flight_Id FlightId, sm.ShipmentId,
+
+                     Sum(IsNull(irr.Pieces,0)) Pieces, Sum(IsNull(irr.Weight,0)) Weight
+
+              From Shipment_Irregularity irr
+
+              INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = irr.ShipmentNumber
+
+                                            And Sm.ShipmentDate = irr.ShipmentDate        
+
+              Where IsNull(irr.CargoIrregularityCode,'XXX') = 'MSCA'
+
+              And irr.Flight_Id Is Not NUll
+
+              Group By irr.Flight_Id, sm.ShipmentId
+
+),
+
+Fdca As (
+
+              Select irr.Flight_Id FlightId, sm.ShipmentId,
+
+              Sum(IsNull(irr.Pieces,0)) Pieces, Sum(IsNull(irr.Weight,0)) Weight
+
+              From Shipment_Irregularity irr
+
+              INNER JOIN shipment_master Sm ON Sm.ShipmentNumber = irr.ShipmentNumber
+
+                                            And Sm.ShipmentDate = irr.ShipmentDate
+
+              Where IsNull(irr.CargoIrregularityCode,'XXX') = 'FDCA'
+
+              And irr.Flight_Id Is Not NUll
+
+              Group By irr.Flight_Id, sm.ShipmentId
+
+),
+
+FrtIn As (
+
+              Select Ver.FlightId, Ver.ShipmentId,
+
+                     IsNull(Sum(Ver.BreakDownPieces),0) Pieces, IsNull(Sum(Ver.BreakDownWeight),0) Weight
+
+              from Imp_ShipmentVerification Ver
+
+              Where IsNull(Ver.BreakDownPieces,0) > 0
+
+              Group By Ver.FlightId, Ver.ShipmentId
+
+),
+
+invWgt AS (
+
+              SELECT Inv.flight_id FlightId, Inv.shipment_id ShipmentId, 
+
+           Sum(Inv.Pieces) Pieces , Sum(Inv.weight) Weight
+
+              FROM   shipment_inventory Inv
+
+              INNER JOIN shipment_master Sm ON Sm.shipmentid = Inv.shipment_id
+
+              WHERE  sm.destination in (  #{tenantAirport} , #{tenantAirport} )
+
+              AND sm.shipmenttype != 'MAIL'
+
+    AND IsNull(Inv.Abandoned,0) = 0        
+
+              GROUP BY Inv.flight_id, Inv.shipment_id
+
+),
+
+InvRdy As (
+
+              Select FrtIn.FlightId, FrtIn.shipmentId, 'R' Rdy
+
+              From FrtIn
+
+              Inner Join invWgt On invWgt.FlightId = FrtIn.FlightId And invWgt.ShipmentId = FrtIn.ShipmentId
+
+              Left Join Manifest On Manifest.FlightId = FrtIn.FlightId And Manifest.ShipmentId = FrtIn.ShipmentId
+
+              Left Join Msca On Msca.FlightId = FrtIn.FlightId And Msca.ShipmentId = FrtIn.ShipmentId
+
+              Left Join Fdca On Fdca.FlightId = FrtIn.FlightId And Fdca.ShipmentId = FrtIn.ShipmentId
+
+              Where invWgt.Pieces = ((IsNull(Manifest.Pieces,0) - IsNull(Msca.Pieces,0)) + IsNull(Fdca.Pieces,0))
+
+),
+
+inv AS (
+
+              SELECT Inv.ShipmentInventory_Id,flight_id FlightId, Inv.shipment_id ShipmentId, Sm.shipmentnumber,
+
+           Isnull((SELECT airportname
+
+                                        FROM mst_airport
+
+                                                             WHERE airportcode = Sm.origin),
+
+                  (SELECT CityName
+
+                                                             FROM mst_city city
+
+                                                             Where CityCode = Sm.origin)
+
+                                                            ) Origin,
+
+                                                            Sm.origin boardpoint,
+
+  (select Shipment_HouseInformation.Number from Shipment_HouseInformation where
+
+                                                            Shipment_HouseInformation.ShipmentHouseId=Inv.ShipmentHouseId
+
+                                                            and Shipment_HouseInformation.ShipmentType='HAWB' ) Number,
+
+                                           Sm.destination, Sm.Pieces totalpieces,Sm.Weight totalweight,Sum(Inv.pieces) Pieces, Sum(Inv.weight) Weight, sm.natureofgoodsdescription,Sm.ShipmentDate
+
+              FROM   shipment_inventory Inv
+
+              Inner Join InvRdy On InvRdy.FlightId = inv.flight_id
+
+                               And InvRdy.shipmentid = Inv.shipment_id       
+
+              INNER JOIN shipment_master Sm ON Sm.shipmentid = Inv.shipment_id
+
+              and Sm.HandledByMasterHouse='M'
+
+              WHERE  sm.destination in (  #{tenantAirport} , #{tenantAirport} )
+
+              AND sm.shipmenttype != 'MAIL'
+
+              AND IsNull(Inv.WarehouseLocation,'XX') != 'UTL'
+
+              AND IsNUll(Inv.Locked,0) = 0
+
+    AND IsNull(Inv.Abandoned,0) = 0        
+
+             
+
+              GROUP BY 
+			  Inv.ShipmentInventory_Id,Inv.flight_id, Inv.shipment_id, Sm.shipmentnumber,
+
+                                Sm.origin, Sm.destination, sm.natureofgoodsdescription,Sm.ShipmentDate,
+
+                                Sm.Pieces,Sm.Weight,Inv.ShipmentHouseId
+
+),
+
+invHouse AS (
+
+              SELECT Inv.ShipmentInventory_Id,Inv.flight_id FlightId, Inv.shipment_id ShipmentId, Sm.shipmentnumber,
+               Isnull((SELECT airportname
+                        FROM mst_airport
+
+                                                             WHERE airportcode = Sm.origin),
+
+                  (SELECT CityName
+
+                                                             FROM mst_city city
+
+                                                             Where CityCode = Sm.origin)
+
+                                                            ) Origin,
+
+                                                            Sm.origin boardpoint,
+
+  (select Shipment_HouseInformation.Number from Shipment_HouseInformation where
+
+                                                            Shipment_HouseInformation.ShipmentHouseId=Inv.ShipmentHouseId
+
+                                                            and Shipment_HouseInformation.ShipmentType='HAWB' ) Number,
+
+                                           Sm.destination, Sm.Pieces totalpieces,Sm.Weight totalweight,Sum(Inv.pieces) Pieces, Sum(Inv.weight) Weight, sm.natureofgoodsdescription,Sm.ShipmentDate ,
+
+                                           inv.ShipmentHouseId
+
+              FROM   shipment_inventory Inv
+
+              Inner Join InvRdy On InvRdy.FlightId = inv.flight_id
+
+                               And InvRdy.shipmentid = Inv.shipment_id       
+
+              INNER JOIN shipment_master Sm ON Sm.shipmentid = Inv.shipment_id
+
+              and Sm.HandledByMasterHouse='H'
+
+              WHERE  sm.destination in (  #{tenantAirport} , #{tenantAirport} )
+
+              AND sm.shipmenttype != 'MAIL'
+
+              AND IsNull(Inv.WarehouseLocation,'XX') != 'UTL'
+
+              AND IsNUll(Inv.Locked,0) = 0
+
+    AND IsNull(Inv.Abandoned,0) = 0        
+
+              GROUP BY 
+			  Inv.ShipmentInventory_Id,
+			  Inv.flight_id, 
+			  Inv.shipment_id, 
+			  Sm.shipmentnumber,
+
+                                Sm.origin, Sm.destination, sm.natureofgoodsdescription,Sm.ShipmentDate,
+
+                                Sm.Pieces,Sm.Weight,Inv.ShipmentHouseId
+
+),
+
+shc AS (SELECT inv.flightid, 
+               inv.shipmentid, 
+			   inv.natureofgoodsdescription, 
+			   inv.shipmentnumber,
+               inv.origin,
+			   inv.boardpoint, 
+			   inv.destination, 
+			   inv.pieces, 
+			   inv.weight,
+			   inv.totalpieces,
+			   inv.totalweight,
+			   inv.ShipmentDate,
+               String_agg(Shipment_InventorySHC.specialhandlingcode, '/') SpecialHandlingCode, 
+			   inv.Number,
+               CASE WHEN (SELECT Count(1)
+               FROM Shipment_InventorySHC innerSHC
+               INNER JOIN Mst_AssociateSHCbyHandlingGroup
+               ON innerSHC.specialhandlingcode = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode
+               INNER JOIN mst_shchandlinggroup
+               ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid = mst_shchandlinggroup.mstshchandlinggroupid
+               WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP'
+               AND innerSHC.ShipmentInventoryId = inv.ShipmentInventory_Id) > 0
+               THEN 'IRP'
+               ELSE 'IRG'
+               END SHCHandlingGroupCode,
+               Isnull((SELECT TOP 1 mst_shchandlinggroup.mstshchandlinggroupid
+               FROM Shipment_InventorySHC innerSHC
+               INNER JOIN Mst_AssociateSHCbyHandlingGroup
+               ON innerSHC.specialhandlingcode = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode
+			   INNER JOIN mst_shchandlinggroup
+			   ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid
+               = mst_shchandlinggroup.mstshchandlinggroupid
+               WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP'
+               AND innerSHC.ShipmentInventoryId = inv.ShipmentInventory_Id),
+               (Select Top 1 mstshchandlinggroupid
+			    From mst_shchandlinggroup
+				WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRG')
+                ) MstSHCHandlingGroupID,
+				null ShipmentHouseId
+               FROM   inv
+               LEFT JOIN Shipment_InventorySHC ON inv.ShipmentInventory_Id = Shipment_InventorySHC.ShipmentInventoryId
+               GROUP  BY 
+			   inv.ShipmentInventory_Id,
+			   inv.flightid, inv.shipmentid, inv.natureofgoodsdescription,
+               inv.shipmentnumber, inv.origin, inv.boardpoint,inv.destination, inv.pieces, 
+			   inv.weight,inv.ShipmentDate,inv.totalpieces,inv.totalweight,inv.Number
+               UNION
+                      SELECT invHouse.flightid, 
+                      invHouse.shipmentid, 
+					  invHouse.natureofgoodsdescription, 
+					  invHouse.shipmentnumber,
+                      invHouse.origin,
+					  invHouse.boardpoint, 
+					  invHouse.destination, 
+					  invHouse.pieces, 
+					  invHouse.weight,
+					  invHouse.totalpieces,
+                      invHouse.totalweight,
+					  invHouse.ShipmentDate,
+                      String_agg(Shipment_InventorySHC.specialhandlingcode, '/') SpecialHandlingCode,
+					  invHouse.Number,
+                      CASE WHEN (SELECT Count(1)
+                      FROM   Shipment_InventorySHC innerSHC
+                      INNER JOIN Mst_AssociateSHCbyHandlingGroup
+                      ON innerSHC.specialhandlingcode = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode
+                      INNER JOIN mst_shchandlinggroup
+                      ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid= mst_shchandlinggroup.mstshchandlinggroupid
+                      WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP'
+                      AND innerSHC.ShipmentInventoryId = invHouse.ShipmentInventory_Id) > 0
+                      THEN 'IRP'
+                      ELSE 'IRG'
+                      END SHCHandlingGroupCode,
+                      Isnull((SELECT TOP 1 mst_shchandlinggroup.mstshchandlinggroupid
+                      FROM Shipment_InventorySHC innerSHC
+                      INNER JOIN Mst_AssociateSHCbyHandlingGroup
+                      ON innerSHC.specialhandlingcode = Mst_AssociateSHCbyHandlingGroup.specialhandlingcode
+                      INNER JOIN mst_shchandlinggroup  ON Mst_AssociateSHCbyHandlingGroup.mstshchandlinggroupid
+                      = mst_shchandlinggroup.mstshchandlinggroupid
+                      WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRP'
+                      AND innerSHC.ShipmentInventoryId = invHouse.ShipmentInventory_Id),
+                     (Select Top 1 mstshchandlinggroupid
+					  From mst_shchandlinggroup
+					  WHERE  mst_shchandlinggroup.shchandlinggroupcode = 'IRG')
+					  ) MstSHCHandlingGroupID,
+					   invHouse.ShipmentHouseId
+					  FROM   invHouse
+					 LEFT JOIN Shipment_InventorySHC ON invHouse.ShipmentInventory_Id = Shipment_InventorySHC.ShipmentInventoryId
+                     GROUP  BY 
+					  invHouse.ShipmentInventory_Id,invHouse.flightid, invHouse.shipmentid, invHouse.natureofgoodsdescription,
+					invHouse.shipmentnumber, invHouse.origin, invHouse.boardpoint,invHouse.destination, invHouse.pieces, invHouse.weight,invHouse.ShipmentDate
+                    ,invHouse.totalpieces,invHouse.totalweight,invHouse.Number,invHouse.ShipmentHouseId
+),
+
+customer AS ( SELECT shipment_mastercustomerinfo.shipmentid,
+                     null ShipmentHouseId, 
+                      shipment_mastercustomerinfo.customercode custCode,
+                     shipment_mastercustomeraddressinfo.streetaddress,
+                     shipment_mastercustomeraddressinfo.place,
+                    shipment_mastercustomerinfo.customername agentName,
+                      (SELECT countryname
+                        FROM   mst_country
+                         WHERE  countrycode = shipment_mastercustomeraddressinfo.countrycode) CountryCode,
+                       shipment_mastercustomeraddressinfo.postal
+                  FROM  shipment_mastercustomerinfo
+                 LEFT JOIN Shipment_Master on Shipment_Master.ShipmentId=shipment_mastercustomerinfo.ShipmentId
+				 LEFT JOIN
+				 shipment_mastercustomeraddressinfo
+                 ON shipment_mastercustomeraddressinfo.shipmentcustomerinfoid
+                     = shipment_mastercustomerinfo.shipmentcustomerinfoid
+                LEFT JOIN customer_master ON shipment_mastercustomerinfo.appointedagent = customer_master.customer_id
+                where CustomerType='CNE'
+				and Shipment_Master.HandledByMasterHouse='M'
+
+				UNION 
+
+				SELECT 
+				Shipment_HouseInformation.ShipmentId shipmentid,
+				Shipment_HouseCustomerInfo.ShipmentHouseId,
+			  Shipment_HouseCustomerInfo.customercode custCode,
+              Shipment_HouseCustomerAddressInfo.streetaddress,
+               Shipment_HouseCustomerAddressInfo.place,
+                Shipment_HouseCustomerInfo.customername agentName,
+               (SELECT countryname FROM   mst_country
+			     WHERE  countrycode = Shipment_HouseCustomerAddressInfo.countrycode) CountryCode,
+				   Shipment_HouseCustomerAddressInfo.PostalCode postal
+                FROM   Shipment_HouseCustomerInfo
+				LEFT JOIN Shipment_HouseInformation 
+				on Shipment_HouseInformation.ShipmentHouseId=Shipment_HouseCustomerInfo.ShipmentHouseId
+                LEFT JOIN Shipment_Master 
+				on Shipment_Master.ShipmentId=Shipment_HouseInformation.ShipmentId
+                LEFT JOIN Shipment_HouseCustomerAddressInfo
+                ON Shipment_HouseCustomerAddressInfo.ShipmentHouseCustomerInfoId
+                           = Shipment_HouseCustomerInfo.ShipmentHouseCustomerInfoId
+               LEFT JOIN customer_master
+			     ON Shipment_HouseCustomerInfo.appointedagent = customer_master.customer_id
+				  where CustomerType='CNE'
+				 and Shipment_Master.HandledByMasterHouse='H'
+),
+
+chargehouseinfo AS (
+
+              SELECT invHouse.shipmentid,
+
+           Min(CASE WHEN shipment_otherchargeinfo.chargecode = 'PP'
+
+                                         THEN 'ALL CHARGES PREPAID BY CASH'
+
+                    WHEN shipment_otherchargeinfo.chargecode = 'CC'
+
+                                                              THEN 'ALL CHARGES PREPAID BY CASH'
+
+                    ELSE 'ALL CHARGES PREPAID BY CASH'
+
+               END) chargecode
+
+              FROM   shipment_otherchargeinfo
+
+              Inner JOIN invHouse ON invHouse.shipmentid = shipment_otherchargeinfo.shipmentid
+
+              Group By invHouse.shipmentid
+
+),
+
+chargeinfo AS (
+
+              SELECT inv.shipmentid,
+
+           Min(CASE WHEN shipment_otherchargeinfo.chargecode = 'PP'
+
+                                         THEN 'ALL CHARGES PREPAID BY CASH'
+
+                    WHEN shipment_otherchargeinfo.chargecode = 'CC'
+
+                                                              THEN 'ALL CHARGES PREPAID BY CASH'
+
+                    ELSE 'ALL CHARGES PREPAID BY CASH'
+
+               END) chargecode
+
+              FROM   shipment_otherchargeinfo
+
+              Inner JOIN inv ON inv.shipmentid = shipment_otherchargeinfo.shipmentid
+
+              Group By inv.shipmentid
+
+),
+
+RefNo As (
+
+              Select Flight.FlightID, sm.ShipmentID,           
+
+              Min(CASE WHEN trace.casenumber IS NOT NULL THEN 'IRP' + '/' + trace.casenumber
+
+             ELSE ''
+
+        END) irpRefNo
+
+              From com_tracingshipmentinfo trace
+
+              Inner Join Flight On Flight.FlightKey = trace.FlightKey
+
+                     And Cast(Flight.FlightDate As Date)= Cast(trace.FlightDate As Date)
+
+              Inner Join Shipment_Master sm On sm.ShipmentNUmber = trace.ShipmentNUmber
+
+                    And cast(sm.ShipmentDate as date) = cast(trace.ShipmentDate as date)
+
+              Where trace.irregularitytypecode = 'UNDELIVEREDSHIPMENT'
+
+              Group By Flight.FlightID, sm.ShipmentID
+
+)   ,
+
+cycle AS (
+
+              SELECT Cast(Flt.flightdate AS DATE) FlightDate, Flt.flightkey,
+
+                     shc.shipmentid, shc.shipmentnumber, shc.origin, shc.boardpoint,shc.destination,
+
+           shc.shchandlinggroupcode, shc.specialhandlingcode,
+
+           shc.pieces irrPieces, shc.weight irrWeight, shc.totalpieces pieces,shc.totalweight weight,
+		   shc.Number, shc.natureofgoodsdescription, shc.ShipmentDate,Flt.flightid flightId,
+
+           customer.agentname, customer.streetaddress, customer.place,
+
+                                customer.custcode, customer.postal,
+
+                                customer.countrycode, chargehouseinfo.chargecode,
+
+                                 CASE WHEN Gpu.CycleFour is null then '3'
+
+                                    else '4'
+
+                                              end lastCycle,
+
+           CASE WHEN Cast(Dateadd(day,Gpu.cycleone, Flt.flightdate) AS DATE)
+
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                     AND Cast(Dateadd(day, Gpu.cycleone, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                               THEN 'Y /' + Cast(Gpu.cycleone AS VARCHAR)
+
+                                               ELSE 'N'
+
+                                END CycleOne,
+
+           CASE WHEN Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE)
+
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                     AND Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                          THEN 'Y /' + Cast(Gpu.cycletwo AS VARCHAR)
+
+                ELSE 'N'
+
+           END CycleTwo,
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE )
+
+                                                                <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                AND Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                THEN 'Y /' + Cast(Gpu.cyclethree AS VARCHAR)
+
+                                                ELSE 'N'
+
+                                           END CycleThree,
+
+                                                          CASE WHEN Gpu.cyclefour is null then 'N'   ELSE
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE)
+
+                                                                <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                AND Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                THEN 'Y /' + Cast(Gpu.cyclefour AS VARCHAR)
+
+                                           ELSE 'N'
+
+                                           END
+
+                                                          END CycleFour,
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE )
+
+                                                                          <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                          AND Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                           THEN 'Y /' + Cast(Gpu.movetoabandoned AS VARCHAR)
+
+                                                ELSE 'N'
+
+                                           END MoveToAbandoned,
+
+                                           irpRefNo,
+
+            Upper(Format(Dateadd(hour,8,getDate()),'dd MMM yyyy')) currentDate
+
+              FROM   shc 
+
+              INNER JOIN flight Flt ON Flt.flightid = shc.flightid
+
+              INNER JOIN mst_graceperiodforunclaimedshipments Gpu
+
+                      ON Gpu.mstshchandlinggroupid = shc.mstshchandlinggroupid
+
+              INNER JOIN customer ON customer.ShipmentHouseId = shc.ShipmentHouseId      
+
+    INNER JOIN chargehouseinfo ON chargehouseinfo.shipmentid = shc.shipmentid   
+
+               JOIN RefNo On RefNo.FlightId = Flt.flightid
+
+                    And RefNo.shipmentid = shc.shipmentid       
+
+                              
+
+UNION
+
+SELECT Cast(Flt.flightdate AS DATE) FlightDate, Flt.flightkey,
+
+                     shc.shipmentid, shc.shipmentnumber, shc.origin, shc.boardpoint,shc.destination,
+
+           shc.shchandlinggroupcode, shc.specialhandlingcode,
+
+           shc.pieces irrPieces, shc.weight irrWeight, shc.totalpieces pieces,shc.totalweight weight,shc.Number,
+
+           shc.natureofgoodsdescription, shc.ShipmentDate,Flt.flightid flightId,
+
+           customer.agentname, customer.streetaddress, customer.place,
+
+                                customer.custcode, customer.postal,
+
+                                customer.countrycode, chargeinfo.chargecode,
+
+                                 CASE WHEN Gpu.CycleFour is null then '3'
+
+                                    else '4'
+
+                                              end lastCycle,
+
+           CASE WHEN Cast(Dateadd(day,Gpu.cycleone, Flt.flightdate) AS DATE)
+
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                     AND Cast(Dateadd(day, Gpu.cycleone, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                               THEN 'Y /' + Cast(Gpu.cycleone AS VARCHAR)
+
+                                               ELSE 'N'
+
+                                END CycleOne,
+
+           CASE WHEN Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE)
+
+                     <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                     AND Cast(Dateadd(day, Gpu.cycletwo, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                          THEN 'Y /' + Cast(Gpu.cycletwo AS VARCHAR)
+
+                ELSE 'N'
+
+           END CycleTwo,
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE )
+
+                                                                <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                AND Cast(Dateadd(day, Gpu.cyclethree, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                THEN 'Y /' + Cast(Gpu.cyclethree AS VARCHAR)
+
+                                                ELSE 'N'
+
+                                           END CycleThree,
+
+                                                          CASE WHEN Gpu.cyclefour is null then 'N'   ELSE
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE)
+
+                                                               <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                AND Cast(Dateadd(day, Gpu.cyclefour, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                THEN 'Y /' + Cast(Gpu.cyclefour AS VARCHAR)
+
+                                           ELSE 'N'
+
+                                           END
+
+                                                          END CycleFour,
+
+                                           CASE WHEN Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE )
+
+                                                                          <= Cast(Dateadd(hour,8,getDate()) AS DATE)
+
+                                                                          AND Cast(Dateadd(day, Gpu.movetoabandoned, Flt.flightdate) AS DATE) = #{freightDate}
+
+                                                           THEN 'Y /' + Cast(Gpu.movetoabandoned AS VARCHAR)
+
+                                                ELSE 'N'
+
+                                           END MoveToAbandoned,
+
+                                           irpRefNo,
+
+            Upper(Format(Dateadd(hour,8,getDate()),'dd MMM yyyy')) currentDate
+
+              FROM   shc 
+
+              INNER JOIN flight Flt ON Flt.flightid = shc.flightid
+
+              INNER JOIN mst_graceperiodforunclaimedshipments Gpu
+
+                      ON Gpu.mstshchandlinggroupid = shc.mstshchandlinggroupid
+
+              INNER JOIN customer ON customer.shipmentid = shc.shipmentid             
+
+    INNER JOIN chargeinfo ON chargeinfo.shipmentid = shc.shipmentid    
+
+              LEFT JOIN RefNo On RefNo.FlightId = Flt.flightid
+
+                    And RefNo.shipmentid = shc.shipmentid                   
+
+)
+
+SELECT #{freightDate} PassDate, flightdate FlightDate,
+
+       Datediff(day, flightdate, #{freightDate}) Diff_Days,
+
+       Concat(flightkey, '/', Upper(Format(flightdate, 'ddMMMyyyy'))) flightkey,
+
+       ShipmentDate shipmentDate,
+
+                 shipmentnumber awbNumber,
+
+                 Number,
+
+                 agentname agentName,
+
+       irprefno irpRefNo,
+
+                 flightkey fltkey, flightId,
+
+        shipmentid shipmentId,
+
+       Stuff(RIGHT(shipmentnumber, 11), 4, 0, '-') shipmentNumber,
+
+       origin,boardpoint,destination, shchandlinggroupcode, specialhandlingcode,
+
+       cycleone, cycletwo,  cyclethree, cyclefour, movetoabandoned,
+
+       irrpieces irrPieces, irrweight irrWeight,pieces,weight,chargeCode,
+
+        streetaddress, place,
+
+                 cycleone, cycletwo, cyclethree, cyclefour, movetoabandoned,
+
+       irprefno irpRefNo,
+
+                 currentdate currentDate, custcode customerCode, postal, countrycode,
+
+       CASE
+
+         WHEN movetoabandoned LIKE 'Y%' THEN
+
+         'REMINDER ON NON-COLLECTION OF CARGO MOVED TO ABANDON'
+
+         WHEN cyclefour LIKE 'Y%' THEN '4th REMINDER ON NON-COLLECTION OF CARGO'
+
+         WHEN cyclethree LIKE 'Y%' THEN
+
+         '3rd REMINDER ON NON-COLLECTION OF CARGO'
+
+         WHEN cycletwo LIKE 'Y%' THEN '2nd REMINDER ON NON-COLLECTION OF CARGO'
+
+         WHEN cycleone LIKE 'Y%' THEN '1st REMINDER ON NON-COLLECTION OF CARGO'
+
+         ELSE 'NOSLAB'
+
+       END currentReminder,
+
+       currentdate currentDate, natureofgoodsdescription natureOfGoods ,lastCycle
+
+FROM   cycle
+
+WHERE  ( cycleone LIKE 'Y%'
+          OR cycletwo LIKE 'Y%'
+          OR cyclethree LIKE 'Y%'
+          OR cyclefour LIKE 'Y%'
+          OR movetoabandoned LIKE 'Y%')
+         
+ORDER  BY Cast(flightdate AS DATE), flightkey, shipmentnumber
+
+					   
+       	]]>
+       	
+	</select>
+	<select id="getcustomercode" parameterType="com.ngen.cosys.uncollectedfreightout.model.UncollectedFreightoutShipmentModel" resultType="java.lang.String">
+	<!-- select Customer_NotificationDtl.NotificationTypeDetail as emailList
+		from Shipment_Master
+		inner join Shipment_MasterCustomerInfo ON Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.Shipmentid 
+		inner join Customer_Master ON Shipment_MasterCustomerInfo.AppointedAgent = Customer_Master.Customer_ID
+		inner join Customer_Notification ON Customer_Master.Customer_ID = Customer_Notification.CustomerId
+		inner join Customer_NotificationDtl ON Customer_Notification.CustomerNotificationId = Customer_NotificationDtl.CustomerNotificationId
+		where Shipment_Master.ShipmentNumber = #{awbNumber} AND
+		Customer_Notification.CustomerId = Customer_Master.Customer_ID and
+        Customer_Notification.NotificationTypeCode = 'EMR' -->
+         select Customer_NotificationDtl.NotificationTypeDetail as emailList
+		from Shipment_Master
+		inner join Shipment_MasterCustomerInfo 
+		        ON Shipment_MasterCustomerInfo.ShipmentId = Shipment_Master.Shipmentid 
+		inner join Customer_Master 
+		        ON Shipment_MasterCustomerInfo.CustomerCode = Customer_Master.CustomerCode
+		inner join Customer_Notification 
+		        ON Customer_Master.Customer_ID = Customer_Notification.CustomerId
+		inner join Customer_NotificationDtl 
+		        ON Customer_Notification.CustomerNotificationId 
+		                                   = Customer_NotificationDtl.CustomerNotificationId
+		where Shipment_Master.ShipmentNumber = #{awbNumber} 
+		  AND Shipment_MasterCustomerInfo.CustomerType = 'CNE'
+		  AND Customer_Notification.NotificationTypeCode = 'EMR'
+	</select>
+	
+	<sql id="ShipmentRemarks_Base_Column_List">		
+		ShipmentNumber,
+		ShipmentDate,
+		ShipmentId,
+		RemarkType,
+		Flight_ID, 
+		ShipmentRemarks,
+		ShipmentType,
+		CreatedUser_Code,
+		Created_DateTime,
+		LastUpdatedUser_Code,
+		LastUpdated_DateTime
+	</sql>
+	<insert id="insertShipmentRemarks"
+		parameterType="com.ngen.cosys.uncollectedfreightout.model.ShipmentRemarksModel">
+		insert into Shipment_Remarks(
+			<include refid="ShipmentRemarks_Base_Column_List" />
+		)values(
+				#{shipmentNumber},
+				#{shipmentDate},
+				#{shipmentId},
+				#{remarkType},
+				#{flightId},
+				#{shipmentRemarks},
+				#{shipmentType},
+				#{createdBy},
+				#{createdOn},
+				#{modifiedBy},
+				#{modifiedOn}
+		)
+	</insert>
+	
+	<sql id="IRPNotification_Base_Column_List">		
+		ShipmentId,
+		FlightId, 
+		ReferenceNumber,
+		SHCHandlingGroupCode,
+		EmailNotification1,
+		EmailNotification2,
+		EmailNotification3,
+		EmailNotification4,
+		EmailNotificationAbondon,
+		ReportGenetation1,
+		ReportGenetation2,
+		ReportGenetation3,
+		ReportGenetation4,
+		ReportGenetationAbondon,
+		CreatedUserCode,
+		CreatedDateTime,
+		LastUpdatedUserCode,
+		LastUpdatedDateTime
+	</sql>
+	<insert id="insertIrpNotificationDetails"
+		parameterType="com.ngen.cosys.uncollectedfreightout.model.IRPNotificationDetails">
+		insert into IRPNotificationLog(
+			<include refid="IRPNotification_Base_Column_List" />
+		)values(
+				#{shipmentId},
+				#{flightId},
+				#{referenceNumber},
+				#{shcHandlingGroupCode},
+				#{emailNotification1},
+				#{emailNotification2},
+				#{emailNotification3},
+				#{emailNotification4},
+				#{emailNotificationAbondon},
+				#{reportGenetation1},
+				#{reportGenetation2},
+				#{reportGenetation3},
+				#{reportGenetation4},
+				#{ReportGenetationAbondon},
+				#{createdBy},
+				#{createdOn},
+				#{modifiedBy},
+				#{modifiedOn}
+		)
+	</insert>
+	<select id="getIRPNotificationDetails" parameterType="com.ngen.cosys.uncollectedfreightout.model.IRPNotificationDetails" resultType="com.ngen.cosys.uncollectedfreightout.model.IRPNotificationDetails">
+	    select 
+		ShipmentId,
+		FlightId,
+		ReferenceNumber,
+		SHCHandlingGroupCode,
+		EmailNotification1,
+		EmailNotification2,
+		EmailNotification3,
+		EmailNotification4,
+		EmailNotificationAbondon,
+		ReportGenetation1,
+		ReportGenetation2,
+		ReportGenetation3,
+		ReportGenetation4,
+		ReportGenetationAbondon,
+		CreatedUserCode,
+		CreatedDateTime,
+		LastUpdatedUserCode,
+		LastUpdatedDateTime from IRPNotificationLog 
+	   <![CDATA[ 
+	   where ShipmentId=#{shipmentId} and FlightId=#{flightId} and CreatedUserCode = 'BATCHUSER'
+	   ]]>
+	</select>
+	
+	<update 
+		id="updateIRPNotificationDetails"
+		parameterType="com.ngen.cosys.uncollectedfreightout.model.IRPNotificationDetails">
+		update IRPNotificationLog
+		set
+		
+		ReferenceNumber = #{referenceNumber},
+		SHCHandlingGroupCode = #{shcHandlingGroupCode},
+		EmailNotification1 = #{emailNotification1},
+		EmailNotification2 = #{emailNotification2},
+		EmailNotification3 = #{emailNotification3},
+		EmailNotification4 = #{emailNotification4},
+		EmailNotificationAbondon = #{emailNotificationAbondon},
+		ReportGenetation1 = #{reportGenetation1},
+		ReportGenetation2 = #{reportGenetation2},
+		ReportGenetation3 = #{reportGenetation3},
+		ReportGenetation4 = #{reportGenetation4},
+		ReportGenetationAbondon = #{reportGenetationAbondon},
+		CreatedUserCode = #{createdBy},
+		CreatedDateTime = #{createdOn},
+		LastUpdatedUserCode = #{modifiedBy},
+		LastUpdatedDateTime = #{modifiedOn}
+		<![CDATA[ 
+	   where ShipmentId=#{shipmentId} and FlightId=#{flightId} and CreatedUserCode = 'BATCHUSER'
+	   ]]>
+	</update>
+	
+	
+	<select id="getEmailAddressesforuldbtcoolport" resultType="java.lang.String">
+			
+		   select distinct Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress from Interface_MessageDefinitionByCustomer inner join 
+		   Interface_MessageDefinitionByCustomerCommunication on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId=Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId  INNER JOIN
+		   Interface_MessageDefinitionByCustomerCommunicationAddress ON 
+		   Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId = Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId
+		   where Interface_MessageDefinitionByCustomerCommunication.CommunicationType = 'UTE' 
+
+		   and (Interface_MessageDefinitionByCustomer.AirportCode = '**' OR Interface_MessageDefinitionByCustomer.AirportCode is null) 
+		   and (Interface_MessageDefinitionByCustomer.CountryCode = '**' OR Interface_MessageDefinitionByCustomer.CountryCode is null )
+		   and (Interface_MessageDefinitionByCustomer.FlightKey = '**' OR  Interface_MessageDefinitionByCustomer.FlightKey is null)
+			
+</select>
+
+
+	
+
+
+
+
+
+
+
+</mapper>

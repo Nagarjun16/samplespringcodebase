@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="exportMapper">
+
+	<insert id="insertULD" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		useGeneratedKeys="true" keyProperty="assUldTrolleyId" keyColumn="AssUldTrolleyId">
+		INSERT INTO
+		Exp_AssignedULDTrolleyToFlight
+		(
+		FlightSegmentId
+		,ULDTrolleyNumber
+		,TrolleyInd
+		,TareWeight
+		,ContentCode
+		,HeightCode
+		,HandlingArea
+		,UsedForPerishableContainer
+		,UsedForExpressCourierContainer
+		,UsedAsTrolley
+		,UsedAsStandBy
+		,PriorityOfLoading
+		,Remarks
+		,LoadingStartedOn
+		,LoadingCompletedOn
+		,HandlingServiceGroup
+		,ReasonForMovement
+		,ULDTagPrintedOn
+		,GrossWeight
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime
+		,FlightId
+		)
+		VALUES
+		(
+		(#{uld.segmentId})
+		,#{uld.uldTrolleyNo}
+		,#{uld.trolleyInd}
+		,#{uld.tareWeight}
+		,#{uld.contentCode}
+		,#{uld.heightCode}
+		,#{terminal}
+		,#{uld.phcFlag}
+		,#{uld.eccFlag}
+		,#{uld.trolleyFlag}
+		,#{uld.standByFlag}
+		,#{uld.priority}
+		,#{uld.remarks}
+		,#{uld.loadingStartedOn}
+		,#{uld.loadingCompletedOn}
+		,#{uld.handlingServiceGroupId}
+		,#{uld.reasonIdForMovement}
+		,#{uld.uldTagPrintedOn}
+		,#{uld.loadedWeight}
+		,#{createdBy}
+		,getDate()
+		,#{modifiedBy}
+		,#{modifiedOn}
+		,(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport})
+		)
+	</insert>
+
+	<insert id="insertPiggyBackULDList" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		useGeneratedKeys="true" keyProperty="assUldTrolleyPiggyBackId"
+		keyColumn="AssUldTrolleyPiggyBackId">
+		INSERT INTO Exp_AssignedULDTrolleyToFlightPiggyBackInfo
+		(
+		AssUldTrolleyId
+		,ULDNumber
+		,CreatedUserCode
+		,CreatedDateTime
+		,LastUpdatedUserCode
+		,LastUpdatedDateTime)
+		VALUES
+		<foreach item="currItem" collection="piggyBackULDList" index="index"
+			separator=",">
+			(
+			#{assUldTrolleyId}
+			,#{currItem.uld.uldTrolleyNo}
+			,#{createdBy}
+			,getDate()
+			,#{currItem.modifiedBy}
+			,#{currItem.modifiedOn}
+			)
+		</foreach>
+	</insert>
+
+	<update id="updateULD" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		UPDATE
+		Exp_AssignedULDTrolleyToFlight
+		SET
+		FlightSegmentId = #{uld.segmentId}
+		,TrolleyInd = #{uld.trolleyInd}
+		,TareWeight = #{uld.tareWeight}
+		,ContentCode = #{uld.contentCode}
+		,HeightCode = #{uld.heightCode}
+		,HandlingArea = #{terminal}
+		,UsedForPerishableContainer =
+		#{uld.phcFlag}
+		,UsedForExpressCourierContainer = #{uld.eccFlag}
+		,UsedAsTrolley = #{uld.trolleyFlag}
+		,UsedAsStandBy = #{uld.standByFlag}
+		,PriorityOfLoading = #{uld.priority}
+		,Remarks = #{uld.remarks}
+		,LoadingStartedOn = #{uld.loadingStartedOn}
+		,LoadingCompletedOn =
+		#{uld.loadingCompletedOn}
+		,HandlingServiceGroup =
+		#{uld.handlingServiceGroupId}
+		,ReasonForMovement =
+		#{uld.reasonIdForMovement}
+		,ULDTagPrintedOn = #{uld.uldTagPrintedOn}
+		,GrossWeight = #{uld.loadedWeight}
+		,LastUpdatedUserCode = #{modifiedBy}
+		,LastUpdatedDateTime = #{modifiedOn}
+		WHERE
+		AssUldTrolleyId =
+		#{assUldTrolleyId}
+	</update>
+
+	<update id="updatePiggyBackULDList" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+
+		<foreach item="currItem" collection="piggyBackULDList" index="index"
+			separator=";">
+			UPDATE Exp_AssignedULDTrolleyToFlightPiggyBackInfo
+			SET
+			ULDNumber =#{currItem.uld.uldTrolleyNo}
+			,LastUpdatedUserCode =
+			#{currItem.modifiedBy}
+			,LastUpdatedDateTime = getDate()
+			WHERE
+			AssUldTrolleyPiggyBackId = #{currItem.assUldTrolleyPiggyBackId}
+		</foreach>
+	</update>
+
+	<delete id="deleteSomePiggyBackULDs" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		<foreach item="currItem" collection="piggyBackULDList" index="index"
+			separator=";">
+			DELETE FROM Exp_AssignedULDTrolleyToFlightPiggyBackInfo
+			WHERE
+			AssUldTrolleyPiggyBackId = #{currItem.assUldTrolleyPiggyBackId}
+		</foreach>
+	</delete>
+
+	<delete id="deleteULD" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		DELETE FROM
+		Exp_AssignedULDTrolleyToFlight
+		WHERE
+		AssUldTrolleyId =
+		#{assUldTrolleyId}
+	</delete>
+
+	<delete id="deletePiggyBackULDList" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		DELETE FROM
+		Exp_AssignedULDTrolleyToFlightPiggyBackInfo
+		WHERE
+		AssUldTrolleyId =
+		#{assUldTrolleyId}
+	</delete>
+
+	<!-- <resultMap id="fetchAssignULDResultMap"
+		type="com.ngen.cosys.satssginterfaces.mss.model.AssignULD" autoMapping="false">
+		<id property="assUldTrolleyId" column="AssUldTrolleyId" />
+		<result property="uld.uldTrolleyNo" column="ULDTrolleyNumber" />
+		<result property="uld.tareWeight" column="TareWeight" />
+		<result property="uld.contentCode" column="ContentCode" />
+		<result property="uld.heightCode" column="HeightCode" />
+		<result property="uld.handlingArea" column="HandlingArea" />
+		<result property="uld.phcFlag" column="UsedForPerishableContainer" />
+		<result property="uld.eccFlag" column="UsedForExpressCourierContainer" />
+		<result property="uld.trolleyFlag" column="UsedAsTrolley" />
+		<result property="uld.standByFlag" column="UsedAsStandBy" />
+		<result property="uld.priority" column="PriorityOfLoading" />
+		<result property="uld.remarks" column="Remarks" />
+		<result property="uld.loadingStartedOn" column="LoadingStartedOn" />
+		<result property="uld.loadingCompletedOn" column="LoadingCompletedOn" />
+		<result property="uld.handlingServiceGroupId" column="HandlingServiceGroup" />
+		<result property="uld.reasonIdForMovement" column="ReasonForMovement" />
+		<result property="uld.uldTagPrintedOn" column="ULDTagPrintedOn" />
+		<result property="uld.loadedWeight" column="GrossWeight" />
+		<result property="uld.trolleyInd" column="TrolleyInd" />
+		<result property="uld.offPoint" column="FlightOffPoint" />
+		<result property="uld.segmentId" column="FlightSegmentId" />
+		<collection property="piggyBackULDList" javaType="List"
+			ofType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD" select="sqlGetPiggyBackULD"
+			column="assUldTrolleyId=AssUldTrolleyId" />
+	</resultMap> -->
+
+	<resultMap id="fetchPiggyULDResultMap"
+		type="com.ngen.cosys.satssginterfaces.mss.model.AssignULD" autoMapping="false">
+		<id property="assUldTrolleyPiggyBackId" column="AssUldTrolleyPiggyBackId" />
+		<result property="uld.uldTrolleyNo" column="ULDNumber" />
+	</resultMap>
+
+	<!-- <select id="getFlightDetail"
+		parameterType="com.ngen.cosys.export.assignuld.model.AssignULDFlight"
+		resultType="com.ngen.cosys.export.assignuld.model.AssignULDFlight">
+		Select optFlt.FlightKey as flightKey,
+		optFlt.Flight_ID as flightId
+		,leg.DateSTD as flightOriginDate
+		,optFlt.ApronFlag as apron
+		,leg.DateSTD std
+		,leg.DateETD etd
+		,CASE WHEN
+		event.FlightCompletedAt !=
+		null THEN 'FlightCompleted'
+		WHEN
+		event.ManifestCompletedAt != null THEN
+		'ManifestCompleted'
+		WHEN
+		event.DLSCompletedAt != null THEN
+		'DLSCompleted'
+		WHEN
+		event.BuildupCompletedAt != null THEN
+		'BuildupCompleted'
+		ELSE
+		'Worklist
+		Created' END as status
+		from
+		Flt_OperativeFlight optFlt
+		inner join
+		Flt_OperativeFlight_Legs
+		leg on
+		optFlt.Flight_ID = leg.Flight_ID
+		left join Exp_FlightEvents event on
+		leg.Flight_ID = event.FlightId
+		where
+		optFlt.Flightkey = #{flightKey} AND
+		CAST(leg.DateSTD as
+		Date) = CAST(#{flightOriginDate} as
+		Date)
+		and
+		leg.FlightBoardPoint=#{tenantId}
+	</select> -->
+
+	<!-- <select id="getAircraftBodyType"
+		parameterType="com.ngen.cosys.export.assignuld.model.AssignULDFlight"
+		resultType="java.lang.String">
+		select top 1 Mst_AircraftType.AircraftBodyType from
+		Flt_OperativeFlight Flt_OperativeFlight
+		inner join
+		Flt_OperativeFlight_Legs on
+		Flt_OperativeFlight.Flight_ID=Flt_OperativeFlight_Legs.Flight_ID
+		and
+		Flt_OperativeFlight_Legs.FlightBoardPoint=#{tenantId}
+		INNER Join
+		Mst_AircraftType
+		ON Flt_OperativeFlight_Legs.AircraftType =
+		Mst_AircraftType.AircraftType
+		where
+		Flt_OperativeFlight.FlightKey=#{flightKey} AND
+		CAST(Flt_OperativeFlight_Legs.DateSTD as
+		Date) =
+		CAST(#{flightOriginDate} as Date)
+	</select> -->
+
+	<!-- <select id="fetchAssignULD"
+		parameterType="com.ngen.cosys.export.assignuld.model.AssignULDFlight"
+		resultMap="fetchAssignULDResultMap">
+		SELECT uld.AssUldTrolleyId AssUldTrolleyId
+		,uld.ULDTrolleyNumber
+		ULDTrolleyNumber
+		,uld.TareWeight TareWeight
+		,uld.ContentCode ContentCode
+		,uld.HeightCode HeightCode
+		,uld.HandlingArea HandlingArea
+		,uld.UsedForPerishableContainer UsedForPerishableContainer
+		,uld.UsedForExpressCourierContainer UsedForExpressCourierContainer
+		,uld.UsedAsTrolley UsedAsTrolley
+		,uld.UsedAsStandBy UsedAsStandBy
+		,uld.PriorityOfLoading PriorityOfLoading
+		,uld.Remarks Remarks
+		,uld.LoadingStartedOn LoadingStartedOn
+		,uld.LoadingCompletedOn
+		LoadingCompletedOn
+		,uld.HandlingServiceGroup HandlingServiceGroup
+		,uld.ReasonForMovement ReasonForMovement
+		,uld.ULDTagPrintedOn
+		ULDTagPrintedOn
+		,uld.GrossWeight GrossWeight
+		,uld.TrolleyInd TrolleyInd
+		,segment.FlightOffPoint FlightOffPoint
+		,segment.FlightSegmentId
+		FlightSegmentId
+		FROM Flt_OperativeFlight flight
+		INNER JOIN
+		Flt_OperativeFlight_Segments segment ON flight.Flight_ID =
+		segment.Flight_ID
+		INNER JOIN Exp_AssignedULDTrolleyToFlight uld ON
+		segment.FlightSegmentId =
+		uld.FlightSegmentId
+		WHERE segment.Flight_ID =
+		(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantId})
+		<if test="segmentId != null and segmentId != 0">
+			AND segment.FlightSegmentId = #{segmentId}
+		</if> and uld.ULDTrolleyNumber is not null
+		order by uld.FlightSegmentId, uld.TrolleyInd
+	</select> -->
+
+	<select id="getFlightID" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.math.BigInteger">
+		select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport}
+	</select>
+
+	<!-- <select id="sqlGetPiggyBackULD" resultMap="fetchPiggyULDResultMap">
+		SELECT
+		AssUldTrolleyPiggyBackId
+		,ULDNumber
+		FROM
+		Exp_AssignedULDTrolleyToFlightPiggyBackInfo WHERE AssUldTrolleyId =
+		#{assUldTrolleyId}
+	</select> -->
+
+	<select id="sqlCheckIfAssignUldExists" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		select TOP 1 Flt_OperativeFlight.FlightKey as flightKey,
+		CAST(Flt_OperativeFlight.FlightOriginDate as Date) as
+		flightOriginDate,
+		Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId as
+		assUldTrolleyId from
+		Exp_AssignedULDTrolleyToFlight left join
+		Flt_OperativeFlight on
+		Exp_AssignedULDTrolleyToFlight.FlightId =
+		Flt_OperativeFlight.Flight_ID where		
+		ULDTrolleyNumber= #{uld.uldTrolleyNo}
+		UNION
+		select Flt_OperativeFlight.FlightKey as flightKey,
+				CAST(Flt_OperativeFlight.FlightOriginDate as Date) as
+				flightOriginDate,
+				Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId as
+				assUldTrolleyId from
+				Exp_AssignedULDTrolleyToFlight left join
+				Flt_OperativeFlight on
+				Exp_AssignedULDTrolleyToFlight.FlightId =
+				Flt_OperativeFlight.Flight_ID where		
+				ULDTrolleyNumber is null and FlightSegmentId=#{segment.segmentId}
+				and #{uld.uldTrolleyNo} is null	
+	</select>
+
+
+	<select id="sqlCheckIfAssignUldBulkExists" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		select Flt_OperativeFlight.FlightKey as flightKey,
+		CAST(Flt_OperativeFlight.FlightOriginDate as Date) as
+		flightOriginDate,
+		Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId as
+		assUldTrolleyId from
+		Exp_AssignedULDTrolleyToFlight left join
+		Flt_OperativeFlight on
+		Exp_AssignedULDTrolleyToFlight.FlightId =
+		Flt_OperativeFlight.Flight_ID where
+		ULDTrolleyNumber=#{uld.uldTrolleyNo}
+		and
+		Exp_AssignedULDTrolleyToFlight.FlightSegmentId = #{segment.segmentId}
+	</select>
+
+	<select id="fetchTareWeight" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.math.BigDecimal">
+		select top 1 UldSeriesTareWeight from Uld_UldSeries series
+		where
+		SUBSTRING(#{uld.uldTrolleyNo},4,#{uldNumberLength}) between
+		series.UldSeriesNumberFrom and series.UldSeriesNumberTo
+		and
+		UldCarrierCode = #{uld.uldCarrier} and UldType=#{uld.uldType}
+	</select>
+
+	<select id="getContourCode" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.String">
+		select top 1 ContourCode from Exp_eAcceptanceAutoWeigh
+		where
+		ULDNumber = #{uld.uldTrolleyNo}
+	</select>
+
+	<select id="getContourCodeULDChar" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.String">
+		Select top 1
+		contourcode from
+		Uld_UldCharacteristics where
+		UldCarrierCode IN
+		(RIGHT(#{uld.uldTrolleyNo},
+		2),RIGHT(#{uld.uldTrolleyNo},3))
+		AND
+		UldType =
+		LEFT(#{uld.uldTrolleyNo},
+		3)
+	</select>
+
+	<select id="fetchUldInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		select count(*) from Uld_UldMaster where
+		uldkey=#{uld.uldTrolleyNo}
+	</select>
+
+	<select id="fetchPiggybackUldInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM
+		Exp_AssignedULDTrolleyToFlightPiggyBackInfo WHERE
+		ULDNumber =
+		#{uld.uldTrolleyNo}
+	</select>
+
+	<!-- <select id="fetchPiggybackUldInventory" parameterType="com.ngen.cosys.export.assignuld.model.AssignULD" 
+		resultType="java.lang.Integer"> SELECT COUNT(*) FROM Exp_AssignedULDTrolleyToFlightPiggyBackInfo 
+		WHERE ULDNumber = #{uld.uldTrolleyNo} </select> -->
+
+	<select id="searchInULDInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM Uld_UldMaster WHERE
+		UldKey =
+		#{uld.uldTrolleyNo}
+	</select>
+
+	<insert id="insertULDInventory" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD">
+		INSERT INTO
+		Uld_UldMaster
+		(
+		UldType
+		,UldNumber
+		,UldCarrierCode
+		,UldKey
+		,ContentCode
+		,ULDContourIndicator
+		,CreatedUser_Code
+		,Created_DateTime
+		,OutboundFlight_ID
+		)
+		VALUES
+		(
+		#{uld.uldType},
+		#{uld.uldNumber},
+		#{uld.uldCarrier}
+		,#{uld.uldTrolleyNo}
+		,#{uld.contentCode}
+		,#{uld.heightCode}
+		,#{createdBy}
+		,getDate()
+		,(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport})
+		)
+	</insert>
+
+	<select id="fetchDLSId" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="com.ngen.cosys.satssginterfaces.mss.model.DLSULD">
+		select
+		DLSUldTrolleyId as dlsUldTrolleyId
+		from
+		Exp_DLSULDTrolley
+		where ULDTrolleyNumber = #{uld.uldTrolleyNo} AND FlightSegmentId=#{segment.segmentId}
+	</select>
+
+	<select id="getBulkUldID" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.math.BigInteger">
+		select AssUldTrolleyId from Exp_AssignedULDTrolleyToFlight
+		where FlightSegmentId = #{uld.segmentId} and
+		FlightId = (select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport}) and ULDTrolleyNumber=#{uld.uldTrolleyNo}
+	</select>
+
+	<select id="isPerishableCargo" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		select COUNT(1) WHERE 'PER' in
+		(select distinct
+		Mst_SHCHandlingGroup.SHCHandlingGroupCode from
+		Exp_LoadedShipmentInfo
+		inner join Exp_LoadedShipmentSHCInfo on
+		Exp_LoadedShipmentInfo.LoadedShipmentInfoId =
+		Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId
+		inner join
+		Mst_AssociateSHCByHandlingGroup on
+		Exp_LoadedShipmentSHCInfo.SpecialHandlingCode =
+		Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode
+		inner join
+		Mst_SHCHandlingGroup on
+		Mst_SHCHandlingGroup.MstSHCHandlingGroupID =
+		Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+		where
+		Exp_LoadedShipmentInfo.AssUldTrolleyId =
+		(select AssUldTrolleyId from
+		Exp_AssignedULDTrolleyToFlight where
+		ULDTrolleyNumber=#{uld.uldTrolleyNo}) )
+	</select>
+
+	<select id="getDestinationCode" parameterType="java.lang.Integer"
+		resultType="java.lang.String">
+		select FlightOffPoint
+		from Flt_OperativeFlight_Segments
+		where FlightSegmentId = #{param}
+	</select>
+
+	<select id="getContentCode" parameterType="java.lang.String"
+		resultType="java.lang.String">
+		select ContentCodeDescription
+		from Uld_ContentCodes
+		where
+		ContentCode = #{param}
+	</select>
+
+	<!-- <select id="isContentCodeValid"
+		parameterType="com.ngen.cosys.export.assignuld.model.AssignULDFlight"
+		resultType="java.lang.Integer">
+		select count(1) where
+		(
+		SELECT AircraftType
+		FROM
+		Flt_OperativeFlight_Legs
+		where Flight_ID =
+		(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantId})
+		and FlightBoardPoint = #{tenantId}
+		) in (
+		select
+		Uld_UldAircraftRegistration.AircraftType from
+		Uld_UldCharacteristics
+		inner join Uld_UldAircraftRegistration
+		on
+		Uld_UldCharacteristics.UldCarrierCode =
+		Uld_UldAircraftRegistration.UldCarrierCode
+		and
+		Uld_UldCharacteristics.UldType = Uld_UldAircraftRegistration.UldType
+		where Uld_UldCharacteristics.ContourCode=#{status});
+	</select> -->
+
+	<select id="isDamaged" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		select count(UldKey) from Uld_UldMaster
+		where UldKey =
+		#{uld.uldTrolleyNo} and
+		UldConditionType='DAM'
+	</select>
+
+	<select id="isCarrierCompatible" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		select count(UldCarrierCode)
+		from
+		Uld_UldAircraftRegistration
+		where UldCarrierCode  in (RIGHT(#{uld.uldTrolleyNo},
+		2)
+		,RIGHT(#{uld.uldTrolleyNo},3))
+		and
+		AircraftType in (select AircraftType
+		  FROM Flt_OperativeFlight_Legs
+		 
+		where Flight_ID = (select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport})
+		  )
+	</select>
+
+	<select id="isExceptionULD" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		SELECT count(1)
+		where #{uld.uldType}
+		IN (select
+		BypassULDType
+		FROM Flt_OperativeFlight_Exceptions
+		where Flight_ID=(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantAirport}) and
+		ExceptionType =
+		'ByPassULDType')
+	</select>
+
+	<!-- <select id="getAliInformation"
+		parameterType="com.ngen.cosys.export.assignuld.model.AssignULDFlight"
+		resultType="com.ngen.cosys.export.airlineloadinstr.model.AirlineLoadingInstructions">
+		select PalletForFlightUse as PalletForFlightUse,
+		ContainerForFlightUse as PalletForFlightContainer,
+		PalletForTransitUse as PalletForTransitUse,
+		ContainerForTransitUse as ContainerForTransitUse,
+		PalletForCargoUse as PalletForCargoUse,
+		ContainerForCargoUse as ContainerForCargoUse,
+		'flight' as LoadingInstruction
+		from Exp_AirlineLoadingInstructions
+		where FlightId=(select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantId})
+		union
+		select
+		(select count(1) from Exp_DLSULDTrolley where DLSId=Exp_DLS.DLSId and
+		UsedForTransitUse=1
+		and (UsedAsTrolley=1 or TrolleyInd=1)) as PalletForFlightUse,
+		(select
+		count(1) from Exp_DLSULDTrolley where DLSId=Exp_DLS.DLSId and
+		UsedForTransitUse=1
+		and UsedAsTrolley =0 and TrolleyInd=0) as PalletForFlightContainer,
+		(select count(1) from Exp_DLSULDTrolley where DLSId=Exp_DLS.DLSId and
+		transferType is not null and (UsedAsTrolley=1 or TrolleyInd=1))
+		AS transitUsePallet,
+		(select count(1) from Exp_DLSULDTrolley where
+		DLSId=Exp_DLS.DLSId and transferType is not null
+		and UsedAsTrolley is null and TrolleyInd=0) as transitUseContainer,
+		(select count(1) from Exp_DLSULDTrolley,Exp_DLSULDTrolleyContentCodes
+		where DLSId=Exp_DLS.DLSId and
+		Exp_DLSULDTrolley.DLSUldTrolleyId=Exp_DLSULDTrolleyContentCodes.DLSUldTrolleyId
+		and Exp_DLSULDTrolleyContentCodes.Code='C'
+		and (UsedAsTrolley=1 or TrolleyInd=1)) as PalletForCargoUse,
+		(select
+		count(1) from Exp_DLSULDTrolley,Exp_DLSULDTrolleyContentCodes where
+		DLSId=Exp_DLS.DLSId and
+		Exp_DLSULDTrolley.DLSUldTrolleyId=Exp_DLSULDTrolleyContentCodes.DLSUldTrolleyId
+		and Exp_DLSULDTrolleyContentCodes.Code='C'
+		and UsedAsTrolley is null and TrolleyInd=0) as ContainerForCargoUse,
+		'dls' as LoadingInstruction
+		from Exp_DLS where Exp_DLS.DLSId=(select
+		DLSId from Exp_DLS
+		where FlightId = (select top 1 Flt_OperativeFlight.Flight_ID from Flt_OperativeFlight inner join Flt_OperativeFlight_Segments
+  on Flt_OperativeFlight.Flight_ID =  Flt_OperativeFlight_Segments.Flight_ID
+  where FlightKey=#{flightKey} and CAST(Flt_OperativeFlight_Segments.DateSTD as Date) =
+  CAST(#{flightOriginDate} as Date) and FlightBoardPoint=#{tenantId}))
+	</select> -->
+	
+	<select id="isUldLoaded" parameterType="com.ngen.cosys.satssginterfaces.mss.model.AssignULD"
+		resultType="java.lang.Integer">
+		select count(LoadedShipmentInfoId) from
+		Exp_LoadedShipmentInfo where 
+		AssUldTrolleyId = (select AssUldTrolleyId from Exp_AssignedULDTrolleyToFlight
+		where ULDTrolleyNumber=#{uld.uldTrolleyNo}
+		)
+	</select>
+	
+	<select id="getTareWeightForUld" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ULDIInformationDetails" resultType="java.math.BigDecimal">
+	select top 1  UldTareWeightQty  from 	Uld_UldCharacteristics
+	where UldCarrierCode IN
+		(RIGHT(#{uldTrolleyNo},
+		2)
+		,RIGHT(#{uldTrolleyNo},3))
+		AND
+		UldType =
+		LEFT(#{uldTrolleyNo},
+		3) 
+	</select>
+	
+	<select id="getActualWeightForUld" parameterType="com.ngen.cosys.satssginterfaces.mss.model.ULDIInformationDetails" resultType="java.math.BigDecimal">
+	select  ActualWeight from Exp_DLS
+		inner join 
+		Exp_DLSULDTrolley
+		on
+		Exp_DLSULDTrolley.DLSId=Exp_DLS.DLSId
+		where Exp_DLS.FlightId=#{flightId}
+		and ULDTrolleyNumber=#{uldTrolleyNo}
+	</select> 
+	
+	<select id="isULDInUldMaster" parameterType="java.lang.String" resultType="java.lang.Boolean"> 
+		select case when count(UldType) > 0 then 1 else 0 end from Uld_UldMaster where UldType=#{param}
+	</select>
+	
+</mapper>
+
+

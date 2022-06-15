@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="InboundMailDocumentMapper">
+   <select id="flightdetail" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentModel" resultType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentModel">
+	<!-- select CarrierCode as carrierCode,Flight_ID as flightId from Flt_OperativeFlight where FlightKey=#{flightKey} and FlightOriginDate=#{flightDate} -->
+	SELECT 
+		Flt_OperativeFlight.Flight_ID as flightId
+    	, Flt_OperativeFlight.CarrierCode as carrierCode
+    FROM Flt_OperativeFlight 
+    INNER JOIN Flt_OperativeFlight_Legs ON Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID 
+    where Flt_OperativeFlight.FlightKey = #{flightKey} 
+    	AND CAST(Flt_OperativeFlight_Legs.DateSTA AS date) = cast(#{flightDate} as date) 
+    	AND Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport}
+   </select>
+
+	<resultMap id="inboundMailDocumentResultMap"
+		type="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+		<result column="ImpShipmentVerificationId" property="shipmentVerificationId"/>
+		<result column="DispatchYear" property="dispatchYear" />
+		<result column="ShipmentDate" property="shipmentdate"/>
+		<result column="ShipmentId" property="shipmentId" />
+		<result column="ShipmentNumber" property="shipmentNumber" />
+		<result column="OriginOfficeExchange" property="originOfficeExchange" />
+		<result column="DestinationOfficeExchange" property="destinationOfficeExchange" />
+		<result column="MailCategory" property="mailCategory" />
+		<result column="MailSubCategory" property="mailSubCategory" />		
+		<result column="RegisteredIndicator" property="registered"/>
+		<result column="Pieces" property="piece" />
+		<result column="Weight" property="weight" />
+		<result column="BreakDownPieces" property="breakDownPieces" />
+		<result column="BreakDownWeight" property="breakDownWeight" />		
+		<result column="ShipmentRemarks" property="remarks" />
+	</resultMap>
+	<select id="sqlInboundMailDocumentData"
+		parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentModel"
+		resultMap="inboundMailDocumentResultMap">
+	select distinct
+            Imp_ShipmentVerification.FlightId as flightId,
+            Imp_ShipmentVerification.ImpShipmentVerificationId,
+            Shipment_Master.DispatchYear,
+            Shipment_Master.ShipmentDate,
+            ISNULL(Imp_ShipmentVerification.BreakDownPieces,0) BreakDownPieces,
+            ISNULL(Imp_ShipmentVerification.BreakDownWeight,0) BreakDownWeight,
+            Shipment_Master.ShipmentId,
+            Shipment_Master.ShipmentNumber,
+            Imp_ShipmentVerification.DocumentPieces Pieces,
+            Imp_ShipmentVerification.DocumentWeight Weight,
+            Shipment_Master.OriginOfficeExchange,
+            Shipment_Master.DestinationOfficeExchange,
+            Shipment_Master.MailCategory,
+            Shipment_Master.MailSubCategory,
+            Shipment_Master.RegisteredIndicator,
+            Shipment_Remarks.ShipmentRemarks
+        from
+            Imp_ShipmentVerification inner join
+            Shipment_Master on Imp_ShipmentVerification.ShipmentId = Shipment_Master.ShipmentId and Shipment_Master.ShipmentType='MAIL'
+            LEFT JOIN Shipment_HouseInformation ON Shipment_Master.ShipmentId = Shipment_HouseInformation.ShipmentId
+            left join
+            Shipment_Remarks on (Imp_ShipmentVerification.FlightId = Shipment_Remarks.Flight_ID and 
+            Shipment_Master.ShipmentId = Shipment_Remarks.ShipmentId and
+            Shipment_Remarks.RemarkType = 'GEN')
+            LEFT OUTER JOIN Flt_OperativeFlight ON Flt_OperativeFlight.Flight_ID=Imp_ShipmentVerification.FlightId
+            LEFT OUTER JOIN Flt_OperativeFlight_Segments ON Flt_OperativeFlight_Segments.Flight_ID=Flt_OperativeFlight.Flight_ID AND Flt_OperativeFlight_Segments.FlightOffPoint = #{tenantAirport}
+        where
+            Imp_ShipmentVerification.FlightId = #{flightId}
+	</select>
+	<update id="updatemail" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	update Shipment_Master 
+	set 
+	Pieces = #{totalPieces}
+	,Weight = #{totalWeight}
+	<if test="shipmentMasterAlreadyCreated == true">
+	,OriginOfficeExchange = #{originOfficeExchange}
+	,DestinationOfficeExchange = #{destinationOfficeExchange}
+	,MailCategory = #{mailCategory}, 
+	MailSubCategory = #{mailSubCategory}
+	,RegisteredIndicator = #{registered} 
+	</if>
+	
+	where ShipmentId = #{shipmentId} 
+	</update>
+	
+	<update id="updateremarks" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	UPDATE Shipment_Remarks
+     SET 
+      ShipmentRemarks = #{remarks}
+      WHERE ShipmentId = #{shipmentId} and
+      		Flight_ID = #{flightId}
+	</update>
+	
+	<delete id="deleteShipmentverification" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	delete from Imp_ShipmentVerification where ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteShipmentOtherChargeInfo" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	DELETE FROM Shipment_OtherChargeInfo WHERE ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteShipmentMasterHandlingArea" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	DELETE FROM Shipment_MasterHandlingArea WHERE ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteShipmentRemark" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	DELETE FROM Shipment_Remarks WHERE ShipmentId = #{shipmentId}
+	</delete>
+	
+	<delete id="deleteShipmentMaster" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+	DELETE FROM Shipment_Master WHERE ShipmentId = #{shipmentId}
+	</delete>
+
+   <select id="checkshipmentId" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel"
+   resultType="java.lang.Integer">
+   select count(1) from Shipment_Inventory where Shipment_ID = #{shipmentId}
+   </select>
+   
+   <select id="checkShipmentVerificationId" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel"
+   resultType="java.lang.Integer">
+   select count(1) from Imp_BreakDownULDTrolleyInfo where ImpShipmentVerificationId=#{shipmentVerificationId}
+   </select>
+   
+   <select id="checkoriginofficeexchange" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel"
+   resultType="java.lang.Integer">
+   select count(1) from Mst_PostalAuthorityOpenOffficeInfo where ImpcCode = #{originOfficeExchange}
+   </select>
+   
+   <select id="checkdestinationofficeexchange" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel"
+   resultType="java.lang.Integer">
+   select count(1) from Mst_PostalAuthorityOpenOffficeInfo where ImpcCode = #{destinationOfficeExchange}
+   </select>
+   
+   <select id="checkshipmentnumber" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel"
+   resultType="java.lang.Integer">
+   select count(1) from Shipment_Master where ShipmentNumber = #{shipmentNumber}
+   </select>
+   
+   <insert id="insertRemarksForDocument" parameterType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+   INSERT INTO Shipment_Remarks
+           (ShipmentNumber
+           ,ShipmentDate
+           ,ShipmentId
+           ,RemarkType
+           ,Flight_ID
+           ,ShipmentRemarks
+           ,CreatedUser_Code
+           ,Created_DateTime
+           ,ShipmentType)
+     VALUES
+           (#{shipmentNumber}
+           ,#{shipmentdate}
+           ,#{shipmentId}
+           ,'GEN'
+           ,#{flightId}
+           ,#{remarks}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,'MAIL')
+   </insert>
+   
+   <select id="sqlGetTotalPiecesAndWeightFromVerification" resultType="com.ngen.cosys.impbd.mail.document.model.InboundMailDocumentShipmentModel">
+   	select 
+   		sum(documentpieces) totalPieces,
+   		sum(documentweight) totalWeight
+   	from 
+   		Imp_ShipmentVerification 
+   	where 
+   		ShipmentId = #{shipmentId}
+   </select>
+   
+   <update id="sqlUpdateDocumentInfoForMail">
+   update 
+   		Imp_ShipmentVerification
+   	set
+   		DocumentPieces = #{piece},
+   		DocumentWeight = #{weight}
+   	where
+   		FlightId = #{flightId} and
+   		ShipmentId = #{shipmentId}
+   		
+   </update>
+</mapper>

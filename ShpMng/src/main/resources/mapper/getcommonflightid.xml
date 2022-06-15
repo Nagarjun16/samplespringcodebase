@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="AwbShipmentMapperCommon">
+	
+	<!-- Operating Flight Sql Query Start -->
+   <select id="sqlGetCommonImportFlightId"
+      parameterType="com.ngen.cosys.shipment.model.CommonFlightId"
+      resultType="java.lang.String">
+       select opr.Flight_ID
+       from Flt_OperativeFlight opr
+       inner join Flt_OperativeFlight_Legs leg on opr.Flight_ID = leg.Flight_ID and leg.FlightOffPoint = #{tenantAirport}
+       where opr.FlightKey = #{flightKey} and cast(leg.DateSTA as date) = cast(#{flightDate} as date)
+   </select>
+   
+   <select id="sqlGetCommonExportFlightId"
+      parameterType="com.ngen.cosys.shipment.model.CommonFlightId"
+      resultType="java.lang.String"> 
+       select opr.Flight_ID
+       from Flt_OperativeFlight opr
+       inner join Flt_OperativeFlight_Legs leg on opr.Flight_ID = leg.Flight_ID and leg.FlightBoardPoint = #{tenantAirport}
+       where opr.FlightKey = #{flightKey} and cast(leg.DateSTD as date) = cast(#{flightDate} as date)      
+   </select>
+   
+   <select id="sqlGetCommonImportFlightKeyDate"
+      parameterType="com.ngen.cosys.shipment.model.CommonFlightId"
+      resultType="com.ngen.cosys.shipment.model.CommonFlightId">
+      select
+	  	opr.FlightKey,
+	    leg.DateSTA as flightDate,
+	  	leg.FlightBoardPoint as source,
+	    leg.FlightOffPoint as destination
+      from 
+      	Flt_OperativeFlight opr, 
+      	Flt_OperativeFlight_Legs leg
+      where 
+      	opr.Flight_ID = leg.Flight_ID and 
+      	leg.FlightOffPoint = #{tenantAirport} and 
+      	opr.Flight_ID = #{flightKey}
+   </select>
+   
+    <select id="sqlGetCommonExportFlightKeyDate"
+      parameterType="com.ngen.cosys.shipment.model.CommonFlightId"
+      resultType="com.ngen.cosys.shipment.model.CommonFlightId">
+      select
+	  	opr.FlightKey,
+	    leg.DateSTD as flightDate,
+	  	leg.FlightBoardPoint as source,
+	    leg.FlightOffPoint as destination
+      from 
+      	Flt_OperativeFlight opr, 
+      	Flt_OperativeFlight_Legs leg
+      where 
+      	opr.Flight_ID = leg.Flight_ID and 
+      	leg.FlightBoardPoint = #{tenantAirport} and 
+      	opr.Flight_ID = #{flightKey}
+   </select>
+</mapper>
+ 

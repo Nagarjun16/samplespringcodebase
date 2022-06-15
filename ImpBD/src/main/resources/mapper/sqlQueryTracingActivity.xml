@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TracingActivityShipmentMapper">
+
+	<!-- Get Flight Info for Tracing Shipment -->	
+	<select id="sqlGetFlightInfoForTracingActivity" 
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+		resultType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel">
+		select			
+			Flt_OperativeFlight_Legs.FlightBoardPoint boardingPoint,
+			Flt_OperativeFlight_Legs.FlightOffPoint offPoint,
+			Flt_OperativeFlight.CarrierCode carrier,
+			Flt_OperativeFlight_Legs.DateSTA flightDate
+		from
+			Flt_OperativeFlight inner join
+			Flt_OperativeFlight_Legs on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID
+		where 
+			Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} and
+			Flt_OperativeFlight.Flight_ID = #{flightId}
+	</select>
+	
+	<select id="sqlGetShipmentShcInfoTracingActivity" 
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+		resultType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentShcModel">		
+		select 
+			Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode
+		from 
+		Imp_ArrivalManifestByFlight inner join
+			Imp_ArrivalManifestBySegment on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+			Imp_ArrivalManifestULD on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+			Imp_ArrivalManifestShipmentInfo on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId inner join
+			Imp_ArrivalManifestByShipmentSHC on Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+		where	
+			Imp_ArrivalManifestByFlight.FlightId = #{flightId} and 
+			Imp_ArrivalManifestShipmentInfo.ShipmentNumber = #{shipmentNumber} and 
+			Imp_ArrivalManifestShipmentInfo.ShipmentDate = #{shipmentdate}
+	</select>
+	
+	<select id="sqlCheckTracingActivityForShipmentExists"
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+		resultType="java.lang.Boolean">
+		select
+			case when count(CaseNumber) > 0 then
+				1
+			else
+				0
+			end	result
+		from
+			Com_TracingShipmentInfo
+		where
+			IrregularityTypeCode = #{irregularityTypeCode} and 
+			TracingCreatedFor = #{tracingCreatedfor} and 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			CaseStatus != 'CLOSED'
+			<if test="houseNumber != null">
+				and HouseNumber = #{houseNumber}
+			</if>
+	</select>
+	
+	<insert id="sqlInsertTracingActivityForShipment"
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="ComTracingShipmentInfoId">
+		insert into Com_TracingShipmentInfo
+		(
+			CaseNumber,CaseStatus,IrregularityTypeCode,ImportExportIndicator,TracingCreatedFor,Origin,Destination,
+			TotalPieces,TotalWeight,IrregularityPieces,IrregularityWeight,FlightKey,FlightDate,CarrierCode,BoardingPoint,
+			OffPoint,NatureOfGoodsDescription,ShipmentNumber,ShipmentDate,HouseNumber,CreatedUserCode,CreatedDateTime, ImportUserCode, ImportStaffNumber, ImportStaffName)
+		values
+		(
+			#{caseNumber},#{caseStatus},#{irregularityTypeCode},'I',#{tracingCreatedfor},#{origin},#{destination},
+			#{piece},#{weight},#{irregularitypieces},#{irregularityWeight},#{flightKey},#{flightDate},#{carrier},#{boardingPoint},
+			#{offPoint},#{natureOfGoodsDescription},#{shipmentNumber},#{shipmentdate},#{houseNumber},#{createdBy},#{createdOn}, #{importUserCode}, #{importStaffNumber}, #{importStaffName}
+		)
+	</insert>
+	
+	<select id="getFlightKey" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT flightkey FROM flt_operativeflight where flight_id = #{flightId}
+	</select>
+
+	<select id="sqlGetUserDetails" parameterType="java.lang.String" resultType="com.ngen.cosys.impbd.summary.model.TracingUserDetailsModel">
+	<![CDATA[
+		select userShortName, staffIdNumber, userLoginCode, userType from Adm_UserProfile where UserLoginCode = #{loggedInUser}
+	]]>
+	</select>
+	
+	<insert id="sqlInsertTracingActivityForShipmentShc"
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentShcModel">
+		insert into Com_TracingShipmentSHC
+		(
+			ComTracingShipmentInfoId,SpecialHandlingCode,CreatedUserCode,CreatedDateTime)
+		values
+		(
+			#{tracingActivityShipmentId},#{specialHandlingCode},#{createdOn},#{createdBy}
+		)
+	</insert>
+	
+	<select id="sqlGetMaxTracingCaseNumber" resultType="java.math.BigInteger">
+		<!-- select isnull(max(substring(CaseNumber, 3, len(CaseNumber))),1) from Com_TracingShipmentInfo -->
+		<!-- SELECT
+	   		isnull( MAX(CAST(SUBSTRING(CaseNumber,3,LEN(CaseNumber)) AS INT)),1)
+			FROM Com_TracingShipmentInfo -->
+			SELECT NEXT VALUE FOR Com_TracingShipmentInfo_CaseNumber_Seq
+	</select>
+	
+	<select id="sqlGetInventoryInfoForTracing" 
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+	 	resultType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentInventoryModel">
+	 <choose>
+	 	<when test="houseNumber != null and irregularityTypeCode == 'DAMG' and shipmentType == 'MAIL'">
+	 	<![CDATA[
+	 		select 
+				Shipment_Inventory.ShipmentLocation shipmentLocation, 
+				Shipment_Inventory.Pieces inventoryPieces,
+				Shipment_Inventory.Weight inventoryWeight,
+				Shipment_Inventory.WarehouseLocation warehouseLocation 
+			from 
+				Shipment_Inventory inner join 
+				Shipment_InventoryHouse
+					on Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId inner join
+				Shipment_HouseInformation
+					on Shipment_InventoryHouse.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId inner join
+				Shipment_Master 
+					on Shipment_HouseInformation.ShipmentId = Shipment_Master.ShipmentId
+			where 
+				Shipment_Master.ShipmentNumber = #{shipmentNumber} and 
+				Shipment_Master.ShipmentDate = #{shipmentdate} and
+				Shipment_HouseInformation.Number = #{houseNumber} and
+				Shipment_Inventory.Pieces > 0
+	 	]]>	 	
+	 	</when>
+	 	<otherwise>
+	 	<![CDATA[
+	 		select 
+				Shipment_Inventory.ShipmentLocation shipmentLocation, 
+				Shipment_Inventory.Pieces inventoryPieces,
+				Shipment_Inventory.Weight inventoryWeight,
+				Shipment_Inventory.WarehouseLocation warehouseLocation 
+			from 
+				Shipment_Inventory inner join 
+				Shipment_Master 
+					on Shipment_Inventory.Shipment_Id = Shipment_Master.ShipmentId 
+			where 
+				Shipment_Master.ShipmentNumber = #{shipmentNumber} and 
+				Shipment_Master.ShipmentDate = #{shipmentdate} and
+				Shipment_Inventory.Pieces > 0
+	 	]]>	 	
+	 	</otherwise>
+	 </choose>
+	 
+	 <![CDATA[
+		
+	 ]]>
+	</select>
+	
+	<insert id="sqlInsertInventoryInfoForTracingActivity" parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentInventoryModel">
+	INSERT INTO Com_TracingShipmentLocationInfo
+           (ComTracingShipmentInfoId
+           ,ShipmentLocationCode
+           ,Pieces
+           ,Weight
+           ,WeightUnitCode
+           ,WarehouseLocationCode
+           ,NatureOfGoodsDescription
+           ,CreatedUserCode
+           ,CreatedDateTime
+           ,TransactionSequenceNo)
+     VALUES
+           (#{tracingShipmentInfoId}
+           ,#{shipmentLocation}
+           ,#{inventoryPieces}
+           ,#{inventoryWeight}
+           ,#{weightUnitCode}
+           ,#{warehouseLocation}
+           ,#{natureOfGoodsDescription}
+           ,#{createdBy}
+           ,#{createdOn}
+           ,(Select ISNULL(Max(TransactionSequenceNo)+1,1) from Com_TracingShipmentLocationInfo))
+	</insert>
+	
+	<select id="sqlGetTracingActivityCaseIdForShipment"
+		parameterType="com.ngen.cosys.impbd.tracing.activity.model.TracingActivityShipmentModel"
+		resultType = "java.math.BigInteger">
+	<![CDATA[
+		select
+			ComTracingShipmentInfoId
+		from 
+			Com_TracingShipmentInfo
+		where
+			IrregularityTypeCode = #{irregularityTypeCode} and 
+			TracingCreatedFor = #{tracingCreatedfor} and 
+			ShipmentNumber = #{shipmentNumber} and 
+			ShipmentDate = #{shipmentdate} and 
+			CaseStatus = 'INPROGRESS'
+	]]>
+		<if test="houseNumber != null">
+		<![CDATA[
+			and HouseNumber = #{houseNumber}
+		]]>
+		</if>
+	</select>
+	
+	<delete id="sqlDeleteTracingActivityForShipment"
+		parameterType="java.math.BigInteger">
+	<![CDATA[
+		delete from Com_TracingShipmentInfo where ComTracingShipmentInfoId = #{id}
+	]]>
+	</delete>
+	
+	<delete id="sqlDeleteTracingActivityForShipmentSHC"
+		parameterType="java.math.BigInteger">
+	<![CDATA[
+		delete from Com_TracingShipmentSHC where ComTracingShipmentInfoId = #{id}
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteTracingActivityForShipmentLocation"
+		parameterType="java.math.BigInteger">
+	<![CDATA[
+		delete from Com_TracingShipmentLocationInfo where ComTracingShipmentInfoId = #{id}
+	]]>
+	</delete>
+	
+	<delete id="sqlDeleteTracingActivityForShipmentDimensionInfo"
+		parameterType="java.math.BigInteger">
+	<![CDATA[
+		delete from Com_TracingShipmentDimensionInfo where ComTracingShipmentInfoId = #{id}
+	]]>
+	</delete>
+	
+	<delete id="sqlDeleteTracingActivityForShipmentFollowupAction"
+		parameterType="java.math.BigInteger">
+	<![CDATA[
+		delete from Com_TracingShipmentFollowupAction where ComTracingShipmentInfoId = #{id}
+	]]>
+	</delete>
+</mapper>

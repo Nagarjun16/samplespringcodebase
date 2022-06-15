@@ -1,0 +1,1630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AlteaFMMapper">
+
+	<!-- Message Setup Configuration -->
+	<select id="sqlVerifyAlteaFMConfigured" resultType="java.lang.Boolean" 
+			parameterType="com.ngen.cosys.events.payload.AlteaFMEvent">
+		<![CDATA[
+			SELECT	CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+			FROM	Interface_IncomingOutgoingMessageDefinition
+				INNER JOIN
+					Interface_AssociateCustomerWithMessageDefinition
+				ON	Interface_AssociateCustomerWithMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+						= Interface_IncomingOutgoingMessageDefinition.InterfaceIncomingOutgoingMessageDefinitionId
+				INNER JOIN
+					Interface_MessageDefinitionByCustomer
+				ON	Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId
+						= Interface_AssociateCustomerWithMessageDefinition.InterfaceMessageDefinitionByCustomerId
+			WHERE	Interface_IncomingOutgoingMessageDefinition.MessageType = 'AFM'
+		]]>
+		<if test="eventSource != null and eventSource != ''">
+			<choose>
+				<when test="eventSource == 'DLS'">
+					<![CDATA[ AND	(Interface_IncomingOutgoingMessageDefinition.SubMessageType = 'DLSFM' 
+								OR 	Interface_IncomingOutgoingMessageDefinition.SubMessageType IS NULL) ]]>
+				</when>
+				<when test="eventSource == 'NOTOC'">
+					<![CDATA[ AND	(Interface_IncomingOutgoingMessageDefinition.SubMessageType = 'NTMFM' 
+								OR 	Interface_IncomingOutgoingMessageDefinition.SubMessageType IS NULL) ]]>
+				</when>
+			</choose>				
+		</if>
+		<![CDATA[
+			AND	Interface_MessageDefinitionByCustomer.CarrierCode = SUBSTRING(#{flightKey},1,2)
+			AND	(Interface_MessageDefinitionByCustomer.FlightKey = #{flightKey} 
+				OR Interface_MessageDefinitionByCustomer.FlightKey = '**')
+		]]>
+	</select>
+
+	<!-- Altea FM Per Flight Message Count -->
+	<select id="sqlSelectAlteaFMPerFlightMessageCount" resultType="java.lang.String" 
+			parameterType="java.lang.String">
+		<![CDATA[
+			SELECT 	ParameterValueChar
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = #{code}
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>
+	</select>
+	
+	<!-- SENT Message count by Flight -->
+	<select id="sqlSelectAlteaFMSentMessageCountByFlight" resultType="java.lang.Integer" 
+			parameterType="com.ngen.cosys.events.payload.AlteaFMEvent">
+		<![CDATA[
+			SELECT 	COUNT(1)
+			FROM	Interface_OutgoingMessageLog
+			WHERE	InterfacingSystem = 'ALTEAWEB'
+			AND		MessageType = 'AFM'
+		]]>
+		<if test="eventSource != null and eventSource != ''">
+			<choose>
+				<when test="eventSource == 'DLS'">
+					<![CDATA[ AND	SubMessageType = 'DLSFM' ]]>
+				</when>
+				<when test="eventSource == 'NOTOC'">
+					<![CDATA[ AND	SubMessageType = 'NTMFM' ]]>
+				</when>
+			</choose>				
+		</if>
+		<![CDATA[
+			AND		CarrierCode = SUBSTRING(#{flightKey},1,2)
+			AND		FlightNumber = SUBSTRING(#{flightKey},3,4)
+			AND		CAST(FlightOriginDate AS DATE) = CAST(#{flightDate} AS DATE)
+		]]>
+	</select>
+	
+	<!-- Get Flight Id -->
+	<select id="fmSqlFlightId" resultType="java.math.BigInteger" 
+			parameterType="com.ngen.cosys.events.payload.AlteaFMEvent">
+		<![CDATA[
+			SELECT 	Flt_OperativeFlight.Flight_ID 
+			FROM 	Flt_OperativeFlight 
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE 	Flt_OperativeFlight.FlightKey = #{flightKey} 
+			AND 	CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) = CAST(#{flightDate} AS DATE)
+			AND 	Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenant}
+		]]>
+	</select>
+	
+	<!-- Get DCS FM Update Cargo Data -->
+	<select id="sqlSelectAlteaFMCargoData" resultMap="alteaDCSFMUpdateCargoFiguresMap" 
+			parameterType="com.ngen.cosys.events.payload.AlteaFMEvent">
+		<![CDATA[
+			SELECT 	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					Flt_OperativeFlight.Flight_ID AS Flight_ID
+			FROM 	Flt_OperativeFlight 
+				INNER JOIN
+					Flt_OperativeFlight_Legs
+				ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			WHERE 	Flt_OperativeFlight.FlightKey = #{flightKey} 
+			AND 	CAST(Flt_OperativeFlight_Legs.DateSTD AS DATE) = CAST(#{flightDate} AS DATE)
+			AND 	Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenant}
+		]]>
+	</select>
+	
+	<resultMap id="alteaDCSFMUpdateCargoFiguresMap" type="com.ngen.cosys.altea.fm.model.DCSFMUpdateCargoFigures" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<id column="Flight_ID" property="flightId" />
+		<!-- Flight Number Information  -->
+		<association property="flightNumberInformation"
+			javaType="com.ngen.cosys.altea.fm.model.FlightNumberInformation"
+			select="fmSqlFlightNumberInformation" column="{flightId=Flight_ID}" />
+		<!-- Leg Origin -->
+		<association property="legOrigin"
+			javaType="com.ngen.cosys.altea.fm.model.LegOrigin"
+			select="fmSqlFlightLegOrigin" column="{flightId=Flight_ID}" />
+		<!-- SQL Aircraft Type Registration -->
+		<association property="aircraftTypeRegistration"
+			javaType="com.ngen.cosys.altea.fm.model.AircraftTypeRegistration"
+			select="fmSqlAircraftTypeAndRegistration" column="{tenant=Tenant,flightId=Flight_ID}" />
+		<!-- DWS Comments -->
+		<association property="dwsComments"
+			javaType="com.ngen.cosys.altea.fm.model.DWSFreeTextQualifier"
+			select="fmSqlDWSComments" column="{flightId=Flight_ID}" />
+		<!-- Indicator -->
+		<association property="indicator"
+			javaType="com.ngen.cosys.altea.fm.model.Indicator"
+			select="fmSqlIndicator" column="{flightId=Flight_ID}" />
+		<!-- Dispatch Time -->
+		<association property="dispatchTime"
+			javaType="com.ngen.cosys.altea.fm.model.DispatchTime"
+			select="fmSqlDispatchTime" column="{flightId=Flight_ID}" />
+		<!-- Source System Info -->
+		<association property="sourceSystemInfo"
+			javaType="com.ngen.cosys.altea.fm.model.SourceSystemInfo"
+			select="fmSqlSourceSystem" column="{eventSource=EventSource,tenant=Tenant,flightId=Flight_ID}" />
+		<!-- Agent Name for NOTOC -->
+		<association property="agentNameForNOTOC"
+			javaType="com.ngen.cosys.altea.fm.model.AgentNameForNOTOC"
+			select="fmSqlAgentNameForNOTOC" column="{eventSource=EventSource,tenant=Tenant}" />
+		<!-- Cargo Agent Name -->
+		<association property="cargoAgentName"
+			javaType="com.ngen.cosys.altea.fm.model.CargoAgentName"
+			select="fmSqlCargoAgentName" column="{eventSource=EventSource,tenant=Tenant}" />
+		<!-- Flight Date -->
+		<collection property="flightDate" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.FlightDate" 
+			select="fmSqlFlightDate" column="{tenant=Tenant,flightId=Flight_ID}" />
+		<!-- Flight Leg Date -->
+		<collection property="flightLegDate" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.FlightDate" 
+			select="fmSqlFlightDate" column="{tenant=Tenant,flightId=Flight_ID}" />
+		<!-- LoadInfo -->
+		<collection property="loadInfo" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.LoadInfo" 
+			select="fmSqlLoadInfo" column="{eventSource=EventSource,tenant=Tenant,flightId=Flight_ID}" />
+	</resultMap>
+	
+	<!-- Flight Number Information -->
+	<select id="fmSqlFlightNumberInformation" resultMap="flightNumberInformationMap">
+		<![CDATA[
+			SELECT	CarrierCode, 
+					CONCAT(REPLICATE('0', 4 - LEN(FlightNumber)), FlightNumber) AS FlightNumber
+			FROM	Flt_OperativeFlight
+			WHERE	Flight_ID = #{flightId}
+		]]>
+	</select>
+	<resultMap id="flightNumberInformationMap" type="com.ngen.cosys.altea.fm.model.FlightNumberInformation">
+		<result column="CarrierCode" property="companyIdentification.operatingCompany" />
+		<result column="FlightNumber" property="flightDetail.flightNumber" />
+	</resultMap>
+	
+	<!-- Flight Leg Origin -->
+	<select id="fmSqlFlightLegOrigin" resultMap="flightLegOriginMap">
+		<![CDATA[
+			SELECT 	FlightBoardPoint 
+			FROM 	Flt_OperativeFlight_Legs 
+			WHERE 	Flight_ID = #{flightId} 
+			AND 	FlightSegmentOrder = 1
+		]]>	
+	</select>
+	<resultMap id="flightLegOriginMap" type="com.ngen.cosys.altea.fm.model.LegOrigin">
+		<result column="FlightBoardPoint" property="origin" />
+	</resultMap>
+	
+	<!-- Aircraft Type and Registration -->
+	<select id="fmSqlAircraftTypeAndRegistration" resultMap="aircraftTypeAndRegistrationMap">
+		<![CDATA[
+			SELECT 	AircraftType, AircraftRegCode
+			FROM 	Flt_OperativeFlight_Legs 
+			WHERE 	Flight_ID = #{flightId}
+			AND 	FlightBoardPoint = #{tenant}
+		]]>	
+	</select>
+	<resultMap id="aircraftTypeAndRegistrationMap" type="com.ngen.cosys.altea.fm.model.AircraftTypeRegistration" 
+		autoMapping="false">
+		<result column="AircraftType" property="equipmentDetail.aircraftType" />
+		<result column="AircraftRegCode" property="equipmentDetail.registrationNumber" />
+	</resultMap>
+	
+	<!-- DWS Comments -->
+	<select id="fmSqlDWSComments" resultMap="dwsCommentsMap">
+		<![CDATA[
+			SELECT	'SUP' AS SubjectQualifier,
+					#{flightId} AS Flight_ID
+		]]>	
+	</select>
+	<select id="fmSqlDWSCommentsOSIDetail" resultType="java.lang.String">
+		<![CDATA[
+			SELECT	CASE WHEN LEN(OSIDetail.Detail) > 50 
+						THEN SUBSTRING(OSIDetail.Detail,1,50) 
+						ELSE OSIDetail.Detail
+					END	AS FreeTextComment
+			FROM
+				(
+					SELECT	TOP(2) Exp_DLSULDTrolleyOSI.Detail
+					FROM	Exp_DLSULDTrolleyOSI 
+						INNER JOIN
+							Exp_DLS
+						ON	Exp_DLS.DLSId = Exp_DLSULDTrolleyOSI.DLSId
+					WHERE	Exp_DLS.FlightId = #{flightId}
+					AND		Exp_DLSULDTrolleyOSI.Manual = 1
+				) OSIDetail
+		]]>	
+	</select>
+	<resultMap id="dwsCommentsMap" type="com.ngen.cosys.altea.fm.model.DWSFreeTextQualifier" 
+		autoMapping="false">
+		<id column="Flight_ID" property="flightId" />
+		<result column="SubjectQualifier" property="textSubjectQualifier.textSubjectQualifier" />
+		<collection property="freeText" javaType="List" ofType="java.lang.String" 
+			select="fmSqlDWSCommentsOSIDetail" column="{flightId=Flight_ID}" />
+	</resultMap>
+	
+	<!-- Indicator -->
+	<select id="fmSqlIndicator" resultMap="indicatorMap">
+		<![CDATA[
+			SELECT 	'DSF' AS Indicator
+		]]>	
+	</select>
+	<resultMap id="indicatorMap" type="com.ngen.cosys.altea.fm.model.Indicator" 
+		autoMapping="false">
+		<result column="Indicator" property="statusDetails.indicator" />
+	</resultMap>
+	
+	<!-- Dispatch Time -->
+	<select id="fmSqlDispatchTime" resultMap="dispatchTimeMap">
+		<![CDATA[
+			SELECT 	'DTD' AS BusinessSemantic, 'U' AS TimeMode,
+					YEAR(DLSCompletedAt) AS DLSYear, 
+					Month(DLSCompletedAt) AS DLSMonth, 
+					DAY(DLSCompletedAt) AS DLSDay,
+					DATEPART(HOUR, DLSCompletedAt) AS DLSHour, 
+					DATEPART(MINUTE, DLSCompletedAt) AS DLSMinute, 
+					DATEPART(SECOND, DLSCompletedAt) AS DLSSecond
+			FROM	Exp_FlightEvents 
+			WHERE	FlightId = #{flightId}
+		]]>	
+	</select>
+	<resultMap id="dispatchTimeMap" type="com.ngen.cosys.altea.fm.model.DispatchTime" 
+		autoMapping="false">
+		<result column="BusinessSemantic" property="businessSemantic" />
+		<result column="TimeMode" property="timeMode" />
+		<result column="DLSYear" property="dateTime.year" />
+		<result column="DLSMonth" property="dateTime.month" />
+		<result column="DLSDay" property="dateTime.day" />
+		<result column="DLSHour" property="dateTime.hour" />
+		<result column="DLSMinute" property="dateTime.minutes" />
+		<result column="DLSSecond" property="dateTime.seconds" />
+	</resultMap>
+	
+	<!-- Source System Information -->
+	<select id="fmSqlSourceSystem" resultMap="sourceSystemMap">
+		<![CDATA[
+			SELECT	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					#{flightId} AS Flight_ID
+		]]>	
+	</select>
+	<resultMap id="sourceSystemMap" type="com.ngen.cosys.altea.fm.model.SourceSystemInfo" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<id column="Flight_ID" property="flightId" />
+		<!-- Source System Reference Detail -->
+		<collection property="referenceDetail" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.ReferenceDetail" 
+			select="fmSqlSourceSystemInfo" column="{referenceId=Flight_ID}" />
+	</resultMap>
+	
+	<select id="fmSqlSourceSystemInfo" resultMap="sourceSystemInfoMap">
+		<![CDATA[
+			SELECT	'SSI' AS ReferenceType, 
+					ParameterValueChar AS ReferenceValue
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = 'ALTEA_FM_SSI'
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+			UNION ALL
+			SELECT	'SSN' AS ReferenceType, 
+					ParameterValueChar AS ReferenceValue
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = 'ALTEA_FM_SSN'
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+			UNION ALL
+			SELECT	'SSP' AS ReferenceType, 
+					ParameterValueChar AS ReferenceValue
+			FROM	App_SystemParameters
+			WHERE	ParameterCode = 'ALTEA_FM_SSP'
+			AND 	ParameterStatusFlag = 'Y'
+			AND 	StartDate <= GETDATE() 
+			AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+		]]>	
+	</select>
+	<resultMap id="sourceSystemInfoMap" type="com.ngen.cosys.altea.fm.model.ReferenceDetail" 
+		autoMapping="false">
+		<result column="ReferenceType" property="type" />
+		<result column="ReferenceValue" property="value" />
+	</resultMap>
+	
+	<!-- Agent Name for NOTOC -->
+	<select id="fmSqlAgentNameForNOTOC" resultMap="agentNameForNOTOCMap">
+		<![CDATA[
+			SELECT	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					'SATS' AS PaxDetailName,
+					'SATS' AS OtherPaxDetailName
+		]]>	
+	</select>
+	<resultMap id="agentNameForNOTOCMap" type="com.ngen.cosys.altea.fm.model.AgentNameForNOTOC" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<!-- Pax Detail -->
+		<result column="PaxDetailName" property="paxDetail.surname" />
+		<!-- Other Pax Detail -->
+		<result column="OtherPaxDetailName" property="otherPaxDetail.givenName" />
+	</resultMap>
+	
+	<!-- Cargo Agent Name -->
+	<select id="fmSqlCargoAgentName" resultMap="cargoAgentNameMap">
+		<![CDATA[
+			SELECT	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					'SATS' AS PaxDetailName,
+					'SATS' AS OtherPaxDetailName
+		]]>	
+	</select>
+	<resultMap id="cargoAgentNameMap" type="com.ngen.cosys.altea.fm.model.CargoAgentName" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<!-- Pax Detail -->
+		<result column="PaxDetailName" property="paxDetail.surname" />
+		<!-- Other Pax Detail -->
+		<result column="OtherPaxDetailName" property="otherPaxDetail.givenName" />
+	</resultMap>
+	
+	<!-- Flight Date -->
+	<select id="fmSqlFlightDate" resultMap="flightDateMap">
+		<![CDATA[
+			SELECT	'U' AS TimeMode, 
+					YEAR(FlightDetail.FlightDate) AS FlightYear, 
+					MONTH(FlightDetail.FlightDate) AS FlightMonth, 
+					DAY(FlightDetail.FlightDate) AS FlightDay
+			FROM 
+				(
+					SELECT	DATEADD(HOUR, -8, Flt_OperativeFlight_Legs.DateSTD) AS FlightDate
+					FROM	Flt_OperativeFlight
+						INNER JOIN
+							Flt_OperativeFlight_Legs
+						ON	Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight.Flight_ID
+					WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+					AND 	Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenant}
+				) FlightDetail
+		]]>
+	</select>
+	<resultMap id="flightDateMap" type="com.ngen.cosys.altea.fm.model.FlightDate">
+		<result column="TimeMode" property="timeMode" />
+		<result column="FlightYear" property="dateTime.year" />
+		<result column="FlightMonth" property="dateTime.month" />
+		<result column="FlightDay" property="dateTime.day" />
+	</resultMap>
+	
+	<!-- LoadInfo -->
+	<select id="fmSqlLoadInfo" resultMap="loadInfoMap">
+		<![CDATA[
+			SELECT	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					#{flightId} AS Flight_ID,
+					Exp_DLSULDTrolley.FlightSegmentId, 
+					Exp_DLSULDTrolley.DLSUldTrolleyId,
+					'SUP' AS SubjectQualifier,
+					ISNULL(Exp_DLSULDTrolley.Remarks, ' ') AS LoadDescription,
+					Flt_OperativeFlight_Segments.FlightBoardPoint AS LoadOrigin, 
+					Flt_OperativeFlight_Segments.FlightOffPoint AS LoadDestination
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+				AND	Exp_DLS.FlightId = Exp_DLSULDTrolley.PlannedFlightId
+				INNER JOIN
+					Flt_OperativeFlight_Segments
+				ON	Flt_OperativeFlight_Segments.Flight_ID = Exp_DLS.FlightId
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = Exp_DLSULDTrolley.FlightSegmentId
+			WHERE	Exp_DLS.FlightId = #{flightId}
+		]]>	
+	</select>
+	<resultMap id="loadInfoMap" type="com.ngen.cosys.altea.fm.model.LoadInfo" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<id column="Flight_ID" property="flightId" />
+		<id column="FlightSegmentId" property="flightSegmentId" />
+		<id column="DLSUldTrolleyId" property="dlsULDTrolleyId" />
+		<!--  -->
+		<result column="SubjectQualifier" property="loadDescription.textSubjectQualifier.textSubjectQualifier" />
+		<result column="LoadDescription" property="loadDescription.freeText" />
+		<result column="LoadOrigin" property="loadOriginDestination.origin" />
+		<result column="LoadDestination" property="loadOriginDestination.destination" />
+		<!--  -->
+		<!-- LoadType and Data -->
+		<association property="loadTypeAndData"
+			javaType="com.ngen.cosys.altea.fm.model.LoadTypeAndData"
+			select="fmSqlLoadTypeAndData" 
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,loadReferenceId=DLSUldTrolleyId}" />
+		<!-- Load Tare Weight -->
+		<association property="loadTareWeight"
+			javaType="com.ngen.cosys.altea.fm.model.LoadTareWeight"
+			select="fmSqlLoadTareWeight" column="{flightId=Flight_ID,loadReferenceId=DLSUldTrolleyId}" />
+		<!-- Deadload BIG Reference Details -->
+		<collection property="bigReferenceDetail" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.BigReferenceDetail" 
+			select="fmSqlBigReferenceDetails"
+			column="{bigReferenceId=DLSUldTrolleyId}" />
+		<!-- Dead Load for Load -->
+		<collection property="deadloadForLoad" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DeadloadForLoad" 
+			select="fmSqlDeadloadForLoad"
+			column="{eventSource=EventSource,tenant=Tenant, 
+					flightId=Flight_ID,flightSegmentId=FlightSegmentId,deadloadId=DLSUldTrolleyId}" />
+	</resultMap>
+	
+	<select id="fmSqlLoadTypeAndData" resultMap="loadTypeAndDataMap">
+		<![CDATA[
+			SELECT 	#{flightId} AS Flight_ID,
+					#{flightSegmentId} AS FlightSegmentId,
+					#{loadReferenceId} AS LoadReferenceId
+		]]>
+	</select>
+	<resultMap id="loadTypeAndDataMap" type="com.ngen.cosys.altea.fm.model.LoadTypeAndData" 
+		autoMapping="false">
+		<id column="Flight_ID" property="flightId" />
+		<id column="FlightSegmentId" property="flightSegmentId" />
+		<id column="LoadReferenceId" property="loadReferenceId" />
+		<collection property="referenceDetail" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.ReferenceDetail" 
+			select="fmSqlLoadTypeAndDataReferenceDetail"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,referenceId=LoadReferenceId}" />
+	</resultMap>
+	
+	<select id="fmSqlLoadTypeAndDataReferenceDetail" resultMap="loadTypeAndDataReferenceMap">
+		<![CDATA[
+			SELECT	CASE WHEN Uld_UldMaster.UldType IS NOT NULL THEN 'ULD' ELSE 'BLK' END AS LoadType, 
+					Exp_DLSULDTrolley.ULDTrolleyNumber AS LoadValue
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+				AND	Exp_DLS.FlightId = Exp_DLSULDTrolley.PlannedFlightId
+				LEFT JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_DLSULDTrolley.ULDTrolleyNumber
+				LEFT JOIN
+					Uld_UldType
+				ON	Uld_UldType.UldType = Uld_UldMaster.UldType
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{referenceId}
+		]]>
+	</select>
+	<resultMap id="loadTypeAndDataReferenceMap" type="com.ngen.cosys.altea.fm.model.ReferenceDetail" 
+		autoMapping="false">
+		<result column="LoadType" property="type" />
+		<result column="LoadValue" property="value" />
+	</resultMap>
+	
+	<select id="fmSqlLoadTareWeight" resultMap="loadTareWeightMap">
+		<![CDATA[
+			SELECT 	#{flightId} AS Flight_ID,
+					#{loadReferenceId} AS LoadReferenceId
+		]]>
+	</select>
+	<resultMap id="loadTareWeightMap" type="com.ngen.cosys.altea.fm.model.LoadTareWeight" 
+		autoMapping="false">
+		<id column="Flight_ID" property="flightId" />
+		<id column="LoadReferenceId" property="loadReferenceId" />
+		<collection property="quantityDetail" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.QuantityDetail" 
+			select="fmSqlLoadTareWeightQuantityDetail"
+			column="{flightId=Flight_ID,quantityId=LoadReferenceId}" />
+	</resultMap>
+	
+	<select id="fmSqlLoadTareWeightQuantityDetail" resultMap="loadTareWeightQuantityMap">
+		<![CDATA[
+			SELECT	'UTW' AS Qualifier, ISNULL(Exp_DLSULDTrolley.TareWeight, 0.0) AS Value
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+				LEFT JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_DLSULDTrolley.ULDTrolleyNumber
+				LEFT JOIN
+					Uld_UldType
+				ON	Uld_UldType.UldType = Uld_UldMaster.UldType
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{quantityId}
+			UNION
+			SELECT	'UGW' AS Qualifier, ISNULL(Exp_DLSULDTrolley.ActualWeight, 0.0) AS Value
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+				LEFT JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_DLSULDTrolley.ULDTrolleyNumber
+				LEFT JOIN
+					Uld_UldType
+				ON	Uld_UldType.UldType = Uld_UldMaster.UldType
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{quantityId}
+		]]>
+	</select>
+	<resultMap id="loadTareWeightQuantityMap" type="com.ngen.cosys.altea.fm.model.QuantityDetail" 
+		autoMapping="false">
+		<result column="Qualifier" property="qualifier" />
+		<result column="Value" property="value" />
+	</resultMap>
+	
+	<!-- Big Reference Details -->
+	<select id="fmSqlBigReferenceDetails" resultMap="bigRefernceDetailsMap">
+		<![CDATA[
+			SELECT 	'BRN' AS ReferenceType, 'BIGREFNO' AS ReferenceValue
+		]]>
+	</select>
+	<resultMap id="bigRefernceDetailsMap" type="com.ngen.cosys.altea.fm.model.BigReferenceDetail" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	
+	<!-- SQL Deadload For load -->
+	<select id="fmSqlDeadloadForLoad" resultMap="deadloadForLoadMap">
+		<![CDATA[
+			SELECT 	#{eventSource} AS EventSource, 
+					#{tenant} AS Tenant,
+					#{flightId} AS Flight_ID,
+					#{flightSegmentId} AS FlightSegmentId,
+					#{deadloadId} AS DeadloadId
+		]]>	
+	</select>
+	<resultMap id="deadloadForLoadMap" type="com.ngen.cosys.altea.fm.model.DeadloadForLoad" 
+		autoMapping="false">
+		<id column="EventSource" property="eventSource" />
+		<id column="Tenant" property="tenant" />
+		<id column="Flight_ID" property="flightId" />
+		<id column="FlightSegmentId" property="flightSegmentId" />
+		<id column="DeadloadId" property="deadloadId" />
+		<!-- Deadload Type -->
+		<association property="deadloadType"
+			javaType="com.ngen.cosys.altea.fm.model.DeadloadType"
+			select="fmSqlDeadloadType" column="{deadloadTypeId=DeadloadId}" />
+		<!-- Deadload Nbr -->	
+		<association property="deadloadNbr"
+			javaType="com.ngen.cosys.altea.fm.model.DeadloadNbr"
+			select="fmSqlDeadloadNbr" column="{tenant=Tenant}" />
+		<!-- Deadload Reference -->	
+		<!-- Not Applicable for Dead Load 
+			 ULD contains more than one AWB, Association reference won't work -->
+		<!-- 
+		<association property="dldReference"
+			javaType="com.ngen.cosys.altea.fm.model.DLDReference"
+			select="fmSqlDeadReference" 
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,dldReferenceId=DeadloadId}" />
+		-->
+		<!-- Deadload Origin Destination -->
+		<association property="deadloadOriginDest"
+			javaType="com.ngen.cosys.altea.fm.model.OriginDestination"
+			select="fmSqlDeadloadOriginDestination" 
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,originDestinationId=DeadloadId}" />
+		<!-- Deadload Indicator -->
+		<association property="deadloadIndicator"
+			javaType="com.ngen.cosys.altea.fm.model.DeadloadIndicator"
+			select="fmSqlDeadloadIndicator"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId}" />
+		<!-- Deadload Description -->
+		<association property="deadloadDescription"
+			javaType="com.ngen.cosys.altea.fm.model.FreeTextQualifier"
+			select="fmSqlDeadloadDescription" 
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,freeTextQualifierId=DeadloadId}" />
+		<!--  -->
+		<!-- Deadload Pieces and Weight -->
+		<collection property="deadloadWeightAndPieces" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DeadloadWeightAndPieces" 
+			select="fmSqlDeadloadWeightAndPieces"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,deadloadWeightPiecesId=DeadloadId}" />
+		<!--  -->
+		<!-- DGSL -->	
+		<collection property="dgslForDeadload" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DGSL" 
+			select="fmSqlDGSLForDeadload"
+			column="{eventSource=EventSource,tenant=Tenant,flightId=Flight_ID,
+					flightSegmentId=FlightSegmentId,dgslId=DeadloadId}" />
+		<!-- All Packed In One -->
+		<collection property="allPackedInOneForDeadload" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.AllPackedInOne" 
+			select="fmSqlAllPackedInOneForDeadload"
+			column="{eventSource=EventSource,tenant=Tenant,flightId=Flight_ID,
+					flightSegmentId=FlightSegmentId,allPackedInOneId=DeadloadId}" />
+		<!-- Overpack For Deadload -->
+		<collection property="overpackForDeadload" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.OverpackForDeadload" 
+			select="fmSqlOverpackForDeadload"
+			column="{eventSource=EventSource,tenant=Tenant,flightId=Flight_ID,
+					flightSegmentId=FlightSegmentId,overpackId=DeadloadId}" />
+	</resultMap>
+	<select id="fmSqlDeadloadType" resultMap="deadloadTypeMap">
+		<![CDATA[
+			SELECT 	'C' AS NatureOfCargo
+		]]>
+	</select>
+	<resultMap id="deadloadTypeMap" type="com.ngen.cosys.altea.fm.model.DeadloadType" 
+		autoMapping="false">
+		<result column="NatureOfCargo" property="cargoDetail.natureOfCargo" />
+	</resultMap>
+	<select id="fmSqlDeadloadNbr" resultMap="deadloadNbrMap">
+		<![CDATA[
+			SELECT	'AID' AS ReferenceType, CONCAT(YEAR(GETDATE()), 
+					CONCAT(REPLICATE('0', 2 - LEN(MONTH(GETDATE()))), MONTH(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DAY(GETDATE()))), DAY(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(HOUR, GETDATE()))), DATEPART(HOUR, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(MINUTE, GETDATE()))), DATEPART(MINUTE, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(SECOND, GETDATE()))), DATEPART(SECOND, GETDATE()))) 
+						AS ReferenceValue
+		]]>
+	</select>
+	<resultMap id="deadloadNbrMap" type="com.ngen.cosys.altea.fm.model.DeadloadNbr" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	<select id="fmSqlDeadReference" resultMap="deadloadReferenceMap">
+		<![CDATA[
+			SELECT	'AWB' AS ReferenceType, 
+					CASE WHEN ULDShipments.ShipmentNumber IS NOT NULL 
+						THEN CONCAT(
+							SUBSTRING(ULDShipments.ShipmentNumber,1,3), '-', 
+							SUBSTRING(ULDShipments.ShipmentNumber,4,LEN(ULDShipments.ShipmentNumber)-3))
+						ELSE ULDShipments.ShipmentNumber 
+					END AS ReferenceValue
+			FROM (	
+			SELECT	Shipment_Master.ShipmentNumber, 
+					Exp_DLS.DLSId, Exp_Manifest.FlightSegmentId, Exp_ManifestULDInfo.ULDNumber
+			FROM	Shipment_Master
+				INNER JOIN
+					Exp_ManifestShipmentInfo
+				ON	Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+				INNER JOIN
+					Exp_ManifestULDInfo
+				ON	Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId
+				INNER JOIN
+					Exp_Manifest
+				ON	Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.FlightId = Exp_Manifest.FlightId
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			) ULDShipments
+				RIGHT JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.DLSId = ULDShipments.DLSId
+				AND	Exp_DLSULDTrolley.FlightSegmentId = ULDShipments.FlightSegmentId
+				AND Exp_DLSULDTrolley.ULDTrolleyNumber = ULDShipments.ULDNumber
+			WHERE	Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{dldReferenceId}		
+		]]>
+	</select>
+	<resultMap id="deadloadReferenceMap" type="com.ngen.cosys.altea.fm.model.DLDReference" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	<select id="fmSqlDeadloadOriginDestination" resultMap="deadloadOriginDestinationMap">
+		<![CDATA[
+			SELECT	TOP(1) FlightSegments.FlightBoardPoint AS Origin, 
+					FlightSegments.FlightOffPoint AS Destination
+			FROM
+				(
+					SELECT	Flight_ID, FlightSegmentId, FlightBoardPoint, FlightOffPoint
+					FROM	Flt_OperativeFlight_Segments
+					WHERE	Flight_ID = #{flightId}
+					AND		FlightSegmentId = #{flightSegmentId}
+				) FlightSegments
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.FlightId = FlightSegments.Flight_ID
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.FlightSegmentId = FlightSegments.FlightSegmentId
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{originDestinationId}
+		]]>
+	</select>
+	<resultMap id="deadloadOriginDestinationMap" type="com.ngen.cosys.altea.fm.model.OriginDestination" 
+		autoMapping="false">
+		<result column="Origin" property="origin" />
+		<result column="Destination" property="destination" />
+	</resultMap>
+	<select id="fmSqlDeadloadWeightAndPieces" resultMap="deadloadWeightAndPiecesMap">
+		<![CDATA[
+			SELECT	'MAN' AS Qualifier, 
+					ISNULL(ActualWeight, 0) - ISNULL(TareWeight, 0) AS ManifestWeight
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{deadloadWeightPiecesId}
+		]]>
+	</select>
+	<resultMap id="deadloadWeightAndPiecesMap" type="com.ngen.cosys.altea.fm.model.DeadloadWeightAndPieces" 
+		autoMapping="false">
+		<result column="Qualifier" property="deadloadWeight.qualifier" />
+		<result column="ManifestWeight" property="deadloadWeight.value" />
+	</resultMap>
+	<select id="fmSqlDeadloadIndicator" resultMap="deadloadIndicatorMap">
+		<![CDATA[
+			SELECT 	#{flightId} AS Flight_ID,
+					#{flightSegmentId} AS FlightSegmentId,
+					'PRC' AS Indicator, '1' AS Action
+		]]>
+	</select>
+	<resultMap id="deadloadIndicatorMap" type="com.ngen.cosys.altea.fm.model.DeadloadIndicator" 
+		autoMapping="false">
+		<id column="Flight_ID" property="flightId" />
+		<id column="FlightSegmentId" property="flightSegmentId" />
+		<result column="Indicator" property="statusDetails.indicator" />
+		<result column="Action" property="statusDetails.action" />
+		<!-- Other Status Details -->
+		<collection property="otherStatusDetails" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.StatusDetail" 
+			select="fmSqlOtherStatusDetails"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId}" />
+	</resultMap>
+	<select id="fmSqlOtherStatusDetails" resultMap="otherStatusDetailsMap">
+		<![CDATA[
+			SELECT	'SDF' AS Indicator, '1' AS Action
+		]]>
+	</select>
+	<resultMap id="otherStatusDetailsMap" type="com.ngen.cosys.altea.fm.model.StatusDetail" 
+		autoMapping="false">
+		<result column="Indicator" property="indicator" />
+		<result column="Action" property="action" />
+	</resultMap>
+	<select id="fmSqlDeadloadDescription" resultMap="deadloadDescriptionMap">
+		<![CDATA[
+			SELECT	'SUP' AS SubjectQualifier, Exp_DLSULDTrolley.Remarks
+			FROM	Exp_DLSULDTrolley
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.DLSId = Exp_DLSULDTrolley.DLSId
+			WHERE	Exp_DLS.FlightId = #{flightId}
+			AND		Exp_DLSULDTrolley.FlightSegmentId = #{flightSegmentId}
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{freeTextQualifierId}
+		]]>
+	</select>
+	<resultMap id="deadloadDescriptionMap" type="com.ngen.cosys.altea.fm.model.FreeTextQualifier" 
+		autoMapping="false">
+		<result column="SubjectQualifier" property="textSubjectQualifier.textSubjectQualifier" />
+		<result column="Remarks" property="freeText" />
+	</resultMap>
+	
+	<select id="fmSqlDGSLForDeadload" resultMap="dgslForDeadloadMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+					'DNW' AS SLDGWeightCode,
+					PackageWeight AS PackageWeight, 
+					'SLD' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				LEFT JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{dgslId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NULL
+		]]>
+	</select>
+	<resultMap id="dgslForDeadloadMap" type="com.ngen.cosys.altea.fm.model.DGSL" 
+		autoMapping="false">
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="NotocId" property="notocId" />
+		<!-- DGSL -->
+		<result column="EmergencyResponseCode" property="dgslCode.emergencyRespCode" />
+		<result column="ShipmentNumber" property="dgslCode.airwayBillNbr" />
+		<result column="UNIDnumber" property="dgslCode.unOrIdNbr" />
+		<result column="ProperShippingName" property="dgslCode.description" />
+		<result column="PackingGroupCode" property="dgslCode.sldgPackingGroup" />
+		<result column="DGClassCode" property="dgslCode.hazardID.classDivision" />
+		<result column="IMPCode" property="dgslCode.hazardReference.sldgIATACode" />
+		<result column="RiskCode" property="dgslCode.hazardReference.radioactiveCategory" />
+		<result column="RiskIMPCode" property="dgslCode.hazardReference.subsidiaryRiskGroup" />
+		<result column="TechnicalName" property="dgslCode.technicalDescription" />
+		<!-- -->
+		<!-- SLDG Weight and Height data -->
+		<result column="SLDGWeightCode" property="sldgWeightAndHeightData.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="sldgWeightAndHeightData.quantityDetail.value" />
+		<!-- DGSL Pieces -->
+		<result column="PiecesCode" property="dgslPieces.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="dgslPieces.quantityDetail.value" />
+		<!-- DGSL Indicator -->
+		<result column="DGSLIndicator" property="dgslIndicators.statusDetails.indicator" />
+		<!-- -->
+		<!-- DGSL Nbr -->	
+		<association property="dgslNbr"
+			javaType="com.ngen.cosys.altea.fm.model.DGSLNbr"
+			select="fmSqlDgslNbr" column="{referenceId=NotocId}" />
+		<!-- SupplementaryInfoAndQuantityTI -->
+		<collection property="supplementaryInfoAndQuantityTI" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.FreeTextQualifier" 
+			select="fmSqlSupplementaryInfoAndQuantityTI"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,freeTextQualifierId=NotocId}" />
+	</resultMap>
+	
+	<select id="fmSqlDgslNbr" resultMap="dgslNbrMap">
+		<![CDATA[
+			SELECT	'AID' AS ReferenceType, CONCAT(YEAR(GETDATE()), 
+					CONCAT(REPLICATE('0', 2 - LEN(MONTH(GETDATE()))), MONTH(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DAY(GETDATE()))), DAY(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(HOUR, GETDATE()))), DATEPART(HOUR, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(MINUTE, GETDATE()))), DATEPART(MINUTE, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(SECOND, GETDATE()))), DATEPART(SECOND, GETDATE()))) 
+						AS ReferenceValue
+		]]>
+	</select>
+	<resultMap id="dgslNbrMap" type="com.ngen.cosys.altea.fm.model.DGSLNbr" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	
+	<select id="fmSqlSupplementaryInfoAndQuantityTI" resultMap="supplementaryInfoAndQuantityTIMap">
+		<![CDATA[
+			SELECT	TOP(1) 'DNT' AS SubjectQualifier,
+					CASE WHEN PackageQuantity IS NULL OR PackageQuantity = 0
+						THEN CAST(TransportIndex AS VARCHAR)
+						ELSE CAST(PackageQuantity AS VARCHAR)
+					END	AS FreeTextComment
+			FROM	Exp_NOTOC_DGDetails
+			WHERE	Exp_NOTOC_DGDetails.NotocId = #{freeTextQualifierId}
+			UNION ALL
+			SELECT	TOP(1) 'SUP' AS SubjectQualifier,
+					PackingRemarks AS FreeTextComment
+			FROM	Exp_NOTOC_DGDetails
+			WHERE	Exp_NOTOC_DGDetails.NotocId = #{freeTextQualifierId}
+		]]>
+	</select>
+	<resultMap id="supplementaryInfoAndQuantityTIMap" type="com.ngen.cosys.altea.fm.model.FreeTextQualifier" 
+		autoMapping="false">
+		<result column="SubjectQualifier" property="textSubjectQualifier.textSubjectQualifier" />
+		<result column="FreeTextComment" property="freeText" />
+	</resultMap>
+
+	<!-- All Packed In One For Deadload -->
+	<select id="fmSqlAllPackedInOneForDeadload" resultMap="allPackedInOneForDeadloadMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, #{eventSource} AS EventSource, 
+					#{allPackedInOneId} AS AllPackedInOneId, 
+					NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId,
+					'DNW' AS APIOWeightCode,
+					PackageWeight AS PackageWeight, 
+					'APO' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{allPackedInOneId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NULL
+		]]>
+	</select>
+	<resultMap id="allPackedInOneForDeadloadMap" type="com.ngen.cosys.altea.fm.model.AllPackedInOne" 
+		autoMapping="false">
+		<result column="EventSource" property="eventSource" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="AllPackedInOneId" property="allPackedInOneId" />
+		<result column="NotocId" property="notocId" />
+		<!-- AllPackedInOneIdentifier -->
+		<result column="ShipmentNumber" property="allPackedInOneIdentifier.airwayBillNbr" />
+		<result column="ProperShippingName" property="allPackedInOneIdentifier.description" />
+		<!-- Weight and Height of APIO -->
+		<result column="APIOWeightCode" property="weightAndHeightOfAPIO.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="weightAndHeightOfAPIO.quantityDetail.value" />
+		<!-- Pieces of APIO -->
+		<result column="PiecesCode" property="piecesOfAPIO.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="piecesOfAPIO.quantityDetail.value" />
+		<!--  -->
+		<!-- AllPackedInOneNbr -->
+		<association property="allPackedInOneNbr"
+			javaType="com.ngen.cosys.altea.fm.model.AllPackedInOneNbr"
+			select="fmSqlAllPackedInOneNbr" column="{allPackedInOneId=NotocId}" />
+		<!--  -->
+		<!-- TODO: DGSL For APIO -->	
+		<collection property="dgslForAPIO" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DGSL" 
+			select="fmSqlDGSLForAPIO"
+			column="{eventSource=EventSource,flightId=Flight_ID,flightSegmentId=FlightSegmentId,
+					dgslId=AllPackedInOneId}" />
+	</resultMap>
+	
+	<select id="fmSqlAllPackedInOneNbr" resultMap="allPackedInOneNbrMap">
+		<![CDATA[
+			SELECT	'AID' AS ReferenceType, CONCAT(YEAR(GETDATE()), 
+					CONCAT(REPLICATE('0', 2 - LEN(MONTH(GETDATE()))), MONTH(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DAY(GETDATE()))), DAY(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(HOUR, GETDATE()))), DATEPART(HOUR, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(MINUTE, GETDATE()))), DATEPART(MINUTE, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(SECOND, GETDATE()))), DATEPART(SECOND, GETDATE()))) 
+						AS ReferenceValue
+		]]>
+	</select>
+	<resultMap id="allPackedInOneNbrMap" type="com.ngen.cosys.altea.fm.model.AllPackedInOneNbr" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	
+	<!-- Overpack For Deadload -->
+	<select id="fmSqlOverpackForDeadload" resultMap="overpackForDeadloadMap">
+		<![CDATA[
+			WITH 	REFDETAIL
+			AS 	(
+					SELECT 	#{eventSource} AS EventSource, #{tenant} AS Tenant, 
+							#{flightId} AS Flight_ID, #{flightSegmentId} AS FlightSegmentId, 
+							#{overpackId} AS OverpackId
+				),
+			OVPDETAIL
+			AS	(
+				SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, 
+						NOTOCDETAIL.FlightId AS Flight_ID, NOTOCDETAIL.FlightSegmentId, 
+						#{eventSource} AS EventSource, #{tenant} AS Tenant, 
+						#{overpackId} AS OverpackId, 
+						NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+						'DNW' AS OVPWeightCode,
+						PackageWeight AS PackageWeight, 
+						'OVP' AS PiecesCode,
+						PackagePieces AS PackagePieces, 
+						Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+						Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+						Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+						Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+						REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+						Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+						Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+						Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+						Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+						REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+						'DDG' AS DGSLIndicator
+				FROM
+				(
+					SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+							Exp_DG_Flight_NOTOC.NotocId AS NotocId
+					FROM	Exp_DG_Flight_NOTOC
+						INNER JOIN
+							Flt_OperativeFlight
+						ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+						INNER JOIN
+							Flt_OperativeFlight_Segments
+						ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+						AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+						AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+					WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+					AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+				) NOTOCDETAIL
+					INNER JOIN
+						Exp_AssignedULDTrolleyToFlight
+					ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+					AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+					INNER JOIN
+						Exp_DLSULDTrolley
+					ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+					INNER JOIN
+						Uld_UldMaster
+					ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+					INNER JOIN
+						Exp_NOTOC_DGDetails
+					ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+					AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+					LEFT JOIN
+						Exp_DG_Class_Subrisk
+					ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+					AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+					LEFT JOIN
+						Exp_DangerousGoodsRegulationHeader
+					ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+					AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+					AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+					LEFT JOIN
+						Shipment_Master
+					ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+				WHERE	#{eventSource} = 'NOTOC'
+				AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{overpackId}
+				AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+				AND		Exp_NOTOC_DGDetails.APIONumber IS NULL
+				AND		Exp_NOTOC_DGDetails.OverpackNumber IS NOT NULL
+			)
+			-- SELECTION OF COLUMNS --
+			SELECT	REFDETAIL.EventSource, REFDETAIL.Tenant,
+					REFDETAIL.Flight_ID, REFDETAIL.FlightSegmentId, 
+					REFDETAIL.OverpackId, 
+					OVPDETAIL.ShipmentId, 
+					OVPDETAIL.NotocId, OVPDETAIL.UldId, 
+					OVPDETAIL.OVPWeightCode,
+					OVPDETAIL.PackageWeight, 
+					OVPDETAIL.PiecesCode,
+					OVPDETAIL.PackagePieces, 
+					OVPDETAIL.EmergencyResponseCode, 
+					OVPDETAIL.ShipmentNumber, 
+					OVPDETAIL.UNIDnumber,
+					OVPDETAIL.ProperShippingName, 
+					OVPDETAIL.PackingGroupCode, 
+					OVPDETAIL.DGClassCode, 
+					OVPDETAIL.IMPCode, 
+					OVPDETAIL.RiskCode, 
+					OVPDETAIL.RiskIMPCode,
+					OVPDETAIL.TechnicalName,
+					OVPDETAIL.DGSLIndicator
+			FROM	REFDETAIL
+				LEFT JOIN
+					OVPDETAIL
+				ON	OVPDETAIL.EventSource = REFDETAIL.EventSource
+				AND	OVPDETAIL.Tenant = REFDETAIL.Tenant
+				AND	OVPDETAIL.Flight_ID = REFDETAIL.Flight_ID
+				AND	OVPDETAIL.FlightSegmentId = REFDETAIL.FlightSegmentId
+				AND	OVPDETAIL.OverpackId = REFDETAIL.OverpackId
+		]]>
+	</select>
+	<resultMap id="overpackForDeadloadMap" type="com.ngen.cosys.altea.fm.model.OverpackForDeadload" 
+		autoMapping="false">
+		<result column="EventSource" property="eventSource" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="OverpackId" property="overpackId" />
+		<result column="NotocId" property="notocId" />
+		<!-- OverpackIdentifier -->
+		<result column="ShipmentNumber" property="overpackIdentifier.airwayBillNbr" />
+		<result column="ProperShippingName" property="overpackIdentifier.description" />
+		<!-- Weight and Height of OVP -->
+		<result column="OVPWeightCode" property="weightAndHeightOfOVP.qualifier" />
+		<result column="PackageWeight" property="weightAndHeightOfOVP.value" />
+		<!-- Pieces of OVP -->
+		<result column="PiecesCode" property="piecesOfOVP.qualifier" />
+		<result column="PackagePieces" property="piecesOfOVP.value" />
+		<!-- -->
+		<!-- AllPackedInOneNbr -->
+		<association property="overpackNbr"
+			javaType="com.ngen.cosys.altea.fm.model.OverpackNbr"
+			select="fmSqlOverpackNbr" column="{overpackId=NotocId}" />
+		<!-- -->
+		<!-- DGSL For OVP -->	
+		<collection property="dgslForOVP" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DGSL" 
+			select="fmSqlDGSLForOVP"
+			column="{eventSource=EventSource,flightId=Flight_ID,flightSegmentId=FlightSegmentId,dgslId=OverpackId}" />
+		<!-- AllPackedInOne For OVP -->	
+		<collection property="allPackedInOneForOVP" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.AllPackedInOne" 
+			select="fmSqlAllPackedInOneForOVP"
+			column="{eventSource=EventSource,flightId=Flight_ID,flightSegmentId=FlightSegmentId,
+					allPackedInOneId=OverpackId}" />
+	</resultMap>
+	
+	<select id="fmSqlOverpackNbr" resultMap="overpackNbrMap">
+		<![CDATA[
+			SELECT	'AID' AS ReferenceType, CONCAT(YEAR(GETDATE()), 
+					CONCAT(REPLICATE('0', 2 - LEN(MONTH(GETDATE()))), MONTH(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DAY(GETDATE()))), DAY(GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(HOUR, GETDATE()))), DATEPART(HOUR, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(MINUTE, GETDATE()))), DATEPART(MINUTE, GETDATE())),
+					CONCAT(REPLICATE('0', 2 - LEN(DATEPART(SECOND, GETDATE()))), DATEPART(SECOND, GETDATE()))) 
+						AS ReferenceValue
+		]]>
+	</select>
+	<resultMap id="overpackNbrMap" type="com.ngen.cosys.altea.fm.model.OverpackNbr" 
+		autoMapping="false">
+		<result column="ReferenceType" property="referenceDetail.type" />
+		<result column="ReferenceValue" property="referenceDetail.value" />
+	</resultMap>
+	
+	<!-- DGSL for OVP -->
+	<select id="fmSqlDGSLForOVP" resultMap="dgslForOVPMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+					'DNW' AS SLDGWeightCode,
+					PackageWeight AS PackageWeight, 
+					'SLD' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{dgslId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NOT NULL
+		]]>
+	</select>
+	<resultMap id="dgslForOVPMap" type="com.ngen.cosys.altea.fm.model.DGSL" 
+		autoMapping="false">
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="NotocId" property="notocId" />
+		<!-- DGSL -->
+		<result column="EmergencyResponseCode" property="dgslCode.emergencyRespCode" />
+		<result column="ShipmentNumber" property="dgslCode.airwayBillNbr" />
+		<result column="UNIDnumber" property="dgslCode.unOrIdNbr" />
+		<result column="ProperShippingName" property="dgslCode.description" />
+		<result column="PackingGroupCode" property="dgslCode.sldgPackingGroup" />
+		<result column="DGClassCode" property="dgslCode.hazardID.classDivision" />
+		<result column="IMPCode" property="dgslCode.hazardReference.sldgIATACode" />
+		<result column="RiskCode" property="dgslCode.hazardReference.radioactiveCategory" />
+		<result column="RiskIMPCode" property="dgslCode.hazardReference.subsidiaryRiskGroup" />
+		<result column="TechnicalName" property="dgslCode.technicalDescription" />
+		<!-- -->
+		<!-- SLDG Weight and Height data -->
+		<result column="SLDGWeightCode" property="sldgWeightAndHeightData.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="sldgWeightAndHeightData.quantityDetail.value" />
+		<!-- DGSL Pieces -->
+		<result column="PiecesCode" property="dgslPieces.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="dgslPieces.quantityDetail.value" />
+		<!-- DGSL Indicator -->
+		<result column="DGSLIndicator" property="dgslIndicators.statusDetails.indicator" />
+		<!-- -->
+		<!-- DGSL Nbr -->	
+		<association property="dgslNbr"
+			javaType="com.ngen.cosys.altea.fm.model.DGSLNbr"
+			select="fmSqlDgslNbr" column="{referenceId=NotocId}" />
+		<!-- SupplementaryInfoAndQuantityTI -->
+		<collection property="supplementaryInfoAndQuantityTI" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.FreeTextQualifier" 
+			select="fmSqlSupplementaryInfoAndQuantityTI"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,freeTextQualifierId=NotocId}" />
+	</resultMap>
+	
+	<!-- All Packed In One For Overpack -->
+	<select id="fmSqlAllPackedInOneForOVP" resultMap="allPackedInOneForOverpackMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, #{eventSource} AS EventSource, 
+					#{allPackedInOneId} AllPackedInOneId,
+					NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+					'DNW' AS APIOWeightCode,
+					PackageWeight AS PackageWeight, 
+					'APO' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{allPackedInOneId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NOT NULL
+		]]>
+	</select>
+	<resultMap id="allPackedInOneForOverpackMap" type="com.ngen.cosys.altea.fm.model.AllPackedInOne" 
+		autoMapping="false">
+		<result column="EventSource" property="eventSource" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="AllPackedInOneId" property="allPackedInOneId" />
+		<result column="NotocId" property="notocId" />
+		<!-- AllPackedInOneIdentifier -->
+		<result column="ShipmentNumber" property="allPackedInOneIdentifier.airwayBillNbr" />
+		<result column="ProperShippingName" property="allPackedInOneIdentifier.description" />
+		<!-- Weight and Height of APIO INSIDE OVERPACK -->
+		<result column="APIOWeightCode" property="weightAndHeightOfAPIO.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="weightAndHeightOfAPIO.quantityDetail.value" />
+		<!-- Pieces of APIO INSIDE OVERPACK -->
+		<result column="PiecesCode" property="piecesOfAPIO.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="piecesOfAPIO.quantityDetail.value" />
+		<!--  -->
+		<!-- AllPackedInOneNbr -->
+		<association property="allPackedInOneNbr"
+			javaType="com.ngen.cosys.altea.fm.model.AllPackedInOneNbr"
+			select="fmSqlAllPackedInOneNbr" column="{allPackedInOneId=NotocId}" />
+		<!--  -->
+		<!-- DGSL For APIO INSIDE OVERPACK -->	
+		<collection property="dgslForAPIO" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.DGSL" 
+			select="fmSqlDGSLForAPIOInsideOVP"
+			column="{eventSource=EventSource,flightId=Flight_ID,flightSegmentId=FlightSegmentId,
+					dgslId=AllPackedInOneId}" />
+	</resultMap>
+	
+	<select id="fmSqlDGSLForAPIO" resultMap="dgslForAPIOMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+					'DNW' AS SLDGWeightCode,
+					PackageWeight AS PackageWeight, 
+					'SLD' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{dgslId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NULL
+		]]>
+	</select>
+	<resultMap id="dgslForAPIOMap" type="com.ngen.cosys.altea.fm.model.DGSL" 
+		autoMapping="false">
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="NotocId" property="notocId" />
+		<!-- DGSL -->
+		<result column="EmergencyResponseCode" property="dgslCode.emergencyRespCode" />
+		<result column="ShipmentNumber" property="dgslCode.airwayBillNbr" />
+		<result column="UNIDnumber" property="dgslCode.unOrIdNbr" />
+		<result column="ProperShippingName" property="dgslCode.description" />
+		<result column="PackingGroupCode" property="dgslCode.sldgPackingGroup" />
+		<result column="DGClassCode" property="dgslCode.hazardID.classDivision" />
+		<result column="IMPCode" property="dgslCode.hazardReference.sldgIATACode" />
+		<result column="RiskCode" property="dgslCode.hazardReference.radioactiveCategory" />
+		<result column="RiskIMPCode" property="dgslCode.hazardReference.subsidiaryRiskGroup" />
+		<result column="TechnicalName" property="dgslCode.technicalDescription" />
+		<!-- -->
+		<!-- SLDG Weight and Height data -->
+		<result column="SLDGWeightCode" property="sldgWeightAndHeightData.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="sldgWeightAndHeightData.quantityDetail.value" />
+		<!-- DGSL Pieces -->
+		<result column="PiecesCode" property="dgslPieces.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="dgslPieces.quantityDetail.value" />
+		<!-- DGSL Indicator -->
+		<result column="DGSLIndicator" property="dgslIndicators.statusDetails.indicator" />
+		<!-- -->
+		<!-- DGSL Nbr -->	
+		<association property="dgslNbr"
+			javaType="com.ngen.cosys.altea.fm.model.DGSLNbr"
+			select="fmSqlDgslNbr" column="{referenceId=NotocId}" />
+		<!-- SupplementaryInfoAndQuantityTI -->
+		<collection property="supplementaryInfoAndQuantityTI" javaType="List"
+			ofType="com.ngen.cosys.altea.fm.model.FreeTextQualifier" 
+			select="fmSqlSupplementaryInfoAndQuantityTI"
+			column="{flightId=Flight_ID,flightSegmentId=FlightSegmentId,freeTextQualifierId=NotocId}" />
+	</resultMap>
+	
+	<select id="fmSqlDGSLForAPIOInsideOVP" resultMap="dgslForAPIOInsideOVPMap">
+		<![CDATA[
+			SELECT	DISTINCT Exp_NOTOC_DGDetails.ShipmentId, NOTOCDETAIL.FlightId AS Flight_ID, 
+					NOTOCDETAIL.FlightSegmentId, NOTOCDETAIL.NotocId, Exp_NOTOC_DGDetails.UldId, 
+					'DNW' AS SLDGWeightCode,
+					PackageWeight AS PackageWeight, 
+					'SLD' AS PiecesCode,
+					PackagePieces AS PackagePieces, 
+					Exp_DangerousGoodsRegulationHeader.EmergencyRespondGroup AS EmergencyResponseCode, 
+					Shipment_Master.ShipmentNumber AS ShipmentNumber, 
+					Exp_NOTOC_DGDetails.UNIDnumber AS UNIDnumber,
+					Exp_DangerousGoodsRegulationHeader.ProperShippingName AS ProperShippingName, 
+					REPLACE(Exp_NOTOC_DGDetails.PackingGroupCode, '*', '') AS PackingGroupCode, 
+					Exp_DG_Class_Subrisk.DGClassCode AS DGClassCode, 
+					Exp_DangerousGoodsRegulationHeader.IMPCode AS IMPCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskCode1 AS RiskCode, 
+					Exp_DangerousGoodsRegulationHeader.DGSubRiskIMPCode1 AS RiskIMPCode,
+					REPLACE(Exp_NOTOC_DGDetails.TechnicalName, '.', '') AS TechnicalName,
+					'DDG' AS DGSLIndicator
+			FROM
+			(
+				SELECT	#{flightId} AS FlightId, #{flightSegmentId} AS FlightSegmentId, 
+						Exp_DG_Flight_NOTOC.NotocId AS NotocId
+				FROM	Exp_DG_Flight_NOTOC
+					INNER JOIN
+						Flt_OperativeFlight
+					ON	Flt_OperativeFlight.Flight_ID = Exp_DG_Flight_NOTOC.FlightId
+					INNER JOIN
+						Flt_OperativeFlight_Segments
+					ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+					AND	Flt_OperativeFlight_Segments.FlightBoardPoint = Exp_DG_Flight_NOTOC.FlightBoardPoint
+					AND	Flt_OperativeFlight_Segments.FlightOffPoint = Exp_DG_Flight_NOTOC.FlightOffPoint
+				WHERE	Flt_OperativeFlight.Flight_ID = #{flightId}
+				AND	Flt_OperativeFlight_Segments.FlightSegmentId = #{flightSegmentId}
+			) NOTOCDETAIL
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = NOTOCDETAIL.FlightId
+				AND	Exp_AssignedULDTrolleyToFlight.FlightSegmentId = NOTOCDETAIL.FlightSegmentId
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.ULDTrolleyNumber = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Uld_UldMaster
+				ON	Uld_UldMaster.UldKey = Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				INNER JOIN
+					Exp_NOTOC_DGDetails
+				ON	Exp_NOTOC_DGDetails.NotocId = NOTOCDETAIL.NotocId
+				AND	Exp_NOTOC_DGDetails.UldId = Uld_UldMaster.Uld_ID
+				LEFT JOIN
+					Exp_DG_Class_Subrisk
+				ON	Exp_DG_Class_Subrisk.DGClassCode = Exp_NOTOC_DGDetails.DGClassCode
+				AND	Exp_DG_Class_Subrisk.ClassSubriskFlag = 'C'
+				LEFT JOIN
+					Exp_DangerousGoodsRegulationHeader
+				ON	Exp_DangerousGoodsRegulationHeader.DGRegulationId = Exp_NOTOC_DGDetails.DGRegulationId
+				AND	Exp_DangerousGoodsRegulationHeader.UNIDnumber = Exp_NOTOC_DGDetails.UNIDnumber
+				AND	Exp_DangerousGoodsRegulationHeader.IMPCode = Exp_DG_Class_Subrisk.ImpCode
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_NOTOC_DGDetails.ShipmentId
+			WHERE	#{eventSource} = 'NOTOC'
+			AND		Exp_DLSULDTrolley.DLSUldTrolleyId = #{dgslId}
+			AND		Exp_NOTOC_DGDetails.ShipmentId IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.APIONumber IS NOT NULL
+			AND		Exp_NOTOC_DGDetails.OverpackNumber IS NOT NULL
+		]]>
+	</select>
+	<resultMap id="dgslForAPIOInsideOVPMap" type="com.ngen.cosys.altea.fm.model.DGSL" 
+		autoMapping="false">
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightSegmentId" property="flightSegmentId" />
+		<result column="NotocId" property="notocId" />
+		<!-- DGSL -->
+		<result column="EmergencyResponseCode" property="dgslCode.emergencyRespCode" />
+		<result column="ShipmentNumber" property="dgslCode.airwayBillNbr" />
+		<result column="UNIDnumber" property="dgslCode.unOrIdNbr" />
+		<result column="ProperShippingName" property="dgslCode.description" />
+		<result column="PackingGroupCode" property="dgslCode.sldgPackingGroup" />
+		<result column="DGClassCode" property="dgslCode.hazardID.classDivision" />
+		<result column="IMPCode" property="dgslCode.hazardReference.sldgIATACode" />
+		<result column="RiskCode" property="dgslCode.hazardReference.radioactiveCategory" />
+		<result column="RiskIMPCode" property="dgslCode.hazardReference.subsidiaryRiskGroup" />
+		<result column="TechnicalName" property="dgslCode.technicalDescription" />
+		<!-- -->
+		<!-- SLDG Weight and Height data -->
+		<result column="SLDGWeightCode" property="sldgWeightAndHeightData.quantityDetail.qualifier" />
+		<result column="PackageWeight" property="sldgWeightAndHeightData.quantityDetail.value" />
+		<!-- DGSL Pieces -->
+		<result column="PiecesCode" property="dgslPieces.quantityDetail.qualifier" />
+		<result column="PackagePieces" property="dgslPieces.quantityDetail.value" />
+		<!-- DGSL Indicator -->
+		<result column="DGSLIndicator" property="dgslIndicators.statusDetails.indicator" />
+		<!-- -->
+		<!-- DGSL Nbr -->	
+		<association property="dgslNbr"
+			javaType="com.ngen.cosys.altea.fm.model.DGSLNbr"
+			select="fmSqlDgslNbr" column="{referenceId=NotocId}" />
+	</resultMap>
+	
+</mapper>

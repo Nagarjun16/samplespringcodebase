@@ -1,0 +1,2840 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FlightDashboardQueryMapper">
+	
+	<resultMap id="dashboardEventNotificationConfigurationMap" type="com.ngen.cosys.dashboard.model.EventNotification">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="Flow" property="module" />
+		<result column="Type" property="eventName" />
+		<result column="Purpose" property="entity" />
+		<result column="SLACategory" property="slaType" />
+		<result column="FlightTime" property="flightTime" />
+		<result column="Equation" property="equation" />
+		<result column="OccurenceInMinutes" property="minutes" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<!-- Flight Information Details -->
+		<collection property="flightInformations" javaType="List"
+			ofType="com.ngen.cosys.dashboard.model.EventFlightInformation" 
+			select="selectDashboardEventNotificationFlightInformation"
+			column="{eventNotificationId=EventNotificationId}" />
+	</resultMap>
+
+	 <!-- Notification Flight Information -->
+	<resultMap id="dashboardEventNotificationFlightInformationMap" 
+				type="com.ngen.cosys.dashboard.model.EventFlightInformation">
+		<id column="EventNotificationId" property="eventNotificationId" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDate" />
+	</resultMap>
+   
+	<!-- Event Notification Configuration -->
+	<select id="sqlSelectDashboardEventNotificationConfiguration" resultMap="dashboardEventNotificationConfigurationMap" 
+			parameterType="com.ngen.cosys.dashboard.model.EventNotification">
+		<![CDATA[
+			SELECT	Event_Notification.EventNotificationId,
+					Event_Types.Flow, Event_Types.Type, Event_Types.Purpose,
+					Event_Notification.SLACategory, Event_Notification.FlightTime, Event_Notification.Equation, 
+					Event_Notification.OccurenceInMinutes, Event_Notification.FlightType, Event_Notification.AircraftType
+			FROM	Event_Types
+				INNER JOIN
+					Event_Notification
+				ON	Event_Notification.EventTypesId = Event_Types.EventTypesId
+				LEFT JOIN
+					Event_NotificationByFlight
+				ON	Event_NotificationByFlight.EventNotificationId = Event_Notification.EventNotificationId
+			WHERE	Event_Types.Flow = #{module}
+			AND		Event_Types.Active = 1
+		]]>
+		<choose>
+			<when test="module == 'IMPORT'">
+				<![CDATA[
+					AND	Event_Types.Type IN 
+					(	
+						'InboundFFMReceived','InboundFlightRampCheckIn','InboundShipmentDocumentComplete',
+						'InboundFlightBreakDownComplete','InwardsFlightServiceReportEvent',
+						'TranshipmentThroughTransitFinalizedByFlight','InboundFlightComplete',
+						'InboundFlightDiscrepancyList','InboundFlightCloseEvent',
+						'InboundManiShipDGD','InboundManiShipXPS','InboundManiShipRAC','InboundManiShipPIL',
+						'InboundManiShipVAL','InboundManiShipAVI','InboundManiShipHUM','InboundManiShipOTH',
+						'InboundUldUcmMessageEvent'
+					)
+				]]>
+			</when>
+			<when test="module == 'EXPORT'">
+				<![CDATA[
+					AND	Event_Types.Type IN 
+					(	
+						'OutboundFlightBuildupCompletedEvent','OutboundFlightDLS',
+						'OutboundFlightManifestCompletedEvent','NOTOCFinlization',
+						'OutboundUldUcmMessageEvent','OutwardServiceReportCompleted',
+						'OutboundFlightComplete','OutboundFlightPouchCompleted',
+						'OutboundShpAcptDGD','OutboundShpAcptXPS','OutboundShpAcptRAC','OutboundShpAcptPIL',
+						'OutboundShpAcptVAL','OutboundShpAcptAVI','OutboundShpAcptHUM','OutboundShpAcptOTH',
+						'OutboundShpAsgnDGD','OutboundShpAsgnXPS','OutboundShpAsgnRAC','OutboundShpAsgnPIL',
+						'OutboundShpAsgnVAL','OutboundShpAsgnAVI','OutboundShpAsgnHUM','OutboundShpAsgnOTH'
+					)
+					
+				]]>
+			</when>
+		</choose>
+		<![CDATA[
+			ORDER BY Event_Types.Type, Event_Notification.FlightType, 
+				(CASE WHEN Event_Notification.SLACategory = 'RED'
+					THEN 1 
+					ELSE 
+						CASE WHEN Event_Notification.SLACategory = 'AMBER'
+							THEN 2
+							ELSE 3
+						END
+					END
+				) ASC
+		]]>
+	</select>
+	
+	<select id="selectDashboardEventNotificationFlightInformation" resultMap="dashboardEventNotificationFlightInformationMap">
+		<![CDATA[
+			SELECT	#{eventNotificationId} AS EventNotificationId,
+					Event_NotificationByFlight.CarrierCode,
+					Event_NotificationByFlight.FlightKey,
+					Event_NotificationByFlight.FlightDate
+			FROM	Event_NotificationByFlight
+				INNER JOIN
+					Event_Notification
+				ON	Event_Notification.EventNotificationId = Event_NotificationByFlight.EventNotificationId
+			WHERE	Event_Notification.EventNotificationId = #{eventNotificationId}
+		]]>
+	</select>
+	
+	<!-- Dashboard Export Flights Data ResultMap -->
+	<resultMap id="dashboardExportFlightsDataMap" type="com.ngen.cosys.dashboard.model.ExportFlightData">
+		<result column="TenantId" property="tenantId" />
+		<result column="CarrierGroupCode" property="carrierGroupCode" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="FlightBoardPoint" property="flightBoardPoint" />
+		<result column="FlightOffPoint" property="flightOffPoint" />
+		<result column="FlightSector" property="flightSector" />
+		<result column="DateSTD" property="dateSTD" />
+		<result column="DateETD" property="dateETD" />
+		<result column="DateATD" property="dateATD" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="AircraftRegCode" property="aircraftRegCode" />
+		<result column="PreviousAircraftRegCode" property="previousAircraftRegCode" />
+		<result column="AircraftRegCodeUpdatedTime" property="aircraftRegCodeUpdatedTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="ParkingBay" property="parkingBay" />
+		<result column="PreviousParkingBay" property="previousParkingBay" />
+		<result column="ParkingBayUpdatedTime" property="parkingBayUpdatedTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="TerminalCode" property="terminalCode" />
+		<result column="FlightTime" property="flightTime" />
+		<result column="FlightDateTime" property="flightDateTime" />
+		<result column="AutoFlightCompleteFlag" property="autoCompleteFlag" />
+		<result column="FlightStatus" property="flightStatus" />
+		<result column="BuildupCompleted" property="buildupCompleted" />
+		<result column="BuildupCompletedTime" property="buildupCompletedTime" />
+		<result column="DLSCompleted" property="dlsCompleted" />
+		<result column="DLSCompletedTime" property="dlsCompletedTime" />
+		<result column="ManifestCompleted" property="manifestCompleted" />
+		<result column="ManifestCompletedTime" property="manifestCompletedTime" />
+		<result column="FlightCompleted" property="flightCompleted" />
+		<result column="FlightCompletedTime" property="flightCompletedTime" />
+		<result column="OutwardServiceReportFinalized" property="outwardServiceReportFinalized" />
+		<result column="OutwardServiceReportFinalizedTime" property="outwardServiceReportFinalizedTime" />
+		<result column="NTMVersion" property="ntmVersion" />
+		<result column="NotocFinalizedTime" property="notocFinalizedTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="UFLMessageTime" property="uflMessageTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="PouchCompleted" property="pouchCompleted" />
+		<result column="PouchCheckout" property="pouchCheckout" />
+		<result column="PouchDropoff" property="pouchDropoff" />
+		<result column="UCMSent" property="ucmSent" />
+		<result column="BookedShipments" property="bookedShipments" />
+		<result column="AssignedShipments" property="assignedShipments" />
+		<result column="ReadyToLoad" property="readyToLoad" />
+		<result column="ActualULD" property="actualULD" />
+		<result column="ManifestedULD" property="manifestULD" />
+		<result column="TranshipmentBooked" property="transhipmentBooked" />
+		<result column="TranshipmentLoaded" property="transhipmentLoaded" />
+		<result column="DLSULDBTAssigned" property="dlsULDBTAssigned" />
+		<result column="DLSULDBTGrossWeightUpdated" property="dlsULDBTGrossWeightUpdated" />
+		<result column="RampULDBTAssigned" property="rampULDBTAssigned" />
+		<result column="RampULDBTReleased" property="rampULDBTReleased" />
+		<result column="TTHUnits" property="tthUnits" />
+		<result column="ULDAllotment" property="uldAllotment" />
+		<result column="ULDAssigned" property="uldAssigned" />
+		<result column="PalletAllotment" property="palletAllotment" />
+		<result column="PalletAssigned" property="palletAssigned" />
+		<result column="DGBooked" property="dgBooked" />
+		<result column="AcceptedDGReady" property="acceptedDGReady" />
+		<result column="AssignedDGReady" property="assignedDGReady" />
+		<result column="XPSBooked" property="xpsBooked" />
+		<result column="AcceptedXPSReady" property="acceptedXPSReady" />
+		<result column="AssignedXPSReady" property="assignedXPSReady" />
+		<result column="RACBooked" property="racBooked" />
+		<result column="AcceptedRACReady" property="acceptedRACReady" />
+		<result column="AssignedRACReady" property="assignedRACReady" />
+		<result column="PILBooked" property="pilBooked" />
+		<result column="AcceptedPILReady" property="acceptedPILReady" />
+		<result column="AssignedPILReady" property="assignedPILReady" />
+		<result column="VALBooked" property="valBooked" />
+		<result column="AcceptedVALReady" property="acceptedVALReady" />
+		<result column="AssignedVALReady" property="assignedVALReady" />
+		<result column="AVIBooked" property="aviBooked" />
+		<result column="AcceptedAVIReady" property="acceptedAVIReady" />
+		<result column="AssignedAVIReady" property="assignedAVIReady" />
+		<result column="HUMBooked" property="humBooked" />
+		<result column="AcceptedHUMReady" property="acceptedHUMReady" />
+		<result column="AssignedHUMReady" property="assignedHUMReady" />
+		<result column="OTHBooked" property="othBooked" />
+		<result column="AcceptedOTHReady" property="acceptedOTHReady" />
+		<result column="AssignedOTHReady" property="assignedOTHReady" />
+		<result property="hoDlsColor" column="HoDlsColor"/>
+		<result property="hoNotocColor" column="HoNotocColor"/>
+	</resultMap>
+	
+	<!-- Dashboard - Export flights data -->
+	<select id="sqlSelectDashboardExportFlightsData" parameterType="Map" resultMap="dashboardExportFlightsDataMap">
+		<![CDATA[
+		-- FLIGHTS --
+		DECLARE @DashboardExportFlights TABLE (
+			TenantId VARCHAR(3),
+			CarrierGroupCode VARCHAR(3),
+			CarrierCode VARCHAR(3),
+			Flight_ID NUMERIC INDEX DashFlightID CLUSTERED,
+			FlightNumber VARCHAR(5),
+			FlightKey VARCHAR(8),
+			FlightBoardPoint VARCHAR(3),
+			FlightOffPoint VARCHAR(3),
+			DateSTD DATETIME,
+			DateETD DATETIME, 
+			DateATD DATETIME,
+			FlightType VARCHAR(1),
+			AircraftType VARCHAR(3),
+			OutboundAircraftRegNo VARCHAR(10),
+			PreviousOutboundAircraftRegNo VARCHAR(10),
+			OutboundAircraftRegNoUpdatedTime DATETIME,
+			ParkingBayDepAircraft VARCHAR(4),
+			PreviousParkingBayDepAircraft VARCHAR(4),
+			ParkingBayDepAircraftUpdatedTime DATETIME,
+			FlightAutoCompleteFlag BIT,
+			FlightCancelFlag VARCHAR(1),
+			BuildupCompletedAt DATETIME,
+			DLSCompletedAt DATETIME,
+			ManifestCompletedAt DATETIME,
+			FlightCompletedAt DATETIME,
+			OutwardServiceReportFinalizedAt DATETIME,
+			NotocFinalizedVersion NUMERIC,
+			NotocSentOn DATETIME,
+			TotalPouch INT
+		);
+		WITH FlightLegs AS (
+			SELECT 	Flight_ID, FlightBoardPoint, FlightOffPoint, AircraftType, DateSTD, DateETD, DateATD
+			FROM 	Flt_OperativeFlight_Legs
+			WHERE	DateSTD BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+			AND		DateETD IS NULL
+			UNION
+			SELECT 	Flight_ID, FlightBoardPoint, FlightOffPoint, AircraftType, DateSTD, DateETD, DateATD
+			FROM 	Flt_OperativeFlight_Legs
+			WHERE	DateETD BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+		)
+		-- INSERT INTO DASHBOARD EXPORT FLIGHT TABLE --
+		INSERT INTO @DashboardExportFlights
+		SELECT	#{tenantAirport} AS TenantId,
+				Mst_CarrierGroup.CarrierGroupCode,
+				Flt_OperativeFlight.CarrierCode,
+				Flt_OperativeFlight.Flight_ID, 
+				Flt_OperativeFlight.FlightNumber, Flt_OperativeFlight.FlightKey, 
+				FlightLegs.FlightBoardPoint, FlightLegs.FlightOffPoint, 
+				FlightLegs.DateSTD, FlightLegs.DateETD, FlightLegs.DateATD,
+				Flt_OperativeFlight.FlightType, FlightLegs.AircraftType, 
+				Flt_OperativeFlight.OutboundAircraftRegNo,
+				Flt_OperativeFlight.PreviousOutboundAircraftRegNo,
+				Flt_OperativeFlight.OutboundAircraftRegNoUpdatedTime,
+				Flt_OperativeFlight.ParkingBayDepAircraft, 
+				Flt_OperativeFlight.PreviousParkingBayDepAircraft, 
+				Flt_OperativeFlight.ParkingBayDepAircraftUpdatedTime,
+				Flt_OperativeFlight.FlightAutoCompleteFlag, 
+				Flt_OperativeFlight.FlightCancelFlag,
+				Exp_FlightEvents.BuildupCompletedAt,
+				Exp_FlightEvents.DLSCompletedAt,
+				Exp_FlightEvents.ManifestCompletedAt,
+				Exp_FlightEvents.FlightCompletedAt,
+				Exp_FlightEvents.OutwardServiceReportFinalizedAt,
+				MAX(ISNULL(Exp_DG_Flight_NOTOC.FinalizeVersion, 0)) AS NotocFinalizedVersion,
+				MAX(Exp_DG_Flight_NOTOC.SentOn) AS NotocSentOn,
+				COUNT(DISTINCT Cdh_FlightPouch.PouchCode) AS TotalPouch
+		FROM	Flt_OperativeFlight
+			INNER JOIN
+				FlightLegs
+			ON	FlightLegs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			INNER JOIN
+				Exp_FlightEvents
+			ON	Exp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN
+				Mst_AssociateCarrierWithGroup
+			ON	Mst_AssociateCarrierWithGroup.CarrierCode = Flt_OperativeFlight.CarrierCode
+			INNER JOIN
+				Mst_CarrierGroup
+			ON	Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+			AND	Mst_CarrierGroup.CarrierGroupCode IN ('OAL','SQ')
+			LEFT JOIN
+				Exp_DG_Flight_NOTOC
+			ON	Exp_DG_Flight_NOTOC.FlightId = Flt_OperativeFlight.Flight_ID
+			LEFT JOIN
+				Cdh_FlightPouch
+			ON	Cdh_FlightPouch.FlightId = Flt_OperativeFlight.Flight_ID
+		WHERE	COALESCE(FlightLegs.DateETD, FlightLegs.DateSTD) BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+		AND		FlightLegs.FlightBoardPoint = #{tenantAirport}
+		AND		Flt_OperativeFlight.GroundHandlerCode <> 'DNATA'
+		GROUP BY Mst_CarrierGroup.CarrierGroupCode, Flt_OperativeFlight.CarrierCode,
+				Flt_OperativeFlight.Flight_ID, Flt_OperativeFlight.FlightNumber, Flt_OperativeFlight.FlightKey, 
+				FlightLegs.FlightBoardPoint, FlightLegs.FlightOffPoint, 
+				FlightLegs.DateSTD, FlightLegs.DateETD, FlightLegs.DateATD,
+				Flt_OperativeFlight.FlightType, FlightLegs.AircraftType,  
+				Flt_OperativeFlight.OutboundAircraftRegNo,
+				Flt_OperativeFlight.PreviousOutboundAircraftRegNo,
+				Flt_OperativeFlight.OutboundAircraftRegNoUpdatedTime,
+				Flt_OperativeFlight.ParkingBayDepAircraft, 
+				Flt_OperativeFlight.PreviousParkingBayDepAircraft, 
+				Flt_OperativeFlight.ParkingBayDepAircraftUpdatedTime,
+				Flt_OperativeFlight.FlightAutoCompleteFlag, Flt_OperativeFlight.FlightCancelFlag,
+				Exp_FlightEvents.BuildupCompletedAt, Exp_FlightEvents.DLSCompletedAt, 
+				Exp_FlightEvents.ManifestCompletedAt, Exp_FlightEvents.FlightCompletedAt, 
+				Exp_FlightEvents.OutwardServiceReportFinalizedAt;
+				
+				
+
+				---HoDlsNotocMismatchUld Table--------
+		DECLARE @HoDlsNotocMismatchUld TABLE (
+		    HoDlsColor varchar(7),
+			HoNotocColor varchar(7),
+			Flight_ID NUMERIC INDEX DashFlightID CLUSTERED
+			);  
+       
+	   -- INSERT INTO HoDlsNotocMismatchUld TABLE --
+		INSERT INTO @HoDlsNotocMismatchUld 
+		SELECT 
+		 case when ( select count(*) 
+					         from Shipment_SpecialCargoHandover 
+			                 where Flights.FlightKey=Shipment_SpecialCargoHandover.FlightKey and Flights.DateSTD=Shipment_SpecialCargoHandover.FlightDate
+					         )=0 then 'GRAY'
+                 else 
+				 case when ( select count(*)
+					         from  Shipment_SpecialCargoHandover 
+							 where Flights.FlightKey=Shipment_SpecialCargoHandover.FlightKey and Flights.DateSTD=Shipment_SpecialCargoHandover.FlightDate and ULDFlag=1    
+                             and not exists ( select  null
+							                  from Exp_DLS inner join Exp_DLSULDTrolley
+										      ON  Exp_DLS.dlsid = Exp_DLSULDTrolley.dlsid 
+											  where Exp_DLS.FlightID = Flights.Flight_ID and  Shipment_SpecialCargoHandover.HandoverLocation = Exp_DLSULDTrolley.ULDTrolleyNumber
+											  )
+							)!=0 then 'RED' 
+                  else
+			      case when ( select count(*) from (  select Shipment_SpecialCargoHandover.HandoverLocation  + '/' + STRING_AGG(Shipment_InventorySHC.SpecialHandlingCode, ' ') dlsMismatchUldShc
+                                                       from Shipment_SpecialCargoHandover  inner join Exp_DLSULDTrolley  
+													   ON   Shipment_SpecialCargoHandover.HandoverLocation = Exp_DLSULDTrolley.ULDTrolleyNumber  inner join Shipment_InventorySHC 
+													   on Shipment_SpecialCargoHandover.ShipmentInventoryId = Shipment_InventorySHC.ShipmentInventoryId  inner join  Exp_DLS
+													   on Exp_DLS.dlsid = Exp_DLSULDTrolley.dlsid
+													    where  Flights.FlightKey = Shipment_SpecialCargoHandover.FlightKey
+														 and Flights.DateSTD=   Shipment_SpecialCargoHandover.FlightDate
+														 and Exp_DLS.flightId=Flights.Flight_ID 
+														 and not exists (select null
+														                 from Exp_DLS inner join Exp_DLSULDTrolley
+																		 ON  Exp_DLS.dlsid = Exp_DLSULDTrolley.dlsid  inner join Exp_DLSULDTrolleySHCInfo
+																		 on Exp_DLSULDTrolley.DLSUldTrolleyId = Exp_DLSULDTrolleySHCInfo.DLSUldTrolleyId
+																		  where Shipment_SpecialCargoHandover.HandoverLocation = Exp_DLSULDTrolley.ULDTrolleyNumber and 
+																		        Shipment_InventorySHC.SpecialHandlingCode  = Exp_DLSULDTrolleySHCInfo.SpecialHandlingCode
+								                                                and Exp_DLS.FlightID = Flights.Flight_ID
+								                                         )
+														group by
+													    Shipment_SpecialCargoHandover.HandoverLocation) as shcMismatch
+							    )!=0 then 'RED'
+                        else 'GREEN'
+                        end
+                        end
+                        end as HoDlsColor,
+
+						case when ( select count(*) 
+					                from Shipment_SpecialCargoHandover where
+			                         Flights.FlightKey = Shipment_SpecialCargoHandover.FlightKey and Flights.DateSTD=Shipment_SpecialCargoHandover.FlightDate
+					               )=0 then 'GRAY'
+                        else
+						case when ( select count(*)
+                                    from   Shipment_SpecialCargoHandover
+                                     where Flights.FlightKey = Shipment_SpecialCargoHandover.FlightKey 
+                                           and Flights.DateSTD = Shipment_SpecialCargoHandover.FlightDate  and ULDFlag=1 
+								    and not exists ( select null
+									                 from Exp_DG_Flight_NOTOC inner join  Exp_NOTOC_DGDetails
+													   ON  Exp_NOTOC_DGDetails.NotocId = Exp_DG_Flight_NOTOC.NotocId inner join  Uld_UldMaster uld
+													   on uld.Uld_ID = Exp_NOTOC_DGDetails.UldId  where
+													     Exp_DG_Flight_NOTOC.FlightID = Flights.Flight_ID
+														  and uld.UldKey = Shipment_SpecialCargoHandover.HandoverLocation
+														   union
+														select null
+														from Exp_DG_Flight_NOTOC inner join  Exp_NOTOC_OtherSpecialLoad
+														 ON  Exp_NOTOC_OtherSpecialLoad.NotocId = Exp_DG_Flight_NOTOC.NotocId inner join Uld_UldMaster uld 
+														 on uld.Uld_ID = Exp_NOTOC_OtherSpecialLoad.UldId 
+														 where 
+														  uld.UldKey = Shipment_SpecialCargoHandover.HandoverLocation and 
+														  Exp_DG_Flight_NOTOC.FlightID = Flights.Flight_ID)
+									)=0  then 'GREEN'
+                        else 'RED'
+                        end
+                        end as HoNotocColor,
+						Flights.Flight_ID
+
+						FROM @DashboardExportFlights as Flights;
+
+				
+						
+				
+				
+		-- EXPORT SHC TABLE --
+		DECLARE @DashboardShipmentsSHCDetails TABLE (
+			FlightId NUMERIC INDEX DashSHCFlightID CLUSTERED,
+			ShipmentId NUMERIC,
+			ShipmentInventory_Id NUMERIC,
+			FreightOutId NUMERIC,
+			ShipmentNumber VARCHAR(20),
+			ShipmentDate DATETIME,
+			Origin VARCHAR(3),
+			Destination VARCHAR(3),
+			AssignedPieces NUMERIC,
+			AssignedWeight DECIMAL,
+			ShipmentLocation VARCHAR(12),
+			WarehouseLocation VARCHAR(12),
+			Pieces NUMERIC,
+			Weight DECIMAL,
+			Flight_ID NUMERIC,
+			AssignedUldTrolley VARCHAR(15),
+			SHCHandlingGroupCode VARCHAR(3),
+			SpecialHandlingCode VARCHAR(3),
+			SHCPriority NUMERIC,
+			BookingId NUMERIC,
+			FlightBookingId NUMERIC,
+			PartBookingId NUMERIC,
+			BookingSuffix VARCHAR(16),
+			PartSuffix VARCHAR(16),
+			LoadedPieces NUMERIC,
+			FreightOutPieces NUMERIC,
+			Accepted BIT,
+			AcceptedDateTime DATETIME
+		);
+		WITH Shipments AS (
+			SELECT	Exp_ShipmentFlightBookingDetail.FlightId, Exp_WorkingListFlightDetails.FlightSegmentId, 
+					Shipment_Master.ShipmentId, 
+					ISNULL(Shipment_Master.ShipmentNumber, Exp_ShipmentBooking.ShipmentNumber) AS ShipmentNumber, 
+					ISNULL(Shipment_Master.ShipmentDate, Exp_ShipmentBooking.ShipmentDate) AS ShipmentDate,
+					ISNULL(Shipment_Master.Origin, Exp_ShipmentBooking.Origin) AS Origin, 
+					ISNULL(Shipment_Master.Destination, Exp_ShipmentBooking.Destination) AS Destination, 
+					Exp_ShipmentFlightBookingDetail.BookingPieces AS AssignedPieces, 
+					Exp_ShipmentFlightBookingDetail.BookingWeight AS AssignedWeight, 
+					Exp_eAcceptanceDocumentInformation.DocumentInformationId,
+					Exp_eAcceptanceDocumentInformation.Accepted,
+					Exp_eAcceptanceDocumentInformation.AcceptedDateTime,
+					Exp_ShipmentBooking.BookingId,
+					Exp_ShipmentFlightBookingDetail.FlightBookingId,
+					Exp_ShipmentPartBookingDetail.PartBookingId,
+					Exp_ShipmentPartBookingDetail.PartSuffix,
+					Exp_ShipmentFlightBookingDetail.TransferType
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_ShipmentFlightBookingDetail
+				ON	Exp_ShipmentFlightBookingDetail.FlightId = Flights.Flight_ID
+				AND	Exp_ShipmentFlightBookingDetail.BookingStatusCode NOT IN ('XX')
+				AND	Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+				INNER JOIN
+					Exp_ShipmentBooking
+				ON	Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+				LEFT JOIN
+					Exp_ShipmentPartBookingDetail
+				ON	Exp_ShipmentPartBookingDetail.BookingId = Exp_ShipmentBooking.BookingId
+				LEFT JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = Exp_ShipmentBooking.ShipmentNumber
+				AND Shipment_Master.ShipmentDate = Exp_ShipmentBooking.ShipmentDate
+				LEFT JOIN
+					Exp_WorkingListFlightDetails
+				ON	Exp_WorkingListFlightDetails.FlightId = Exp_ShipmentFlightBookingDetail.FlightId
+				AND	Exp_WorkingListFlightDetails.FlightSegmentId = Exp_ShipmentFlightBookingDetail.FlightSegmentId
+				LEFT JOIN
+					Exp_WorkingListShipment
+				ON	Exp_WorkingListShipment.ExpWorkingListID = Exp_WorkingListFlightDetails.ExpWorkingListId
+				AND	Exp_WorkingListShipment.ShipmentId = Shipment_Master.ShipmentId
+				LEFT JOIN
+					Exp_eAcceptanceDocumentInformation
+				ON	Exp_eAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber
+				AND	Exp_eAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate
+		)
+		-- INSERT INTO DASHBOARD SHIPMENT SHC DETAILS TABLE --
+		INSERT INTO @DashboardShipmentsSHCDetails
+		SELECT	ShipmentSHCGroup.FlightId, ShipmentSHCGroup.ShipmentId, 
+				Shipment_Inventory.ShipmentInventory_Id, Shipment_FreightOut.ShipmentFreightOutId AS FreightOutId,
+				ShipmentSHCGroup.ShipmentNumber, ShipmentSHCGroup.ShipmentDate, 
+				ShipmentSHCGroup.Origin, ShipmentSHCGroup.Destination, 
+				ISNULL(ShipmentSHCGroup.AssignedPieces, 
+					ISNULL(Shipment_Inventory.Pieces, Shipment_FreightOut.Pieces)) AS AssignedPieces, 
+				ISNULL(ShipmentSHCGroup.AssignedWeight, 
+					ISNULL(Shipment_Inventory.Weight, Shipment_FreightOut.Weight)) AS AssignedWeight,
+				Shipment_FreightOut.ShipmentLocation, Shipment_FreightOut.WarehouseLocation, 
+				ISNULL(Shipment_Inventory.Pieces, Shipment_FreightOut.Pieces) AS Pieces, 
+				ISNULL(Shipment_Inventory.Weight, Shipment_FreightOut.Weight) AS Weight, 
+				ISNULL(Shipment_Inventory.Flight_ID, Shipment_FreightOut.FlightId) AS Flight_ID, 
+				ISNULL(Shipment_Inventory.AssignedUldTrolley, Shipment_FreightOut.AssignedUldTrolley) AssignedUldTrolley,
+				ISNULL(SHCGroupDetails.SHCHandlingGroupCode, 'OTH') AS SHCHandlingGroupCode, 
+				Mst_SpecialHandlingCode.SpecialHandlingCode,
+				IIF(SHCGroupDetails.SHCGroupPriority < Mst_SpecialHandlingCode.SpecialHandlingPriority, 
+					SHCGroupDetails.SHCGroupPriority, Mst_SpecialHandlingCode.SpecialHandlingPriority) AS SHCPriority,
+				ShipmentSHCGroup.BookingId, ShipmentSHCGroup.FlightBookingId,
+				ShipmentSHCGroup.PartBookingId, ShipmentSHCGroup.PartSuffix AS BookingSuffix,
+				ISNULL(Shipment_Inventory.PartSuffix, Shipment_FreightOut.PartSuffix) AS PartSuffix,
+				(
+					SELECT	SUM(Pieces)
+					FROM	Shipment_Inventory
+					WHERE	Shipment_Inventory.Shipment_ID = ShipmentSHCGroup.ShipmentId
+					AND		Shipment_Inventory.Flight_ID = ShipmentSHCGroup.FlightId
+					AND		(Shipment_Inventory.PartSuffix = ShipmentSHCGroup.PartSuffix 
+								OR 1 = 1)
+					GROUP BY Shipment_Inventory.Flight_ID, Shipment_Inventory.Shipment_ID
+				) AS LoadedPieces,
+				(
+					SELECT	SUM(Pieces)
+					FROM	Shipment_FreightOut
+					WHERE	Shipment_FreightOut.ShipmentId = ShipmentSHCGroup.ShipmentId
+					AND		Shipment_FreightOut.FlightId = ShipmentSHCGroup.FlightId
+					AND		(Shipment_FreightOut.PartSuffix = ShipmentSHCGroup.PartSuffix 
+								OR 1 = 1)
+				) AS FreightOutPieces,
+				CASE WHEN ShipmentSHCGroup.Origin not in ( #{tenantAirport} , #{tenantCity} ) 
+						AND (ShipmentSHCGroup.AssignedPieces IS NOT NULL 
+							OR ISNULL(Shipment_Inventory.Pieces, Shipment_FreightOut.Pieces) IS NOT NULL) 
+						AND ISNULL(Shipment_Inventory.Flight_ID, Shipment_FreightOut.FlightId) IS NOT NULL 
+					THEN 1
+					ELSE ShipmentSHCGroup.Accepted 
+				END Accepted, 
+				CASE WHEN ShipmentSHCGroup.Origin not in ( #{tenantAirport} , #{tenantCity} ) 
+						AND (ShipmentSHCGroup.AssignedPieces IS NOT NULL 
+							OR ISNULL(Shipment_Inventory.Pieces, Shipment_FreightOut.Pieces) IS NOT NULL)
+						AND ISNULL(Shipment_Inventory.Flight_ID, Shipment_FreightOut.FlightId) IS NOT NULL 
+					THEN GETDATE()
+					ELSE ShipmentSHCGroup.AcceptedDateTime 
+				END AcceptedDateTime
+		FROM (
+			SELECT	Shipments.FlightId, Shipments.ShipmentId, 
+					Shipments.ShipmentNumber, Shipments.ShipmentDate,
+					Shipments.Origin, Shipments.Destination,
+					Shipments.AssignedPieces, Shipments.AssignedWeight,
+					Shipment_MasterSHC.SpecialHandlingCode,
+					Shipments.BookingId, Shipments.FlightBookingId,
+					Shipments.PartBookingId, Shipments.PartSuffix,
+					Shipments.Accepted, Shipments.AcceptedDateTime
+			FROM	Shipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = Shipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = Shipments.ShipmentDate
+				INNER JOIN
+					Exp_WorkingListFlightDetails
+				ON	Exp_WorkingListFlightDetails.FlightId = Shipments.FlightId
+				AND	Exp_WorkingListFlightDetails.FlightSegmentId = Shipments.FlightSegmentId
+				INNER JOIN
+					Exp_WorkingListShipment
+				ON	Exp_WorkingListShipment.ExpWorkingListID = Exp_WorkingListFlightDetails.ExpWorkingListId
+				AND	Exp_WorkingListShipment.ShipmentId = Shipment_Master.ShipmentId
+				INNER JOIN
+					Shipment_MasterSHC
+				ON	Shipment_MasterSHC.ShipmentId = Exp_WorkingListShipment.ShipmentId
+			UNION
+			SELECT	Shipments.FlightId, Shipments.ShipmentId, 
+					Shipments.ShipmentNumber, Shipments.ShipmentDate,
+					Shipments.Origin, Shipments.Destination,
+					Shipments.AssignedPieces, Shipments.AssignedWeight,
+					Shipment_InventorySHC.SpecialHandlingCode,
+					Shipments.BookingId, Shipments.FlightBookingId,
+					Shipments.PartBookingId, Shipments.PartSuffix,
+					Shipments.Accepted, Shipments.AcceptedDateTime
+			FROM	Shipments
+				INNER JOIN
+					Shipment_Inventory
+				ON	Shipment_Inventory.Shipment_ID = Shipments.ShipmentId
+				AND	(Shipment_Inventory.Flight_ID IS NULL OR Shipment_Inventory.Flight_ID = Shipments.FlightId)
+				AND	ISNULL(Shipment_Inventory.Locked, 0) = 0
+				INNER JOIN
+					Shipment_InventorySHC
+				ON	Shipment_InventorySHC.ShipmentInventoryId = Shipment_Inventory.ShipmentInventory_Id
+			UNION
+			SELECT	Shipments.FlightId, Shipments.ShipmentId, 
+					Shipments.ShipmentNumber, Shipments.ShipmentDate,
+					Shipments.Origin, Shipments.Destination,
+					Shipments.AssignedPieces, Shipments.AssignedWeight,
+					Shipment_FreightOutSHC.SpecialHandlingCode,
+					Shipments.BookingId, Shipments.FlightBookingId,
+					Shipments.PartBookingId, Shipments.PartSuffix,
+					Shipments.Accepted, Shipments.AcceptedDateTime
+			FROM	Shipments
+				INNER JOIN
+					Shipment_FreightOut
+				ON	Shipment_FreightOut.ShipmentId = Shipments.ShipmentId
+				AND	Shipment_FreightOut.FlightId = Shipments.FlightId
+				INNER JOIN
+					Shipment_FreightOutSHC
+				ON	Shipment_FreightOutSHC.ShipmentFreightOutId = Shipment_FreightOut.ShipmentFreightOutId
+			UNION
+			SELECT	Shipments.FlightId, Shipments.ShipmentId, 
+					Shipments.ShipmentNumber, Shipments.ShipmentDate,
+					Shipments.Origin, Shipments.Destination,
+					Shipments.AssignedPieces, Shipments.AssignedWeight,
+					Exp_ShipmentFlightBookingDetailSHC.SpecialHandlingCode,
+					Shipments.BookingId, Shipments.FlightBookingId,
+					Shipments.PartBookingId, Shipments.PartSuffix,
+					Shipments.Accepted, Shipments.AcceptedDateTime
+			FROM	Shipments
+				INNER JOIN
+					Exp_ShipmentFlightBookingDetailSHC
+				ON	Exp_ShipmentFlightBookingDetailSHC.FlightBookingId = Shipments.FlightBookingId
+			UNION
+			SELECT	Shipments.FlightId, Shipments.ShipmentId, 
+					Shipments.ShipmentNumber, Shipments.ShipmentDate,
+					Shipments.Origin, Shipments.Destination,
+					Shipments.AssignedPieces, Shipments.AssignedWeight,
+					Exp_ShipmentPartBookingDetailSHC.SpecialHandlingCode,
+					Shipments.BookingId, Shipments.FlightBookingId,
+					Shipments.PartBookingId, Shipments.PartSuffix,
+					Shipments.Accepted, Shipments.AcceptedDateTime
+			FROM	Shipments
+				INNER JOIN
+					Exp_ShipmentPartBookingDetailSHC
+				ON	Exp_ShipmentPartBookingDetailSHC.PartBookingId = Shipments.PartBookingId
+			) ShipmentSHCGroup
+			INNER JOIN
+				Mst_SpecialHandlingCode
+			ON	Mst_SpecialHandlingCode.SpecialHandlingCode = ShipmentSHCGroup.SpecialHandlingCode
+			LEFT JOIN
+			(
+				SELECT	Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode,
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode,
+						ISNULL(Mst_SHCHandlingGroup.SHCGrpPrioirity, 999) AS SHCGroupPriority
+				FROM	Mst_AssociateSHCByHandlingGroup
+					INNER JOIN
+						Mst_SHCHandlingGroup
+					ON	Mst_SHCHandlingGroup.MstSHCHandlingGroupID = Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+				WHERE	Mst_SHCHandlingGroup.Category IN ('DOC','WH')
+				AND		Mst_SHCHandlingGroup.SHCHandlingGroupCode IN ('DGR','DGN','XPS','RAC','PIL','VAL','AVI','HUM')
+			) AS SHCGroupDetails
+			ON	SHCGroupDetails.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode
+			LEFT JOIN
+				Shipment_Inventory
+			ON	Shipment_Inventory.Shipment_ID = ShipmentSHCGroup.ShipmentId
+			AND	ISNULL(Shipment_Inventory.Locked, 0) = 0
+			LEFT JOIN
+				Shipment_FreightOut
+			ON	Shipment_FreightOut.ShipmentId = ShipmentSHCGroup.ShipmentId
+			AND	Shipment_FreightOut.FlightId = ShipmentSHCGroup.FlightId;
+		-- BOOKING SHC PRIORITY --
+		DECLARE @BookingSHCPriority TABLE (
+			BookingId NUMERIC INDEX DashSHCBookingId CLUSTERED,
+			GroupCode VARCHAR(3),
+			GroupPriority NUMERIC
+		);
+		WITH BookingSHCPriorities AS (
+			SELECT	BookingSHCDetails.BookingId, BookingSHCDetails.SHCHandlingGroupCode,
+					BookingSHCDetails.SHCPriority, 
+					GROUPORDER = ROW_NUMBER() OVER (PARTITION BY BookingSHCDetails.BookingId, BookingSHCDetails.SHCPriority
+						ORDER BY (
+							CASE WHEN BookingSHCDetails.SHCHandlingGroupCode = 'DGN' THEN 1
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'DGR' THEN 2
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'RAC' THEN 3
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'XPS' THEN 4
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'AVI' THEN 5
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'HUM' THEN 6
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'VAL' THEN 7
+								WHEN BookingSHCDetails.SHCHandlingGroupCode = 'PIL' THEN 8
+								ELSE 9
+							END
+						) 
+					)
+			FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+			WHERE	BookingSHCDetails.SHCHandlingGroupCode NOT IN ('OTH')
+		)
+		-- INSERT INTO BOOKING SHC PRIORITY --
+		INSERT INTO @BookingSHCPriority
+		SELECT	BookingId, SHCHandlingGroupCode, SHCPriority
+		FROM	BookingSHCPriorities
+		WHERE	GROUPORDER = 1
+		GROUP BY BookingId, SHCHandlingGroupCode, SHCPriority
+		HAVING SHCPriority = (
+			SELECT	MIN(BookingPriority.SHCPriority) 
+			FROM	BookingSHCPriorities AS BookingPriority
+			WHERE	BookingPriority.BookingId = BookingSHCPriorities.BookingId
+			GROUP BY BookingPriority.BookingId
+		);
+		-- ACCEPTANCE SHC GROUP PRIORITY --
+		DECLARE @AcceptanceSHCPriority TABLE (
+			ShipmentId NUMERIC INDEX DashSHCShipmentId CLUSTERED,
+			GroupCode VARCHAR(3),
+			GroupPriority NUMERIC
+		);
+		-- ACCEPTANCE SHC PRIORITIES --
+		WITH AcceptanceSHCPriorities AS (
+			SELECT	ShipmentSHCDetails.ShipmentId, ShipmentSHCDetails.SHCHandlingGroupCode,
+					ShipmentSHCDetails.SHCPriority, 
+					GROUPORDER = ROW_NUMBER() OVER (PARTITION BY ShipmentSHCDetails.ShipmentId, ShipmentSHCDetails.SHCPriority
+						ORDER BY (
+							CASE WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'DGN' THEN 1
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'DGR' THEN 2
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'RAC' THEN 3
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'XPS' THEN 4
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'AVI' THEN 5
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'HUM' THEN 6
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'VAL' THEN 7
+								WHEN ShipmentSHCDetails.SHCHandlingGroupCode = 'PIL' THEN 8
+								ELSE 9
+							END
+						) 
+					)
+			FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+			WHERE	ShipmentSHCDetails.SHCHandlingGroupCode NOT IN ('OTH')
+		)
+		-- INSERT INTO ACCEPTANCE SHC PRIORITY --
+		INSERT INTO @AcceptanceSHCPriority
+		SELECT	ShipmentId, SHCHandlingGroupCode, SHCPriority
+		FROM	AcceptanceSHCPriorities
+		WHERE	GROUPORDER = 1
+		GROUP BY ShipmentId, SHCHandlingGroupCode, SHCPriority
+		HAVING SHCPriority = (
+			SELECT	MIN(AcceptancePriority.SHCPriority) 
+			FROM	AcceptanceSHCPriorities AS AcceptancePriority
+			WHERE	AcceptancePriority.ShipmentId = AcceptanceSHCPriorities.ShipmentId
+			GROUP BY AcceptancePriority.ShipmentId
+		);
+		-- BATCH CONFIG --
+		WITH BatchConfig AS (
+			SELECT	#{tenantAirport} AS TenantId, 
+			ISNULL(
+				(SELECT	CAST(ParameterValueChar AS INT) AS Range
+				FROM	App_SystemParameters
+				WHERE	ParameterCode = 'DASHBOARD_EXPORT_FROM_HOURS_RANGE'
+				AND 	ParameterStatusFlag = 'Y'
+				AND 	StartDate <= GETDATE() 
+				AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				), -8) AS FromHours,
+			ISNULL(
+				(SELECT	CAST(ParameterValueChar AS INT) AS Range
+				FROM	App_SystemParameters
+				WHERE	ParameterCode = 'DASHBOARD_EXPORT_TO_HOURS_RANGE'
+				AND 	ParameterStatusFlag = 'Y'
+				AND 	StartDate <= GETDATE() 
+				AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				), +8) AS ToHours,
+			CONVERT(DATETIME, 
+				SWITCHOFFSET(CONVERT(DATETIMEOFFSET, GETDATE()), 
+					(SELECT current_utc_offset FROM sys.time_zone_info WHERE name = 
+						(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode = 'STATION_TIMEZONE')
+					)
+				)
+			) AS CurrentTime
+		),
+		-- SHC Group Priority --
+		SHCGroupPriority AS (
+			SELECT	GroupCode, Priority
+			FROM (
+				VALUES ('DGN',1), ('DGR',2), ('RAC',3), ('XPS',4), ('AVI',5), ('HUM',6), ('VAL',7), ('PIL',8)
+			) AS TablePriority (GroupCode, Priority)
+		), 
+		PouchDetails AS (
+			SELECT	Cdh_FlightPouch.FlightId, Cdh_FlightPouch.FlightOffPoint,
+					Cdh_FlightPouch.PouchCode, Cdh_FlightPouch.DocumentStatus, 
+					Cdh_FlightPouch.PouchFinalizedDate
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Cdh_FlightPouch
+				ON	Cdh_FlightPouch.FlightId = Flights.Flight_ID
+		),
+		BookingShipments AS (
+			SELECT	Exp_ShipmentFlightBookingDetail.FlightId, 
+					Exp_ShipmentFlightBookingDetail.FlightSegmentId, 
+					Exp_ShipmentFlightBookingDetail.FlightBookingId, 
+					Exp_ShipmentFlightBookingDetail.BookingId, 
+					Exp_ShipmentBooking.ShipmentNumber, Exp_ShipmentBooking.ShipmentDate, 
+					Exp_ShipmentBooking.Origin, Exp_ShipmentBooking.Destination, 
+					Exp_ShipmentBooking.Pieces, Exp_ShipmentBooking.GrossWeight, 
+					Exp_ShipmentFlightBookingDetail.TransferType
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_ShipmentFlightBookingDetail
+				ON	Exp_ShipmentFlightBookingDetail.FlightId = Flights.Flight_ID
+				AND	Exp_ShipmentFlightBookingDetail.BookingStatusCode NOT IN ('XX')
+				AND	Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+				INNER JOIN
+					Exp_ShipmentBooking
+				ON	Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+		),
+		AcceptedShipments AS (
+			SELECT	Exp_WorkingListFlightDetails.FlightId, Exp_WorkingListFlightDetails.FlightSegmentId, 
+					Shipment_Master.ShipmentId, Shipment_FreightOut.ShipmentFreightOutId AS FreightOutId,
+					Shipment_FreightOut.FlightId AS FreightOutFlightId,
+					Shipment_Master.ShipmentNumber, Shipment_Master.ShipmentDate,
+					Shipment_Master.Origin, Shipment_Master.Destination, 
+					ISNULL(Exp_WorkingListShipment.AssignedPieces, Exp_ShipmentFlightBookingDetail.BookingPieces) AS AssignedPieces, 
+					ISNULL(Exp_WorkingListShipment.AssignedWeight, Exp_ShipmentFlightBookingDetail.BookingWeight) AS AssignedWeight, 
+					Exp_eAcceptanceDocumentInformation.DocumentInformationId,
+					CASE WHEN Shipment_Master.Origin not in ( #{tenantAirport} , #{tenantCity} ) 
+							AND Exp_WorkingListFlightDetails.FlightId = Exp_ShipmentFlightBookingDetail.FlightId
+						THEN 1 
+						ELSE CASE WHEN Exp_WorkingListFlightDetails.FlightId = Exp_ShipmentFlightBookingDetail.FlightId 
+							THEN ISNULL(Exp_eAcceptanceDocumentInformation.Accepted,0)
+							ELSE CASE WHEN Flights.FlightKey <> Exp_eAcceptanceDocumentInformation.FirstBookedFlight 
+								AND CAST(Flights.DateSTD AS DATE) <> CAST(Exp_eAcceptanceDocumentInformation.FirstBookedFlightDate AS DATE)
+								THEN 0
+								ELSE 
+									CASE WHEN 1 = (
+										SELECT	CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+										FROM	Exp_ShipmentBooking
+											INNER JOIN
+												Exp_ShipmentFlightBookingDetail
+											ON	Exp_ShipmentFlightBookingDetail.BookingId = Exp_ShipmentBooking.BookingId
+											AND	Exp_ShipmentFlightBookingDetail.BookingStatusCode NOT IN ('XX')
+											AND	Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+										WHERE	Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber
+										AND		Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate
+									) THEN 0 ELSE ISNULL(Exp_eAcceptanceDocumentInformation.Accepted,0)
+								END
+							END
+						END
+					END Accepted, 
+					CASE WHEN Shipment_Master.Origin not in ( #{tenantAirport} , #{tenantCity} ) 
+							AND Exp_WorkingListFlightDetails.FlightId = Exp_ShipmentFlightBookingDetail.FlightId
+						THEN GETDATE()
+						ELSE CASE WHEN Exp_WorkingListFlightDetails.FlightId = Exp_ShipmentFlightBookingDetail.FlightId 
+							THEN Exp_eAcceptanceDocumentInformation.AcceptedDateTime
+							ELSE CASE WHEN Flights.FlightKey <> Exp_eAcceptanceDocumentInformation.FirstBookedFlight 
+								AND CAST(Flights.DateSTD AS DATE) <> CAST(Exp_eAcceptanceDocumentInformation.FirstBookedFlightDate AS DATE)
+								THEN NULL
+								ELSE 
+									CASE WHEN 1 = (
+										SELECT	CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+										FROM	Exp_ShipmentBooking
+											INNER JOIN
+												Exp_ShipmentFlightBookingDetail
+											ON	Exp_ShipmentFlightBookingDetail.BookingId = Exp_ShipmentBooking.BookingId
+											AND	Exp_ShipmentFlightBookingDetail.BookingStatusCode NOT IN ('XX')
+											AND	Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+										WHERE	Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber
+										AND		Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate
+									) THEN NULL ELSE Exp_eAcceptanceDocumentInformation.AcceptedDateTime
+								END
+							END
+						END
+					END AcceptedDateTime,
+					Shipment_FreightOut.Pieces AS FreightOutPieces, Shipment_FreightOut.Weight AS FreightOutWeight, 
+					Shipment_FreightOut.ShipmentLocation, Shipment_FreightOut.WarehouseLocation, 
+					CASE WHEN Shipment_FreightOut.AssignedUldTrolley IS NOT NULL 
+						THEN Shipment_FreightOut.AssignedUldTrolley
+						ELSE (
+							SELECT	TOP(1) Shipment_Inventory.AssignedUldTrolley
+							FROM	Shipment_Inventory
+							WHERE	Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+							AND		Shipment_Inventory.Flight_ID = Flights.Flight_ID
+							AND		Shipment_Inventory.AssignedUldTrolley IS NOT NULL
+						)
+					END AssignedUldTrolley,
+					Exp_ShipmentBooking.BookingId, Exp_ShipmentFlightBookingDetail.FlightBookingId
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_WorkingListFlightDetails
+				ON	Exp_WorkingListFlightDetails.FlightId = Flights.Flight_ID
+				INNER JOIN
+					Exp_WorkingListShipment
+				ON	Exp_WorkingListShipment.ExpWorkingListID = Exp_WorkingListFlightDetails.ExpWorkingListId
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentId = Exp_WorkingListShipment.ShipmentId
+				LEFT JOIN
+					Exp_eAcceptanceDocumentInformation
+				ON	Exp_eAcceptanceDocumentInformation.ShipmentNumber = Shipment_Master.ShipmentNumber
+				AND	Exp_eAcceptanceDocumentInformation.ShipmentDate = Shipment_Master.ShipmentDate
+				LEFT JOIN
+					Shipment_FreightOut
+				ON	Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId
+				AND	Shipment_FreightOut.FlightId = Flights.Flight_ID
+				LEFT JOIN
+					Exp_ShipmentBooking
+				ON	Exp_ShipmentBooking.ShipmentNumber = Shipment_Master.ShipmentNumber
+				AND	Exp_ShipmentBooking.ShipmentDate = Shipment_Master.ShipmentDate
+				LEFT JOIN
+					Exp_ShipmentFlightBookingDetail
+				ON	Exp_ShipmentFlightBookingDetail.BookingId = Exp_ShipmentBooking.BookingId
+				AND	Exp_ShipmentFlightBookingDetail.FlightId = Exp_WorkingListFlightDetails.FlightId
+				AND	Exp_ShipmentFlightBookingDetail.BookingStatusCode NOT IN ('XX')
+				AND	Exp_ShipmentFlightBookingDetail.OutwardBookingFlag = 1
+		),
+		Transhipments AS (
+			SELECT	BookingShipments.FlightId, BookingShipments.FlightSegmentId, BookingShipments.FlightBookingId, 
+					BookingShipments.BookingId, Shipment_Master.ShipmentId,
+					BookingShipments.ShipmentNumber, BookingShipments.ShipmentDate, 
+					BookingShipments.Origin, BookingShipments.Destination, 
+					BookingShipments.Pieces, BookingShipments.GrossWeight, 
+					BookingShipments.TransferType, NULL AS FreightOutId
+			FROM	BookingShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = BookingShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = BookingShipments.ShipmentDate
+				AND	Shipment_Master.Origin not in ( #{tenantAirport} , #{tenantCity} )
+				INNER JOIN
+					Exp_LoadedShipmentInfo
+				ON	Exp_LoadedShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+				INNER JOIN
+					Shipment_Inventory
+				ON	Shipment_Inventory.Shipment_ID = Exp_LoadedShipmentInfo.ShipmentId
+				AND	Shipment_Inventory.Flight_ID = BookingShipments.FlightId
+				AND	Shipment_Inventory.AssignedUldTrolley IS NOT NULL
+			UNION 
+			SELECT	BookingShipments.FlightId, BookingShipments.FlightSegmentId, BookingShipments.FlightBookingId, 
+					BookingShipments.BookingId, Shipment_Master.ShipmentId,
+					BookingShipments.ShipmentNumber, BookingShipments.ShipmentDate, 
+					BookingShipments.Origin, BookingShipments.Destination, 
+					BookingShipments.Pieces, BookingShipments.GrossWeight, 
+					BookingShipments.TransferType, Shipment_FreightOut.ShipmentFreightOutId AS FreightOutId
+			FROM	BookingShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = BookingShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = BookingShipments.ShipmentDate
+				AND	Shipment_Master.Origin not in ( #{tenantAirport} , #{tenantCity} )
+				INNER JOIN
+					Shipment_FreightOut
+				ON	Shipment_FreightOut.ShipmentId = Shipment_Master.ShipmentId
+		), 
+		ULDBTAssignedDetails AS (
+			SELECT	Exp_AssignedULDTrolleyToFlight.FlightId, 
+					Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId, 
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber, 
+					Exp_AssignedULDTrolleyToFlight.GrossWeight, 
+					Exp_AssignedULDTrolleyToFlight.TransferType, 
+					Uld_UldType.UldType, 
+					Uld_UldType.PalletTypeFlag
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_AssignedULDTrolleyToFlight
+				ON	Exp_AssignedULDTrolleyToFlight.FlightId = Flights.Flight_ID
+				INNER JOIN
+					Uld_UldType
+				ON	Uld_UldType.UldType = (CASE WHEN (Uld_UldType.UldType = 'BT' OR Uld_UldType.UldType = 'MT')
+						THEN SUBSTRING(Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber, 1, 2)
+						ELSE SUBSTRING(Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber, 1, 3) 
+					END)
+		), 
+		ULDBTManifestedDetails AS (
+			SELECT	Exp_DLS.FlightId, Exp_DLSULDTrolley.DLSUldTrolleyId, Exp_DLSULDTrolley.ULDTrolleyNumber, 
+					Exp_DLSULDTrolley.TareWeight, 
+					IIF(ROUND(ISNULL(Exp_DLSULDTrolley.ActualWeight, 0), 1) = 0, NULL, Exp_DLSULDTrolley.ActualWeight) 
+						AS ActualWeight, 
+					Exp_DLSULDTrolley.ManifestWeight, 
+					Exp_DLSULDTrolley.HeightCode, Exp_DLSULDTrolley.TransferType, 
+					Uld_UldType.UldType, 
+					Uld_UldType.PalletTypeFlag
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_DLS
+				ON	Exp_DLS.FlightId = Flights.Flight_ID
+				INNER JOIN
+					Exp_DLSULDTrolley
+				ON	Exp_DLSULDTrolley.DLSId = Exp_DLS.DLSId
+				INNER JOIN
+					Uld_UldType
+				ON	Uld_UldType.UldType = (CASE WHEN (Uld_UldType.UldType = 'BT' OR Uld_UldType.UldType = 'MT')
+						THEN SUBSTRING(Exp_DLSULDTrolley.ULDTrolleyNumber, 1, 2)
+						ELSE SUBSTRING(Exp_DLSULDTrolley.ULDTrolleyNumber, 1, 3) 
+					END)
+		), 
+		ULDBTReleasedDetails AS (
+			SELECT	Exp_HandOver.FlightId, Exp_HandOverContainerTrolleyInfo.ContainerTrolleyNumber AS ULDTrolleyNumber,
+					CASE WHEN Exp_HandOverContainerTrolleyInfo.DriverId IS NOT NULL THEN 'Y' ELSE 'N' END Released, 
+					Exp_HandOverContainerTrolleyInfo.IsReturned, 
+					Exp_HandOverContainerTrolleyInfo.IsOffload, 
+					Exp_HandOverContainerTrolleyInfo.Ocs
+			FROM	@DashboardExportFlights AS Flights
+				INNER JOIN
+					Exp_HandOver
+				ON	Exp_HandOver.FlightId = Flights.Flight_ID
+				INNER JOIN
+					Exp_HandOverContainerTrolleyInfo
+				ON	Exp_HandOverContainerTrolleyInfo.ExpHandOverId = Exp_HandOver.ExpHandOverId
+			UNION
+			SELECT	ULDBTManifestedDetails.FlightId, ULDBTManifestedDetails.ULDTrolleyNumber, 
+					CASE WHEN Exp_HandOverContainerTrolleyInfo.DriverId IS NOT NULL THEN 'Y' ELSE 'N' END Released, 
+					Exp_HandOverContainerTrolleyInfo.IsReturned, 
+					Exp_HandOverContainerTrolleyInfo.IsOffload, 
+					Exp_HandOverContainerTrolleyInfo.Ocs
+			FROM	ULDBTManifestedDetails
+				INNER JOIN
+					Exp_HandOver
+				ON	Exp_HandOver.FlightId = ULDBTManifestedDetails.FlightId
+				INNER JOIN
+					Exp_HandOverContainerTrolleyInfo
+				ON	Exp_HandOverContainerTrolleyInfo.ExpHandOverId = Exp_HandOver.ExpHandOverId
+				AND	Exp_HandOverContainerTrolleyInfo.ContainerTrolleyNumber = ULDBTManifestedDetails.ULDTrolleyNumber
+		),
+		AirlineInstructions AS (
+			SELECT	Exp_AirlineLoadingInstructions.FlightId, 
+					Exp_AirlineLoadingInstructions.PalletForFlightUse,
+					Exp_AirlineLoadingInstructions.ContainerForFlightUse, 
+					Exp_AirlineLoadingInstructions.PalletForTransitUse, 
+					Exp_AirlineLoadingInstructions.ContainerForTransitUse,
+					Exp_AirlineLoadingInstructions.PalletForCargoUse, 
+					Exp_AirlineLoadingInstructions.ContainerForCargoUse
+			FROM	Exp_AirlineLoadingInstructions
+				INNER JOIN
+					@DashboardExportFlights AS Flights
+				ON	Flights.Flight_ID = Exp_AirlineLoadingInstructions.FlightId
+		)
+		-- RESULT --
+		SELECT	Flights.TenantId, Flights.CarrierGroupCode, Flights.CarrierCode, Flights.Flight_ID, Flights.FlightKey,
+				SUBSTRING(REPLACE(UPPER(CONVERT(VARCHAR(16), Flights.DateSTD, 6)),' ',''), 1, 5) AS FlightDate, 
+				Flights.FlightBoardPoint, Flights.FlightOffPoint, 
+				(
+					SELECT	STRING_AGG(Routing.FlightOffPoint, '/')
+					FROM	(
+						SELECT	Flt_OperativeFlight_Legs.FlightOffPoint, 
+								Flt_OperativeFlight_Legs.FlightSegmentOrder, 
+								(
+									SELECT	FlightSegmentOrder
+									FROM	Flt_OperativeFlight_Legs
+									WHERE	Flight_ID = Flights.Flight_ID
+									AND		FlightBoardPoint = #{tenantAirport}
+								)	AS SegmentOrder							
+						FROM	Flt_OperativeFlight_Legs
+						WHERE	Flt_OperativeFlight_Legs.Flight_ID = Flights.Flight_ID
+						AND		Flt_OperativeFlight_Legs.FlightOffPoint <> #{tenantAirport}
+						ORDER BY Flt_OperativeFlight_Legs.FlightSegmentOrder
+						OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+					) Routing
+					WHERE 	Routing.FlightSegmentOrder BETWEEN Routing.SegmentOrder AND 5
+				) AS FlightSector, 
+				Flights.DateSTD, Flights.DateETD, Flights.DateATD,
+				Flights.FlightType, Flights.AircraftType, 
+				Flights.OutboundAircraftRegNo AS AircraftRegCode, 
+				Flights.PreviousOutboundAircraftRegNo AS PreviousAircraftRegCode, 
+				Flights.OutboundAircraftRegNoUpdatedTime AS AircraftRegCodeUpdatedTime,
+				Flights.ParkingBayDepAircraft AS ParkingBay, 
+				Flights.PreviousParkingBayDepAircraft AS PreviousParkingBay, 
+				Flights.ParkingBayDepAircraftUpdatedTime AS ParkingBayUpdatedTime,
+				(
+					SELECT	STRING_AGG(HandlingArea.TerminalCode, ',')
+					FROM	(
+						SELECT	DISTINCT Flt_OperativeFlight_HandlingArea.TerminalCode
+						FROM	Flt_OperativeFlight_HandlingArea
+						WHERE	Flt_OperativeFlight_HandlingArea.FlightId = Flights.Flight_ID
+					) HandlingArea
+				) AS TerminalCode, 
+				CASE WHEN Flights.DateATD IS NOT NULL THEN 'ATD'
+					ELSE CASE WHEN Flights.DateETD IS NOT NULL THEN 'ETD' ELSE 'STD' END
+				END FlightTime,
+				COALESCE(Flights.DateETD, Flights.DateSTD) AS FlightDateTime,
+				CASE WHEN Flights.FlightAutoCompleteFlag = 1 THEN 'YES' ELSE 'NO' END AutoFlightCompleteFlag,
+				CASE WHEN Flights.FlightCancelFlag = 'D' THEN 'CNX' 
+					ELSE CASE WHEN Flights.FlightCompletedAt IS NOT NULL THEN 'DEP' 
+						ELSE CASE WHEN Flights.DateETD > Flights.DateSTD THEN 'DLY' ELSE 'ONT' END
+					END
+				END FlightStatus,
+				CASE WHEN Flights.BuildupCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END BuildupCompleted,
+				CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.BuildupCompletedAt), 120)) AS BuildupCompletedTime,
+				CASE WHEN Flights.DLSCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END DLSCompleted,
+				CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.DLSCompletedAt), 120)) AS DLSCompletedTime,
+				CASE WHEN Flights.ManifestCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END ManifestCompleted,
+				CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.ManifestCompletedAt), 120)) AS ManifestCompletedTime,
+				CASE WHEN Flights.FlightCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END FlightCompleted,
+				CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.FlightCompletedAt), 120)) AS FlightCompletedTime,
+				CASE WHEN Flights.OutwardServiceReportFinalizedAt IS NOT NULL THEN 'YES' ELSE 'NO' END OutwardServiceReportFinalized,
+				CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.OutwardServiceReportFinalizedAt), 120)) AS OutwardServiceReportFinalizedTime,
+				ISNULL(Flights.NotocFinalizedVersion, 0) AS NTMVersion,
+				Flights.NotocSentOn AS NotocFinalizedTime,
+				(
+					SELECT	MAX(Interface_IncomingMessageLog.ReceivedOn)
+					FROM	Interface_IncomingMessageLog 
+					WHERE	Interface_IncomingMessageLog.MessageType = 'UFL'
+					AND		Interface_IncomingMessageLog.CarrierCode = Flights.CarrierCode
+					AND		Interface_IncomingMessageLog.FlightNumber = Flights.FlightNumber
+					AND		CAST(Interface_IncomingMessageLog.FlightOriginDate AS DATE) = CAST(Flights.DateSTD AS DATE)
+					AND		Interface_IncomingMessageLog.Status = 'PROCESSED'
+				) AS UFLMessageTime,
+				(
+					SELECT	CASE WHEN COUNT(1) > 0 AND COUNT(1) = Flights.TotalPouch THEN 'YES' ELSE 'NO' END
+					FROM	PouchDetails
+					WHERE	PouchDetails.FlightId = Flights.Flight_ID
+					AND		PouchDetails.DocumentStatus IN ('Finalized','Checkout','DropOff')
+				) AS PouchCompleted,
+				(
+					SELECT	CASE WHEN COUNT(1) > 0 AND COUNT(1) = Flights.TotalPouch THEN 'YES' ELSE 'NO' END
+					FROM	PouchDetails
+					WHERE	PouchDetails.FlightId = Flights.Flight_ID
+					AND		PouchDetails.DocumentStatus IN ('Checkout','DropOff')
+				) AS PouchCheckout,
+				(
+					SELECT	CASE WHEN COUNT(1) > 0 AND COUNT(1) = Flights.TotalPouch THEN 'YES' ELSE 'NO' END
+					FROM	PouchDetails
+					WHERE	PouchDetails.FlightId = Flights.Flight_ID
+					AND		PouchDetails.DocumentStatus IN ('DropOff')
+				) AS PouchDropoff,
+				(
+					SELECT	CASE WHEN COUNT(1) > 0 THEN 'YES' ELSE 'NO' END
+					FROM	Interface_OutgoingMessageLog
+					WHERE	Interface_OutgoingMessageLog.CarrierCode = Flights.CarrierCode
+					AND		Interface_OutgoingMessageLog.FlightNumber = Flights.FlightNumber
+					AND		CAST(Interface_OutgoingMessageLog.FlightOriginDate AS DATE) = CAST(Flights.DateSTD AS DATE)
+					AND		Interface_OutgoingMessageLog.MessageType = 'UCM'
+					AND		Interface_OutgoingMessageLog.Status = 'SENT'
+				) AS UCMSent,
+				(
+					SELECT	COUNT(BookingShipments.BookingId)
+					FROM	BookingShipments
+					WHERE	BookingShipments.FlightId = Flights.Flight_ID
+				) AS BookedShipments,
+				(
+					SELECT	COUNT(DISTINCT AcceptedShipments.ShipmentId)
+					FROM	AcceptedShipments
+						LEFT JOIN
+							Shipment_Inventory
+						ON	Shipment_Inventory.Shipment_ID = AcceptedShipments.ShipmentId
+						AND	ISNULL(Shipment_Inventory.locked, 0) = 0
+						AND	((Shipment_Inventory.AssignedUldTrolley IS NOT NULL AND Shipment_Inventory.Flight_ID IS NOT NULL)
+								OR AcceptedShipments.FreightOutId IS NOT NULL)
+					WHERE	AcceptedShipments.FlightId = Flights.Flight_ID
+					AND		AcceptedShipments.FlightBookingId IS NOT NULL
+				) AS AssignedShipments,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT AcceptedShipments.ShipmentId)
+					FROM	BookingShipments
+						INNER JOIN
+							AcceptedShipments
+						ON	AcceptedShipments.ShipmentNumber = BookingShipments.ShipmentNumber
+						AND	AcceptedShipments.ShipmentDate = BookingShipments.ShipmentDate
+						INNER JOIN
+							Shipment_Inventory
+						ON	Shipment_Inventory.Shipment_ID = AcceptedShipments.ShipmentId
+						AND	Shipment_Inventory.AssignedUldTrolley IS NULL 
+						AND Shipment_Inventory.Flight_ID IS NULL
+						AND	ISNULL(Shipment_Inventory.locked, 0) = 0
+					WHERE	AcceptedShipments.FlightId = Flights.Flight_ID
+					), 0) AS ReadyToLoad,
+				ISNULL(
+					(SELECT	COUNT(ULDBTAssignedDetails.AssUldTrolleyId)
+					FROM	ULDBTAssignedDetails
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					), 0) AS ActualULD,
+				ISNULL(
+					(SELECT	COUNT(ULDBTManifestedDetails.DLSUldTrolleyId)
+					FROM	ULDBTManifestedDetails
+					WHERE	ULDBTManifestedDetails.FlightId = Flights.Flight_ID
+					), 0) AS ManifestedULD,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT Transhipments.BookingId)
+					FROM	Transhipments
+					WHERE	Transhipments.FlightId = Flights.Flight_ID
+					AND		(Transhipments.TransferType IS NULL 
+								OR Transhipments.TransferType NOT IN ('QT','ST','TT','HTT','TTH','TTT'))
+					), 0) AS TranshipmentBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT Transhipments.ShipmentId)
+					FROM	Transhipments
+					WHERE	Transhipments.FlightId = Flights.Flight_ID
+					AND		(Transhipments.TransferType IS NULL 
+								OR Transhipments.TransferType NOT IN ('QT','ST','TT','HTT','TTH','TTT'))
+					GROUP BY Transhipments.FlightId
+					), 0) AS TranshipmentLoaded, 
+				ISNULL(
+					(SELECT	COUNT(ULDBTAssignedDetails.AssUldTrolleyId)
+					FROM	ULDBTAssignedDetails
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					), 0) AS DLSULDBTAssigned,
+				ISNULL(
+					(SELECT	COUNT(ULDBTManifestedDetails.DLSUldTrolleyId)
+					FROM	ULDBTManifestedDetails
+					WHERE	ULDBTManifestedDetails.FlightId = Flights.Flight_ID
+					AND		ULDBTManifestedDetails.ActualWeight IS NOT NULL
+					), 0) AS DLSULDBTGrossWeightUpdated,
+				ISNULL(
+					(SELECT	COUNT(ULDBTAssignedDetails.AssUldTrolleyId)
+					FROM	ULDBTAssignedDetails
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					AND		(ULDBTAssignedDetails.TransferType IS NULL 
+								OR ULDBTAssignedDetails.TransferType NOT IN ('TTH'))
+					), 0) AS RampULDBTAssigned,
+				ISNULL(
+					(SELECT	COUNT(ULDBTReleasedDetails.ULDTrolleyNumber)
+					FROM	ULDBTReleasedDetails
+					WHERE	ULDBTReleasedDetails.FlightId = Flights.Flight_ID
+					AND		(ISNULL(ULDBTReleasedDetails.IsReturned, 0) = 0 
+								AND ISNULL(ULDBTReleasedDetails.IsOffload, 0) = 0 
+								AND ISNULL(ULDBTReleasedDetails.Ocs, 0) = 0)
+					AND		ULDBTReleasedDetails.Released = 'Y'
+					), 0) AS RampULDBTReleased,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ULDBTAssignedDetails.ULDTrolleyNumber)
+					FROM	ULDBTAssignedDetails
+						INNER JOIN
+							ULDBTManifestedDetails
+						ON	ULDBTManifestedDetails.FlightId = ULDBTAssignedDetails.FlightId
+						AND	ULDBTManifestedDetails.ULDTrolleyNumber = ULDBTAssignedDetails.ULDTrolleyNumber
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					AND		ULDBTManifestedDetails.TransferType IN ('TTH')
+					), 0) AS TTHUnits,
+				ISNULL(
+					(SELECT	ISNULL(AirlineInstructions.ContainerForCargoUse, 0)
+					FROM	AirlineInstructions
+					WHERE	AirlineInstructions.FlightId = Flights.Flight_ID
+					), 0) AS ULDAllotment,
+				ISNULL(
+					(SELECT	COUNT(ULDBTAssignedDetails.AssUldTrolleyId)
+					FROM	ULDBTAssignedDetails
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					AND		ULDBTAssignedDetails.UldType NOT IN ('BT')
+					AND		ULDBTAssignedDetails.PalletTypeFlag = 'C'
+					), 0) AS ULDAssigned,
+				ISNULL(
+					(SELECT	ISNULL(AirlineInstructions.PalletForCargoUse, 0)
+					FROM	AirlineInstructions
+					WHERE	AirlineInstructions.FlightId = Flights.Flight_ID
+					), 0) AS PalletAllotment,
+				ISNULL(
+					(SELECT	COUNT(ULDBTAssignedDetails.AssUldTrolleyId)
+					FROM	ULDBTAssignedDetails
+					WHERE	ULDBTAssignedDetails.FlightId = Flights.Flight_ID
+					AND		ULDBTAssignedDetails.PalletTypeFlag = 'P'
+					), 0) AS PalletAssigned,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('DGN','DGR'))
+					), 0) AS DGBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('DGN','DGR'))
+					), 0) AS AcceptedDGReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('DGN','DGR'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedDGReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('XPS')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('XPS'))
+					), 0) AS XPSBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('XPS')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('XPS'))
+					), 0) AS AcceptedXPSReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('XPS')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('XPS'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedXPSReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('RAC')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('RAC'))
+					), 0) AS RACBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('RAC')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('RAC'))
+					), 0) AS AcceptedRACReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('RAC')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('RAC'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedRACReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('PIL')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('PIL'))
+					), 0) AS PILBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('PIL')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('PIL'))
+					), 0) AS AcceptedPILReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('PIL')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('PIL'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedPILReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('VAL')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('VAL'))
+					), 0) AS VALBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('VAL')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('VAL'))
+					), 0) AS AcceptedVALReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('VAL')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('VAL'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedVALReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('AVI')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('AVI'))
+					), 0) AS AVIBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('AVI')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('AVI'))
+					), 0) AS AcceptedAVIReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('AVI')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('AVI'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedAVIReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+						INNER JOIN
+							@BookingSHCPriority AS SHCPriority
+						ON	SHCPriority.BookingId = BookingSHCDetails.BookingId
+						AND SHCPriority.GroupCode = BookingSHCDetails.SHCHandlingGroupCode
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('HUM')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('HUM'))
+					), 0) AS HUMBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		ShipmentSHCDetails.Accepted = 1
+					AND		ShipmentSHCDetails.AcceptedDateTime IS NOT NULL
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('HUM')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('HUM'))
+					), 0) AS AcceptedHUMReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT ShipmentSHCDetails.ShipmentId)
+					FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						INNER JOIN
+							@AcceptanceSHCPriority AS SHCPriority
+						ON	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						AND SHCPriority.GroupCode = ShipmentSHCDetails.SHCHandlingGroupCode
+					WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND		(ShipmentSHCDetails.SHCHandlingGroupCode IN ('HUM')
+								OR ShipmentSHCDetails.SpecialHandlingCode IN ('HUM'))
+					AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+					AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+					AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+								OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+					), 0) AS AssignedHUMReady,
+				ISNULL(
+					(SELECT	COUNT(BookingShipments.BookingId)
+					FROM	BookingShipments
+					WHERE	BookingShipments.FlightId = Flights.Flight_ID
+					), 0)
+					- 
+				ISNULL(
+					(SELECT	COUNT(DISTINCT BookingSHCDetails.BookingId)
+					FROM	@DashboardShipmentsSHCDetails AS BookingSHCDetails
+					WHERE	BookingSHCDetails.FlightId = Flights.Flight_ID
+					AND		(BookingSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR','XPS','RAC','PIL','VAL','AVI','HUM')
+								OR BookingSHCDetails.SpecialHandlingCode IN ('DGN','DGR','XPS','RAC','PIL','VAL','AVI','HUM'))
+					), 0) AS OTHBooked,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT AcceptedShipments.ShipmentNumber)
+					FROM	AcceptedShipments
+					WHERE	AcceptedShipments.FlightId = Flights.Flight_ID
+					AND		((AcceptedShipments.Accepted = 1 AND AcceptedShipments.AcceptedDateTime IS NOT NULL)
+								OR AcceptedShipments.FreightOutId IS NOT NULL)
+					AND		AcceptedShipments.ShipmentNumber NOT IN 
+						(
+							SELECT	DISTINCT ShipmentNumber
+							FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+							WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+						)
+					), 0) 
+					+
+				ISNULL(
+					(SELECT COUNT(DISTINCT AcceptedOTHShipments.ShipmentId)
+					FROM 
+						(SELECT	ShipmentSHCDetails.ShipmentId
+						FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+						AND		((ShipmentSHCDetails.Accepted = 1 AND ShipmentSHCDetails.AcceptedDateTime IS NOT NULL)
+									OR ShipmentSHCDetails.FreightOutId IS NOT NULL)
+						AND	NOT EXISTS (
+							SELECT	SHCPriority.ShipmentId
+							FROM	@AcceptanceSHCPriority AS SHCPriority
+							WHERE	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						)
+						) AS AcceptedOTHShipments
+					), 0) AS AcceptedOTHReady,
+				ISNULL(
+					(SELECT	COUNT(DISTINCT AcceptedShipments.ShipmentId)
+					FROM	AcceptedShipments
+					WHERE	AcceptedShipments.FlightId = Flights.Flight_ID
+					AND		AcceptedShipments.FlightBookingId IS NOT NULL
+					AND		((AcceptedShipments.Accepted = 1 AND AcceptedShipments.AcceptedDateTime IS NOT NULL)
+								OR AcceptedShipments.FreightOutId IS NOT NULL)
+					AND		AcceptedShipments.AssignedUldTrolley IS NOT NULL
+					AND		AcceptedShipments.ShipmentId NOT IN 
+						(
+							SELECT	DISTINCT ShipmentId
+							FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+							WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+							AND		ShipmentSHCDetails.FlightBookingId IS NOT NULL
+							AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+							AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+						)
+					), 0) 
+					+
+				ISNULL(
+					(SELECT COUNT(DISTINCT AssignedOTHShipments.ShipmentId)
+					FROM 
+						(SELECT	ShipmentSHCDetails.ShipmentId
+						FROM	@DashboardShipmentsSHCDetails AS ShipmentSHCDetails
+						WHERE	ShipmentSHCDetails.FlightId = Flights.Flight_ID
+						AND		ShipmentSHCDetails.FlightBookingId IS NOT NULL
+						AND		ShipmentSHCDetails.AssignedUldTrolley IS NOT NULL
+						AND		ShipmentSHCDetails.Flight_ID IS NOT NULL
+						AND		(ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.LoadedPieces
+									OR ShipmentSHCDetails.AssignedPieces = ShipmentSHCDetails.FreightOutPieces)
+						AND	NOT EXISTS (
+							SELECT	SHCPriority.ShipmentId
+							FROM	@AcceptanceSHCPriority AS SHCPriority
+							WHERE	SHCPriority.ShipmentId = ShipmentSHCDetails.ShipmentId
+						)
+						) AS AssignedOTHShipments
+					), 0) AS AssignedOTHReady,
+					HoDLsNotocMismatch.HoDlsColor,
+					HoDLsNotocMismatch.HoNotocColor
+		FROM	@DashboardExportFlights AS Flights INNER JOIN @HoDlsNotocMismatchUld AS HoDLsNotocMismatch
+		          ON HoDLsNotocMismatch.Flight_ID=Flights.Flight_ID
+			INNER JOIN
+				BatchConfig
+			ON	BatchConfig.TenantId = #{tenantAirport}
+		WHERE	COALESCE(Flights.DateETD, Flights.DateSTD) 
+					BETWEEN DATEADD(HOUR, BatchConfig.FromHours, BatchConfig.CurrentTime) 
+					AND DATEADD(HOUR, BatchConfig.ToHours, BatchConfig.CurrentTime)
+		ORDER BY COALESCE(Flights.DateATD, Flights.DateETD, Flights.DateSTD) ASC
+		]]>
+	</select>
+	
+	<!-- Dashboard Import Flights Data ResultMap -->
+	<resultMap id="dashboardImportFlightsDataMap" type="com.ngen.cosys.dashboard.model.ImportFlightData">
+		<result column="TenantId" property="tenantId" />
+		<result column="CarrierGroupCode" property="carrierGroupCode" />
+		<result column="CarrierCode" property="carrierCode" />
+		<result column="Flight_ID" property="flightId" />
+		<result column="FlightKey" property="flightKey" />
+		<result column="FlightDate" property="flightDate" />
+		<result column="FlightBoardPoint" property="flightBoardPoint" />
+		<result column="FlightOffPoint" property="flightOffPoint" />
+		<result column="FlightSector" property="flightSector" />
+		<result column="DateSTA" property="dateSTA" />
+		<result column="DateETA" property="dateETA" />
+		<result column="DateATA" property="dateATA" />
+		<result column="FlightType" property="flightType" />
+		<result column="AircraftType" property="aircraftType" />
+		<result column="AircraftRegCode" property="aircraftRegCode" />
+		<result column="PreviousAircraftRegCode" property="previousAircraftRegCode" />
+		<result column="AircraftRegCodeUpdatedTime" property="aircraftRegCodeUpdatedTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="ParkingBay" property="parkingBay" />
+		<result column="PreviousParkingBay" property="previousParkingBay" />
+		<result column="ParkingBayUpdatedTime" property="parkingBayUpdatedTime" 
+				javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP" />
+		<result column="TerminalCode" property="terminalCode" />
+		<result column="FlightTime" property="flightTime" />
+		<result column="FlightDateTime" property="flightDateTime" />
+		<result column="FlightStatus" property="flightStatus" />
+		<result column="RampCheckInCompleted" property="rampCheckInCompleted" />
+		<result column="RampCheckInCompletedTime" property="rampCheckInCompletedTime" />
+		<result column="DocumentVerificationCompleted" property="documentVerificationCompleted" />
+		<result column="DocumentVerificationCompletedTime" property="documentVerificationCompletedTime" />
+		<result column="BreakdownCompleted" property="breakdownCompleted" />
+		<result column="BreakdownCompletedTime" property="breakdownCompletedTime" />
+		<result column="FlightCompleted" property="flightCompleted" />
+		<result column="FlightCompletedTime" property="flightCompletedTime" />
+		<result column="FlightClosed" property="flightClosed" />
+		<result column="FlightClosedTime" property="flightClosedTime" />
+		<result column="FlightDiscrepancyListSent" property="flightDiscrepancyListSent" />
+		<result column="FlightDiscrepancyListSentTime" property="flightDiscrepancyListSentTime" />
+		<result column="ThroughTransitWorkingListFinalized" property="throughTransitWorkingListFinalized" />
+		<result column="ThroughTransitWorkingListFinalizedTime" property="throughTransitWorkingListFinalizedTime" />
+		<result column="InwardServiceReportFinalized" property="inwardServiceReportFinalized" />
+		<result column="InwardServiceReportFinalizedTime" property="inwardServiceReportFinalizedTime" />
+		<result column="FFMStatus" property="ffmStatus" />
+		<result column="FFMProcessedTime" property="ffmProcessedTime" />
+		<result column="TowInRampTotalULD" property="towInRampTotalULD" />
+		<result column="TowInRampCheckedInULD" property="towInRampCheckedInULD" />
+		<result column="DocumentsAttached" property="documentsAttached" />
+		<result column="DocumentsReceived" property="documentsReceived" />
+		<result column="LocalDeliveryShipments" property="localDeliveryShipments" />
+		<result column="LocalDeliveryShipmentsWeight" property="localDeliveryShipmentsWeight" />
+		<result column="TranshipmentsTotal" property="transhipmentsTotal" />
+		<result column="TranshipmentsWeight" property="transhipmentsWeight" />
+		<result column="ManifestedDGTotal" property="manifestedDGTotal" />
+		<result column="ManifestedDGReady" property="manifestedDGReady" />
+		<result column="ManifestedXPSTotal" property="manifestedXPSTotal" />
+		<result column="ManifestedXPSReady" property="manifestedXPSReady" />
+		<result column="ManifestedRACTotal" property="manifestedRACTotal" />
+		<result column="ManifestedRACReady" property="manifestedRACReady" />
+		<result column="ManifestedPILTotal" property="manifestedPILTotal" />
+		<result column="ManifestedPILReady" property="manifestedPILReady" />
+		<result column="ManifestedVALTotal" property="manifestedVALTotal" />
+		<result column="ManifestedVALReady" property="manifestedVALReady" />
+		<result column="ManifestedAVITotal" property="manifestedAVITotal" />
+		<result column="ManifestedAVIReady" property="manifestedAVIReady" />
+		<result column="ManifestedHUMTotal" property="manifestedHUMTotal" />
+		<result column="ManifestedHUMReady" property="manifestedHUMReady" />
+		<result column="ManifestedOTHTotal" property="manifestedOTHTotal" />
+		<result column="ManifestedOTHReady" property="manifestedOTHReady" />
+		<result column="UCMSent" property="ucmSent" />
+	</resultMap>
+   
+	<!-- Dashboard - Import flights data -->
+	<select id="sqlSelectDashboardImportFlightsData" parameterType="Map" resultMap="dashboardImportFlightsDataMap">
+		<![CDATA[
+		-- FLIGHTS --
+		DECLARE @DashboardImportFlights TABLE (
+			TenantId VARCHAR(3),
+			CarrierGroupCode VARCHAR(3),
+			CarrierCode VARCHAR(3),
+			Flight_ID NUMERIC INDEX DashFlightID CLUSTERED, 
+			FlightSegmentId NUMERIC, 
+			FlightNumber VARCHAR(5), 
+			FlightKey VARCHAR(8), 
+			FlightOriginDate DATETIME,
+			FlightBoardPoint VARCHAR(3), 
+			FlightOffPoint VARCHAR(3), 
+			DateSTA DATETIME, 
+			DateETA DATETIME, 
+			DateATA DATETIME,
+			FlightType VARCHAR(1), 
+			AircraftType VARCHAR(3), 
+			InboundAircraftRegNo VARCHAR(10), 
+			PreviousInboundAircraftRegNo VARCHAR(10),
+			InboundAircraftRegNoUpdatedTime DATETIME,
+			ParkingBayArrivalAircraft VARCHAR(4),
+			PreviousParkingBayArrivalAircraft VARCHAR(4), 
+			ParkingBayArrivalAircraftUpdatedTime DATETIME,
+			FlightCancelFlag VARCHAR(1),
+			RampCheckInCompletedAt DATETIME, 
+			DocumentVerificationCompletedAt DATETIME,
+			BreakDownCompletedAt DATETIME, 
+			FlightCompletedAt DATETIME,
+			FightClosedAt DATETIME, 
+			FlightDiscrepncyListSentAt DATETIME,
+			ThroughTransitWorkingListFinalizedAt DATETIME, 
+			InwardServiceReportFinalizedAt DATETIME,
+			MessageStatus VARCHAR(10),
+			MessageProcessedDate DATETIME
+		);
+		WITH FlightLegs AS (
+			SELECT 	Flight_ID, FlightBoardPoint, FlightOffPoint, AircraftType, DateSTA, DateETA, DateATA
+			FROM 	Flt_OperativeFlight_Legs
+			WHERE	DateSTA BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+			AND		DateETA IS NULL
+			UNION
+			SELECT 	Flight_ID, FlightBoardPoint, FlightOffPoint, AircraftType, DateSTA, DateETA, DateATA
+			FROM 	Flt_OperativeFlight_Legs
+			WHERE	DateETA BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+		)
+		-- INSERT INTO DASHBOARD IMPORT FLIGHT TABLE --
+		INSERT INTO @DashboardImportFlights
+		SELECT	#{tenantAirport} AS TenantId,
+				Mst_CarrierGroup.CarrierGroupCode,
+				Flt_OperativeFlight.CarrierCode,
+				Flt_OperativeFlight.Flight_ID, Flt_OperativeFlight_Segments.FlightSegmentId, 
+				Flt_OperativeFlight.FlightNumber, Flt_OperativeFlight.FlightKey, Flt_OperativeFlight.FlightOriginDate,
+				FlightLegs.FlightBoardPoint, FlightLegs.FlightOffPoint, 
+				FlightLegs.DateSTA, FlightLegs.DateETA, FlightLegs.DateATA,
+				Flt_OperativeFlight.FlightType, FlightLegs.AircraftType, 
+				Flt_OperativeFlight.InboundAircraftRegNo, 
+				Flt_OperativeFlight.PreviousInboundAircraftRegNo,
+				Flt_OperativeFlight.InboundAircraftRegNoUpdatedTime,
+				Flt_OperativeFlight.ParkingBayArrivalAircraft,
+				Flt_OperativeFlight.PreviousParkingBayArrivalAircraft, 
+				Flt_OperativeFlight.ParkingBayArrivalAircraftUpdatedTime,
+				Flt_OperativeFlight.FlightCancelFlag,
+				Imp_FlightEvents.RampCheckInCompletedAt, Imp_FlightEvents.DocumentVerificationCompletedAt,
+				Imp_FlightEvents.BreakDownCompletedAt, Imp_FlightEvents.FlightCompletedAt,
+				Imp_FlightEvents.FightClosedAt, Imp_FlightEvents.FlightDiscrepncyListSentAt,
+				Imp_FlightEvents.ThroughTransitWorkingListFinalizedAt, 
+				Imp_FlightEvents.InwardServiceReportFinalizedAt,
+				Imp_FreightFlightManifestBySegment.MessageStatus,
+				Imp_FreightFlightManifestBySegment.MessageProcessedDate
+		FROM	Flt_OperativeFlight
+			INNER JOIN
+				FlightLegs
+			ON	FlightLegs.Flight_ID = Flt_OperativeFlight.Flight_ID
+			INNER JOIN
+				Flt_OperativeFlight_Segments
+			ON	Flt_OperativeFlight_Segments.Flight_ID = Flt_OperativeFlight.Flight_ID
+			AND	Flt_OperativeFlight_Segments.FlightBoardPoint = FlightLegs.FlightBoardPoint
+			AND	Flt_OperativeFlight_Segments.FlightOffPoint = FlightLegs.FlightOffPoint
+			INNER JOIN
+				Imp_FlightEvents
+			ON	Imp_FlightEvents.FlightId = Flt_OperativeFlight.Flight_ID
+			INNER JOIN
+				Mst_AssociateCarrierWithGroup
+			ON	Mst_AssociateCarrierWithGroup.CarrierCode = Flt_OperativeFlight.CarrierCode
+			INNER JOIN
+				Mst_CarrierGroup
+			ON	Mst_CarrierGroup.Mst_CarrierGroup_ID = Mst_AssociateCarrierWithGroup.Mst_CarrierGroup_ID
+			AND	Mst_CarrierGroup.CarrierGroupCode IN ('OAL','SQ')
+			LEFT JOIN
+				Imp_FreightFlightManifestByFlight
+			ON	Imp_FreightFlightManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID
+			LEFT JOIN
+				Imp_FreightFlightManifestBySegment
+			ON	Imp_FreightFlightManifestBySegment.ImpFreightFlightManifestByFlightId 
+					= Imp_FreightFlightManifestByFlight.ImpFreightFlightManifestByFlightId
+			AND	Imp_FreightFlightManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId
+			AND	(Imp_FreightFlightManifestBySegment.MessageStatus IS NULL OR Imp_FreightFlightManifestBySegment.MessageStatus = 'PROCESSED')
+		WHERE	COALESCE(FlightLegs.DateETA, FlightLegs.DateSTA) BETWEEN GETDATE() AND DATEADD(HOUR, +16, GETDATE())
+		AND		FlightLegs.FlightOffPoint = #{tenantAirport};
+		-- IMPORT SHC TABLE --
+		DECLARE @DashboardImportManifestSHCDetails TABLE (
+			FlightId NUMERIC INDEX DashSHCFlightID CLUSTERED, 
+			ShipmentNumber VARCHAR(20), 
+			ShipmentDate DATETIME,
+			Origin VARCHAR(3), 
+			Destination VARCHAR(3),
+			SHCHandlingGroupCode VARCHAR(3), 
+			SpecialHandlingCode VARCHAR(3),
+			SHCPriority NUMERIC
+		);
+		WITH ManifestedShipments AS (
+			SELECT	Imp_ArrivalManifestByFlight.FlightId,
+					Imp_ArrivalManifestBySegment.FlightSegmentId,
+					Imp_ArrivalManifestULD.ULDNumber,
+					Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId, 
+					Imp_ArrivalManifestShipmentInfo.ShipmentNumber, Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+					Imp_ArrivalManifestShipmentInfo.Origin, Imp_ArrivalManifestShipmentInfo.Destination,
+					ISNULL(Imp_ArrivalManifestShipmentInfo.Piece, 0) AS Pieces, 
+					ISNULL(Imp_ArrivalManifestShipmentInfo.Weight, 0.0) AS Weight,
+					SUM(Imp_ArrivalManifestShipmentInfo.Piece) 
+						OVER (PARTITION BY Imp_ArrivalManifestByFlight.FlightId, Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+								Imp_ArrivalManifestShipmentInfo.ShipmentDate) AS ManifestedTotalPieces,
+					SUM(Imp_ArrivalManifestShipmentInfo.Weight) 
+						OVER (PARTITION BY Imp_ArrivalManifestByFlight.FlightId, Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+								Imp_ArrivalManifestShipmentInfo.ShipmentDate) AS ManifestedTotalWeight,
+					ISNULL(Imp_ArrivalManifestShipmentInfo.OffloadedFlag, 0) AS OffloadedFlag
+			FROM	@DashboardImportFlights AS Flights
+				INNER JOIN
+					Imp_ArrivalManifestByFlight 
+				ON	Imp_ArrivalManifestByFlight.FlightId = Flights.Flight_ID
+				INNER JOIN
+					Imp_ArrivalManifestBySegment 
+				ON	Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+						= Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+				INNER JOIN
+					Imp_ArrivalManifestULD 
+				ON	Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId 
+						= Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+				INNER JOIN
+					Imp_ArrivalManifestShipmentInfo
+				ON	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId 
+						= Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+		)
+		-- MANIFEST SHC DETAILS --
+		INSERT INTO @DashboardImportManifestSHCDetails
+		SELECT	ShipmentSHCGroup.FlightId, 
+				ShipmentSHCGroup.ShipmentNumber, ShipmentSHCGroup.ShipmentDate,
+				ShipmentSHCGroup.Origin, ShipmentSHCGroup.Destination,
+				ISNULL(SHCGroupDetails.SHCHandlingGroupCode, 'OTH') AS SHCHandlingGroupCode, 
+				SHCGroupDetails.SpecialHandlingCode,
+				IIF(SHCGroupDetails.SHCGroupPriority < Mst_SpecialHandlingCode.SpecialHandlingPriority, 
+					SHCGroupDetails.SHCGroupPriority, Mst_SpecialHandlingCode.SpecialHandlingPriority) AS SHCPriority	
+		FROM (
+			SELECT	ManifestedShipments.FlightId,
+					ManifestedShipments.ShipmentNumber, ManifestedShipments.ShipmentDate,
+					ManifestedShipments.Origin, ManifestedShipments.Destination,
+					Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode
+			FROM	ManifestedShipments
+				INNER JOIN
+					Imp_ArrivalManifestByShipmentSHC
+				ON	Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId 
+						= ManifestedShipments.ImpArrivalManifestShipmentInfoId
+			UNION
+			SELECT	ManifestedShipments.FlightId, 
+					ManifestedShipments.ShipmentNumber, ManifestedShipments.ShipmentDate,
+					ManifestedShipments.Origin, ManifestedShipments.Destination,
+					Shipment_MasterSHC.SpecialHandlingCode
+			FROM	ManifestedShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = ManifestedShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = ManifestedShipments.ShipmentDate
+				AND	(Shipment_Master.DocumentReceivedOn IS NOT NULL OR Shipment_Master.PhotoCopy IS NOT NULL)
+				INNER JOIN
+					Shipment_MasterSHC
+				ON	Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId
+			UNION
+			SELECT	ManifestedShipments.FlightId, 
+					ManifestedShipments.ShipmentNumber, ManifestedShipments.ShipmentDate,
+					ManifestedShipments.Origin, ManifestedShipments.Destination,
+					Shipment_InventorySHC.SpecialHandlingCode
+			FROM	ManifestedShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = ManifestedShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = ManifestedShipments.ShipmentDate
+				AND	(Shipment_Master.DocumentReceivedOn IS NOT NULL OR Shipment_Master.PhotoCopy IS NOT NULL)
+				INNER JOIN
+					Shipment_Inventory
+				ON	Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+				AND	ISNULL(Shipment_Inventory.Locked, 0) = 0
+				INNER JOIN
+					Shipment_InventorySHC
+				ON	Shipment_InventorySHC.ShipmentInventoryId = Shipment_Inventory.ShipmentInventory_Id
+			) ShipmentSHCGroup
+			INNER JOIN
+				Mst_SpecialHandlingCode
+			ON	Mst_SpecialHandlingCode.SpecialHandlingCode = ShipmentSHCGroup.SpecialHandlingCode
+			LEFT JOIN
+			(
+				SELECT	Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode,
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode,
+						ISNULL(Mst_SHCHandlingGroup.SHCGrpPrioirity, 999) AS SHCGroupPriority
+				FROM	Mst_AssociateSHCByHandlingGroup
+					INNER JOIN
+						Mst_SHCHandlingGroup
+					ON	Mst_SHCHandlingGroup.MstSHCHandlingGroupID = Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+				WHERE	Mst_SHCHandlingGroup.Category IN ('DOC','WH')
+				AND		Mst_SHCHandlingGroup.SHCHandlingGroupCode IN ('DGR','DGN','XPS','RAC','PIL','VAL','AVI','HUM')
+			) AS SHCGroupDetails
+			ON	SHCGroupDetails.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode;
+		-- MANIFESTED SHC PRIORITY --
+		DECLARE @ManifestedSHCPriority TABLE (
+			ShipmentNumber VARCHAR(20) INDEX DashSHCManifestShipment CLUSTERED,
+			GroupCode VARCHAR(3),
+			GroupPriority NUMERIC
+		);
+		WITH ManifestedSHCPriorities AS (
+			SELECT	ManifestSHCDetails.ShipmentNumber, ManifestSHCDetails.SHCHandlingGroupCode,
+					ManifestSHCDetails.SHCPriority, 
+					GROUPORDER = ROW_NUMBER() OVER (PARTITION BY ManifestSHCDetails.ShipmentNumber, ManifestSHCDetails.SHCPriority
+						ORDER BY (
+							CASE WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'DGN' THEN 1
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'DGR' THEN 2
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'RAC' THEN 3
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'XPS' THEN 4
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'AVI' THEN 5
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'HUM' THEN 6
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'VAL' THEN 7
+								WHEN ManifestSHCDetails.SHCHandlingGroupCode = 'PIL' THEN 8
+								ELSE 9
+							END
+						) 
+					)
+			FROM	@DashboardImportManifestSHCDetails AS ManifestSHCDetails
+			WHERE	ManifestSHCDetails.SHCHandlingGroupCode NOT IN ('OTH')
+		)
+		-- INSERT INTO MANIFESTED SHC PRIORITY --
+		INSERT INTO @ManifestedSHCPriority
+		SELECT	ShipmentNumber, SHCHandlingGroupCode, SHCPriority
+		FROM	ManifestedSHCPriorities
+		WHERE	GROUPORDER = 1
+		GROUP BY ShipmentNumber, SHCHandlingGroupCode, SHCPriority
+		HAVING SHCPriority = (
+			SELECT	MIN(ManifestedPriority.SHCPriority) 
+			FROM	ManifestedSHCPriorities AS ManifestedPriority
+			WHERE	ManifestedPriority.ShipmentNumber = ManifestedSHCPriorities.ShipmentNumber
+			GROUP BY ManifestedPriority.ShipmentNumber
+		);
+		-- BREAKDOWN SHIPMENTS --
+		DECLARE @BreakdownShipments TABLE (
+			FlightId NUMERIC INDEX DashBreakdownFlightId CLUSTERED, 
+			ULDTrolleyNumber VARCHAR(15), 
+			ImpBreakDownStorageInfoId NUMERIC, 
+			ShipmentId NUMERIC, 
+			ShipmentNumber VARCHAR(20), 
+			ShipmentDate DATETIME, 
+			Origin VARCHAR(3), 
+			Destination VARCHAR(3), 
+			ShipmentInventory_Id NUMERIC, 
+			ShipmentLocation VARCHAR(12), 
+			WarehouseLocation VARCHAR(12), 
+			BreakdownPieces NUMERIC, 
+			BreakdownWeight DECIMAL,
+			TransactionSequenceNo NUMERIC, 
+			CargoIrregularityCode VARCHAR(50), 
+			IrregularityPieces NUMERIC, 
+			IrregularityWeight DECIMAL,
+			IrregularityTotalPieces NUMERIC,
+			IrregularityTotalWeight DECIMAL
+		);
+		WITH DocumentVerification AS (
+		SELECT	Imp_ShipmentVerification.FlightId, Imp_ShipmentVerification.ImpShipmentVerificationId, 
+				Imp_ShipmentVerification.ShipmentId, 
+				Shipment_Master.ShipmentNumber, Shipment_Master.ShipmentDate, 
+				Shipment_Master.Origin, Shipment_Master.Destination, 
+				ISNULL(Imp_ShipmentVerification.BreakDownPieces, 0) AS BreakdownPieces, 
+				ISNULL(Imp_ShipmentVerification.BreakDownWeight, 0.0) AS BreakdownWeight, 
+				Imp_ShipmentVerification.DocumentReceivedFlag
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				Imp_ShipmentVerification
+			ON	Imp_ShipmentVerification.FlightId = Flights.Flight_ID
+			INNER JOIN
+				Shipment_Master
+			ON	Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+		)
+		-- INSERT INTO DASHBOARD BREAKDOWN SHIPMENTS --
+		INSERT INTO @BreakdownShipments
+		SELECT	DocumentVerification.FlightId, Imp_BreakDownULDTrolleyInfo.ULDTrolleyNumber, 
+				Imp_BreakDownStorageInfo.ImpBreakDownStorageInfoId, 
+				DocumentVerification.ShipmentId, 
+				DocumentVerification.ShipmentNumber, DocumentVerification.ShipmentDate, 
+				DocumentVerification.Origin, DocumentVerification.Destination, 
+				Imp_BreakDownStorageInfo.ShipmentInventory_Id, 
+				Imp_BreakDownStorageInfo.ShipmentLocation, Imp_BreakDownStorageInfo.WarehouseLocation, 
+				ISNULL(Imp_BreakDownStorageInfo.Pieces, 0) AS BreakdownPieces, 
+				ISNULL(Imp_BreakDownStorageInfo.Weight, 0.0) AS BreakdownWeight,
+				Imp_BreakDownStorageInfo.TransactionSequenceNo, 
+				Shipment_Irregularity.CargoIrregularityCode, 
+				ISNULL(Shipment_Irregularity.Pieces, 0) AS IrregularityPieces, 
+				ISNULL(Shipment_Irregularity.Weight, 0.0) AS IrregularityWeight,
+				SUM(Shipment_Irregularity.Pieces) 
+					OVER (PARTITION BY Shipment_Irregularity.Flight_ID, 
+						Shipment_Irregularity.ShipmentNumber, Shipment_Irregularity.ShipmentDate, 
+						Shipment_Irregularity.CargoIrregularityCode) AS IrregularityTotalPieces,
+				SUM(Shipment_Irregularity.Weight)
+					OVER (PARTITION BY Shipment_Irregularity.Flight_ID, 
+						Shipment_Irregularity.ShipmentNumber, Shipment_Irregularity.ShipmentDate, 
+						Shipment_Irregularity.CargoIrregularityCode) AS IrregularityTotalWeight
+		FROM	DocumentVerification
+			INNER JOIN
+				Imp_BreakDownULDTrolleyInfo
+			ON	Imp_BreakDownULDTrolleyInfo.ImpShipmentVerificationId = DocumentVerification.ImpShipmentVerificationId
+			INNER JOIN
+				Imp_BreakDownStorageInfo
+			ON	Imp_BreakDownStorageInfo.ImpBreakDownULDTrolleyInfoId = Imp_BreakDownULDTrolleyInfo.ImpBreakDownULDTrolleyInfoId
+			LEFT JOIN
+				Shipment_Irregularity
+			ON	Shipment_Irregularity.Flight_ID = DocumentVerification.FlightId
+			AND	Shipment_Irregularity.ShipmentNumber = DocumentVerification.ShipmentNumber
+			AND	Shipment_Irregularity.ShipmentDate = DocumentVerification.ShipmentDate;
+		-- BREAKDOWN SHC DETAILS --
+		DECLARE @BreakdownShipmentSHCDetails TABLE (
+			FlightId NUMERIC INDEX DashBreakdownSHCFlightId CLUSTERED, 
+			ShipmentNumber VARCHAR(20), 
+			ShipmentDate DATETIME,
+			Origin VARCHAR(3), 
+			Destination VARCHAR(3),
+			SHCHandlingGroupCode VARCHAR(3), 
+			SpecialHandlingCode VARCHAR(3),
+			SHCPriority NUMERIC
+		);
+		-- INSERT INTO DASHBOARD BREAKDOWN SHIPMENT SHC DETAILS --
+		INSERT INTO @BreakdownShipmentSHCDetails
+		SELECT	ShipmentSHCGroup.FlightId, 
+				ShipmentSHCGroup.ShipmentNumber, ShipmentSHCGroup.ShipmentDate,
+				ShipmentSHCGroup.Origin, ShipmentSHCGroup.Destination,
+				ISNULL(SHCGroupDetails.SHCHandlingGroupCode, 'OTH') AS SHCHandlingGroupCode, 
+				SHCGroupDetails.SpecialHandlingCode,
+				IIF(SHCGroupDetails.SHCGroupPriority < Mst_SpecialHandlingCode.SpecialHandlingPriority, 
+					SHCGroupDetails.SHCGroupPriority, Mst_SpecialHandlingCode.SpecialHandlingPriority) AS SHCPriority	
+		FROM (
+			SELECT	BreakdownShipments.FlightId, 
+					BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate,
+					BreakdownShipments.Origin, BreakdownShipments.Destination,
+					Imp_BreakDownStorageSHCInfo.SpecialHandlingCode
+			FROM	@BreakdownShipments AS BreakdownShipments
+				INNER JOIN
+					Imp_BreakDownStorageSHCInfo
+				ON	Imp_BreakDownStorageSHCInfo.ImpBreakDownStorageInfoId = BreakdownShipments.ImpBreakDownStorageInfoId
+			UNION
+			SELECT	BreakdownShipments.FlightId, 
+					BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate,
+					BreakdownShipments.Origin, BreakdownShipments.Destination,
+					Shipment_MasterSHC.SpecialHandlingCode
+			FROM	@BreakdownShipments AS BreakdownShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = BreakdownShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = BreakdownShipments.ShipmentDate
+				AND	(Shipment_Master.DocumentReceivedOn IS NOT NULL OR Shipment_Master.PhotoCopy IS NOT NULL)
+				INNER JOIN
+					Shipment_MasterSHC
+				ON	Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId
+			UNION
+			SELECT	BreakdownShipments.FlightId, 
+					BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate,
+					BreakdownShipments.Origin, BreakdownShipments.Destination,
+					Shipment_InventorySHC.SpecialHandlingCode
+			FROM	@BreakdownShipments AS BreakdownShipments
+				INNER JOIN
+					Shipment_Master
+				ON	Shipment_Master.ShipmentNumber = BreakdownShipments.ShipmentNumber
+				AND	Shipment_Master.ShipmentDate = BreakdownShipments.ShipmentDate
+				AND	(Shipment_Master.DocumentReceivedOn IS NOT NULL OR Shipment_Master.PhotoCopy IS NOT NULL)
+				INNER JOIN
+					Shipment_Inventory
+				ON	Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId
+				AND	ISNULL(Shipment_Inventory.Locked, 0) = 0
+				INNER JOIN
+					Shipment_InventorySHC
+				ON	Shipment_InventorySHC.ShipmentInventoryId = Shipment_Inventory.ShipmentInventory_Id
+			) ShipmentSHCGroup
+			INNER JOIN
+				Mst_SpecialHandlingCode
+			ON	Mst_SpecialHandlingCode.SpecialHandlingCode = ShipmentSHCGroup.SpecialHandlingCode
+			LEFT JOIN
+			(
+				SELECT	Mst_AssociateSHCByHandlingGroup.SpecialHandlingCode,
+						Mst_SHCHandlingGroup.SHCHandlingGroupCode,
+						ISNULL(Mst_SHCHandlingGroup.SHCGrpPrioirity, 999) AS SHCGroupPriority
+				FROM	Mst_AssociateSHCByHandlingGroup
+					INNER JOIN
+						Mst_SHCHandlingGroup
+					ON	Mst_SHCHandlingGroup.MstSHCHandlingGroupID = Mst_AssociateSHCByHandlingGroup.MstSHCHandlingGroupID
+				WHERE	Mst_SHCHandlingGroup.Category IN ('DOC','WH')
+				AND		Mst_SHCHandlingGroup.SHCHandlingGroupCode IN ('DGR','DGN','XPS','RAC','PIL','VAL','AVI','HUM')
+			) AS SHCGroupDetails
+			ON	SHCGroupDetails.SpecialHandlingCode = Mst_SpecialHandlingCode.SpecialHandlingCode;
+		-- BREAKDOWN SHC PRIORITY --
+		DECLARE @BreakdownSHCPriority TABLE (
+			ShipmentNumber VARCHAR(20) INDEX DashSHCBreakdownShipment CLUSTERED,
+			GroupCode VARCHAR(3),
+			GroupPriority NUMERIC
+		);
+		WITH BreakdownSHCPriorities AS (
+			SELECT	BreakdownSHCDetails.ShipmentNumber, BreakdownSHCDetails.SHCHandlingGroupCode,
+					BreakdownSHCDetails.SHCPriority, 
+					GROUPORDER = ROW_NUMBER() OVER (PARTITION BY BreakdownSHCDetails.ShipmentNumber, BreakdownSHCDetails.SHCPriority
+						ORDER BY (
+							CASE WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'DGN' THEN 1
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'DGR' THEN 2
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'RAC' THEN 3
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'XPS' THEN 4
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'AVI' THEN 5
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'HUM' THEN 6
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'VAL' THEN 7
+								WHEN BreakdownSHCDetails.SHCHandlingGroupCode = 'PIL' THEN 8
+								ELSE 9
+							END
+						) 
+					)
+			FROM	@BreakdownShipmentSHCDetails AS BreakdownSHCDetails
+			WHERE	BreakdownSHCDetails.SHCHandlingGroupCode NOT IN ('OTH')
+		)
+		-- INSERT INTO BREAKDOWN SHC PRIORITY --
+		INSERT INTO @BreakdownSHCPriority
+		SELECT	ShipmentNumber, SHCHandlingGroupCode, SHCPriority
+		FROM	BreakdownSHCPriorities
+		WHERE	GROUPORDER = 1
+		GROUP BY ShipmentNumber, SHCHandlingGroupCode, SHCPriority
+		HAVING SHCPriority = (
+			SELECT	MIN(BreakdownPriority.SHCPriority) 
+			FROM	BreakdownSHCPriorities AS BreakdownPriority
+			WHERE	BreakdownPriority.ShipmentNumber = BreakdownSHCPriorities.ShipmentNumber
+			GROUP BY BreakdownPriority.ShipmentNumber
+		);
+		-- BATCH CONFIG --
+		WITH BatchConfig AS (
+			SELECT	#{tenantAirport} AS TenantId, 
+			ISNULL(
+				(SELECT	CAST(ParameterValueChar AS INT) AS Range
+				FROM	App_SystemParameters
+				WHERE	ParameterCode = 'DASHBOARD_IMPORT_FROM_HOURS_RANGE'
+				AND 	ParameterStatusFlag = 'Y'
+				AND 	StartDate <= GETDATE() 
+				AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				), -8) AS FromHours,
+			ISNULL(
+				(SELECT	CAST(ParameterValueChar AS INT) AS Range
+				FROM	App_SystemParameters
+				WHERE	ParameterCode = 'DASHBOARD_IMPORT_TO_HOURS_RANGE'
+				AND 	ParameterStatusFlag = 'Y'
+				AND 	StartDate <= GETDATE() 
+				AND 	(EndDate >= GETDATE() OR EndDate IS NULL)
+				), +8) AS ToHours,
+			CONVERT(DATETIME, 
+				SWITCHOFFSET(CONVERT(DATETIMEOFFSET, GETDATE()), 
+					(SELECT current_utc_offset FROM sys.time_zone_info WHERE name = 
+						(SELECT ParameterValueChar FROM App_SystemParameters WHERE ParameterCode = 'STATION_TIMEZONE')
+					)
+				)
+			) AS CurrentTime
+		), 
+		-- SHC Group Priority --
+		SHCGroupPriority AS (
+			SELECT	GroupCode, Priority
+			FROM (
+				VALUES ('DGN',1), ('DGR',2), ('RAC',3), ('XPS',4), ('AVI',5), ('HUM',6), ('VAL',7), ('PIL',8)
+			) AS TablePriority (GroupCode, Priority)
+		), 
+		ManifestedShipments AS (
+		SELECT	Imp_ArrivalManifestByFlight.FlightId,
+				Imp_ArrivalManifestBySegment.FlightSegmentId,
+				Imp_ArrivalManifestULD.ULDNumber, Imp_InboundContainers.ContentCode, 
+				CASE WHEN Imp_InboundContainers.TransferType = 'TTH' AND ISNULL(Imp_InboundContainers.PHCFlag, 0) = 1
+					THEN NULL ELSE Imp_InboundContainers.TransferType 
+				END AS TransferType, 
+				Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId, 
+				Imp_ArrivalManifestShipmentInfo.ShipmentNumber, Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+				Imp_ArrivalManifestShipmentInfo.Origin, Imp_ArrivalManifestShipmentInfo.Destination,
+				ISNULL(Imp_ArrivalManifestShipmentInfo.Piece, 0) AS Pieces, 
+				ISNULL(Imp_ArrivalManifestShipmentInfo.Weight, 0.0) AS Weight,
+				SUM(Imp_ArrivalManifestShipmentInfo.Piece) 
+					OVER (PARTITION BY Imp_ArrivalManifestByFlight.FlightId, Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+							Imp_ArrivalManifestShipmentInfo.ShipmentDate) AS ManifestedTotalPieces,
+				SUM(Imp_ArrivalManifestShipmentInfo.Weight) 
+					OVER (PARTITION BY Imp_ArrivalManifestByFlight.FlightId, Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+							Imp_ArrivalManifestShipmentInfo.ShipmentDate) AS ManifestedTotalWeight,
+				ISNULL(Imp_ArrivalManifestShipmentInfo.OffloadedFlag, 0) AS OffloadedFlag, 
+				ISNULL(Imp_InboundContainers.PHCFlag, 0) AS PHCFlag
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				Imp_ArrivalManifestByFlight 
+			ON	Imp_ArrivalManifestByFlight.FlightId = Flights.Flight_ID
+			INNER JOIN
+				Imp_ArrivalManifestBySegment 
+			ON	Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId 
+					= Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId
+			INNER JOIN
+				Imp_ArrivalManifestULD 
+			ON	Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId 
+					= Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId
+			INNER JOIN
+				Imp_ArrivalManifestShipmentInfo
+			ON	Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId 
+					= Imp_ArrivalManifestULD.ImpArrivalManifestULDId
+			LEFT JOIN
+				Imp_InboundContainers
+			ON	Imp_InboundContainers.IncomingFlightId = Imp_ArrivalManifestByFlight.FlightId
+			AND	Imp_InboundContainers.ULDNumber = Imp_ArrivalManifestULD.ULDNumber
+		), 
+		CPMTowIn AS (
+		SELECT	Imp_InboundContainers.IncomingFlightId AS FlightId, Imp_InboundContainers.ULDNumber,
+				Uld_UldType.UldType, Imp_InboundContainers.ContentCode, 
+				CASE WHEN Imp_InboundContainers.TransferType = 'TTH' AND ISNULL(Imp_InboundContainers.PHCFlag, 0) = 1
+					THEN NULL ELSE Imp_InboundContainers.TransferType 
+				END AS TransferType
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				Imp_InboundContainers
+			ON	Imp_InboundContainers.IncomingFlightId = Flights.Flight_ID
+			INNER JOIN
+				Uld_UldType
+			ON	Uld_UldType.UldType = (CASE WHEN (Uld_UldType.UldType = 'BT' OR Uld_UldType.UldType = 'MT')
+					THEN SUBSTRING(Imp_InboundContainers.ULDNumber, 1, 2)
+					ELSE SUBSTRING(Imp_InboundContainers.ULDNumber, 1, 3) 
+				END)
+		), 
+		RampCheckIn AS (
+		SELECT	Imp_RampCheckIn.FlightId, Imp_HandOverContainerTrolleyInformation.ContainerTrolleyNumber AS ULDNumber,
+				Uld_UldType.UldType, Imp_RampCheckIn.ContentCode, 
+				CASE WHEN Imp_RampCheckIn.TransferType = 'TTH' AND ISNULL(Imp_RampCheckIn.PHCFlag, 0) = 1
+					THEN NULL ELSE Imp_RampCheckIn.TransferType 
+				END AS TransferType, 
+				Imp_RampCheckIn.CheckedInAt
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				Imp_RampCheckIn
+			ON	Imp_RampCheckIn.FlightId = Flights.Flight_ID
+			INNER JOIN
+				Uld_UldType
+			ON	Uld_UldType.UldType = (CASE WHEN (Uld_UldType.UldType = 'BT' OR Uld_UldType.UldType = 'MT')
+					THEN SUBSTRING(Imp_RampCheckIn.ULDNumber, 1, 2)
+					ELSE SUBSTRING(Imp_RampCheckIn.ULDNumber, 1, 3) 
+				END)
+			LEFT JOIN
+				Imp_HandOver
+			ON	Imp_HandOver.FlightId = Imp_RampCheckIn.FlightId
+			INNER JOIN
+				Imp_HandOverContainerTrolleyInformation
+			ON	Imp_HandOverContainerTrolleyInformation.ImpHandOverId = Imp_HandOver.ImpHandOverId
+			AND	Imp_HandOverContainerTrolleyInformation.ContainerTrolleyNumber = Imp_RampCheckIn.ULDNumber
+		), 
+		DocumentVerification AS (
+		SELECT	Imp_ShipmentVerification.FlightId, Imp_ShipmentVerification.ImpShipmentVerificationId, 
+				Imp_ShipmentVerification.ShipmentId, 
+				Shipment_Master.ShipmentNumber, Shipment_Master.ShipmentDate, 
+				Shipment_Master.Origin, Shipment_Master.Destination, 
+				ISNULL(Imp_ShipmentVerification.BreakDownPieces, 0) AS BreakdownPieces, 
+				ISNULL(Imp_ShipmentVerification.BreakDownWeight, 0.0) AS BreakdownWeight, 
+				Imp_ShipmentVerification.DocumentReceivedFlag
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				Imp_ShipmentVerification
+			ON	Imp_ShipmentVerification.FlightId = Flights.Flight_ID
+			INNER JOIN
+				Shipment_Master
+			ON	Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+		), 
+		DeliveryShipments AS (
+		SELECT	ManifestedShipments.FlightId, 
+				BreakdownShipments.ShipmentId,  BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate,
+				ManifestedShipments.Origin, ManifestedShipments.Destination, 
+				ManifestedShipments.ManifestedTotalPieces, ManifestedShipments.ManifestedTotalWeight,
+				BreakdownShipments.BreakdownPieces, BreakdownShipments.BreakdownWeight, 
+				BreakdownShipments.IrregularityTotalPieces, BreakdownShipments.IrregularityTotalWeight, 
+				BreakdownShipments.CargoIrregularityCode,
+				CASE WHEN ManifestedShipments.ManifestedTotalPieces = (
+						CASE WHEN BreakdownShipments.CargoIrregularityCode = 'MSCA' 
+							THEN SUM(BreakdownShipments.BreakdownPieces) 
+								OVER (PARTITION BY ManifestedShipments.FlightId, 
+									BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate)
+								+ BreakdownShipments.IrregularityTotalPieces
+							ELSE 
+								CASE WHEN BreakdownShipments.CargoIrregularityCode = 'FDCA'
+									THEN SUM(BreakdownShipments.BreakdownPieces) 
+										OVER (PARTITION BY ManifestedShipments.FlightId, 
+											BreakdownShipments.ShipmentNumber, BreakdownShipments.ShipmentDate) 
+										- BreakdownShipments.IrregularityTotalPieces
+									ELSE 0
+								END
+							END
+					)
+					THEN 'Y' 
+					ELSE 'N' 
+				END Ready
+		FROM	ManifestedShipments
+			INNER JOIN
+				@BreakdownShipments AS BreakdownShipments
+			ON	BreakdownShipments.FlightId = ManifestedShipments.FlightId
+			AND	BreakdownShipments.ShipmentNumber = ManifestedShipments.ShipmentNumber
+			AND	BreakdownShipments.ShipmentDate = ManifestedShipments.ShipmentDate
+			AND	ManifestedShipments.Destination in ( #{tenantAirport} , #{tenantCity} )
+			LEFT JOIN
+				Imp_DeliveryRequest
+			ON	Imp_DeliveryRequest.ShipmentId = BreakdownShipments.ShipmentId
+			AND	Imp_DeliveryRequest.Status NOT IN ('CANCELLED','EXPIRED')
+			AND NOT EXISTS (
+				SELECT	NULL
+				FROM	Imp_Delivery
+				WHERE	Imp_Delivery.ShipmentId = Imp_DeliveryRequest.ShipmentId
+				AND		Imp_Delivery.Status NOT IN ('CANCELLED')
+			)
+		)
+		-- RESULT --
+		SELECT	Flights.TenantId, Flights.CarrierGroupCode, Flights.CarrierCode, Flights.Flight_ID, Flights.FlightKey,
+			SUBSTRING(REPLACE(UPPER(CONVERT(VARCHAR(16), Flights.DateSTA, 6)),' ',''), 1, 5) AS FlightDate, 
+			Flights.FlightBoardPoint, Flights.FlightOffPoint, 
+			(
+				SELECT	STRING_AGG(Routing.FlightBoardPoint, '/')
+				FROM	(
+					SELECT	Flt_OperativeFlight_Legs.FlightBoardPoint,
+							Flt_OperativeFlight_Legs.FlightSegmentOrder, 
+							(
+								SELECT 	FlightSegmentOrder
+								FROM	Flt_OperativeFlight_Legs
+								WHERE	Flight_ID = Flights.Flight_ID
+								AND		FlightOffPoint = #{tenantAirport}
+							) AS SegmentOrder	
+					FROM	Flt_OperativeFlight_Legs
+					WHERE	Flt_OperativeFlight_Legs.Flight_ID = Flights.Flight_ID
+					AND		Flt_OperativeFlight_Legs.FlightBoardPoint <> #{tenantAirport}
+					ORDER BY Flt_OperativeFlight_Legs.FlightSegmentOrder
+					OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+				) Routing
+				WHERE	Routing.FlightSegmentOrder BETWEEN 1 AND Routing.SegmentOrder
+			) AS FlightSector, 
+			Flights.DateSTA, Flights.DateETA, Flights.DateATA,
+			Flights.FlightType, Flights.AircraftType, 
+			Flights.InboundAircraftRegNo AS AircraftRegCode,
+			Flights.PreviousInboundAircraftRegNo AS PreviousAircraftRegCode, 
+			Flights.InboundAircraftRegNoUpdatedTime AS AircraftRegCodeUpdatedTime,
+			Flights.ParkingBayArrivalAircraft AS ParkingBay, 
+			Flights.PreviousParkingBayArrivalAircraft AS PreviousParkingBay, 
+			Flights.ParkingBayArrivalAircraftUpdatedTime AS ParkingBayUpdatedTime,
+			(
+				SELECT	STRING_AGG(HandlingArea.TerminalCode, ',')
+				FROM	(
+					SELECT	DISTINCT Flt_OperativeFlight_HandlingArea.TerminalCode
+					FROM	Flt_OperativeFlight_HandlingArea
+					WHERE	Flt_OperativeFlight_HandlingArea.FlightId = Flights.Flight_ID
+				) HandlingArea
+			) AS TerminalCode, 
+			CASE WHEN Flights.DateATA IS NOT NULL THEN 'ATA'
+				ELSE CASE WHEN Flights.DateETA IS NOT NULL THEN 'ETA' ELSE 'STA' END
+			END FlightTime,
+			COALESCE(Flights.DateETA, Flights.DateSTA) AS FlightDateTime,
+			CASE WHEN Flights.FlightCancelFlag = 'D' THEN 'CNX' 
+				ELSE CASE WHEN Flights.DateATA IS NOT NULL THEN 'ARR' 
+					ELSE CASE WHEN Flights.DateETA > Flights.DateSTA THEN 'DLY' ELSE 'ONT' END
+				END
+			END FlightStatus,
+			CASE WHEN Flights.RampCheckInCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END RampCheckInCompleted,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.RampCheckInCompletedAt), 120)) AS RampCheckInCompletedTime,
+			CASE WHEN Flights.DocumentVerificationCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END DocumentVerificationCompleted,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.DocumentVerificationCompletedAt), 120)) 
+				AS DocumentVerificationCompletedTime,
+			CASE WHEN Flights.BreakDownCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END BreakdownCompleted,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.BreakDownCompletedAt), 120)) AS BreakdownCompletedTime,
+			CASE WHEN Flights.FlightCompletedAt IS NOT NULL THEN 'YES' ELSE 'NO' END FlightCompleted,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.FlightCompletedAt), 120)) AS FlightCompletedTime,
+			CASE WHEN Flights.FightClosedAt IS NOT NULL THEN 'YES' ELSE 'NO' END FlightClosed,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.FightClosedAt), 120)) AS FlightClosedTime,
+			CASE WHEN Flights.FlightDiscrepncyListSentAt IS NOT NULL THEN 'YES' ELSE 'NO' END FlightDiscrepancyListSent,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.FlightDiscrepncyListSentAt), 120)) AS FlightDiscrepancyListSentTime,
+			CASE WHEN Flights.ThroughTransitWorkingListFinalizedAt IS NOT NULL THEN 'YES' ELSE 'NO' END ThroughTransitWorkingListFinalized,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.ThroughTransitWorkingListFinalizedAt), 120)) 
+				AS ThroughTransitWorkingListFinalizedTime,
+			CASE WHEN Flights.InwardServiceReportFinalizedAt IS NOT NULL THEN 'YES' ELSE 'NO' END InwardServiceReportFinalized,
+			CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.InwardServiceReportFinalizedAt), 120)) 
+				AS InwardServiceReportFinalizedTime,
+			CASE WHEN Flights.MessageStatus = 'PROCESSED' THEN 'YES' ELSE 'NO' END FFMStatus,
+			CASE WHEN Flights.MessageStatus = 'PROCESSED' 
+				THEN CONVERT(DATETIME, CONVERT(VARCHAR(16), DATEADD(HOUR, +8, Flights.MessageProcessedDate), 120))
+				ELSE NULL
+			END FFMProcessedTime,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT CPMTowIn.ULDNumber)
+				FROM	CPMTowIn
+				WHERE	CPMTowIn.FlightId = Flights.Flight_ID
+				AND		(CPMTowIn.ContentCode IS NULL 
+							OR CPMTowIn.ContentCode IN ('C','M','X'))
+				AND		(CPMTowIn.TransferType IS NULL 
+							OR CPMTowIn.TransferType NOT IN ('TTH'))
+				), 0) As TowInRampTotalULD,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT RampCheckIn.ULDNumber)
+				FROM	RampCheckIn
+				WHERE	RampCheckIn.FlightId = Flights.Flight_ID
+				AND		RampCheckIn.CheckedInAt IS NOT NULL
+				AND		RampCheckIn.UldType NOT IN ('BT','MT')
+				AND		(RampCheckIn.ContentCode IS NULL 
+							OR RampCheckIn.ContentCode IN ('C','M','X'))
+				AND		(RampCheckIn.TransferType IS NULL 
+							OR RampCheckIn.TransferType NOT IN ('TTH'))
+				), 0) AS TowInRampCheckedInULD,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipments.ShipmentNumber)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				), 0) AS DocumentsAttached,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT DocumentVerification.ShipmentId)
+				FROM	DocumentVerification
+				WHERE	DocumentVerification.FlightId = Flights.Flight_ID
+				), 0) AS DocumentsReceived,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipments.ShipmentNumber)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				AND		ManifestedShipments.Destination in ( #{tenantAirport} , #{tenantCity} )
+				), 0) AS LocalDeliveryShipments,
+			ISNULL(
+				(SELECT	SUM(ManifestedShipments.Weight)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				AND		ManifestedShipments.Destination in ( #{tenantAirport} , #{tenantCity} )
+				), 0.0) AS LocalDeliveryShipmentsWeight,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipments.ShipmentNumber)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				AND		ManifestedShipments.Destination not in ( #{tenantAirport} , #{tenantCity} )
+				), 0) AS TranshipmentsTotal,
+			ISNULL(
+				(SELECT	SUM(ManifestedShipments.Weight)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				AND		ManifestedShipments.Destination not in ( #{tenantAirport} , #{tenantCity} )
+				), 0.0) AS TranshipmentsWeight,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('DGN','DGR'))
+				), 0) AS ManifestedDGTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('DGN','DGR')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('DGN','DGR'))
+				), 0) AS ManifestedDGReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('XPS')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('XPS'))
+				), 0) AS ManifestedXPSTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('XPS')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('XPS'))
+				), 0) AS ManifestedXPSReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('RAC')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('RAC'))
+				), 0) AS ManifestedRACTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('RAC')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('RAC'))
+				), 0) AS ManifestedRACReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('PIL')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('PIL'))
+				), 0) AS ManifestedPILTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('PIL')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('PIL'))
+				), 0) AS ManifestedPILReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('VAL')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('VAL'))
+				), 0) AS ManifestedVALTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('VAL')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('VAL'))
+				), 0) AS ManifestedVALReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('AVI')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('AVI'))
+				), 0) AS ManifestedAVITotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('AVI')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('AVI'))
+				), 0) AS ManifestedAVIReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber) 
+				FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					INNER JOIN
+						@ManifestedSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = ManifestedShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(ManifestedShipmentSHCDetails.SHCHandlingGroupCode IN ('HUM')
+							OR ManifestedShipmentSHCDetails.SpecialHandlingCode IN ('HUM'))
+				), 0) AS ManifestedHUMTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber)
+				FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					INNER JOIN
+						@BreakdownSHCPriority AS SHCPriority
+					ON	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					AND SHCPriority.GroupCode = BreakdownShipmentSHCDetails.SHCHandlingGroupCode
+				WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+				AND		(BreakdownShipmentSHCDetails.SHCHandlingGroupCode IN ('HUM')
+							OR BreakdownShipmentSHCDetails.SpecialHandlingCode IN ('HUM'))
+				), 0) AS ManifestedHUMReady,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedShipments.ShipmentNumber)
+				FROM	ManifestedShipments
+				WHERE	ManifestedShipments.FlightId = Flights.Flight_ID
+				AND		ManifestedShipments.ShipmentNumber NOT IN 
+					(
+						SELECT	DISTINCT ManifestedShipmentSHCDetails.ShipmentNumber
+						FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+						WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+					)
+				), 0)
+				+
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedOTHShipments.ShipmentNumber)
+				FROM
+					(SELECT	ManifestedShipmentSHCDetails.ShipmentNumber
+					FROM	@DashboardImportManifestSHCDetails AS ManifestedShipmentSHCDetails
+					WHERE	ManifestedShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND	NOT EXISTS (
+						SELECT	SHCPriority.ShipmentNumber
+						FROM	@ManifestedSHCPriority AS SHCPriority
+						WHERE	SHCPriority.ShipmentNumber = ManifestedShipmentSHCDetails.ShipmentNumber
+					)
+					) AS ManifestedOTHShipments
+				), 0) AS ManifestedOTHTotal,
+			ISNULL(
+				(SELECT	COUNT(DISTINCT BreakdownShipments.ShipmentNumber)
+				FROM	@BreakdownShipments AS BreakdownShipments 
+				WHERE	BreakdownShipments.FlightId = Flights.Flight_ID
+				AND		BreakdownShipments.ShipmentNumber NOT IN 
+					(
+						SELECT	DISTINCT BreakdownShipmentSHCDetails.ShipmentNumber
+						FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+						WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+					)
+				), 0)
+				+
+			ISNULL(
+				(SELECT	COUNT(DISTINCT ManifestedOTHReadyShipments.ShipmentNumber)
+				FROM
+					(SELECT	BreakdownShipmentSHCDetails.ShipmentNumber
+					FROM	@BreakdownShipmentSHCDetails AS BreakdownShipmentSHCDetails
+					WHERE	BreakdownShipmentSHCDetails.FlightId = Flights.Flight_ID
+					AND	NOT EXISTS (
+						SELECT	SHCPriority.ShipmentNumber
+						FROM	@BreakdownSHCPriority AS SHCPriority
+						WHERE	SHCPriority.ShipmentNumber = BreakdownShipmentSHCDetails.ShipmentNumber
+					)
+					) AS ManifestedOTHReadyShipments
+				), 0) AS ManifestedOTHReady,
+				(
+					SELECT	CASE WHEN COUNT(1) > 0 THEN 'YES' ELSE 'NO' END
+					FROM	Interface_OutgoingMessageLog
+					WHERE	Interface_OutgoingMessageLog.CarrierCode = Flights.CarrierCode
+					AND		Interface_OutgoingMessageLog.FlightNumber = Flights.FlightNumber
+					AND		CAST(Interface_OutgoingMessageLog.FlightOriginDate AS DATE) = CAST(Flights.DateSTA AS DATE)
+					AND		Interface_OutgoingMessageLog.MessageType = 'UCM'
+					AND		Interface_OutgoingMessageLog.Status = 'SENT'
+				) AS UCMSent
+		FROM	@DashboardImportFlights AS Flights
+			INNER JOIN
+				BatchConfig
+			ON	BatchConfig.TenantId = #{tenantAirport}
+		WHERE	COALESCE(Flights.DateETA, Flights.DateSTA) 
+					BETWEEN DATEADD(HOUR, BatchConfig.FromHours, BatchConfig.CurrentTime) 
+					AND DATEADD(HOUR, BatchConfig.ToHours, BatchConfig.CurrentTime)
+		ORDER BY COALESCE(Flights.DateATA, Flights.DateETA, Flights.DateSTA) ASC
+		]]>
+	</select>
+	
+	<insert id="sqlInsertExportDashboardBatchLog" 
+			parameterType="com.ngen.cosys.dashboard.model.DashboardBatchLog"
+			useGeneratedKeys="true" keyColumn="DashboardExportBatchLogId" keyProperty="dashboardBatchLogId" >
+		<![CDATA[
+			INSERT INTO Dashboard_ExportBatchLog
+			(
+				StartTime, CreatedUserCode, CreatedDateTime
+			)
+			VALUES
+			(
+				#{startTime}, 'BATCH', GETDATE()
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateExportDashboardBatchLog" 
+		parameterType="com.ngen.cosys.dashboard.model.DashboardBatchLog">
+		<![CDATA[
+			UPDATE 	Dashboard_ExportBatchLog
+			SET		EndTime = #{endTime},
+					TotalFlights = #{totalFlights},
+					NextFireTime = #{nextFireTime},
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	DashboardExportBatchLogId = #{dashboardBatchLogId} 
+		]]>
+	</update>
+	
+	<insert id="sqlInsertImportDashboardBatchLog" 
+			parameterType="com.ngen.cosys.dashboard.model.DashboardBatchLog"
+			useGeneratedKeys="true" keyColumn="DashboardImportBatchLogId" keyProperty="dashboardBatchLogId" >
+		<![CDATA[
+			INSERT INTO Dashboard_ImportBatchLog
+			(
+				StartTime, CreatedUserCode, CreatedDateTime
+			)
+			VALUES
+			(
+				#{startTime}, 'BATCH', GETDATE()
+			)
+		]]>
+	</insert>
+	
+	<update id="sqlUpdateImportDashboardBatchLog" 
+		parameterType="com.ngen.cosys.dashboard.model.DashboardBatchLog">
+		<![CDATA[
+			UPDATE 	Dashboard_ImportBatchLog
+			SET		EndTime = #{endTime},
+					TotalFlights = #{totalFlights},
+					NextFireTime = #{nextFireTime},
+					LastUpdatedUserCode = 'BATCH',
+					LastUpdatedDateTime = GETDATE()
+			WHERE	DashboardImportBatchLogId = #{dashboardBatchLogId} 
+		]]>
+	</update>
+	
+	<!-- Delete Dashboard Export Flight data -->
+	<delete id="sqlDeleteDashboardExportFlightsData" >
+		<![CDATA[
+			DELETE FROM Dashboard_ExportFlights
+		]]>
+	</delete>
+	
+	<!-- Insert Dashboard Export Flight data -->
+	<insert id="sqlInsertDashboardExportFlightsData" 
+			parameterType="com.ngen.cosys.dashboard.model.ExportFlightData" useGeneratedKeys="false" >
+		<![CDATA[
+			INSERT INTO Dashboard_ExportFlights
+			(
+				DashboardExportBatchLogId, TenantId, CarrierGroupCode, CarrierCode, 
+				FlightId, FlightKey, FlightDate, 
+				FlightBoardPoint, FlightOffPoint, FlightSector, 
+				FlightType, AircraftType, AircraftRegCode, AircraftRegDisplayColor,
+				ParkingBay, ParkingBayDisplayColor, TerminalCode, 
+				DateSTD, DateETD, DateATD, FlightTime, FlightDateTime, AutoFlightComplete, FlightStatus, 
+				BuildupCompleted, BuildupCompletedColor, BuildupCompletedTime, 
+				DLSCompleted, DLSCompletedColor, DLSCompletedTime, 
+				ManifestCompleted, ManifestCompletedColor, ManifestCompletedTime, 
+				FlightCompleted, FlightCompletedColor, FlightCompletedTime, 
+				SVCReportFinalized, SVCReportFinalizedColor, SVCReportFinalizedTime, 
+				NTMVersion, NOTOCFinalizedColor, NOTOCFinalizedTime, NOTOCThresholdMinutes, 
+				PouchCompleted, PouchCompletedColor, PouchCheckout, PouchDropOff, UCMSent, UCMSentColor, 
+				BookedShipments, AssignedShipments, ReadyToLoad, ReadyToLoadDisplay, 
+				ActualULD, ManifestedULD, ULDDisplay, 
+				TranshipmentBooked, TranshipmentLoaded, TranshipmentDisplay, 
+				DLSULDBTAssigned, DLSULDBTGrossWeightUpdated, DLSULDBTDisplay, 
+				RampULDBTAssigned, RampULDBTReleased, RampReleaseDisplay, RampReleaseDisplayColor, TTHUnits, 
+				ULDAllotment, ULDAssigned, ULDUsedDisplay, ULDUsedDisplayColor, 
+				PalletAllotment, PalletAssigned, PalletUsedDisplay, PalletUsedDisplayColor, 
+				DGBooked, AcceptedDGReady, AcceptedDGDisplay, AcceptedDGDisplayColor, 
+				AssignedDGReady, AssignedDGDisplay, AssignedDGDisplayColor, 
+				XPSBooked, AcceptedXPSReady, AcceptedXPSDisplay, AcceptedXPSDisplayColor, 
+				AssignedXPSReady, AssignedXPSDisplay, AssignedXPSDisplayColor, 
+				RACBooked, AcceptedRACReady, AcceptedRACDisplay, AcceptedRACDisplayColor, 
+				AssignedRACReady, AssignedRACDisplay, AssignedRACDisplayColor, 
+				PILBooked, AcceptedPILReady, AcceptedPILDisplay, AcceptedPILDisplayColor, 
+				AssignedPILReady, AssignedPILDisplay, AssignedPILDisplayColor, 
+				VALBooked, AcceptedVALReady, AcceptedVALDisplay, AcceptedVALDisplayColor, 
+				AssignedVALReady, AssignedVALDisplay, AssignedVALDisplayColor, 
+				AVIBooked, AcceptedAVIReady, AcceptedAVIDisplay, AcceptedAVIDisplayColor, 
+				AssignedAVIReady, AssignedAVIDisplay, AssignedAVIDisplayColor, 
+				HUMBooked, AcceptedHUMReady, AcceptedHUMDisplay, AcceptedHUMDisplayColor, 
+				AssignedHUMReady, AssignedHUMDisplay, AssignedHUMDisplayColor, 
+				OTHBooked, AcceptedOTHReady, AcceptedOTHDisplay, AcceptedOTHDisplayColor, 
+				AssignedOTHReady, AssignedOTHDisplay, AssignedOTHDisplayColor,HoDlsColor,HoNotocColor
+			)
+			VALUES
+			(
+				#{dashboardBatchLogId}, #{tenantAirport}, #{carrierGroupCode}, #{carrierCode}, 
+				#{flightId}, #{flightKey}, #{flightDate}, 
+				#{flightBoardPoint}, #{flightOffPoint}, #{flightSector}, 
+				#{flightType}, #{aircraftType}, #{aircraftRegCode}, #{aircraftRegDisplayColor}, 
+				#{parkingBay}, #{parkingBayDisplayColor}, #{terminalCode}, 
+				#{dateSTD}, #{dateETD}, #{dateATD}, #{flightTime}, #{flightDateTime}, #{autoCompleteFlag}, #{flightStatus}, 
+				#{buildupCompleted}, #{buildupCompletedColor}, #{buildupCompletedTime}, 
+				#{dlsCompleted}, #{dlsCompletedColor}, #{dlsCompletedTime}, 
+				#{manifestCompleted}, #{manifestCompletedColor}, #{manifestCompletedTime}, 
+				#{flightCompleted}, #{flightCompletedColor}, #{flightCompletedTime}, 
+   				#{outwardServiceReportFinalized}, #{outwardServiceReportColor}, #{outwardServiceReportFinalizedTime}, 
+				#{ntmVersion}, #{notocFinalizedColor}, #{notocFinalizedTime}, #{notocThresholdMinutes}, 
+				#{pouchCompleted}, #{pouchCompletedColor}, #{pouchCheckout}, #{pouchDropoff}, #{ucmSent}, #{ucmSentColor}, 
+				#{bookedShipments}, #{assignedShipments}, #{readyToLoad}, #{readyToLoadDisplay}, 
+				#{actualULD}, #{manifestULD}, #{uldDisplay}, 
+				#{transhipmentBooked}, #{transhipmentLoaded}, #{transhipmentDisplay}, 
+				#{dlsULDBTAssigned}, #{dlsULDBTGrossWeightUpdated}, #{dlsULDBTDisplay}, 
+				#{rampULDBTAssigned}, #{rampULDBTReleased}, #{rampReleaseDisplay}, #{rampReleaseDisplayColor}, #{tthUnits}, 
+				#{uldAllotment}, #{uldAssigned}, #{uldUsedDisplay}, #{uldUsedDisplayColor}, 
+				#{palletAllotment}, #{palletAssigned}, #{palletUsedDisplay}, #{palletUsedDisplayColor}, 
+				#{dgBooked}, #{acceptedDGReady}, #{acceptedDGDisplay}, #{acceptedDGDisplayColor}, 
+				#{assignedDGReady}, #{assignedDGDisplay}, #{assignedDGDisplayColor}, 
+				#{xpsBooked}, #{acceptedXPSReady}, #{acceptedXPSDisplay}, #{acceptedXPSDisplayColor}, 
+				#{assignedXPSReady}, #{assignedXPSDisplay}, #{assignedXPSDisplayColor},
+				#{racBooked}, #{acceptedRACReady}, #{acceptedRACDisplay}, #{acceptedRACDisplayColor}, 
+				#{assignedRACReady}, #{assignedRACDisplay}, #{assignedRACDisplayColor},
+				#{pilBooked}, #{acceptedPILReady}, #{acceptedPILDisplay}, #{acceptedPILDisplayColor}, 
+				#{assignedPILReady}, #{assignedPILDisplay}, #{assignedPILDisplayColor}, 
+				#{valBooked}, #{acceptedVALReady}, #{acceptedVALDisplay}, #{acceptedVALDisplayColor}, 
+				#{assignedVALReady}, #{assignedVALDisplay}, #{assignedVALDisplayColor},
+				#{aviBooked}, #{acceptedAVIReady}, #{acceptedAVIDisplay}, #{acceptedAVIDisplayColor}, 
+				#{assignedAVIReady}, #{assignedAVIDisplay}, #{assignedAVIDisplayColor},
+				#{humBooked}, #{acceptedHUMReady}, #{acceptedHUMDisplay}, #{acceptedHUMDisplayColor}, 
+				#{assignedHUMReady}, #{assignedHUMDisplay}, #{assignedHUMDisplayColor}, 
+				#{othBooked}, #{acceptedOTHReady}, #{acceptedOTHDisplay}, #{acceptedOTHDisplayColor}, 
+				#{assignedOTHReady}, #{assignedOTHDisplay}, #{assignedOTHDisplayColor},#{hoDlsColor},#{hoNotocColor}
+			)
+		]]>
+	</insert>
+	
+	<!-- Delete Dashboard Import Flight data -->
+	<delete id="sqlDeleteDashboardImportFlightsData" >
+		<![CDATA[
+			DELETE FROM Dashboard_ImportFlights
+		]]>
+	</delete>
+	
+	<!-- Insert Dashboard Export Flight data -->
+	<insert id="sqlInsertDashboardImportFlightsData" 
+			parameterType="com.ngen.cosys.dashboard.model.ImportFlightData" useGeneratedKeys="false" >
+		<![CDATA[
+			INSERT INTO Dashboard_ImportFlights
+			(
+				DashboardImportBatchLogId, TenantId, CarrierGroupCode, CarrierCode, 
+				FlightId, FlightKey, FlightDate, 
+				FlightBoardPoint, FlightOffPoint, FlightSector, 
+				FlightType, AircraftType, AircraftRegCode, ParkingBay, ParkingBayDisplayColor, TerminalCode, 
+				DateSTA, DateETA, DateATA, FlightTime, FlightDateTime, FlightStatus, 
+				RampCheckInCompleted, RampCheckInCompletedColor, RampCheckInCompletedTime, 
+				DocumentVerificationCompleted, DocumentVerificationCompletedColor, DocumentVerificationCompletedTime, 
+				BreakdownCompleted, BreakdownCompletedColor, BreakdownCompletedTime, 
+				FlightCompleted, FlightCompletedColor, FlightCompletedTime, 
+				FlightClosed, FlightClosedColor, FlightClosedTime, 
+				FDLSent, FDLSentColor, FDLSentTime, 
+				TTWLFinalized, TTWLFinalizedColor, TTWLFinalizedTime, 
+				SVCReportFinalized, SVCReportFinalizedColor, SVCReportFinalizedTime, 
+				FFMStatus, FFMColor, FFMProcessedTime, UCMSent, UCMSentColor, 
+				TowInRampTotalULD, TowInRampCheckedInULD, TowInRampDisplay, 
+				DocumentsAttached, DocumentsReceived, DocumentsDisplay, 
+				LocalDeliveryShipments, LocalDeliveryShipmentsWeight, LocalDeliveryDisplay, 
+				TranshipmentsTotal, TranshipmentsWeight, TranshipmentsDisplay, 
+				ManifestedDGTotal, ManifestedDGReady, ManifestedDGDisplay, ManifestedDGDisplayColor, 
+				ManifestedXPSTotal, ManifestedXPSReady, ManifestedXPSDisplay, ManifestedXPSDisplayColor, 
+				ManifestedRACTotal, ManifestedRACReady, ManifestedRACDisplay, ManifestedRACDisplayColor, 
+				ManifestedPILTotal, ManifestedPILReady, ManifestedPILDisplay, ManifestedPILDisplayColor, 
+				ManifestedVALTotal, ManifestedVALReady, ManifestedVALDisplay, ManifestedVALDisplayColor, 
+				ManifestedAVITotal, ManifestedAVIReady, ManifestedAVIDisplay, ManifestedAVIDisplayColor, 
+				ManifestedHUMTotal, ManifestedHUMReady, ManifestedHUMDisplay, ManifestedHUMDisplayColor, 
+				ManifestedOTHTotal, ManifestedOTHReady, ManifestedOTHDisplay, ManifestedOTHDisplayColor
+			)
+			VALUES
+			(
+				#{dashboardBatchLogId}, #{tenantAirport}, #{carrierGroupCode}, #{carrierCode}, 
+				#{flightId}, #{flightKey}, #{flightDate}, 
+				#{flightBoardPoint}, #{flightOffPoint}, #{flightSector}, 
+				#{flightType}, #{aircraftType}, #{aircraftRegCode}, #{parkingBay}, #{parkingBayDisplayColor}, #{terminalCode}, 
+				#{dateSTA}, #{dateETA}, #{dateATA}, #{flightTime}, #{flightDateTime}, #{flightStatus}, 
+				#{rampCheckInCompleted}, #{rampCheckInCompletedColor}, #{rampCheckInCompletedTime}, 
+				#{documentVerificationCompleted}, #{documentVerificationCompletedColor}, #{documentVerificationCompletedTime}, 
+				#{breakdownCompleted}, #{breakdownCompletedColor}, #{breakdownCompletedTime}, 
+				#{flightCompleted}, #{flightCompletedColor}, #{flightCompletedTime}, 
+				#{flightClosed}, #{flightClosedColor}, #{flightClosedTime}, 
+				#{flightDiscrepancyListSent}, #{flightDiscrepancyListSentColor}, #{flightDiscrepancyListSentTime}, 
+				#{throughTransitWorkingListFinalized}, #{throughTransitWorkingListFinalizedColor}, #{throughTransitWorkingListFinalizedTime}, 
+				#{inwardServiceReportFinalized}, #{inwardServiceReportFinalizedColor}, #{inwardServiceReportFinalizedTime}, 
+				#{ffmStatus}, #{ffmColor}, #{ffmProcessedTime}, #{ucmSent}, #{ucmSentColor}, 
+				#{towInRampTotalULD}, #{towInRampCheckedInULD}, #{towInRampDisplay}, 
+				#{documentsAttached}, #{documentsReceived}, #{documentsDisplay}, 
+				#{localDeliveryShipments}, #{localDeliveryShipmentsWeight}, #{localDeliveryDisplay}, 
+				#{transhipmentsTotal}, #{transhipmentsWeight}, #{transhipmentsDisplay}, 
+				#{manifestedDGTotal}, #{manifestedDGReady}, #{manifestedDGDisplay}, #{manifestedDGDisplayColor}, 
+				#{manifestedXPSTotal}, #{manifestedXPSReady}, #{manifestedXPSDisplay}, #{manifestedXPSDisplayColor}, 
+				#{manifestedRACTotal}, #{manifestedRACReady}, #{manifestedRACDisplay}, #{manifestedRACDisplayColor}, 
+				#{manifestedPILTotal}, #{manifestedPILReady}, #{manifestedPILDisplay}, #{manifestedPILDisplayColor}, 
+				#{manifestedVALTotal}, #{manifestedVALReady}, #{manifestedVALDisplay}, #{manifestedVALDisplayColor}, 
+				#{manifestedAVITotal}, #{manifestedAVIReady}, #{manifestedAVIDisplay}, #{manifestedAVIDisplayColor}, 
+				#{manifestedHUMTotal}, #{manifestedHUMReady}, #{manifestedHUMDisplay}, #{manifestedHUMDisplayColor}, 
+				#{manifestedOTHTotal}, #{manifestedOTHReady}, #{manifestedOTHDisplay}, #{manifestedOTHDisplayColor} 
+			)
+		]]>
+	</insert>
+	
+</mapper>

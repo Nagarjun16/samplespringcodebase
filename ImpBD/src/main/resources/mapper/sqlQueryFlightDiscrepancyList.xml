@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ImpBDMapper">
+	<!-- Print AWB barcode queries -->
+
+	<select id="getFlightDiscrepancyList" resultMap="discrepancy"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel">
+		select  
+			(select  
+				case when IFE.flightCompletedAt  IS NOT NULL THEN 
+						'true'  
+                	else 
+                		'false'
+                    end) flightCompletedAt,
+              IFE.flightDiscrepncyListSentAt,
+              IFE.FlightDiscrepancyMessageVersion, 
+              IFE.FlightId as flightId,
+              FOF.FlightKey as flightKey,
+              FOL.dateSTA as flightOriginDate,
+              #{tenantAirport} as tenantAirport 
+		from
+              Imp_FlightEvents IFE  INNER JOIN 
+              Flt_OperativeFlight FOF 
+              ON IFE.FlightId=FOF.Flight_ID INNER JOIN 
+              Flt_OperativeFlight_Legs FOL 
+              	ON FOL.Flight_ID=FOF.Flight_ID 
+         where
+              FOF.FlightKey= #{flightKey} and 
+              CAST(FOL.DateSTA AS DATE)=#{flightOriginDate}  and 
+              FOL.FlightOffPoint=#{tenantAirport}
+
+	</select>
+	<resultMap id="discrepancy"
+		type="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel">
+		<id column="flightId" property="flightId" />
+		<result column="flightKey" property="flightKey" />
+		<result column="flightOriginDate" property="flightOriginDate" />
+		<result column="flightCompletedAt" property="flightCompletedAt" />
+		<result column="tenantAirport" property="tenantAirport" />
+		<result column="flightDiscrepncyListSentAt" property="flightDiscrepncyListSentAt" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FlightDiscrepancyMessageVersion" property="flightDiscrepncyListSentBy" />
+		<collection property="flightDiscrepancyList" javaType="List"
+			ofType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList"
+			select="getDiscrepancyBasedOnFlight" column="{flightId=flightId,tenantAirport=tenantAirport}">
+		</collection>
+	</resultMap>
+
+	<select id="getDiscrepancyBasedOnFlight"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList"
+		resultMap="discrepancyListBasedOnFlightKey">
+	<![CDATA[
+				With ShipmentIrregularityInfo AS(
+                     select
+                           Shipment_Irregularity.Flight_ID,
+                           Flt_OperativeFlight_Segments.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint,
+                           Shipment_Irregularity.ShipmentNumber,
+                           Shipment_Irregularity.ShipmentDate,
+                           sum(Shipment_Irregularity.Pieces) as Pieces,
+                           sum(Shipment_Irregularity.Weight) as Weight,
+                           Shipment_Irregularity.CargoIrregularityCode,
+                           string_agg(case when
+								Shipment_Irregularity.HouseNumber is not null then
+								Shipment_Irregularity.HouseNumber+' - '
+								else '' end+ 
+							Shipment_Irregularity.IrregularityRemarks,'/') as IrregularityRemarks,
+						   Mst_CargoIrregularityTypes.IrregularityType
+                     from
+                           Shipment_Irregularity inner join
+					       Mst_CargoIrregularityTypes
+					       		on Shipment_Irregularity.CargoIrregularityCode = Mst_CargoIrregularityTypes.IrregularityTypeCode inner join
+                           Flt_OperativeFlight  
+                                on Shipment_Irregularity.Flight_ID = Flt_OperativeFlight.Flight_ID inner join
+                           Flt_OperativeFlight_Legs
+                                  on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+                                         Flt_OperativeFlight_Legs.FlightOffPoint = #{tenantAirport} inner join
+                           Flt_OperativeFlight_Segments
+                                on Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and
+                                   Shipment_Irregularity.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSEgmentId left join 
+                           Imp_FlightEvents  
+                           		on Shipment_Irregularity.Flight_ID = Imp_FlightEvents.FlightId
+                     where
+                           Shipment_Irregularity.Flight_ID = #{flightId} and
+						   Mst_CargoIrregularityTypes.IrregularityTypeFor = 'AWB'
+                     Group by
+                     	   Shipment_Irregularity.Flight_ID,
+                           Flt_OperativeFlight_Segments.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint,
+                           Shipment_Irregularity.ShipmentNumber,
+                           Shipment_Irregularity.ShipmentDate,
+                           Shipment_Irregularity.CargoIrregularityCode,
+						   Mst_CargoIrregularityTypes.IrregularityType
+              ), ShipmentDamageInfo AS(
+                     select
+                           Com_DamageInfo.FlightId as Flight_ID,
+                           Flt_OperativeFlight_Segments.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint,
+                           Com_DamageInfo.EntityKey as ShipmentNumber,
+                           Com_DamageInfo.EntityDate as ShipmentDate,      
+                           'DAMG' as CargoIrregularityCode,
+                           (     
+							     select  
+                                         string_agg(Com_DamageLineItems.Remarks, ', ')
+                                  from
+                                         Com_DamageLineItems
+                                  where
+                                         Com_DamageLineItems.EntityKey = Com_DamageInfo.EntityKey
+								  group by
+							      Com_DamageLineItems.EntityKey  
+							 ) as IrregularityRemarks,
+                           sum(Com_DamageLineItems.DamagedPieces) as Pieces,
+                           0 as Weight
+                     from
+                           Com_DamageInfo inner join
+                           Com_DamageLineItems
+                                  on Com_DamageInfo.DamageInfoId = Com_DamageLineItems.DamageInfoId inner join
+                           Flt_OperativeFlight  
+                                  on Com_DamageInfo.FlightId = Flt_OperativeFlight.Flight_ID inner join
+                           Flt_OperativeFlight_Legs
+                                  on Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Legs.Flight_ID and
+                                         Flt_OperativeFlight_Legs.FlightOffPoint =#{tenantAirport} inner join
+                           Flt_OperativeFlight_Segments
+                                  on Flt_OperativeFlight_Legs.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID and
+                                         Flt_OperativeFlight_Legs.FlightOffPoint = Flt_OperativeFlight_Segments.FlightOffPoint and
+                                         Flt_OperativeFlight_Legs.FlightBoardPoint = Flt_OperativeFlight_Segments.FlightBoardPoint          
+                     where
+                           Com_DamageInfo.FlightId = #{flightId} and
+						   Com_DamageInfo.EntityType = 'AWB'
+                     group by
+                           Com_DamageInfo.EntityKey,
+                           Com_DamageInfo.EntityDate,
+                           Com_DamageInfo.FlightId,
+                           Flt_OperativeFlight_Segments.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint
+              ), ArrivalManifestInfo AS(
+                     select
+                           Imp_ArrivalManifestByFlight.FlightId,
+                           Imp_ArrivalManifestBySegment.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint,
+                           Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+                           Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+                           Imp_ArrivalManifestShipmentInfo.Origin,
+                           Imp_ArrivalManifestShipmentInfo.Destination,
+                           sum(Imp_ArrivalManifestShipmentInfo.Piece) "ManifestPieces",
+                           sum(Imp_ArrivalManifestShipmentInfo.Weight) "ManifestWeight",
+                           Flt_OperativeFlight_Segments.FlightBoardPoint "Segment",
+                           (
+                                  select
+                                         string_agg(Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode,',') shcs         
+                                  from(select
+                                                distinct Imp_ArrivalManifestByShipmentSHC.SpecialHandlingCode
+                                         from
+                                                Imp_ArrivalManifestByFlight innerArrivalManifestFlight inner join
+                                                Imp_ArrivalManifestBySegment innerArrivalManifestSegment
+                                                       on innerArrivalManifestFlight.ImpArrivalManifestByFlightId = innerArrivalManifestSegment.ImpArrivalManifestByFlightId inner join
+                                                Imp_ArrivalManifestULD innerArrivalManifestULD
+                                                       on innerArrivalManifestSegment.ImpArrivalManifestBySegmentId = innerArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+                                                Imp_ArrivalManifestShipmentInfo innerArrivalManifestShipmentInfo
+                                                       on innerArrivalManifestULD.ImpArrivalManifestULDId = innerArrivalManifestShipmentInfo.ImpArrivalManifestULDId inner join
+                                                Imp_ArrivalManifestByShipmentSHC 
+                                                       on innerArrivalManifestShipmentInfo.ImpArrivalManifestShipmentInfoId = Imp_ArrivalManifestByShipmentSHC.ImpArrivalManifestShipmentInfoId
+                                         where
+                                                innerArrivalManifestShipmentInfo.ShipmentNumber = Imp_ArrivalManifestShipmentInfo.ShipmentNumber and
+                                                innerArrivalManifestShipmentInfo.ShipmentDate = Imp_ArrivalManifestShipmentInfo.ShipmentDate and
+                                                innerArrivalManifestFlight.FlightId = Imp_ArrivalManifestByFlight.FlightId)Imp_ArrivalManifestByShipmentSHC
+                                  )shcs
+                     from
+                           Imp_ArrivalManifestByFlight inner join
+                           Flt_OperativeFlight 
+                                  on Imp_ArrivalManifestByFlight.FlightId = Flt_OperativeFlight.Flight_ID inner join
+                           Imp_ArrivalManifestBySegment 
+                                  on Imp_ArrivalManifestByFlight.ImpArrivalManifestByFlightId = Imp_ArrivalManifestBySegment.ImpArrivalManifestByFlightId inner join
+                           Flt_OperativeFlight_Segments 
+                                  on Imp_ArrivalManifestBySegment.FlightSegmentId = Flt_OperativeFlight_Segments.FlightSegmentId and 
+                                         Flt_OperativeFlight.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID inner join
+                           Imp_ArrivalManifestULD 
+                                  on Imp_ArrivalManifestBySegment.ImpArrivalManifestBySegmentId = Imp_ArrivalManifestULD.ImpArrivalManifestBySegmentId inner join
+                           Imp_ArrivalManifestShipmentInfo 
+                                  on Imp_ArrivalManifestULD.ImpArrivalManifestULDId = Imp_ArrivalManifestShipmentInfo.ImpArrivalManifestULDId
+                     where  
+                           Imp_ArrivalManifestByFlight.FlightId = #{flightId}
+                           
+                     group by
+                           Imp_ArrivalManifestByFlight.FlightId,
+                           Imp_ArrivalManifestBySegment.FlightSegmentId,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint,
+                           Imp_ArrivalManifestShipmentInfo.ShipmentNumber,
+                           Imp_ArrivalManifestShipmentInfo.ShipmentDate,
+                           Imp_ArrivalManifestShipmentInfo.Origin,
+                           Imp_ArrivalManifestShipmentInfo.Destination,
+                           Flt_OperativeFlight_Segments.FlightBoardPoint
+              )(select
+                     ShipmentIrregularityInfo.Flight_ID,
+                     isnull(ArrivalManifestInfo.FlightSegmentId, ShipmentIrregularityInfo.FlightSegmentId) FlightSegmentId,
+                     isnull(ArrivalManifestInfo.FlightBoardPoint, ShipmentIrregularityInfo.FlightBoardPoint) Segment,
+                     Shipment_Master.ShipmentId,
+                     ShipmentIrregularityInfo.ShipmentNumber,
+                     ShipmentIrregularityInfo.ShipmentDate,
+                     isnull(Shipment_Master.Origin, ArrivalManifestInfo.Origin) Origin,
+                     isnull(Shipment_Master.Destination, ArrivalManifestInfo.Destination) Destination,
+                     Shipment_Master.Pieces as AwbPieces,
+                     Shipment_Master.Weight as AwbWeight,
+                     ArrivalManifestInfo.ManifestPieces,
+                     ArrivalManifestInfo.ManifestWeight,
+                     Imp_ShipmentVerification.BreakDownPieces,
+                     Imp_ShipmentVerification.BreakDownWeight,
+                     ShipmentIrregularityInfo.CargoIrregularityCode,
+                     ShipmentIrregularityInfo.CargoIrregularityCode +
+						case
+							when ShipmentIrregularityInfo.IrregularityType <> 'D' then
+								'(' + convert(varchar, ShipmentIrregularityInfo.Pieces) +
+                                  ')'						
+							else
+								''
+							end as irregularity,
+                     ShipmentIrregularityInfo.IrregularityRemarks as IrregularityTypeDescription,
+                     Shipment_Master.ShipmentType,
+                     isnull(ArrivalManifestInfo.shcs,(select  
+                                         string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+                                  from
+                                         Shipment_MasterSHC
+                                  where
+                                         Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId)
+                     ) as shcs
+              from
+                     ShipmentIrregularityInfo left join
+                     Shipment_Master
+                           on ShipmentIrregularityInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+                                  ShipmentIrregularityInfo.ShipmentDate = Shipment_Master.ShipmentDate and
+                                  Shipment_Master.ShipmentType <> 'MAIL' left join
+                     ArrivalManifestInfo
+                           on ShipmentIrregularityInfo.ShipmentNumber = ArrivalManifestInfo.ShipmentNumber and
+                                  ShipmentIrregularityInfo.ShipmentDate = ArrivalManifestInfo.ShipmentDate and
+                                  ShipmentIrregularityInfo.Flight_ID = ArrivalManifestInfo.FlightId left join
+                     Imp_ShipmentVerification
+                           on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId and
+                                  ShipmentIrregularityInfo.Flight_ID = Imp_ShipmentVerification.FlightId
+              union
+              select
+                     ShipmentDamageInfo.Flight_ID,
+                     isnull(ArrivalManifestInfo.FlightSegmentId, ShipmentDamageInfo.FlightSegmentId) FlightSegmentId,
+                     isnull(ArrivalManifestInfo.FlightBoardPoint, ShipmentDamageInfo.FlightBoardPoint) FlightBoardPoint,
+                     Shipment_Master.ShipmentId,
+                     ShipmentDamageInfo.ShipmentNumber,
+                     ShipmentDamageInfo.ShipmentDate,
+                     isnull(Shipment_Master.Origin, ArrivalManifestInfo.Origin) Origin,
+                     isnull(Shipment_Master.Destination, ArrivalManifestInfo.Destination) Destination,
+                     Shipment_Master.Pieces as AwbPieces,
+                     Shipment_Master.Weight as AwbWeight,
+                     ArrivalManifestInfo.ManifestPieces,
+                     ArrivalManifestInfo.ManifestWeight,
+                     Imp_ShipmentVerification.BreakDownPieces,
+                     Imp_ShipmentVerification.BreakDownWeight,
+                     ShipmentDamageInfo.CargoIrregularityCode,
+                     ShipmentDamageInfo.CargoIrregularityCode + '(' + convert(varchar, ShipmentDamageInfo.Pieces) +
+                                  ')' as irregularity,
+                     ShipmentDamageInfo.IrregularityRemarks as IrregularityTypeDescription,
+                     Shipment_Master.ShipmentType,
+                     isnull(ArrivalManifestInfo.shcs,(select  
+                                         string_agg(Shipment_MasterSHC.SpecialHandlingCode, ' ')
+                                  from
+                                         Shipment_MasterSHC
+                                  where
+                                         Shipment_MasterSHC.ShipmentId = Shipment_Master.ShipmentId)
+                     )
+              from
+                     ShipmentDamageInfo left join
+                     Shipment_Master
+                           on ShipmentDamageInfo.ShipmentNumber = Shipment_Master.ShipmentNumber and
+                                  ShipmentDamageInfo.ShipmentDate = Shipment_Master.ShipmentDate and
+                                  Shipment_Master.ShipmentType <> 'MAIL' left join
+                     ArrivalManifestInfo
+                           on ShipmentDamageInfo.ShipmentNumber = ArrivalManifestInfo.ShipmentNumber and
+                                  ShipmentDamageInfo.ShipmentDate = ArrivalManifestInfo.ShipmentDate and
+                                  ShipmentDamageInfo.Flight_ID = ArrivalManifestInfo.FlightId left join
+                     Imp_ShipmentVerification
+                           on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId and
+                                  ShipmentDamageInfo.Flight_ID = Imp_ShipmentVerification.FlightId)
+              order by 
+              	FlightSegmentId asc
+	]]>
+	</select>
+
+	<resultMap id="discrepancyListBasedOnFlightKey"
+		type="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList">
+		<id column="Flight_ID" property="flightId" />
+		<result column="SegmentId" property="segmentId"></result>
+		<result column="Segment" property="segment"></result>
+		<result column="ShipmentId" property="shipmentId"></result>
+		<result column="ShipmentNumber" property="shipmentNumber"></result>
+		<result column="ShipmentDate" property="shipmentDate"></result>
+		<result column="Origin" property="origin"></result>
+		<result column="Destination" property="destination"></result>
+		<result column="ManifestPieces" property="manifestPieces"></result>
+		<result column="ManifestWeight" property="manifestWeight"></result>
+		<result column="awbPieces" property="awbPieces"></result>
+		<result column="awbWeight" property="awbWeight"></result>
+		<result column="BreakDownPieces" property="breakDownPieces"></result>
+		<result column="BreakDownWeight" property="breakDownWeight"></result>
+		<result column="shcs" property="shcs"></result>
+		<result column="CargoIrregularityCode" property="cargoIrregularityCode"></result>
+		<result column="irregularity" property="irregularity"></result>
+		<result column="ShipmentType" property="shipmentType"></result>
+		<result column="FlightSegmentId" property="flightSegmentId"/>
+		<result column="IrregularityTypeDescription" property="irregularityTypeDescription"></result>
+		<association property="fdlSentFlag"
+			select="sqlFdlSentForShipmentIrregularity"
+			column="shipmentNumber=ShipmentNumber,flightId=Flight_ID,cargoIrregularityCode=CargoIrregularityCode"/>
+		<collection property="shipmentIrregularityIds"
+            column="shipmentNumber=ShipmentNumber,flightId=Flight_ID,cargoIrregularityCode=CargoIrregularityCode"
+            javaType="List"
+            select="sqlGetShipmentIrregularityIdsInfo">
+        </collection>
+	</resultMap>
+	
+	<select id="sqlFdlSentForShipmentIrregularity"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList"
+		resultType="java.math.BigInteger">
+		select 
+				case when sum(fdlSentFLag.fdlSent) >= 1 then
+					1
+				else
+				  fdlSentFLag.fdlSent end
+		from( 
+				select 
+					Max(case
+						when (isnull(Imp_FlightEvents.FlightDiscrepncyListSentBy, '')='' and isnull(Imp_FlightEvents.FlightDiscrepncyListSentAt, '')='' ) then 0
+						when (Shipment_Irregularity.LastUpdated_DateTime is null and Shipment_Irregularity.Created_DateTime>=Imp_FlightEvents.FlightDiscrepncyListSentAt) then 0
+						when (Shipment_Irregularity.LastUpdated_DateTime is not null and Shipment_Irregularity.LastUpdated_DateTime>=Imp_FlightEvents.FlightDiscrepncyListSentAt) then 0
+						else 1 end) as fdlSent
+				from
+					Shipment_Irregularity inner join 
+					Imp_FlightEvents  
+							on Shipment_Irregularity.Flight_ID = Imp_FlightEvents.FlightId
+				where 
+					Shipment_Irregularity.Flight_ID= #{flightId} and
+					Shipment_Irregularity.ShipmentNumber = #{shipmentNumber} and
+					Shipment_Irregularity.CargoIrregularityCode = #{cargoIrregularityCode}
+				) fdlSentFLag
+		Group by 
+				fdlSentFLag.fdlSent
+	</select>
+	
+	<select id="sqlGetShipmentIrregularityIdsInfo"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList"
+		resultType="java.math.BigInteger">
+		select 
+			Shipment_Irregularity.ShipmentIrregularityId
+		from
+			Shipment_Irregularity 
+		where 
+			Shipment_Irregularity.Flight_ID = #{flightId} and
+			Shipment_Irregularity.ShipmentNumber = #{shipmentNumber} and
+			Shipment_Irregularity.CargoIrregularityCode = #{cargoIrregularityCode}
+	</select>
+
+	<select id="getDiscrepancyBasedOnFlightSegment"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancySegmentList"
+		resultMap="discrepancyListBasedOnSegments">
+		select
+			FOS.FlightSegmentId AS segmentId,
+			FOS.Flight_ID as flightId ,
+			FOS.FlightBoardPoint AS boardingPoint,
+			#{tenantAirport} tenantAirport
+		from
+		Flt_OperativeFlight_Segments FOS Inner Join
+		Flt_OperativeFlight FOF 
+			ON FOS.Flight_ID=FOF.Flight_ID
+		where
+			FOF.Flight_ID=#{flightId} AND
+			FlightOffPoint=#{tenantAirport}
+		ORDER BY 
+			(FOS.FlightSegmentOrder)
+	</select>
+
+	<resultMap id="discrepancyListBasedOnSegments"
+		type="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancySegmentList">
+		<id column="flightId" property="flightId" />
+		<result column="segmentId" property="segmentId"></result>
+		<result column="boardingPoint" property="boardingPoint"></result>
+		<collection property="flightDiscrepancyList" javaType="List"
+			ofType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyList"
+			select="getDiscrepancyBasedOnFlight" column="{flightId=flightId, segmentId=segmentId, tenantAirport=tenantAirport}">
+		</collection>
+	</resultMap>
+	
+	<select id="countForfdlSentFlag" parameterType="java.lang.Long"
+	resultType="java.lang.Integer">
+	<![CDATA[
+		 with awbdetails as(
+			select 
+				case
+				      when (isnull(fe.FlightDiscrepncyListSentBy, '')='' and isnull(fe.FlightDiscrepncyListSentAt, '')='' ) then 0
+				      when (si.LastUpdated_DateTime is null and si.Created_DateTime>=fe.FlightDiscrepncyListSentAt) then 0
+					  when (si.LastUpdated_DateTime is not null and si.LastUpdated_DateTime>=fe.FlightDiscrepncyListSentAt) then 0
+				      else 1 end as fdlSentFlag 
+			from
+				Shipment_Irregularity si inner join 
+				Imp_FlightEvents fe
+				      on fe.FlightId = si.Flight_ID
+			where 
+				fe.FlightId = #{flightId}
+			union all
+			select 
+				case
+				      when (isnull(fe.FlightDiscrepncyListSentBy, '')='' and isnull(fe.FlightDiscrepncyListSentAt, '')='' ) then 0
+				      when (si.LastUpdated_DateTime is null and si.Created_DateTime>=fe.FlightDiscrepncyListSentAt) then 0
+					  when (si.LastUpdated_DateTime is not null and si.LastUpdated_DateTime>=fe.FlightDiscrepncyListSentAt) then 0
+				      else 1 end as fdlSentFlag 
+			from
+				Com_DamageInfo si inner join 
+				Imp_FlightEvents fe
+				      on si.FlightId = fe.FlightId
+			where 
+				fe.FlightId = #{flightId}
+		)
+		select 
+			count(awbdetails.fdlSentFlag) as status    
+		from 
+			awbdetails
+		where 
+			awbdetails.fdlSentFlag = 0
+	]]>
+	</select>	
+
+    <select id="getFlightDiscrepancyListUpdatedData" resultMap="discrepancyupdated"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel">
+		select  
+			
+              IFE.flightDiscrepncyListSentAt,
+              IFE.FlightId as flightId,
+              IFE.FlightDiscrepancyMessageVersion
+		from
+              Imp_FlightEvents IFE  INNER JOIN 
+              Flt_OperativeFlight FOF 
+              ON IFE.FlightId=FOF.Flight_ID INNER JOIN 
+              Flt_OperativeFlight_Legs FOL 
+              	ON FOL.Flight_ID=FOF.Flight_ID 
+         where
+              FOF.FlightKey= #{flightKey} and 
+              CAST(FOL.DateSTA AS DATE)=#{flightOriginDate}  and 
+              FOL.FlightOffPoint=#{tenantAirport}
+	</select>
+	
+	<resultMap id="discrepancyupdated"
+		type="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel">
+		<id column="flightId" property="flightId" />
+		<result column="flightDiscrepncyListSentAt" property="flightDiscrepncyListSentAt" javaType="java.time.LocalDateTime" jdbcType="TIMESTAMP"/>
+		<result column="FlightDiscrepancyMessageVersion" property="flightDiscrepncyListSentBy" />
+	</resultMap>
+	
+	<select id="sqlGetImportFlightEventsFDLLastSentVersion"
+		parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel"
+		resultType="java.math.BigInteger">
+	<![CDATA[
+		select
+			isnull(FlightDiscrepancyMessageVersion,0) + 1
+		from
+			Imp_FlightEvents
+		where
+			FlightId=#{flightId}
+	]]>		
+	</select>
+	
+	<update id="sqlUpdateImportFlightEventsFDLSent" 
+			parameterType="com.ngen.cosys.impbd.flightdiscrepancylist.model.FlightDiscrepancyListModel">
+	<![CDATA[
+		update Imp_FlightEvents
+		set
+			FlightDiscrepancyMessageVersion = #{version},
+			FlightDiscrepncyListSentAt = getdate(),
+			FlightDiscrepncyListSentBy = #{modifiedBy},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getdate()
+		where
+			FlightId=#{flightId}
+	]]>
+	</update>
+</mapper>	

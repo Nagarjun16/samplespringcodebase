@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="units">in</property>
+    <property name="iconFile">/templates/blank_report.gif</property>
+    <property name="bidiLayoutOrientation">ltr</property>
+    <property name="imageDPI">96</property>
+    <parameters>
+        <scalar-parameter name="releaseTripID" id="130">
+            <property name="valueType">static</property>
+            <property name="dataType">decimal</property>
+            <property name="distinct">true</property>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+    </parameters>
+    <data-sources>
+        <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="7">
+            <list-property name="privateDriverProperties">
+                <ex-property>
+                    <name>metadataBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledMetadataBidiFormatStr</name>
+                </ex-property>
+                <ex-property>
+                    <name>contentBidiFormatStr</name>
+                    <value>ILYNN</value>
+                </ex-property>
+                <ex-property>
+                    <name>disabledContentBidiFormatStr</name>
+                </ex-property>
+            </list-property>
+            <property name="odaDriverClass">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+            <property name="odaURL">jdbc:sqlserver://cosysuatsqldb1server.database.windows.net;databaseName=NGCUAT</property>
+            <property name="odaUser">SATsDevUser</property>
+            <encrypted-property name="odaPassword" encryptionID="base64">U0B0cyMxNDIx</encrypted-property>
+        </oda-data-source>
+    </data-sources>
+    <data-sets>
+        <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="Data Set" id="131">
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">HandlingArea</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">HandlingArea</text-property>
+                    <text-property name="heading">HandlingArea</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CustomerCode</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CustomerCode</text-property>
+                    <text-property name="heading">CustomerCode</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">CustomerShortName</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">CustomerShortName</text-property>
+                    <text-property name="heading">CustomerShortName</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">PDNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">PDNumber</text-property>
+                    <text-property name="heading">PDNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">ContainerNumber</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">ContainerNumber</text-property>
+                    <text-property name="heading">ContainerNumber</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">handoverdate</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">handoverdate</text-property>
+                    <text-property name="heading">handoverdate</text-property>
+                </structure>
+            </list-property>
+            <list-property name="parameters"/>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">HandlingArea</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">CustomerCode</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">CustomerShortName</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">PDNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">ContainerNumber</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">handoverdate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <method name="beforeOpen"><![CDATA[var releaseTripID = params["releaseTripID"].value;
+
+this.queryText = this.queryText + " and Equipment_Release_Trip_Info.EquipmentRequestReleaseTripInfoId  in  ('"+releaseTripID+"')";]]></method>
+            <property name="dataSource">Data Source</property>
+            <list-property name="resultSet">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">HandlingArea</property>
+                    <property name="nativeName">HandlingArea</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">CustomerCode</property>
+                    <property name="nativeName">CustomerCode</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">CustomerShortName</property>
+                    <property name="nativeName">CustomerShortName</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">PDNumber</property>
+                    <property name="nativeName">PDNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">ContainerNumber</property>
+                    <property name="nativeName">ContainerNumber</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">handoverdate</property>
+                    <property name="nativeName">handoverdate</property>
+                    <property name="dataType">date-time</property>
+                    <property name="nativeDataType">93</property>
+                </structure>
+            </list-property>
+            <xml-property name="queryText"><![CDATA[select distinct Equipment_Request.HandlingArea,
+Customer_Master.CustomerCode, Customer_Master.CustomerShortName, Equipment_Release_Info.PDNumber, Equipment_Release_Container_Info.ContainerNumber, 
+(select convert
+(datetime,SWITCHOFFSET(converT(datetimeoffset,Equipment_Release_Trip_Info.CreatedDateTime),(SELECT current_utc_offset 
+                 FROM   sys.time_zone_info 
+                 WHERE  NAME = 
+(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone')))))) as handoverdate
+--Equipment_Release_Trip_Info.CreatedDateTime as handoverdate
+from Equipment_Request
+inner join Customer_Master  on Equipment_Request.RequestedBy = Customer_Master.Customer_ID
+inner join
+Equipment_Request_Release_Details on Equipment_Request.EquipmentRequestId = Equipment_Request_Release_Details.EquipmentRequestId
+left join
+Equipment_Release_Info on Equipment_Request_Release_Details.EquipmentReleaseInfoId = Equipment_Release_Info.EquipmentReleaseInfoId
+left join
+Equipment_Release_Container_Info on Equipment_Request_Release_Details.EquipmentReleaseInfoId = Equipment_Release_Container_Info.EquipmentReleaseInfoId
+inner join
+Equipment_Release_Trip_Info on Equipment_Release_Info.EquipmentRequestReleaseTripInfoId = Equipment_Release_Trip_Info.EquipmentRequestReleaseTripInfoId
+where 
+Equipment_Release_Info.PDNumber is not null and  Equipment_Release_Info.PDNumber != ''
+
+]]></xml-property>
+            <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
+  <Version>2.0</Version>
+  <design:ResultSets derivedMetaData="true">
+    <design:resultSetDefinitions>
+      <design:resultSetColumns>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>HandlingArea</design:name>
+              <design:position>1</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>15</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>HandlingArea</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>HandlingArea</design:label>
+            <design:formattingHints>
+              <design:displaySize>15</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CustomerCode</design:name>
+              <design:position>2</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>8</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CustomerCode</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CustomerCode</design:label>
+            <design:formattingHints>
+              <design:displaySize>8</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>CustomerShortName</design:name>
+              <design:position>3</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>70</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>CustomerShortName</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>CustomerShortName</design:label>
+            <design:formattingHints>
+              <design:displaySize>70</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>PDNumber</design:name>
+              <design:position>4</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>10</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>Nullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>PDNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>PDNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>10</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>ContainerNumber</design:name>
+              <design:position>5</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>12</design:nativeDataTypeCode>
+            <design:precision>12</design:precision>
+            <design:scale>0</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>ContainerNumber</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>ContainerNumber</design:label>
+            <design:formattingHints>
+              <design:displaySize>12</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+        <design:resultColumnDefinitions>
+          <design:attributes>
+            <design:identifier>
+              <design:name>handoverdate</design:name>
+              <design:position>6</design:position>
+            </design:identifier>
+            <design:nativeDataTypeCode>93</design:nativeDataTypeCode>
+            <design:precision>23</design:precision>
+            <design:scale>3</design:scale>
+            <design:nullability>NotNullable</design:nullability>
+            <design:uiHints>
+              <design:displayName>handoverdate</design:displayName>
+            </design:uiHints>
+          </design:attributes>
+          <design:usageHints>
+            <design:label>handoverdate</design:label>
+            <design:formattingHints>
+              <design:displaySize>23</design:displaySize>
+            </design:formattingHints>
+          </design:usageHints>
+        </design:resultColumnDefinitions>
+      </design:resultSetColumns>
+      <design:criteria/>
+    </design:resultSetDefinitions>
+  </design:ResultSets>
+</model:DesignValues>]]></xml-property>
+        </oda-data-set>
+    </data-sets>
+    <styles>
+        <style name="report" id="4">
+            <property name="fontFamily">sans-serif</property>
+            <property name="fontSize">10pt</property>
+        </style>
+        <style name="crosstab" id="5">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+        <style name="crosstab-cell" id="6">
+            <property name="borderBottomColor">#CCCCCC</property>
+            <property name="borderBottomStyle">solid</property>
+            <property name="borderBottomWidth">1pt</property>
+            <property name="borderLeftColor">#CCCCCC</property>
+            <property name="borderLeftStyle">solid</property>
+            <property name="borderLeftWidth">1pt</property>
+            <property name="borderRightColor">#CCCCCC</property>
+            <property name="borderRightStyle">solid</property>
+            <property name="borderRightWidth">1pt</property>
+            <property name="borderTopColor">#CCCCCC</property>
+            <property name="borderTopStyle">solid</property>
+            <property name="borderTopWidth">1pt</property>
+        </style>
+    </styles>
+    <page-setup>
+        <simple-master-page name="Simple MasterPage" id="2">
+            <page-footer>
+                <text id="3">
+                    <property name="contentType">html</property>
+                    <text-property name="content"><![CDATA[<value-of>new Date()</value-of>]]></text-property>
+                </text>
+            </page-footer>
+        </simple-master-page>
+    </page-setup>
+    <body>
+        <grid id="26">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="width">7.947916666666667in</property>
+            <column id="38">
+                <property name="width">5.5625in</property>
+            </column>
+            <column id="27">
+                <property name="width">1.1979166666666667in</property>
+            </column>
+            <column id="28">
+                <property name="width">0.19791666666666666in</property>
+            </column>
+            <column id="29">
+                <property name="width">0.9895833333333334in</property>
+            </column>
+            <row id="30">
+                <cell id="37"/>
+                <cell id="31">
+                    <auto-text id="32">
+                        <property name="textAlign">right</property>
+                        <property name="type">page-number</property>
+                    </auto-text>
+                </cell>
+                <cell id="33">
+                    <text id="34">
+                        <property name="contentType">plain</property>
+                        <text-property name="content"><![CDATA[/]]></text-property>
+                    </text>
+                </cell>
+                <cell id="35">
+                    <auto-text id="36">
+                        <property name="type">total-page</property>
+                    </auto-text>
+                </cell>
+            </row>
+        </grid>
+        <grid id="41">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="width">7.947916666666667in</property>
+            <column id="42">
+                <property name="width">5.739583333333333in</property>
+            </column>
+            <column id="43">
+                <property name="width">1.3333333333333333in</property>
+            </column>
+            <column id="61">
+                <property name="width">0.875in</property>
+            </column>
+            <row id="44">
+                <cell id="45">
+                    <label id="56">
+                        <property name="textAlign">center</property>
+                        <text-property name="text">Equipment Issue- Self Collection</text-property>
+                    </label>
+                </cell>
+                <cell id="46"/>
+                <cell id="57"/>
+            </row>
+            <row id="47">
+                <cell id="48"/>
+                <cell id="49">
+                    <label id="63">
+                        <text-property name="text">Print Date</text-property>
+                    </label>
+                </cell>
+                <cell id="58">
+                    <text-data id="128">
+                        <expression name="valueExpr">Formatter.format(BirtDateTime.now() , 'ddMMMYYYY')</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+            <row id="50">
+                <cell id="51"/>
+                <cell id="52">
+                    <label id="64">
+                        <text-property name="text">Print Time</text-property>
+                    </label>
+                </cell>
+                <cell id="59">
+                    <text-data id="129">
+                        <expression name="valueExpr">Formatter.format(BirtDateTime.now() ,'HH:mm')</expression>
+                        <property name="contentType">html</property>
+                    </text-data>
+                </cell>
+            </row>
+        </grid>
+        <grid id="65">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="width">7.947916666666667in</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">HandlingArea</property>
+                    <text-property name="displayName">HandlingArea</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HandlingArea"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomerCode</property>
+                    <text-property name="displayName">CustomerCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomerCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomerShortName</property>
+                    <text-property name="displayName">CustomerShortName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomerShortName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">PDNumber</property>
+                    <text-property name="displayName">PDNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PDNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ContainerNumber</property>
+                    <text-property name="displayName">ContainerNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ContainerNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">handoverdate</property>
+                    <text-property name="displayName">handoverdate</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["handoverdate"]</expression>
+                    <property name="dataType">date-time</property>
+                </structure>
+            </list-property>
+            <column id="66">
+                <property name="width">1.1458333333333333in</property>
+            </column>
+            <column id="67">
+                <property name="width">2.0416666666666665in</property>
+            </column>
+            <column id="68">
+                <property name="width">1.59375in</property>
+            </column>
+            <column id="69">
+                <property name="width">1.5833333333333333in</property>
+            </column>
+            <column id="70">
+                <property name="width">1.5833333333333333in</property>
+            </column>
+            <row id="71">
+                <cell id="72">
+                    <label id="83">
+                        <text-property name="text">Terminal No</text-property>
+                    </label>
+                </cell>
+                <cell id="73">
+                    <data id="121">
+                        <property name="resultSetColumn">HandlingArea</property>
+                    </data>
+                </cell>
+                <cell id="74"/>
+                <cell id="75"/>
+                <cell id="76"/>
+            </row>
+            <row id="77">
+                <cell id="78">
+                    <label id="84">
+                        <text-property name="text">Agent Code</text-property>
+                    </label>
+                </cell>
+                <cell id="79">
+                    <data id="122">
+                        <property name="resultSetColumn">CustomerCode</property>
+                    </data>
+                </cell>
+                <cell id="80">
+                    <label id="85">
+                        <text-property name="text">Agent's Staff ID</text-property>
+                    </label>
+                </cell>
+                <cell id="81">
+                    <property name="colSpan">2</property>
+                    <property name="rowSpan">1</property>
+                    <data id="123">
+                        <property name="resultSetColumn">CustomerShortName</property>
+                    </data>
+                </cell>
+            </row>
+        </grid>
+        <table id="86">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="dataSet">Data Set</property>
+            <list-property name="boundDataColumns">
+                <structure>
+                    <property name="name">HandlingArea</property>
+                    <text-property name="displayName">HandlingArea</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["HandlingArea"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomerCode</property>
+                    <text-property name="displayName">CustomerCode</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomerCode"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">CustomerShortName</property>
+                    <text-property name="displayName">CustomerShortName</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["CustomerShortName"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">PDNumber</property>
+                    <text-property name="displayName">PDNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["PDNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">ContainerNumber</property>
+                    <text-property name="displayName">ContainerNumber</text-property>
+                    <expression name="expression" type="javascript">dataSetRow["ContainerNumber"]</expression>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="name">handoverdate</property>
+                    <text-property name="displayName">handoverdate</text-property>
+                    <expression name="expression" type="javascript">Formatter.format(dataSetRow["handoverdate"], 'ddMMMYYYY HH:mm')</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <column id="99">
+                <property name="suppressDuplicates">true</property>
+            </column>
+            <column id="100"/>
+            <column id="101"/>
+            <header>
+                <row id="106">
+                    <cell id="107">
+                        <label id="110">
+                            <property name="textAlign">left</property>
+                            <text-property name="text">Serial No</text-property>
+                        </label>
+                    </cell>
+                    <cell id="108"/>
+                    <cell id="109"/>
+                </row>
+                <row id="87">
+                    <cell id="88">
+                        <label id="111">
+                            <text-property name="text">PD Number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="89">
+                        <label id="112">
+                            <text-property name="text">ULD Number</text-property>
+                        </label>
+                    </cell>
+                    <cell id="90">
+                        <label id="113">
+                            <text-property name="text">Handover Date/Time</text-property>
+                        </label>
+                    </cell>
+                </row>
+            </header>
+            <detail>
+                <row id="91">
+                    <cell id="92">
+                        <data id="115">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">PDNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="93">
+                        <data id="117">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">ContainerNumber</property>
+                        </data>
+                    </cell>
+                    <cell id="94">
+                        <data id="119">
+                            <property name="textAlign">center</property>
+                            <property name="resultSetColumn">handoverdate</property>
+                        </data>
+                    </cell>
+                </row>
+            </detail>
+        </table>
+        <label id="114">
+            <property name="fontFamily">"Courier New"</property>
+            <property name="textAlign">center</property>
+            <text-property name="text">END OF PRINT</text-property>
+        </label>
+    </body>
+</report>

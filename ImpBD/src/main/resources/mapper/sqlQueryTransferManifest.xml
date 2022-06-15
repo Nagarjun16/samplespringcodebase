@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TransferManifestMapper">
+	<select id="fetchTMDetails" resultMap="inboundTMDetails"
+           parameterType="com.ngen.cosys.impbd.mail.transfermanifest.model.SearchTransferManifestDetails"
+              resultType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierResponse">
+       select Hse.Number mailBagNumber,
+              Hse.DispatchNumber,
+              Hse.ReceptacleNumber,
+              Hse.RegisteredIndicator,
+              Hse.Pieces,
+              Hse.Weight,
+              flt.Flight_Id flightId,
+              flt_operativeflight_legs.DateSTA flightDate,
+              Flt.CarrierCode IncomingCarrier,
+              Flt.FlightKey flightKey,
+              ShpOnwRtg.Carrier
+              transferCarrier,
+              Hse.NextDestination nextDestination,
+              SUBSTRING(Hse.DestinationOfficeExchange,3,3) Destination,
+              SUBSTRING(Hse.OriginOfficeExchange,3,3) Origin,
+              case when com.ReferenceId is not null then 1 else 0 end  damaged,
+              Shipment_Master.ShipmentId shipmentId
+              from
+              Shipment_HouseInformation Hse inner join Shipment_Master on Hse.ShipmentId = Shipment_Master.ShipmentId
+			  inner join Imp_ShipmentVerification on Shipment_Master.ShipmentId = Imp_ShipmentVerification.ShipmentId
+              inner join Shipment_InventoryHouse HseInv on Hse.ShipmentHouseId = HseInv.ShipmentHouseId
+              inner join Shipment_Inventory ShpInv on Hse.ShipmentId= ShpInv.Shipment_ID
+              and ShpInv.ShipmentInventory_Id = HseInv.ShipmentInventoryId
+              inner join
+              Flt_OperativeFlight Flt on Imp_ShipmentVerification.FlightID= Flt.Flight_ID
+              inner join flt_operativeflight_legs on Flt.flight_id = flt_operativeflight_legs.flight_id  
+              left join Com_DamageInfo com on Hse.Number=com.ReferenceId
+              inner join
+              Shipment_MasterRoutingInfo ShpOnwRtg on hse.ShipmentId =
+              ShpOnwRtg.ShipmentId and ShpOnwRtg.FromPoint =#{tenantAirport}
+              inner join
+              Mst_Carrier Car on ShpOnwRtg.Carrier = Car.CarrierCode
+              where
+              Hse.shipmentType='MAIL'
+              and Flt.CarrierCode = #{incomingCarrier}
+              and
+              ShpOnwRtg.Carrier = #{transferCarrier}
+              and flt_operativeflight_legs.flightoffpoint=#{tenantAirport}
+              <if test="destination != null and destination !='' ">
+              and SUBSTRING
+              (Hse.DestinationOfficeExchange,3,3) = #{destination}
+              </if>
+              <if test="dispatchNumber != null and dispatchNumber !='' ">
+              and Hse.DispatchNumber = #{dispatchNumber}
+              </if>
+              and not exists
+              (select 1 from Transhipment_TransferManifestByAWBInfo Trf where
+              Trf.ShipmentNumber= Hse.Number)
+       </select>
+
+
+             <resultMap
+              type="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierResponse"
+              id="inboundTMDetails">
+              
+              <id property="dispatchNumber" column="dispatchNumber"/>
+              <id property="origin" column="origin" />
+              <id property="destination" column="destination" />
+              <id property="flightDate" column="flightDate" />
+              <id property="flightKey" column="flightKey" />
+              <id property="transferCarrier" column="transferCarrier" />
+              <id property="shipmentId" column="shipmentId"/>
+                 
+              <collection property="transferCarrierDetails" javaType="List" ofType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierDetails" >
+                     <result property="trmNumber" column="trmNumber" />
+                      <result property="incomingCarrier" column="incomingCarrier" />
+                     <result property="flightKey" column="flightKey" />
+                     <result property="flightDate" column="flightDate" />
+                     <result property="mailBagNumber" column="mailBagNumber" />
+                     <result property="incomingCarrier" column="incomingCarrier" />
+                     <result property="receptacleNumber" column="receptacleNumber" />
+                     <result property="nextDestination" column="nextDestination"/>
+                     <result property="pieces" column="pieces" />
+                     <result property="weight" column="weight" />
+                     <result property="registeredIndicator" column="registeredIndicator" />
+                     <result property="damaged" column="damaged" />
+                     <result property="flightId" column="flightId" />
+                     <result property="flightKey" column="flightKey" />
+                     <result property="issuedDate" column="issuedDate" />
+                     <result property="finalizedFlag" column="finalizedFlag" />
+                     <result property="finalizedBy" column="finalizedBy"/>
+                     <result property="finalizedDate" column="finalizedDate"/>
+                     <result property="shipmentDate" column="shipmentDate"/>
+                     <result property="shipmentId" column="shipmentId"/>
+              </collection>
+              </resultMap> 
+
+
+	<select id="getCountBaseOnCarrierCodeFrom"
+		parameterType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierDetails"
+		resultType="java.lang.String">
+		select case when count(*) = 0 then count(*) else 
+        count(*)+1 end as count from Transhipment_TransferManifestByAWB
+		where
+		CarrierCodeFrom = #{incomingCarrier}
+	</select>
+	<insert id="insertTransferManifestMail"
+		parameterType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierDetails"
+		useGeneratedKeys="true" keyColumn="TransTransferManifestByAwbId"
+		keyProperty="transTransferManifestByAwbId">
+		insert into Transhipment_TransferManifestByAWB
+		(CarrierCodeFrom,
+		CarrierCodeTo
+		,TRMNumber
+		,IssuedDate
+		,FinalizedFlag
+		,FinalizedBy
+		,FinalizedDate
+		,CreatedUserCode
+		,CreatedDateTime)
+		values (#{incomingCarrier,jdbcType=VARCHAR},
+		#{transferCarrier,jdbcType=VARCHAR}, #{trmNumber,jdbcType=VARCHAR},
+		#{issuedDate,jdbcType=TIMESTAMP},
+		1,
+		#{createdBy},
+		#{createdOn},
+		#{createdBy},#{createdOn})
+	</insert>
+	<insert id="insertTransferManifestMailInfo"
+		parameterType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierDetails">
+		insert into Transhipment_TransferManifestByAWBInfo (
+		TransTransferManifestByAwbId,
+		InboundFlightId,
+		Origin,
+		Destination,
+		Pieces,
+		Weight,
+		WeightUnitCode,
+		ShipmentNumber,
+		ShipmentDate,
+		CreatedUserCode,
+		CreatedDateTime,
+		TransactionSequenceNumber)
+		values (#{transTransferManifestByAwbId,jdbcType=NUMERIC},
+		#{flightId,jdbcType=VARCHAR},
+		#{origin,jdbcType=VARCHAR},
+		#{destination,jdbcType=VARCHAR},
+		#{pieces,jdbcType=NUMERIC},
+		#{weight,jdbcType=DECIMAL},
+		'K',
+		#{mailBagNumber,jdbcType=VARCHAR},
+		#{createdOn},
+		#{createdBy},
+		#{createdOn},
+		(SELECT (case when MAX (TransactionSequenceNumber) is null then 0 else MAX
+		(TransactionSequenceNumber) + 1 end ) TransactionSequenceNumber FROM
+		Transhipment_TransferManifestByAWBInfo where
+		TransTransferManifestByAwbId = #{transTransferManifestByAwbId}))
+	</insert>
+	
+	<update id="updateLyingListOfShipments" parameterType="com.ngen.cosys.impbd.mail.transfermanifest.model.TransferCarrierDetails">
+	Update Shipment_Master SET CarrierCode = #{transferCarrier} Where ShipmentId = #{shipmentId}
+	</update>
+
+</mapper>

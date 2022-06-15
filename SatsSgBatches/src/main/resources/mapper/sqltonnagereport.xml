@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TonnageReportMapper">
+
+	<select id="fetchlistofcarriers"
+		parameterType="com.ngen.cosys.TonnageReport.model.TonnageReportRequest"
+		resultType="java.lang.String">
+		select distinct
+		CarrierCode
+		from
+		Rpt_ReportTemplateConfig
+		inner join
+		Rpt_ReportTemplate on
+		Rpt_ReportTemplateConfig.templateid =
+		Rpt_ReportTemplate.templateid
+		where
+		Month(Rpt_ReportTemplateConfig.StartDate) = #{month} and
+		Year(Rpt_ReportTemplateConfig.StartDate) = #{year}
+	</select>
+
+
+	<insert id="insertreportdata" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest"
+		useGeneratedKeys="true" keyProperty="uploadedDocId" keyColumn="UploadedDocId">
+		INSERT
+		INTO [dbo].[Com_UploadedDocumentStore]
+		(
+		[ReferenceId]
+		,[Document]
+		,[DocumentName]
+		,[DocumentType]
+		,[CreatedUserCode]
+		,[CreatedDateTime]
+		,[AssociatedTo]
+		,[Stage]
+		,[EntityType]
+		,[EntityKey]
+		,[EntityDate]
+		,[DocumentFormat]
+		)
+		values
+		(
+		'12345',
+		#{document},
+		#{documentName},
+		'xlsx',
+		#{createdBy},
+		#{createdOn},
+		'Tonnage',
+		'Tonnage_Report',
+		#{entityType},
+		#{entityKey},
+		#{entityDate},
+		'xlsx'
+		)
+
+	</insert>
+
+	<insert id="insertreportdatawithreportname" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest">
+		INSERT INTO [dbo].[Rpt_ReportOutput]
+		(
+		[TemplateId]
+		,[CarrierCode]
+		,[ReportDate]
+		,[ReportName]
+		,[ReportGenDateTime]
+		,[ReportMode]
+		,[Status]
+		,[StatusDateTime]
+		,[StatusOperationBy]
+		,[UploadedDocId])
+		VALUES
+		(
+		#{templateID},
+		#{entityType},
+		#{entityDate},
+		#{documentName},
+		getdate(),
+		'Automatic',
+		'Pending',
+		getdate(),
+		'BATCHUSER',
+		#{uploadedDocId}
+		)
+	</insert>
+
+
+
+	<select id="fetchlistofautopublish" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest"
+		resultType="java.lang.String">
+		select
+		AutoPublish
+		from
+		Rpt_ReportTemplateConfig
+		inner join
+		Rpt_ReportTemplate on
+		Rpt_ReportTemplateConfig.templateid =
+		Rpt_ReportTemplate.templateid
+		where
+		Month(Rpt_ReportTemplateConfig.StartDate) = #{entityDate} and
+		Year(Rpt_ReportTemplateConfig.StartDate) = #{entityDate}
+	</select>
+
+	<select id="fetchTemplateId" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest"
+		resultType="java.lang.Integer">
+		select templateID from Rpt_ReportTemplate where ReportName
+		= #{documentName}
+	</select>
+
+
+	<select id="fetch_entitytype_entitykeyvalue" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest"
+		resultType="java.lang.String">
+		select top 1 EntityKey from Com_UploadedDocumentStore where
+		AssociatedTo = 'Tonnage'
+		and
+		Stage= 'Tonnage_Report'
+		and
+		EntityType =
+		#{entityType}
+		order by CreatedDateTime desc
+	</select>
+
+	<select id="fetch_datacount" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest"
+		resultType="java.lang.Integer">
+		select count(*) from Com_UploadedDocumentStore
+		where
+		month(EntityDate)=month(#{entityDate})
+		and
+		EntityType= #{entityType}
+		and
+		DocumentName = #{documentName}
+		and
+		Associatedto = 'Tonnage'
+		and
+		Stage =
+		'Tonnage_Report'
+
+	</select>
+
+	<update id="updatereportdata" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest">
+		update
+		Com_UploadedDocumentStore
+		set
+		Document= #{document}
+		where
+		month(EntityDate)=month(#{entityDate})
+		and
+		EntityType= #{entityType}
+		and
+		DocumentName = #{documentName}
+		and
+		Associatedto = 'Tonnage'
+		and
+		Stage = 'Tonnage_Report'
+	</update>
+	
+	<update id="updatereportdatawithreportname" parameterType="com.ngen.cosys.TonnageReport.model.InsertRequest">
+	update Rpt_ReportOutput
+	set 
+	CarrierCode = #{entityType}
+	, 
+	ReportDate= #{entityDate}
+	,
+	ReportName =  #{documentName}
+	,
+	StatusDateTime = getdate()
+	where 
+	UploadedDocId= #{uploadedDocId}
+	</update>
+</mapper>

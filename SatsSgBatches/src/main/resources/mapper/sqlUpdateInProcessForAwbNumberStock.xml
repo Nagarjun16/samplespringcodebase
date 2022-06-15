@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="ShipmentDeliveryMapper">
+
+<update 
+		id="UpdateInProcessForAwbNumberStock"
+		parameterType="com.ngen.cosys.uncollectedfreightout.model.IRPNotificationDetails">
+		update
+		Com_AWBStockDetails set Processing = 0
+		where
+		LastUpdated_DateTime  BETWEEN DATEADD(HOUR, -(select ParameterValueNum from App_SystemParameters where  ParameterCode = 'UpdateInProcessForAwbNumberStock'), GETDATE()) AND GETDATE()
+		and isnull(Com_AWBStockDetails.Issued, 0) != 1 
+	</update>
+	
+</mapper>

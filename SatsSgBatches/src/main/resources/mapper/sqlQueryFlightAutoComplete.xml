@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper SYSTEM "mybatis-3-mapper.dtd">
+<mapper namespace="FlightAutoCompleteMapper">
+
+	<resultMap id="AutoFlightCompleteResultMap"
+		type="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+		<id property="flightId" column="Flight_ID" />
+		<result property="flightKey" column="FlightKey" />
+		<result property="flightOriginDate" column="DateSTD" />
+		<result property="dateSTD" column="DateSTD" />
+		<result property="boardPoint" column="FlightBoardPoint" />
+		<result property="offPoint" column="FlightOffPoint" />
+		<result property="carrierCode" column="CarrierCode" />
+		<result property="includeVolumeInFFM" column="IncludeVolumeInFFM" />
+		<collection property="shipments" column="{flightId = Flight_ID}"
+			select="sqlGetManifestedShipmentsOnAutoFlightComplete"
+			ofType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails"
+			javaType="List" />
+		<collection property="shipmentsFfm" column="{flightId = Flight_ID}"
+			select="sqlGetManifestedShipmentInfoOnAutoFlightComplete"
+			ofType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails"
+			javaType="List" />		
+	</resultMap>
+
+	<select id="sqlGetFlightListForAutoComplete" parameterType="Map"  resultMap="AutoFlightCompleteResultMap">
+	<![CDATA[
+		With GetCurrentTime As(
+			select 
+				convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		),
+AutoFlightComplete As(
+select      
+				
+				Flt_OperativeFlight.CarrierCode,
+			    Flt_OperativeFlight.FlightKey,
+			    Flt_OperativeFlight.Flight_ID,
+			    Flt_OperativeFlight_Legs.DateSTD,
+			    Flt_OperativeFlight_Legs.DateETD,
+				Flt_OperativeFlight_Legs.DateATD,
+				Flt_OperativeFlight_Legs.FlightBoardPoint,
+				Flt_OperativeFlight_Legs.FlightOffPoint,
+				Flt_OperativeFlight.FlightNumber
+				from
+		    	Flt_OperativeFlight inner join   
+		        Flt_OperativeFlight_Legs
+		        	on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID inner join
+		       Exp_FlightEvents
+		              on Exp_FlightEvents.FlightId=Flt_OperativeFlight.Flight_ID                   
+			where
+				Exp_FlightEvents.FlightCompletedAt is null and
+			Exp_FlightEvents.FirstTimeFlightCompletedAt is null and
+			    isnull(Flt_OperativeFlight.OutboundFlightDelayFlag, 0) = 0 and
+			    Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} and
+			    Flt_OperativeFlight.FlightAutoCompleteFlag = 1 
+				and
+			   Exp_FlightEvents.ManifestCompletedAt is not null and
+			    Exp_FlightEvents.DLSCompletedAt is not null								
+
+)
+		select 
+			*
+		from(
+			select   			
+				AutoFlightComplete.CarrierCode,
+			    AutoFlightComplete.FlightKey,
+			    AutoFlightComplete.Flight_ID,
+			    AutoFlightComplete.DateSTD,
+			    AutoFlightComplete.DateETD,
+				AutoFlightComplete.DateATD,
+				AutoFlightComplete.FlightBoardPoint,
+				AutoFlightComplete.FlightOffPoint,				
+				case
+					when (select CurrentTime from GetCurrentTime) >= 
+					dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+						coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))  then
+							1
+					else 
+						0
+					end DifferenceInTime,
+				case
+					when abs(datediff(minute,
+						(select CurrentTime from GetCurrentTime) , 
+						dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+							coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))) / (24 * 60))
+					 <
+				(select ParameterValueNum from App_SystemParameters where ParameterCode = 'LAST_NO_DAYS_CONSIDER_FLIGHT_COMPLETE') then
+					1
+				else
+					0
+				end LessThanConfiguredTime,
+				(select isnull(IncludeVolumeInFFM, 0) from 	Mst_Carrier where  Mst_Carrier.CarrierCode = AutoFlightComplete.CarrierCode) IncludeVolumeInFFM		
+				from
+		    	AutoFlightComplete  
+				inner join
+		        Mst_SetupAutoFlightComplete
+	              on AutoFlightComplete.CarrierCode = Mst_SetupAutoFlightComplete.CarrierCode and    
+	                 
+	                  	AutoFlightComplete.FlightNumber = Mst_SetupAutoFlightComplete.FlightNumber
+
+			UNION
+			select   			
+				AutoFlightComplete.CarrierCode,
+			    AutoFlightComplete.FlightKey,
+			    AutoFlightComplete.Flight_ID,
+			    AutoFlightComplete.DateSTD,
+			    AutoFlightComplete.DateETD,
+				AutoFlightComplete.DateATD,
+				AutoFlightComplete.FlightBoardPoint,
+				AutoFlightComplete.FlightOffPoint,				
+				case
+					when (select CurrentTime from GetCurrentTime) >= 
+					dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+						coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))  then
+							1
+					else 
+						0
+					end DifferenceInTime,
+				case
+					when abs(datediff(minute,
+						(select CurrentTime from GetCurrentTime) , 
+						dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+							coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))) / (24 * 60))
+					 <
+				(select ParameterValueNum from App_SystemParameters where ParameterCode = 'LAST_NO_DAYS_CONSIDER_FLIGHT_COMPLETE') then
+					1
+				else
+					0
+				end LessThanConfiguredTime,
+				(select isnull(IncludeVolumeInFFM, 0) from 	Mst_Carrier where  Mst_Carrier.CarrierCode = AutoFlightComplete.CarrierCode) IncludeVolumeInFFM		
+				from
+		    	AutoFlightComplete  
+				inner join
+		        Mst_SetupAutoFlightComplete
+	              on AutoFlightComplete.CarrierCode = Mst_SetupAutoFlightComplete.CarrierCode and
+	                  AutoFlightComplete.FlightOffPoint = Mst_SetupAutoFlightComplete.AirportCode
+					  and (Mst_SetupAutoFlightComplete.FlightNumber is null or Mst_SetupAutoFlightComplete.FlightNumber = '')
+			and not exists(select null from Mst_SetupAutoFlightComplete
+			where AutoFlightComplete.CarrierCode = CarrierCode and                   
+	                  	AutoFlightComplete.FlightNumber =FlightNumber)
+
+				UNION
+				select   			
+				AutoFlightComplete.CarrierCode,
+			    AutoFlightComplete.FlightKey,
+			    AutoFlightComplete.Flight_ID,
+			    AutoFlightComplete.DateSTD,
+			    AutoFlightComplete.DateETD,
+				AutoFlightComplete.DateATD,
+				AutoFlightComplete.FlightBoardPoint,
+				AutoFlightComplete.FlightOffPoint,				
+				case
+					when (select CurrentTime from GetCurrentTime) >= 
+					dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+						coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))  then
+							1
+					else 
+						0
+					end DifferenceInTime,
+				case
+					when abs(datediff(minute,
+						(select CurrentTime from GetCurrentTime) , 
+						dateadd(minute, isnull(Mst_SetupAutoFlightComplete.NoOfMinutes, 0),  
+							coalesce(AutoFlightComplete.DateATD, AutoFlightComplete.DateETD, AutoFlightComplete.DateSTD))) / (24 * 60))
+					 <
+				(select ParameterValueNum from App_SystemParameters where ParameterCode = 'LAST_NO_DAYS_CONSIDER_FLIGHT_COMPLETE') then
+					1
+				else
+					0
+				end LessThanConfiguredTime,
+				(select isnull(IncludeVolumeInFFM, 0) from 	Mst_Carrier where  Mst_Carrier.CarrierCode = AutoFlightComplete.CarrierCode) IncludeVolumeInFFM		
+				from
+		    	AutoFlightComplete  
+				inner join
+		        Mst_SetupAutoFlightComplete
+	              on AutoFlightComplete.CarrierCode = Mst_SetupAutoFlightComplete.CarrierCode 				  
+				  and (Mst_SetupAutoFlightComplete.FlightNumber is null or Mst_SetupAutoFlightComplete.FlightNumber = '') and Mst_SetupAutoFlightComplete.AirportCode is null
+				and not exists(select null from Mst_SetupAutoFlightComplete
+						where AutoFlightComplete.CarrierCode = CarrierCode and                   
+	                  	AutoFlightComplete.FlightNumber =FlightNumber
+						UNION
+						select null from Mst_SetupAutoFlightComplete
+						where AutoFlightComplete.CarrierCode = CarrierCode and                   
+	                  	  AutoFlightComplete.FlightOffPoint = AirportCode
+						)
+		)AutoCompleteFlightInfo
+		where
+			AutoCompleteFlightInfo.DifferenceInTime = 1
+			and
+		AutoCompleteFlightInfo.LessThanConfiguredTime = 1
+		order by
+			AutoCompleteFlightInfo.DateATD,
+			AutoCompleteFlightInfo.DateETD,
+			AutoCompleteFlightInfo.DateSTD	
+	]]>
+	</select>
+
+	<resultMap id="FlightAutoCompleteShipmentDetailsResultMap"
+		type="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+		<result property="flightId" column="Flight_ID" />
+		<result property="flightBoardPoint" column="FlightBoardPoint" />
+		<result property="flightOffPoint" column="FlightOffPoint" />
+		<result property="shipmentId" column="ShipmentId" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="shipmentDate" column="ShipmentDate" />
+		<result property="shipmentType" column="ShipmentType" />
+		<result property="origin" column="Origin" />
+		<result property="destination" column="Destination" />
+		<result property="natureOfGoodsDescription" column="NatureOfGoodsDescription" />
+		<result property="shipmentPieces" column="Pieces" />
+		<result property="shipmentWeight" column="Weight" />
+		<result property="manifestedPieces" column="ManifestPieces" />
+		<result property="manifestWeight" column="ManifestWeight" />
+		<result property="freightOutPieces" column="FreightOutPieces" />
+		<result property="freightOutWeight" column="FreightOutWeight" />
+		<result property="chargeableWeight" column="chargeableWeight" />
+		<result property="usedChargeableWeight" column="usedChargeableWeight" />
+		<result property="totalConsignmentPieces" column="totalConsignmentPieces" />
+		<result property="totalConsignmentWeight" column="totalConsignmentWeight" />
+		<result property="manifestShipmentInfoId" column="manifestShipmentInfoId" />		
+		<collection property="inventoryIds"
+			column="{flightId = Flight_ID, shipmentId = ShipmentId}" select="sqlGetInventoryIdsOnAutoFlightComplete"
+			ofType="java.math.BigInteger" javaType="List" />
+		<collection property="houses"
+			column="{flightId = Flight_ID, shipmentId = ShipmentId}" select="sqlGetHousesOnAutoFlightComplete"
+			ofType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentHouseDetails"
+			javaType="List" />
+	</resultMap>
+
+	<select id="sqlGetManifestedShipmentsOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails"
+		resultMap="FlightAutoCompleteShipmentDetailsResultMap">
+	<![CDATA[
+		select 
+			*
+		from(
+			select
+				distinct 
+				Flt_OperativeFlight_Segments.Flight_ID,
+				Flt_OperativeFlight_Segments.FlightBoardPoint,
+				Flt_OperativeFlight_Segments.FlightOffPoint,				
+				Shipment_Master.ShipmentId,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,		
+				Shipment_Master.ShipmentType,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.NatureOfGoodsDescription,
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight,
+				sum(Exp_ManifestShipmentInfo.Piece) as ManifestPieces,
+				sum(Exp_ManifestShipmentInfo.Weight) as ManifestWeight,
+				isnull((select
+						sum(Shipment_Inventory.Pieces)
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId and
+						Shipment_Inventory.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID), 0) as FreightOutPieces,
+				isnull((select
+						sum(Shipment_Inventory.Weight)
+					from
+						Shipment_Inventory
+					where
+						Shipment_Inventory.Shipment_ID = Shipment_Master.ShipmentId and
+						Shipment_Inventory.Flight_ID = Flt_OperativeFlight_Segments.Flight_ID), 0) as FreightOutWeight
+			from
+				Flt_OperativeFlight_Segments inner join
+				Exp_Manifest
+					on Flt_OperativeFlight_Segments.FlightSegmentId = Exp_Manifest.FlightSegmentId inner join		
+				Exp_ManifestULDInfo 
+					on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join
+				Exp_ManifestShipmentInfo 
+					ON Exp_ManifestShipmentInfo.ManifestUldInfoId = Exp_ManifestULDInfo.ManifestUldInfoId inner join
+				Shipment_Master 
+					ON Shipment_Master.ShipmentId = Exp_ManifestShipmentInfo.ShipmentId
+			where 
+				Flt_OperativeFlight_Segments.FlightBoardPoint = #{tenantAirport} and
+				Flt_OperativeFlight_Segments.Flight_ID = #{flightId}
+			group by 
+				Flt_OperativeFlight_Segments.Flight_ID,
+				Flt_OperativeFlight_Segments.FlightBoardPoint,
+				Flt_OperativeFlight_Segments.FlightOffPoint,				
+				Shipment_Master.ShipmentId,	
+				Shipment_Master.ShipmentType,
+				Shipment_Master.ShipmentNumber,
+				Shipment_Master.ShipmentDate,
+				Shipment_Master.Origin,
+				Shipment_Master.Destination,
+				Shipment_Master.NatureOfGoodsDescription,			
+				Shipment_Master.Pieces,
+				Shipment_Master.Weight		
+		)ManifestShipmentInfo
+		order by
+			ManifestShipmentInfo.FlightOffPoint,
+			ManifestShipmentInfo.ShipmentType
+	]]>
+	</select>
+	
+	
+
+	<select id="sqlGetInventoryIdsOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails"
+		resultType="java.math.BigInteger">
+		select
+			Shipment_Inventory.ShipmentInventory_Id
+		from
+			Shipment_Inventory
+		where
+			Shipment_Inventory.Shipment_ID = #{shipmentId} and
+			Shipment_Inventory.Flight_ID = #{flightId}
+			<!-- to pick only assigned inventory for transhipment case in 
+			which one inventory loaded and other inventory lying with same flight Id -->
+			and Shipment_Inventory.AssignedUldTrolley is not null			
+	
+	</select>
+
+	<select id="sqlGetHousesOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails"
+		resultType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentHouseDetails">
+	<![CDATA[
+		select
+			distinct 
+				Shipment_HouseInformation.Number as number,
+				Shipment_HouseInformation.ShipmentId as shipmentId
+		from
+			Shipment_Inventory inner join
+			Shipment_InventoryHouse
+				on Shipment_Inventory.ShipmentInventory_Id = Shipment_InventoryHouse.ShipmentInventoryId inner join
+			Shipment_HouseInformation	
+				on Shipment_InventoryHouse.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+				and Shipment_HouseInformation.shipmenttype<>'SB'
+		where
+			Shipment_Inventory.Shipment_ID = #{shipmentId} and
+			Shipment_Inventory.Flight_ID = #{flightId}	
+	]]>
+	</select>
+
+	<update id="sqlUpdateMarkFirstAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+	<![CDATA[		
+		update Exp_FlightEvents
+		set 
+			FirstTimeFlightCompletedAt = getdate(),
+			FirstTimeFlightCompletedBy = #{createdBy},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime =  getdate()
+		where 
+			FlightId = #{flightId}	
+	]]>
+	</update>
+
+	<update id="sqlUpdateUnMarkFirstAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+	<![CDATA[		
+		update Exp_FlightEvents
+		set 
+			FirstTimeFlightCompletedAt= null,
+			FirstTimeFlightCompletedBy= null,
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getdate()
+		where 
+			FlightId = #{flightId}	
+	]]>
+	</update>
+
+	<update id="sqlUpdateFlightEventsOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+	<![CDATA[		
+		update Exp_FlightEvents
+		set 
+			FlightCompletedBy = #{modifiedBy},
+			FlightCompletedAt = getdate(),
+			FlightDepartedBy = #{modifiedBy},
+			FlightDepartedOn = getdate(),
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getdate()
+		where 
+			FlightId = #{flightId}
+	]]>
+	</update>
+
+	<update id="sqlUpdateFlightStatusForAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+	<![CDATA[		
+		update Flt_OperativeFlight
+		set 
+			FlightStatus = 'DEP',
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = getdate()
+		where 
+			Flight_ID = #{flightId}
+	]]>
+	</update>
+
+	<update id="sqlDeAssociateULDFromOutboundFlightOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails">
+	<![CDATA[		
+		update ULD_ULDMaster
+		set 
+			FlightBoardPoint = null,
+			FlightOffPoint = null,
+			InboundFlight_ID = null,
+			OutboundFlight_ID = null,
+			UldStatus = 'OFL',
+			HandlingCarrierCode = #{carrierCode},
+			UldLocationCode = null,
+			ContainerDestination = null,
+			LastUpdatedUser_Code = #{modifiedBy},
+			LastUpdated_DateTime = getdate()		
+		where 
+			UldKey in(
+				select
+					Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+				from
+					Exp_AssignedULDTrolleyToFlight
+				where
+					Exp_AssignedULDTrolleyToFlight.FlightId = #{flightId}
+			) and
+			OutboundFlight_ID = #{flightId}
+	]]>
+	</update>
+	
+	<select id="sqlCheckShipmentFullDepartedStatus" 
+			parameterType="java.math.BigInteger"
+			resultType="java.lang.Boolean">
+		<![CDATA[
+			SELECT	CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+			FROM	Shipment_Master
+			WHERE	Shipment_Master.ShipmentId = #{shipmentId}
+			AND		Shipment_Master.Pieces = 
+				(
+					SELECT	SUM(Shipment_FreightOut.Pieces) 
+					FROM	Shipment_FreightOut 
+					WHERE	Shipment_FreightOut.ShipmentId = #{shipmentId}
+				)
+		]]>
+	</select>
+
+	<update id="sqlUpdateShipmentStatusOnFlightAutoComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[
+		update Shipment_Master 
+		set 
+			DepartedOn = getdate(),
+			LastUpdatedUserCode = #{modifiedBy}, 
+			LastUpdatedDateTime = getdate() 
+		where 
+			ShipmentId = #{shipmentId} and
+			Shipment_Master.Pieces = (select
+										sum(Shipment_FreightOut.Pieces)
+									from
+										Shipment_FreightOut
+									where
+										Shipment_FreightOut.ShipmentId = #{shipmentId})
+	]]>
+	</update>
+
+	<update id="sqlUpdateShipmentHouseStatusOnFlightAutoComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentHouseDetails">
+	<![CDATA[
+		update Shipment_HouseInformation 
+		set 
+			DepartedOn = getdate(),
+			LastUpdatedUserCode = #{modifiedBy}, 
+			LastUpdatedDateTime = getdate() 
+		where 
+			ShipmentId = #{shipmentId} and 
+			Number = #{number} and
+			not exists(
+				select
+					null
+				from
+					Shipment_InventoryHouse
+				where
+					Shipment_InventoryHouse.ShipmentHouseId = Shipment_HouseInformation.ShipmentHouseId
+					
+			)
+	]]>
+	</update>
+
+	<insert
+		id="sqlMoveShipmentInventorySHCToFreightOutSHCOnFlightAutoComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[		
+		insert into Shipment_FreightOutSHC(
+			SpecialHandlingCode,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			ShipmentFreightOutId
+		)		
+		select Exp_LoadedShipmentSHCInfo.SpecialHandlingCode, 
+		#{createdBy} as CreatedUserCode,
+		getdate() as CreatedDateTime,
+		#{modifiedBy} as LastUpdatedUserCode,
+		getdate() as LastUpdatedDateTime,
+		#{shipmentFreightOutId} as ShipmentFreightOutId
+		from Shipment_Inventory INNER JOIN Exp_AssignedULDTrolleyToFlight
+		ON Shipment_Inventory.AssignedUldTrolley=Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber
+		and Shipment_Inventory.Flight_Id=Exp_AssignedULDTrolleyToFlight.FlightId
+		INNER JOIN Exp_LoadedShipmentInfo 
+		ON Exp_LoadedShipmentInfo.AssUldTrolleyId=Exp_AssignedULDTrolleyToFlight.AssUldTrolleyId
+		and Shipment_Inventory.Shipment_Id=Exp_LoadedShipmentInfo.ShipmentId
+		INNER JOIN
+		Exp_LoadedShipmentSHCInfo ON
+		Exp_LoadedShipmentSHCInfo.LoadedShipmentInfoId=Exp_LoadedShipmentInfo.LoadedShipmentInfoId		
+		where Shipment_Inventory.ShipmentInventory_Id=#{shipmentInventoryId}			
+	]]>
+	</insert>
+
+	<insert
+		id="sqlMoveShipmentInventoryHouseToFreightOutHouseOnFlightAutoComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[
+		insert into Shipment_FreightOutHouse(
+			ShipmentFreightOutId,
+			ShipmentHouseId,
+			Pieces,
+			Weight,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime
+		)
+		select
+			#{shipmentFreightOutId} as ShipmentFreightOutId,
+			Shipment_InventoryHouse.ShipmentHouseId,
+			Shipment_InventoryHouse.Pieces,
+			Shipment_InventoryHouse.Weight,
+			#{createdBy} as CreatedUserCode,
+			getdate() as CreatedDateTime,
+			#{modifiedBy} as LastUpdatedUserCode,
+			getdate() as LastUpdatedDateTime
+		from
+			Shipment_InventoryHouse
+		where
+			Shipment_InventoryHouse.ShipmentInventoryId = #{shipmentInventoryId}
+	]]>
+	</insert>
+
+	<insert id="sqlMoveShipmentInventoryToFreightOutOnFlightAutoComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails" 
+		useGeneratedKeys="true" keyColumn="ShipmentFreightOutId"
+		keyProperty="shipmentFreightOutId">
+	<![CDATA[
+		insert into Shipment_FreightOut(
+			ShipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			ChargebleWeight,
+			WarehouseLocation,
+			FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			CreatedUserCode,
+			CreatedDateTime,
+			LastUpdatedUserCode,
+			LastUpdatedDateTime,
+			InboundFlightId,
+			TRMNumber,
+			Manual,
+			PartSuffix,
+			DipSvcSTATS
+		)
+		select
+			Shipment_ID as shipmentId,
+			ShipmentLocation,
+			Pieces,
+			Weight,
+			ChargebleWeight,
+			WarehouseLocation,
+			Flight_ID as FlightId,
+			PDNumber,
+			AssignedUldTrolley,
+			DryIceWeight,
+			TrackerId,
+			TemperatureRange,
+			HandlingArea,
+			#{createdBy} as CreatedUserCode,
+			getdate() as CreatedDateTime,
+			#{modifiedBy} as LastUpdatedUserCode,
+			getdate() as LastUpdatedDateTime,
+			InboundFlightId,
+			TRMNumber,
+			0 as Manual,
+			PartSuffix,
+			DipSvcSTATS
+		from
+			Shipment_Inventory
+		where
+			Shipment_Inventory.ShipmentInventory_Id = #{shipmentInventoryId}
+	]]>
+	</insert>
+
+	<delete id="sqlDeleteShipmentInventorySHCOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[
+		delete from Shipment_InventorySHC where ShipmentInventoryId = #{shipmentInventoryId}
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteShipmentInventoryHouseOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[
+		delete from Shipment_InventoryHouse where ShipmentInventoryId = #{shipmentInventoryId}
+	]]>
+	</delete>
+
+	<delete id="sqlDeleteShipmentInventoryOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+	<![CDATA[
+		delete from Shipment_Inventory where ShipmentInventory_Id = #{shipmentInventoryId}
+	]]>
+	</delete>
+	
+	<select id="sqlGetCommunicationAddressOnAutoFlightComplete"
+		 parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails"
+		 resultType="java.lang.String">
+	<![CDATA[
+		select
+			distinct Interface_MessageDefinitionByCustomerCommunicationAddress.CommunicationAddress as communicationEmails
+		from
+			Interface_MessageDefinitionByCustomerCommunication inner join
+			Interface_MessageDefinitionByCustomerCommunicationAddress
+				on Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerCommunicationId =
+						Interface_MessageDefinitionByCustomerCommunicationAddress.InterfaceMessageDefinitionByCustomerCommunicationId inner join 
+			Interface_MessageDefinitionByCustomer
+				on Interface_MessageDefinitionByCustomer.InterfaceMessageDefinitionByCustomerId =
+						Interface_MessageDefinitionByCustomerCommunication.InterfaceMessageDefinitionByCustomerId
+		where
+			Interface_MessageDefinitionByCustomerCommunication.CommunicationType = 'LHMAILS' and 
+			Interface_MessageDefinitionByCustomer.carriercode= #{carrierCode}
+	]]>	
+	</select>
+
+	<!-- End of Auto Complete Queries -->
+
+
+	<!-- RCS Related Queries -->
+	<select id="getRcsSchedulerData" parameterType="Map" resultMap="getRcsSchedulerData">
+	<![CDATA[
+	With GetCurrentTime As(
+			select 
+				convert(datetime,SWITCHOFFSET(converT(datetimeoffset,getdate()),
+					(select current_utc_offset FROM sys.time_zone_info where name = 
+						(select ParameterValueChar from App_SystemParameters where upper(ParameterCode)=upper('Station_timezone'))
+					))
+				) CurrentTime
+		)
+		select 
+			*
+		from(
+			select      
+				distinct
+			    Flt_OperativeFlight.FlightKey,
+				'RcsScheduler' as CurrentUser,
+				getdate() as CurrentTime,
+			    Flt_OperativeFlight.Flight_Id,
+			    Flt_OperativeFlight_Legs.DateSTD,
+				Exp_ShipmentBooking.ShipmentNumber,
+				Exp_ShipmentBooking.ShipmentDate,
+				exp_eacceptancedocumentinformation.CargoPhysicallyAccepted,
+				shipment_master.ShipmentId,
+				sum(exp_eacceptanceweighing.GrossWeight) as Weight,
+				sum(exp_eacceptanceweighing.Pieces) as Pieces,
+				case
+					when (select CurrentTime from GetCurrentTime) >= 
+					dateadd(minute, isnull(-30, 0),  
+					Flt_OperativeFlight_Legs.DateSTD)  then
+							1
+					else 
+						0
+					end DifferenceInTime,
+				case
+					when abs(datediff(minute,
+						(select CurrentTime from GetCurrentTime) , 
+						dateadd(minute, isnull(-30, 0),  
+							Flt_OperativeFlight_Legs.DateSTD)) / (24 * 60))
+					 <
+				(select ParameterValueNum from App_SystemParameters where ParameterCode = 'LAST_NO_DAYS_CONSIDER_FLIGHT_COMPLETE') then
+					1
+				else
+					0
+				end LessThanConfiguredTime				
+			from
+		    	Flt_OperativeFlight inner join   
+		        Flt_OperativeFlight_Legs
+		        	on Flt_OperativeFlight_Legs.Flight_ID=Flt_OperativeFlight.Flight_ID
+					inner join Exp_ShipmentFlightBookingDetail 
+					on Exp_ShipmentFlightBookingDetail.FlightId =Flt_OperativeFlight_Legs. Flight_ID    
+					inner join Exp_ShipmentBooking 
+					on Exp_ShipmentBooking.BookingId = Exp_ShipmentFlightBookingDetail.BookingId
+					inner join exp_eacceptancedocumentinformation
+					on exp_eacceptancedocumentinformation.shipmentnumber=Exp_ShipmentBooking.shipmentnumber
+					and exp_eacceptancedocumentinformation.shipmentdate = Exp_ShipmentBooking.shipmentdate
+					inner join shipment_master
+					on shipment_master.shipmentnumber=exp_eacceptancedocumentinformation.shipmentnumber 
+					and 
+					shipment_master.shipmentdate=exp_eacceptancedocumentinformation.shipmentdate
+					inner join exp_eacceptanceweighing
+					on  exp_eacceptanceweighing.documentinformationid = exp_eacceptancedocumentinformation.documentinformationid
+			inner join 
+			      Exp_FlightEvents
+		              on Exp_FlightEvents.FlightId=Flt_OperativeFlight.Flight_ID      
+					  and 
+					  not exists (  
+					  select  * 
+					  from Shipment_StatusUpdateEvent
+					  where 
+					  shipmentnumber=exp_eacceptancedocumentinformation.shipmentnumber
+					  and 
+					  shipmentdate = exp_eacceptancedocumentinformation.shipmentdate
+					  and
+					  Shipment_StatusUpdateEvent.EventType='RCS'
+					  )
+			where
+			    Flt_OperativeFlight_Legs.FlightBoardPoint = #{tenantAirport} and
+				Exp_FlightEvents.FlightCompletedAt is  null and
+				 Exp_FlightEvents.ManifestCompletedAt is not null
+		   group by 
+				 exp_eacceptanceweighing.GrossWeight , Flt_OperativeFlight.Flight_Id,
+			    Flt_OperativeFlight_Legs.DateSTD,
+			    Flt_OperativeFlight_Legs.DateETD,
+				Flt_OperativeFlight_Legs.DateATD,
+				Exp_ShipmentBooking.ShipmentNumber,
+				Exp_ShipmentBooking.ShipmentDate,
+				exp_eacceptancedocumentinformation.CargoPhysicallyAccepted,
+				shipment_master.ShipmentId,
+				exp_eacceptanceweighing.Pieces , Flt_OperativeFlight.FlightKey
+		)RCSSchedulerInfo
+		where
+			RCSSchedulerInfo.DifferenceInTime = 1 and
+			RCSSchedulerInfo.LessThanConfiguredTime = 1
+			
+		order by
+			RCSSchedulerInfo.DateSTD	
+		
+		
+	]]>
+	</select>
+
+	<resultMap id="getRcsSchedulerData"
+		type="com.ngen.cosys.application.model.RcsSchedulerDetail">
+		<result property="shipmentId" column="ShipmentId" />
+		<result property="weight" column="Weight" />
+		<result property="pieces" column="Pieces" />
+		<result property="firstBookingFlightId" column="Flight_Id" />
+		<result property="shipmentNumber" column="ShipmentNumber" />
+		<result property="createdOn" column="CurrentTime" />
+		<result property="createdBy" column="CurrentUser" />
+	</resultMap>
+
+
+	<select id="checkShipmentIsEAwbShipmentRcs" parameterType="java.lang.String"
+		resultType="java.math.BigInteger">
+
+		select count(*) from
+		Com_CargoProcessingEngineCheckShipmentSuccess success
+		JOIN
+		Com_CargoProcessingEngineProcessArea area
+		ON
+		success.ComCargoProcessingEngineProcessAreaId=area.ComCargoProcessingEngineProcessAreaId
+		JOIN shipment_master ms
+		ON success.ShipmentNumber =ms.ShipmentNumber
+		AND
+		success.ShipmentDate =
+		ms.ShipmentDate
+		WHERE
+		ShipmentId=#{shipmentId}
+		AND ProcessAreaCode in('FWB_REQUIRED','EAWB')
+
+	</select>
+	<select id="checkJapanCustoms" parameterType="java.util.Map" resultType="java.math.BigInteger">
+		  select count(*)  from 
+			 Mst_Country inner join 
+			 Mst_City on
+			 Mst_Country.CountryCode=Mst_City.CountryCode
+			 inner join   Mst_Airport on
+			 Mst_Airport.AirportCode=Mst_City.CityCode
+			 where  
+			 exists (
+			 select null from  
+			Mst_CodeAdministration_Group inner join
+			Mst_CodeAdministration_SubGroup on
+			Mst_CodeAdministration_Group.AdministrationGroupCode=Mst_CodeAdministration_SubGroup.AdministrationGroupCode
+			inner join 
+			Mst_CodeAdministration_SubGroupDetails on 
+			Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode=Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupCode
+			 where 
+			 Mst_CodeAdministration_Group.AdministrationGroupCode='CARGO_MESSAGE'
+			 and  Mst_CodeAdministration_SubGroup.AdministrationSubGroupCode='JAPAN_CUSTOMS'
+			 and  Mst_CodeAdministration_SubGroupDetails.AdministrationSubGroupDetailCode=Mst_Country.CountryCode
+			 )
+			 and exists (
+				select null
+				from 
+				Flt_OperativeFlight inner join Flt_OperativeFlight_Segments on
+				Flt_OperativeFlight.Flight_Id=Flt_OperativeFlight_Segments.Flight_ID
+				and Flt_OperativeFlight_Segments.FlightBoardPoint=#{tenantAirport}
+				inner join  Mst_Carrier on
+				Flt_OperativeFlight.CarrierCode=Mst_Carrier.CarrierCode
+				and  isNull(Mst_Carrier.MessageSequenceFlag,0)=1
+				where 
+				Flt_OperativeFlight_Segments.FlightOffPoint=Mst_Airport.AirportCode
+				and  Flt_OperativeFlight.Flight_ID=#{flightId}
+				and Mst_Carrier.CarrierCode=#{carrierCode}
+			 )
+	</select>
+		<!-- Query to get manifestinfo for calculating volume -->	
+	<select id="sqlGetManifestedShipmentInfoOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails"
+		resultMap="FlightAutoCompleteShipmentDetailsResultMap">
+		<![CDATA[
+			select
+				#{flightId} as Flight_ID,
+				Exp_ManifestShipmentInfo.ShipmentId as ShipmentId,
+				Exp_ManifestShipmentInfo.ManifestShipmentInfoId as manifestShipmentInfoId,
+				Shipment_Master.Pieces as totalConsignmentPieces,
+				Shipment_Master.Weight as totalConsignmentWeight,
+				Exp_ManifestShipmentInfo.Piece as ManifestPieces,
+				Exp_ManifestShipmentInfo.Weight as ManifestWeight,
+				isnull((select
+						sum(Shipment_FreightWayBillRateDescription.ChargeableWeight) ChargeableWeight
+					from
+						Shipment_FreightWayBill inner join
+						Shipment_FreightWayBillRateDescription
+							on Shipment_FreightWayBill.ShipmentFreightWayBillId = Shipment_FreightWayBillRateDescription.ShipmentFreightWayBillId
+					where
+						Shipment_FreightWayBill.AwbNumber = Shipment_Master.ShipmentNumber and
+						Shipment_FreightWayBill.AwbDate = Shipment_Master.ShipmentDate
+				), 0) as chargeableWeight,
+				isnull((select
+					sum(cast(isnull(innerManifestShipmentInfo.VolumeAmount,0) as numeric)) * 6000
+				from
+					Exp_Manifest innerManifest inner join
+					Exp_ManifestShipmentInfo innerManifestShipmentInfo
+						on innerManifest.ManifestId = innerManifestShipmentInfo.ManifestId 
+				where
+					innerManifest.FlightId <> Exp_Manifest.FlightId and
+					innerManifestShipmentInfo.ShipmentId = Exp_ManifestShipmentInfo.ShipmentId
+				),0) as usedChargeableWeight
+			from
+				Exp_Manifest inner join
+				Exp_ManifestULDInfo
+					on Exp_Manifest.ManifestId = Exp_ManifestULDInfo.ManifestId inner join
+				Exp_ManifestShipmentInfo
+					on 	Exp_ManifestULDInfo.ManifestUldInfoId = Exp_ManifestShipmentInfo.ManifestUldInfoId inner join
+				Shipment_Master
+					on Exp_ManifestShipmentInfo.ShipmentId = Shipment_Master.ShipmentId
+			where	
+				Shipment_Master.ShipmentType = 'AWB' and
+				Exp_Manifest.FlightId = #{flightId}
+		]]>
+	</select>
+	
+	<update id="sqlUpdateManifestShipmentVolumeOnAutoFlightComplete"
+		parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteShipmentDetails">
+		update Exp_ManifestShipmentInfo 
+		set
+			VolumeUnitCode = #{volume.volumeCode},
+			VolumeAmount = #{volume.volumeAmount},
+			LastUpdatedUserCode = #{modifiedBy},
+			LastUpdatedDateTime = getDate()
+		where
+			ManifestShipmentInfoId = #{manifestShipmentInfoId} and
+			ShipmentId = #{shipmentId}			
+	</update>
+	
+	<select id="getUldlistToUpdateUldStatus" parameterType="com.ngen.cosys.export.flightautocomplete.model.FlightAutoCompleteDetails"
+	resultType="com.ngen.cosys.export.flightautocomplete.model.Uld">
+		select 
+			Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber as uldTrolleyNo,
+			Exp_AssignedULDTrolleyToFlight.ContentCode as contentCode,
+			Exp_AssignedULDTrolleyToFlight.FlightId as flightId,
+			uld_uldMaster.Uld_ID uldId
+		from 
+			Exp_AssignedULDTrolleyToFlight inner join uld_uldMaster 
+               on  Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber = uld_uldMaster.UldKey 
+              where 
+		Exp_AssignedULDTrolleyToFlight.FlightId =#{flightId}
+		and  Exp_AssignedULDTrolleyToFlight.ULDTrolleyNumber is not null
+	</select>
+	
+	<insert id="insertForUldOutMovement" parameterType="com.ngen.cosys.export.flightautocomplete.model.Uld">
+		insert into Uld_UldOutMovements (
+			Uld_ID,
+			UldOutMovementSequenceNo,
+			Flight_ID,
+			UldOutMovementStatus,
+			UCM_SendFlag,
+			ContentCode,
+			ConditionType,
+			HandlingCarrierCode,
+			OutMovementCreationDate,
+			FlightDepartureDate,
+			CreatedUser_Code,
+			Created_DateTime,
+			OutMovementFinalizedFlag
+		) values (
+			#{uldId},
+			(SELECT (select isnull(max(UldOutMovementSequenceNo),0) from Uld_UldOutMovements where Uld_ID = #{uldId})+1),
+			#{flightId},
+			'OFL',
+			0,
+			#{contentCode},
+			'SER',
+			#{handlingCarrierCode},
+			#{createdOn},
+			#{flightCompletedOn},
+			#{createdBy},
+			#{createdOn},
+			0
+		)
+	</insert>
+	
+	<select id="checkDuplicateUldInUldOutMovement" parameterType="com.ngen.cosys.export.flightautocomplete.model.Uld" resultType="java.lang.Integer">	
+		SELECT 
+		       count(*)
+		FROM 
+		       Uld_UldOutMovements inner join uld_uldMaster 
+                                  on  Uld_UldOutMovements.Uld_ID = uld_uldMaster.Uld_ID 
+	    where
+               UldOutMovementStatus='OFL' and UldKey = #{uldTrolleyNo} and Uld_UldOutMovements.Flight_ID = #{flightId}
+	</select>
+	
+</mapper>
